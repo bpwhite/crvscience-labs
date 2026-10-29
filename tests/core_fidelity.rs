@@ -713,7 +713,7 @@ fn collect_repo_source_files(dir: &Path, out: &mut Vec<PathBuf>) {
             if p.is_dir() {
                 if matches!(
                     name.as_str(),
-                    ".git" | "target" | ".cache" | "runs" | "node_modules"
+                    ".git" | "target" | "cache" | ".cache" | "runs" | "node_modules"
                 ) {
                     continue;
                 }

@@ -9,6 +9,7 @@ pub mod complexity;
 pub mod dag_pipelines;
 pub mod fetch;
 pub mod genome_target;
+pub mod haplotype;
 pub mod phylo;
 pub mod pipelines;
 pub mod sweep;

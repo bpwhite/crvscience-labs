@@ -575,6 +575,38 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
     assert_eq!(sweep_report.two_star_validation_count, 1);
     assert_eq!(sweep_report.three_star_synthesis_count, 3);
     assert!(sweep_report.disk_snapshots.len() >= 3);
+
+    // 6. Haplotype Clustering & Adaptive Visualization (`haplo-cluster`):
+    //    Verify Small-Dataset ASCII viewpoint (h <= 30) and Large-Dataset Super-Cluster + SVG/DOT (h > 30)
+    let haplo_report = bio_suite::haplotype::run_haplotype_cluster_pipeline_agent()
+        .expect("Haplotype clustering pipeline must succeed");
+    assert_eq!(haplo_report.pipeline_id, "haplo-cluster-v1");
+    assert_eq!(haplo_report.small_dataset_cohort.diversity_metrics.total_sequences_n, 24);
+    assert_eq!(haplo_report.small_dataset_cohort.diversity_metrics.unique_haplotypes_h, 10);
+    assert_eq!(haplo_report.small_dataset_cohort.clusters.len(), 3);
+    assert!(haplo_report
+        .small_dataset_cohort
+        .visualizations
+        .ascii_cluster_network_viewpoint
+        .contains("CLUSTER-01"));
+    assert!(haplo_report
+        .small_dataset_cohort
+        .visualizations
+        .ascii_polymorphic_site_matrix
+        .contains("POLYMORPHIC SEGREGATING SITES ALIGNMENT"));
+    assert_eq!(haplo_report.large_dataset_cohort.diversity_metrics.total_sequences_n, 120);
+    assert_eq!(haplo_report.large_dataset_cohort.diversity_metrics.unique_haplotypes_h, 40);
+    assert_eq!(haplo_report.large_dataset_cohort.clusters.len(), 5);
+    assert!(haplo_report
+        .large_dataset_cohort
+        .visualizations
+        .svg_vector_network
+        .starts_with("<svg"));
+    assert!(haplo_report
+        .large_dataset_cohort
+        .visualizations
+        .graphviz_dot_network
+        .contains("graph HaplotypeMinimumSpanningNetwork"));
 }
 
 #[test]

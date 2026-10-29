@@ -721,3 +721,187 @@ fn mean_slice(vals: &[f64]) -> f64 {
         vals.iter().sum::<f64>() / (vals.len() as f64)
     }
 }
+
+/// Render a detailed ASCII summary of a specific focal window `[start_1based..=end_1based]`
+/// within a Multiple Sequence Alignment (MSA), including:
+/// - Full-alignment summary metrics vs. focal-region conservation stats
+/// - 1-based coordinate ruler
+/// - Optional structural / reading-frame / secondary-structure track
+/// - Aligned sequence rows with accession/taxon labels
+/// - Clustal conservation track (`*` invariant, `:` transition-conserved, `.` transversion, ` ` gap)
+/// - Per-column Shannon entropy sparkline (`▁▂▃▄▅▆▇█`)
+pub fn render_focal_alignment_ascii_summary(
+    alignment_title: &str,
+    full_alignment_bp: usize,
+    start_1based: usize,
+    structure_track_label: Option<(&str, &str)>,
+    rows: &[(&str, &str)],
+    callout_notes: &[&str],
+) -> String {
+    if rows.is_empty() {
+        return String::new();
+    }
+    let win_len = rows[0].1.len();
+    let end_1based = start_1based + win_len.saturating_sub(1);
+    let label_w = rows
+        .iter()
+        .map(|(lbl, _)| lbl.len())
+        .chain(structure_track_label.iter().map(|(l, _)| l.len()))
+        .max()
+        .unwrap_or(18)
+        .max(22);
+
+    let mut invariant_cnt = 0usize;
+    let mut transition_cnt = 0usize;
+    let mut transversion_cnt = 0usize;
+    let mut gap_cols = 0usize;
+    let mut clustal_bar = String::with_capacity(win_len);
+    let mut entropy_spark = String::with_capacity(win_len * 3);
+    let spark_glyphs = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+    for col in 0..win_len {
+        let mut counts = [0usize; 4]; // A, C, G, T
+        let mut has_gap = false;
+        let mut total_valid = 0usize;
+        for &(_, seq) in rows {
+            let b = seq.as_bytes().get(col).copied().unwrap_or(b'-');
+            match b.to_ascii_uppercase() {
+                b'A' => {
+                    counts[0] += 1;
+                    total_valid += 1;
+                }
+                b'C' => {
+                    counts[1] += 1;
+                    total_valid += 1;
+                }
+                b'G' => {
+                    counts[2] += 1;
+                    total_valid += 1;
+                }
+                b'T' | b'U' => {
+                    counts[3] += 1;
+                    total_valid += 1;
+                }
+                _ => {
+                    has_gap = true;
+                }
+            }
+        }
+        let non_zero_bases = counts.iter().filter(|&&c| c > 0).count();
+        if has_gap {
+            gap_cols += 1;
+            clustal_bar.push(' ');
+        } else if non_zero_bases <= 1 {
+            invariant_cnt += 1;
+            clustal_bar.push('*');
+        } else {
+            let only_purines = counts[1] == 0 && counts[3] == 0;
+            let only_pyrimidines = counts[0] == 0 && counts[2] == 0;
+            if only_purines || only_pyrimidines {
+                transition_cnt += 1;
+                clustal_bar.push(':');
+            } else {
+                transversion_cnt += 1;
+                clustal_bar.push('.');
+            }
+        }
+
+        // Column Shannon entropy in bits (0.0 to 2.0)
+        let mut h_col = 0.0f64;
+        if total_valid > 0 {
+            for &c in &counts {
+                if c > 0 {
+                    let p = (c as f64) / (total_valid as f64);
+                    h_col -= p * p.log2();
+                }
+            }
+        }
+        let idx = ((h_col / 2.0) * 7.0).round().clamp(0.0, 7.0) as usize;
+        entropy_spark.push(spark_glyphs[idx]);
+    }
+
+    let mut out = String::new();
+    out.push_str("========================================================================================\n");
+    out.push_str(&format!("FOCAL ALIGNMENT SUMMARY: {}\n", alignment_title));
+    out.push_str(&format!(
+        "Full Alignment: {} bp | Highlighted Window: nt {}..{} ({} bp) | Taxa/Operons: {}\n",
+        full_alignment_bp,
+        start_1based,
+        end_1based,
+        win_len,
+        rows.len()
+    ));
+    out.push_str(&format!(
+        "Window Conservation: {} invariant (*) | {} transition-only (:) | {} transversion (.) | {} gapped cols\n",
+        invariant_cnt, transition_cnt, transversion_cnt, gap_cols
+    ));
+    out.push_str("========================================================================================\n");
+
+    // Coordinate ruler
+    let mut ruler_nums = vec![b' '; win_len];
+    let mut ruler_ticks = vec![b'.'; win_len];
+    for offset in 0..win_len {
+        let pos = start_1based + offset;
+        if offset == 0 || pos % 10 == 0 {
+            ruler_ticks[offset] = b'|';
+            let s = pos.to_string();
+            for (k, ch) in s.bytes().enumerate() {
+                if offset + k < win_len {
+                    ruler_nums[offset + k] = ch;
+                }
+            }
+        } else if pos % 5 == 0 {
+            ruler_ticks[offset] = b':';
+        }
+    }
+    out.push_str(&format!(
+        "{:<width$}  {}\n",
+        "1-Based Coord",
+        String::from_utf8_lossy(&ruler_nums),
+        width = label_w
+    ));
+    out.push_str(&format!(
+        "{:<width$}  {}\n",
+        "Position Scale",
+        String::from_utf8_lossy(&ruler_ticks),
+        width = label_w
+    ));
+
+    if let Some((st_lbl, st_seq)) = structure_track_label {
+        out.push_str(&format!("{:<width$}  {}\n", st_lbl, st_seq, width = label_w));
+    }
+    out.push_str(&format!(
+        "{}\n",
+        "-".repeat(label_w + 2 + win_len)
+    ));
+
+    for &(lbl, seq) in rows {
+        out.push_str(&format!("{:<width$}  {}\n", lbl, seq, width = label_w));
+    }
+
+    out.push_str(&format!(
+        "{}\n",
+        "-".repeat(label_w + 2 + win_len)
+    ));
+    out.push_str(&format!(
+        "{:<width$}  {}\n",
+        "Clustal Conservation",
+        clustal_bar,
+        width = label_w
+    ));
+    out.push_str(&format!(
+        "{:<width$}  {}\n",
+        "Column Entropy (0-2b)",
+        entropy_spark,
+        width = label_w
+    ));
+
+    if !callout_notes.is_empty() {
+        out.push_str("\nFOCAL REGION DIAGNOSTIC CALLOUTS:\n");
+        for note in callout_notes {
+            out.push_str(&format!("  • {}\n", note));
+        }
+    }
+
+    out
+}

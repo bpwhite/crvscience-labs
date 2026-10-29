@@ -11,6 +11,7 @@
 # Local cache & pipeline output runs (regenerated deterministically by `bio-suite`)
 /cache/
 /runs/
+/tools/
 
 # OS & editor files
 .DS_Store

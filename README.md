@@ -1,4 +1,4 @@
-# CRV Science Labs (`bio-suite` v0.2.0)
+# CRV Science Labs (`bio-suite` v0.3.0)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Language: Rust](https://img.shields.io/badge/Language-Rust%202021-orange.svg)](https://www.rust-lang.org/)
@@ -7,6 +7,30 @@
 **`bio-suite`** is the open-source, high-throughput Rust bioinformatics, chemoinformatics, molecular systematics, and information-theoretic genome complexity engine powering [CRV Science Labs](https://crvscience.com/labs).
 
 Designed around a deterministic **Three-Tier Worker-Agent Architecture**, `bio-suite` eliminates fragile scripting glue by combining native `rayon`-parallelized Rust algorithms with drop-in adapters for GPL-3.0-compatible scientific tools.
+
+---
+
+## Multiple Sequence Alignment Policy: Native Rust Default vs. Explicit External Tools (`--aligner`)
+
+By default, all `bio-suite` pipelines execute **Native Mode (`AlignerMode::Native`)** so every discovery pipeline remains 100% self-contained, deterministic, and millisecond-fast without spawning external subprocesses unless explicitly requested:
+
+1. **`AlignerMode::Native` (Default — Zero External Process Overhead)**:
+   - **Mode 1 (Codon-Anchored Reading-Frame Mode)**: Automatically activates for uniform-length protein-coding barcodes (e.g., `1,545 bp` vertebrate `COX1`), locking onto triplet codon boundaries (`-15..=+15 bp`, step `3`) to guarantee `0` artificial frameshift gaps (`K2P` Pearson $r = 1.0000$, $\text{MAD} = 0.0000$ vs. `MAFFT v7.526 L-INS-i`, executing **`2,415×` faster**: `1.51 ms` vs. `3,635.51 ms`).
+   - **Mode 2 (9-mer Anchor-Segmented Gotoh 3-State Affine-Gap Dynamic Programming)**: Automatically activates for variable-length / indel-rich structural rRNAs (`16S`, `18S`, `23S`, `28S`) and nuclear ribosomal spacers (`ITS1–5.8S–ITS2`). Selects the 6-mer Jaccard medoid guide reference, locks onto colinear unique 9-mer anchors ($\ge 24\text{ bp}$ spacing), and executes exact Gotoh (`1982`) 3-matrix (`M`, `I`, `D`) affine-gap dynamic programming (`Match = +4`, `Transition = +1`, `Transversion = -3`, `GapOpen = -10`, `GapExtend = -1`), achieving $r = 0.9849\text{–}0.9867$ K2P concordance with `MAFFT L-INS-i` at **`122×`–`222×` faster runtime**.
+2. **`AlignerMode::Mafft` (Explicit On-Demand External Tool — `--aligner mafft`)**:
+   - Invokes the local `MAFFT v7.526` (`--auto` $\rightarrow$ `L-INS-i` / `FFT-NS-i` / `FFT-NS-2`, `model=DNA200`) installation (`tools/mafft-win/mafft-win/mafft.bat` or system `mafft` in `PATH`) only when `--aligner mafft` is explicitly passed on the CLI or during head-to-head calibration (`bio-suite align-compare`).
+   - Note: `tools/` is git-ignored to keep the repository lightweight and compliant with GitHub Blackbird code search limits (`< 384 KB` per tracked file).
+
+```bash
+# Default: Runs Native Rust v2 Aligner (AlignerMode::Native)
+./target/release/bio-suite agent coi-barcode-cluster --out runs/coi-barcode-report.json
+
+# Explicit External Tool Override: Runs MAFFT v7.526 (AlignerMode::Mafft)
+./target/release/bio-suite agent coi-barcode-cluster --aligner mafft --out runs/coi-barcode-mafft.json
+
+# Head-to-Head Calibration Benchmark (Native Rust v2 vs. MAFFT v7.526 L-INS-i across 4 cohorts)
+./target/release/bio-suite align-compare --out runs/msa-native-vs-mafft-calibration.json
+```
 
 ---
 

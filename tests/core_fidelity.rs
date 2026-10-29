@@ -828,7 +828,7 @@ fn collect_repo_source_files(dir: &Path, out: &mut Vec<PathBuf>) {
             if p.is_dir() {
                 if matches!(
                     name.as_str(),
-                    ".git" | "target" | "cache" | ".cache" | "runs" | "node_modules"
+                    ".git" | "target" | "cache" | ".cache" | "runs" | "node_modules" | "tools"
                 ) {
                     continue;
                 }
@@ -838,4 +838,71 @@ fn collect_repo_source_files(dir: &Path, out: &mut Vec<PathBuf>) {
             }
         }
     }
+}
+
+#[test]
+fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
+    use bio_suite::fetch::FastaRecord;
+    use bio_suite::phylo::{align_sequences_with_mode, AlignerMode};
+
+    // 1. Default policy MUST be AlignerMode::Native
+    assert_eq!(
+        AlignerMode::default(),
+        AlignerMode::Native,
+        "Default aligner mode must be Native unless an external tool is explicitly specified"
+    );
+    assert_eq!(AlignerMode::from_cli_arg("native"), AlignerMode::Native);
+    assert_eq!(AlignerMode::from_cli_arg("mafft"), AlignerMode::Mafft);
+
+    // 2. Test Gotoh 3-state affine-gap progressive MSA on sequences with internal indels
+    let records = vec![
+        FastaRecord {
+            id: "SEQ_REF.1".to_string(),
+            accession: "SEQ_REF.1".to_string(),
+            taxon: "Taxon_A".to_string(),
+            common_name: "Ref".to_string(),
+            family: "FamA".to_string(),
+            gene: "ITS".to_string(),
+            description: "SEQ_REF.1".to_string(),
+            sequence: "ATCGATCGATCGAAAACCCCGGGGTTTTATCGATCGATCG".to_string(),
+            cached_from_disk: true,
+        },
+        FastaRecord {
+            id: "SEQ_DEL.1".to_string(),
+            accession: "SEQ_DEL.1".to_string(),
+            taxon: "Taxon_B".to_string(),
+            common_name: "Del4".to_string(),
+            family: "FamA".to_string(),
+            gene: "ITS".to_string(),
+            description: "SEQ_DEL.1".to_string(),
+            // 4-bp deletion of CCCC in the middle
+            sequence: "ATCGATCGATCGAAAAGGGGTTTTATCGATCGATCG".to_string(),
+            cached_from_disk: true,
+        },
+        FastaRecord {
+            id: "SEQ_INS.1".to_string(),
+            accession: "SEQ_INS.1".to_string(),
+            taxon: "Taxon_C".to_string(),
+            common_name: "Ins3".to_string(),
+            family: "FamA".to_string(),
+            gene: "ITS".to_string(),
+            description: "SEQ_INS.1".to_string(),
+            // 3-bp insertion of TTT after GGGG
+            sequence: "ATCGATCGATCGAAAACCCCGGGGTTTTTTATCGATCGATCG".to_string(),
+            cached_from_disk: true,
+        },
+    ];
+
+    let (_method, aligned, telemetry) = align_sequences_with_mode(&records, AlignerMode::Native);
+    assert_eq!(telemetry.aligner_mode, "Native");
+    assert_eq!(aligned.len(), 3);
+    assert_eq!(aligned[0].aligned_seq.len(), aligned[1].aligned_seq.len());
+    assert_eq!(aligned[1].aligned_seq.len(), aligned[2].aligned_seq.len());
+    // Single contiguous 4-bp gap should be opened in SEQ_DEL.1 ("----")
+    assert!(
+        aligned[1].aligned_seq.contains("----"),
+        "Expected affine-gap aligner to group the 4-bp deletion into a contiguous '----' gap, got {}",
+        aligned[1].aligned_seq
+    );
+    assert!(telemetry.sum_of_pairs_identity > 0.90);
 }

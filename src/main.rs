@@ -4,7 +4,9 @@
 //! Released under GNU General Public License v3.0 (GPL-3.0-or-later).
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
-use bio_suite::agent::{run_chr1_complexity_agent, run_coi_barcode_cluster_agent};
+use bio_suite::agent::{
+    run_chr1_complexity_agent, run_coi_barcode_cluster_agent_with_mode,
+};
 use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
 use bio_suite::dag_pipelines::{
     run_chromatin_condensate_scaffolder_agent, run_coevo_epistatic_escape_agent,
@@ -14,6 +16,8 @@ use bio_suite::disease_panels::{build_disease_genes_atlas, run_apoe_tiered_disco
 use bio_suite::fetch::PoliteCacheManager;
 use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
 use bio_suite::haplotype::run_haplotype_cluster_pipeline_agent;
+use bio_suite::msa_calibration::run_msa_native_vs_mafft_calibration;
+use bio_suite::phylo::AlignerMode;
 use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
@@ -42,14 +46,47 @@ fn emit_json_output<T: Serialize>(report: &T, duration_ms: u128, out_file: Optio
     }
 }
 
-fn dispatch_pipeline(workflow: &str, cache: &PoliteCacheManager, out_file: Option<&String>) {
+fn dispatch_pipeline(
+    workflow: &str,
+    cache: &PoliteCacheManager,
+    out_file: Option<&String>,
+    aligner_mode: AlignerMode,
+) {
     match workflow {
         "coi-barcode-cluster" => {
-            eprintln!("[bio-suite] Launching Pipeline 1: coi-barcode-cluster (500 Rayon bootstrap replicates)...");
-            match run_coi_barcode_cluster_agent(cache, 500) {
+            eprintln!(
+                "[bio-suite] Launching Pipeline 1: coi-barcode-cluster (500 Rayon bootstrap replicates, aligner={:?})...",
+                aligner_mode
+            );
+            match run_coi_barcode_cluster_agent_with_mode(cache, 500, aligner_mode) {
                 Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
                 Err(e) => {
                     eprintln!("[bio-suite] Pipeline failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "align-compare" | "msa-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Head-to-Head MSA Calibration: Native Rust v2 (Gotoh Affine-Gap) vs. MAFFT v7.526 (L-INS-i)...");
+            match run_msa_native_vs_mafft_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    for c in &report.cohorts {
+                        eprintln!("\n{}", c.focal_alignment_ascii);
+                    }
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] MSA calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -257,6 +294,13 @@ fn main() {
         .position(|a| a == "--out" || a == "-o")
         .and_then(|idx| args.get(idx + 1));
 
+    let aligner_mode = args
+        .iter()
+        .position(|a| a == "--aligner")
+        .and_then(|idx| args.get(idx + 1))
+        .map(|s| AlignerMode::from_cli_arg(s))
+        .unwrap_or(AlignerMode::Native);
+
     match cmd {
         "registry" => {
             let json = serde_json::to_string_pretty(&BIO_SUITE_TOOL_REGISTRY)
@@ -312,15 +356,16 @@ fn main() {
                 .get(2)
                 .map(|s| s.as_str())
                 .unwrap_or("coi-barcode-cluster");
-            dispatch_pipeline(workflow, &cache, out_file);
+            dispatch_pipeline(workflow, &cache, out_file, aligner_mode);
         }
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
         | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep"
-        | "burn-in" | "disease-atlas" | "disease-genes" | "apoe-sweep" | "avian-sweep" => {
+        | "burn-in" | "disease-atlas" | "disease-genes" | "apoe-sweep" | "avian-sweep"
+        | "align-compare" | "msa-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
-                dispatch_pipeline("burn-in", &cache, out_file);
+                dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {
-                dispatch_pipeline(cmd, &cache, out_file);
+                dispatch_pipeline(cmd, &cache, out_file, aligner_mode);
             }
         }
         _ => {
@@ -329,7 +374,8 @@ fn main() {
             println!();
             println!("USAGE:");
             println!("  bio-suite fetch [coi-barcodes | chr1-section-a]");
-            println!("  bio-suite agent coi-barcode-cluster [--out runs/coi-barcode-report.json]");
+            println!("  bio-suite agent coi-barcode-cluster [--aligner native|mafft] [--out runs/coi-barcode-report.json]");
+            println!("  bio-suite align-compare             [--out runs/msa-native-vs-mafft-calibration.json]");
             println!("  bio-suite agent chr1-unbiased-scan  [--out runs/chr1-complexity-report.json]");
             println!("  bio-suite hgt-scan                  [--out runs/hgt-scan-report.json]");
             println!("  bio-suite bgc-mine                  [--out runs/bgc-mine-report.json]");

@@ -1,10 +1,16 @@
-# Rust build artifacts
+# Rust build artifacts & binaries
 /target/
 **/*.rs.bk
+*.exe
+*.dll
+*.so
+*.dylib
+*.zip
+*.tar.gz
 
-# Local cache & temporary pipeline scratch (regenerated deterministically by `bio-suite fetch`)
+# Local cache & pipeline output runs (regenerated deterministically by `bio-suite`)
 /cache/
-/runs/tmp/
+/runs/
 
 # OS & editor files
 .DS_Store

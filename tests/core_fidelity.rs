@@ -564,6 +564,17 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
     assert_eq!(dag_report.total_pipelines_executed, 9);
     assert_eq!(dag_report.dag_edges.len(), 3);
     assert_eq!(dag_report.tool_reuse_matrix.len(), 8);
+
+    // 5. Multi-Pipeline Discovery Sweep (`sweep`): Verify 0★, 1★, 2★, and 3★ rubric gates and disk telemetry
+    let root = repo_root();
+    let sweep_report = bio_suite::sweep::run_multi_pipeline_discovery_sweep(&root)
+        .expect("Multi-pipeline sweep must succeed");
+    assert_eq!(sweep_report.total_runs_executed, 8);
+    assert_eq!(sweep_report.zero_star_excluded_count, 3);
+    assert_eq!(sweep_report.one_star_baseline_count, 1);
+    assert_eq!(sweep_report.two_star_validation_count, 1);
+    assert_eq!(sweep_report.three_star_synthesis_count, 3);
+    assert!(sweep_report.disk_snapshots.len() >= 3);
 }
 
 #[test]

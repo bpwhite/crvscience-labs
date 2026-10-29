@@ -16,7 +16,9 @@ use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
 };
-use bio_suite::sweep::run_multi_pipeline_discovery_sweep;
+use bio_suite::sweep::{
+    run_multi_pipeline_discovery_sweep, run_procedural_burnin_calibration_sweep,
+};
 use serde::Serialize;
 use std::env;
 use std::fs;
@@ -174,9 +176,16 @@ fn dispatch_pipeline(workflow: &str, cache: &PoliteCacheManager, out_file: Optio
                 }
             }
         }
+        "burn-in" => match run_procedural_burnin_calibration_sweep() {
+            Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+            Err(e) => {
+                eprintln!("[bio-suite] Burn-in calibration failed: {}", e);
+                std::process::exit(1);
+            }
+        },
         _ => {
             eprintln!(
-                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, dag-chain, sweep",
+                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in",
                 workflow
             );
             std::process::exit(1);
@@ -256,8 +265,13 @@ fn main() {
             dispatch_pipeline(workflow, &cache, out_file);
         }
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
-        | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep" => {
-            dispatch_pipeline(cmd, &cache, out_file);
+        | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep"
+        | "burn-in" => {
+            if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
+                dispatch_pipeline("burn-in", &cache, out_file);
+            } else {
+                dispatch_pipeline(cmd, &cache, out_file);
+            }
         }
         _ => {
             println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");

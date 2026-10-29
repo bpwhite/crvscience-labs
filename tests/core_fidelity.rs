@@ -565,10 +565,16 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
     assert_eq!(dag_report.dag_edges.len(), 3);
     assert_eq!(dag_report.tool_reuse_matrix.len(), 8);
 
-    // 5. Multi-Pipeline Discovery Sweep (`sweep`): Verify 0★, 1★, 2★, and 3★ rubric gates (including rRNA 16S/18S/23S/ITS calibration) and disk telemetry
+    // 5. Multi-Pipeline Discovery Sweep (`sweep`): Verify 0★, 1★, 2★, and 3★ rubric gates (including rRNA 16S/18S/23S/ITS calibration),
+    //    empirical vs. procedural burn-in provenance separation, and disk telemetry
     let root = repo_root();
     let sweep_report = bio_suite::sweep::run_multi_pipeline_discovery_sweep(&root)
         .expect("Multi-pipeline sweep must succeed");
+    assert_eq!(
+        sweep_report.data_provenance,
+        "EMPIRICAL DATA: NCBI REFSEQ/GENBANK CACHED"
+    );
+    assert!(sweep_report.publishable_standalone);
     assert_eq!(sweep_report.total_runs_executed, 13);
     assert_eq!(sweep_report.zero_star_excluded_count, 5);
     assert_eq!(sweep_report.one_star_baseline_count, 2);
@@ -577,6 +583,21 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
     assert_eq!(sweep_report.rrna_cross_domain_markers.len(), 4);
     assert_eq!(sweep_report.rrna_23s_ptc_epistatic_pairs.len(), 3);
     assert!(sweep_report.disk_snapshots.len() >= 4);
+
+    // 5b. Procedural Burn-In Calibration (`burn-in`): Verify strict "CALIBRATION DATA: PROCEDURALLY GENERATED" stamp and non-publishable gate
+    let burnin_report = bio_suite::sweep::run_procedural_burnin_calibration_sweep()
+        .expect("Procedural burn-in calibration must succeed");
+    assert_eq!(
+        burnin_report.data_provenance,
+        "CALIBRATION DATA: PROCEDURALLY GENERATED"
+    );
+    assert!(!burnin_report.publishable_standalone);
+    assert_eq!(burnin_report.total_trials, 10);
+    assert_eq!(burnin_report.zero_star_failures, 4);
+    for t in &burnin_report.trials {
+        assert_eq!(t.data_provenance, "CALIBRATION DATA: PROCEDURALLY GENERATED");
+        assert!(!t.publishable_standalone);
+    }
 
     // 6. Haplotype Clustering & Adaptive Visualization (`haplo-cluster`):
     //    Verify Small-Dataset ASCII viewpoint (h <= 30) and Large-Dataset Super-Cluster + SVG/DOT (h > 30)

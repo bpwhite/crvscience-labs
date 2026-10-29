@@ -1,0 +1,9 @@
+# CRV Science Labs (bio-suite) — GitHub Linguist & Code Search Indexing Rules
+* text=auto eol=lf
+
+# Core Rust source and test suites (100% indexed by GitHub Code Search)
+src/*.rs linguist-language=Rust
+tests/*.rs linguist-language=Rust
+
+# Mark Cargo.lock as generated so it does not skew repository language stats or search ranking
+Cargo.lock linguist-generated=true

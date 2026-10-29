@@ -4,15 +4,9 @@
 //! Released under GNU General Public License v3.0 (GPL-3.0-or-later).
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
-pub mod agent;
-pub mod complexity;
-pub mod fetch;
-pub mod genome_target;
-pub mod phylo;
-
-use agent::{run_chr1_complexity_agent, run_coi_barcode_cluster_agent};
-use fetch::PoliteCacheManager;
-use genome_target::BIO_SUITE_TOOL_REGISTRY;
+use bio_suite::agent::{run_chr1_complexity_agent, run_coi_barcode_cluster_agent};
+use bio_suite::fetch::PoliteCacheManager;
+use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
 use std::env;
 use std::fs;
 use std::path::PathBuf;

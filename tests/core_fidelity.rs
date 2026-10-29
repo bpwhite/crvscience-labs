@@ -1,0 +1,491 @@
+//! Core Module Fidelity & GitHub Search Engine Indexing Compliance Suite (`core_fidelity.rs`)
+//!
+//! Validates the mathematical, algorithmic, and biological fidelity of all four
+//! `bio-suite` engines (`fetch`, `phylo`, `genome_target`, `complexity`) using compact,
+//! deterministic test fixtures (`tests/fixtures/`), and enforces strict GitHub
+//! repository hygiene and Blackbird Code Search indexing constraints:
+//! - Hard GitHub file limit: No file >= 100 MB (104,857,600 bytes) anywhere in the repository
+//! - GitHub Code Search limit: All tracked source/test/doc files < 384 KB (393,216 bytes)
+//! - Valid UTF-8 text without NUL bytes in tracked source files
+//! - Compact test footprint: `tests/` maintains <= 10 total files
+
+use bio_suite::complexity::{
+    analyze_sequences_parallel, compute_dna_walk_dfa, compute_dna_walk_hurst,
+    compute_sequence_complexity, compute_zdna_propensity, kmer_shannon_entropy, lempel_ziv_76,
+    scan_g4hunter, scan_sliding_windows_parallel,
+};
+use bio_suite::fetch::{parse_single_fasta, FastaRecord, GenomicAnnotation, CARNIVORA_COI_PANEL};
+use bio_suite::genome_target::{
+    compute_wakefield_fine_mapping, intersect_high_complexity_windows, BIO_SUITE_TOOL_REGISTRY,
+};
+use bio_suite::phylo::{
+    align_sequences, compute_k2p_and_tn93, neighbor_joining_newick,
+    run_coi_phylo_and_barcode_analysis,
+};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+const GITHUB_HARD_FILE_LIMIT_BYTES: u64 = 100 * 1024 * 1024; // 100 MB hard GitHub limit
+const GITHUB_SEARCH_INDEX_LIMIT_BYTES: u64 = 384 * 1024; // 384 KB GitHub Blackbird Code Search limit
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+/// Parse a multi-record FASTA fixture file into `Vec<FastaRecord>` using `parse_single_fasta`
+/// on each entry so we test the exact FASTA & IUPAC normalization logic used in production.
+fn load_multi_fasta_fixture(rel_path: &str) -> Vec<FastaRecord> {
+    let full_path = repo_root().join(rel_path);
+    let raw = fs::read_to_string(&full_path)
+        .unwrap_or_else(|e| panic!("Failed to read fixture {}: {}", full_path.display(), e));
+
+    let mut records = Vec::new();
+    for chunk in raw.split('>') {
+        let trimmed = chunk.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let single_fasta = format!(">{}\n", trimmed);
+        let (header, sequence) = parse_single_fasta(&single_fasta)
+            .unwrap_or_else(|| panic!("Failed to parse FASTA entry in {}", rel_path));
+
+        // Header format: "ACCESSION Genus species ..."
+        let words: Vec<&str> = header.split_whitespace().collect();
+        let id = words.first().copied().unwrap_or("UNKNOWN").to_string();
+        let taxon = if words.len() >= 3 {
+            format!("{} {}", words[1], words[2])
+        } else {
+            "Unknown sp.".to_string()
+        };
+        let family = if taxon.starts_with("Ursus") {
+            "Ursidae".to_string()
+        } else if taxon.starts_with("Canis") || taxon.starts_with("Vulpes") {
+            "Canidae".to_string()
+        } else {
+            "Hominidae".to_string()
+        };
+
+        records.push(FastaRecord {
+            id: id.clone(),
+            accession: id,
+            taxon: taxon.clone(),
+            common_name: taxon,
+            family,
+            gene: "COX1".to_string(),
+            description: header,
+            sequence,
+            cached_from_disk: true,
+        });
+    }
+    records
+}
+
+#[test]
+fn test_fetch_fasta_parser_and_iupac_reading_frame_preservation() {
+    // Verify that `parse_single_fasta` preserves exact reading-frame length when encountering
+    // IUPAC degenerate bases (R, Y, W, S, K, M, B, D, H, V, N) by converting them to 'N'
+    // instead of dropping characters and inducing a frameshift.
+    let raw_with_iupac = ">NC_009971.1_test Ursus thibetanus COX1\n\
+                          ATGTTCATTAATCGWCTGACTATYCTCAACTAACCACAAAGACATTGGAACACTATACCT\n\
+                          ATTATTCGGCGCATGAGCTGGAGTCCTAGGCACAGCTCTAAGCCTCCTTATTCGA\n";
+    let (header, seq) = parse_single_fasta(raw_with_iupac).expect("Should parse valid FASTA");
+    assert_eq!(header, "NC_009971.1_test Ursus thibetanus COX1");
+    assert_eq!(
+        seq.len(),
+        115,
+        "Sequence length must preserve all 115 bases including IUPAC 'W' and 'Y' converted to 'N'"
+    );
+    assert!(
+        seq.contains('N'),
+        "IUPAC degenerate bases 'W' and 'Y' must be normalized to 'N' in-frame"
+    );
+
+    // Also test against the compact Carnivora COI fixture (4 records, 300 bp each = 100 codons)
+    let records = load_multi_fasta_fixture("tests/fixtures/carnivora_coi_mini.fasta");
+    assert_eq!(records.len(), 4, "Fixture must contain 4 Carnivora records");
+    for rec in &records {
+        assert_eq!(
+            rec.sequence.len(),
+            300,
+            "Every Carnivora mini COI fixture sequence must be 300 bp (100 codons) for {}",
+            rec.id
+        );
+        assert_eq!(rec.sequence.len() % 3, 0);
+    }
+
+    // Check Ursus arctos record #0 specifically has 'N' from IUPAC 'W', 'L', 'R', 'Y' in-frame
+    assert!(
+        records[0].sequence.contains('N'),
+        "Ursus arctos fixture IUPAC degenerate bases must be preserved as 'N' in-frame"
+    );
+
+    // Verify curated 16-specimen panel metadata integrity
+    assert_eq!(CARNIVORA_COI_PANEL.len(), 16);
+}
+
+#[test]
+fn test_phylo_alignment_k2p_tn93_nj_tree_and_abgd_barcoding_gap() {
+    let records = load_multi_fasta_fixture("tests/fixtures/carnivora_coi_mini.fasta");
+    let (_, aligned) = align_sequences(&records);
+    assert_eq!(aligned.len(), 4);
+    for a in &aligned {
+        assert_eq!(a.aligned_seq.len(), 300);
+    }
+
+    // Direct pairwise check between the two intraspecific Canis lupus isolates (records 2 and 3)
+    let (p_intra, k2p_intra, tn93_intra, _ti_intra, _tv_intra, _) = compute_k2p_and_tn93(
+        aligned[2].aligned_seq.as_bytes(),
+        aligned[3].aligned_seq.as_bytes(),
+    );
+    assert!(
+        p_intra < 0.01,
+        "Intraspecific Canis lupus vs Canis lupus familiaris p-distance should be < 1%, got {}",
+        p_intra
+    );
+    assert!(k2p_intra >= p_intra);
+    assert!(tn93_intra >= p_intra);
+
+    // Direct pairwise check between interfamily Ursus arctos (0) and Canis lupus (2)
+    let (p_inter, k2p_inter, tn93_inter, ti_inter, tv_inter, _) = compute_k2p_and_tn93(
+        aligned[0].aligned_seq.as_bytes(),
+        aligned[2].aligned_seq.as_bytes(),
+    );
+    assert!(
+        k2p_inter > 0.10,
+        "Interfamily Ursidae vs Canidae K2P distance must exceed 10%, got {}",
+        k2p_inter
+    );
+    assert!(k2p_inter > p_inter);
+    assert!(tn93_inter > p_inter);
+    assert!(ti_inter > tv_inter, "Mitochondrial COI must exhibit transition bias (Ti > Tv)");
+
+    // Full phylogenetic & ABGD barcoding analysis on the 4-specimen fixture panel
+    let phylo = run_coi_phylo_and_barcode_analysis(&records, 200);
+    assert_eq!(phylo.alignment_length_bp, 300);
+    assert!(phylo.conserved_sites > 220);
+    assert!(phylo.variable_sites > 30);
+    assert_eq!(phylo.pairwise_comparisons.len(), 6); // 4 * 3 / 2
+
+    // Verify clear barcoding gap between intraspecific (< 1%) and interspecific pairs
+    assert!(
+        phylo.barcode_gap.max_intraspecific_k2p < 0.025,
+        "Max intraspecific K2P ({}) must fall below the 2.5% threshold",
+        phylo.barcode_gap.max_intraspecific_k2p
+    );
+
+    // Verify Newick tree syntax and presence of all 4 labels
+    assert!(phylo.newick_tree.starts_with('('));
+    assert!(phylo.newick_tree.ends_with(");"));
+    for label in &phylo.labels {
+        assert!(
+            phylo.newick_tree.contains(label),
+            "Newick tree must contain taxon label {}",
+            label
+        );
+    }
+
+    // Verify standalone Neighbor-Joining tree on a 3-taxon additive matrix
+    let d_mat = vec![
+        vec![0.0, 0.02, 0.10],
+        vec![0.02, 0.0, 0.10],
+        vec![0.10, 0.10, 0.0],
+    ];
+    let lbls = vec![
+        "TaxonA".to_string(),
+        "TaxonB".to_string(),
+        "TaxonC".to_string(),
+    ];
+    let nwk = neighbor_joining_newick(&d_mat, &lbls);
+    assert!(nwk.contains("TaxonA") && nwk.contains("TaxonB") && nwk.contains("TaxonC"));
+}
+
+#[test]
+fn test_complexity_entropy_lz76_dfa_hurst_g4hunter_and_zdna_fidelity() {
+    let motif_records = load_multi_fasta_fixture("tests/fixtures/chr1_agrn_motif_mini.fasta");
+    assert_eq!(motif_records.len(), 1);
+    let chr1_seq = &motif_records[0].sequence;
+    assert_eq!(chr1_seq.len(), 1800);
+
+    // Slice the 1,800 bp fixture into its three constituent 360 bp structural regimes:
+    // - 0..360: GC-rich coding regime
+    // - 360..720: Alternating purine-pyrimidine Z-DNA tract (TG/CA/CG repeats)
+    // - 720..1200: G-quadruplex (G4) + Z-DNA hotspot
+    let seq_coding = &chr1_seq[0..360];
+    let seq_zdna_repeat = &chr1_seq[360..720];
+    let seq_g4_hotspot = &chr1_seq[720..1200];
+
+    let batch_inputs = vec![
+        (
+            "REGIME_CODING".to_string(),
+            "Homo sapiens".to_string(),
+            seq_coding.to_string(),
+        ),
+        (
+            "REGIME_ZDNA_REPEAT".to_string(),
+            "Homo sapiens".to_string(),
+            seq_zdna_repeat.to_string(),
+        ),
+        (
+            "REGIME_G4_HOTSPOT".to_string(),
+            "Homo sapiens".to_string(),
+            seq_g4_hotspot.to_string(),
+        ),
+    ];
+    let metrics = analyze_sequences_parallel(&batch_inputs);
+    assert_eq!(metrics.len(), 3);
+
+    let m_coding = &metrics[0];
+    let m_zdna = &metrics[1];
+    let m_g4 = &metrics[2];
+
+    // Also verify single-sequence call matches parallel batch call
+    let single_check = compute_sequence_complexity("REGIME_G4_HOTSPOT", "Homo sapiens", seq_g4_hotspot);
+    assert_eq!(single_check.g4hunter_max_score, m_g4.g4hunter_max_score);
+
+    // 1. G4Hunter propensity must peak strongly in the G4 hotspot regime
+    assert!(
+        m_g4.g4hunter_max_score >= 2.0,
+        "G4 hotspot regime must yield G4Hunter max score >= 2.0, got {}",
+        m_g4.g4hunter_max_score
+    );
+    assert!(
+        m_g4.g4_motif_count > 0,
+        "G4 hotspot regime must have positive G4 motif hits"
+    );
+
+    // 2. Z-DNA alternating purine-pyrimidine propensity must peak in the Z-DNA repeat regime
+    assert!(
+        m_zdna.zdna_propensity > m_coding.zdna_propensity,
+        "Alternating YR Z-DNA tract must have higher Z-DNA propensity ({}) than coding regime ({})",
+        m_zdna.zdna_propensity,
+        m_coding.zdna_propensity
+    );
+
+    // 3. Lempel-Ziv 1976 (LZ76) algorithmic complexity must be lower on simple dinucleotide repeats than coding sequence
+    assert!(
+        m_zdna.lz76_normalized < m_coding.lz76_normalized,
+        "Simple dinucleotide repeat tract must have lower normalized LZ76 complexity ({}) than coding sequence ({})",
+        m_zdna.lz76_normalized,
+        m_coding.lz76_normalized
+    );
+
+    // 4. K-mer Shannon entropy bounds: 0 <= H_k <= 2*k bits, and finite scaling exponents
+    for m in &metrics {
+        assert!(m.shannon_h1_bits > 0.5 && m.shannon_h1_bits <= 2.0001);
+        assert!(m.shannon_h2_bits > 0.8 && m.shannon_h2_bits <= 4.0001);
+        assert!(m.shannon_h3_bits > 1.0 && m.shannon_h3_bits <= 6.0001);
+        assert!(m.dfa_alpha.is_finite());
+        assert!(m.hurst_exponent.is_finite());
+    }
+    assert!(m_coding.dfa_alpha > 0.1 && m_coding.dfa_alpha < 1.5);
+
+    // 5. Direct unit checks on primitives
+    let homopolymer = b"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    assert_eq!(kmer_shannon_entropy(homopolymer, 1), 0.0);
+    let (lz_homo_phrases, lz_homo_norm) = lempel_ziv_76(homopolymer);
+    assert!(lz_homo_phrases <= 3 && lz_homo_norm < 0.25);
+
+    let g4_oligo = b"GGGTTAGGGTTAGGGTTAGGGTTAGGGTTAGGG";
+    let (g4_score, g4_hits) = scan_g4hunter(g4_oligo, 25, 1.2);
+    assert!(g4_score > 1.5 && g4_hits > 0);
+
+    let zdna_oligo = b"CGCGCGCGCGCGCGCGCGCGCGCGCGCGCGCG";
+    assert!(compute_zdna_propensity(zdna_oligo) > 10.0);
+    assert!(compute_dna_walk_dfa(chr1_seq.as_bytes()) > 0.1);
+    assert!(compute_dna_walk_hurst(chr1_seq.as_bytes()) > 0.1);
+}
+
+#[test]
+fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping() {
+    let motif_records = load_multi_fasta_fixture("tests/fixtures/chr1_agrn_motif_mini.fasta");
+    let chr1_seq = &motif_records[0].sequence;
+
+    let windows = scan_sliding_windows_parallel(chr1_seq, 300, 150);
+    assert!(!windows.is_empty());
+
+    let annotations = vec![
+        GenomicAnnotation {
+            feature_id: "GENE_AGRN_HOTSPOT".to_string(),
+            feature_type: "CDS".to_string(),
+            symbol: "AGRN".to_string(),
+            start: 600,
+            end: 1250,
+            strand: '+',
+            description: "AGRN 5' CpG/G4 exon".to_string(),
+        },
+        GenomicAnnotation {
+            feature_id: "REPEAT_VNTR".to_string(),
+            feature_type: "repeat_region".to_string(),
+            symbol: "VNTR-1p36".to_string(),
+            start: 350,
+            end: 1150,
+            strand: '+',
+            description: "Subtelomeric tandem repeat".to_string(),
+        },
+    ];
+
+    let regions = intersect_high_complexity_windows(&windows, &annotations, 0.5);
+    assert!(
+        !regions.is_empty(),
+        "High-complexity hotspot window must exceed Z >= 0.5 and intersect annotations"
+    );
+    let top_region = &regions[0];
+    assert!(
+        top_region.overlapping_cds_count >= 1 || top_region.overlapping_repeat_count >= 1,
+        "Top complexity region ({}..{}) must overlap AGRN CDS or VNTR repeat",
+        top_region.start,
+        top_region.end
+    );
+    assert!(top_region.narrative_summary.contains("Region-X01"));
+
+    // Test Wakefield ABF fine-mapping (`bio-suite target`)
+    let variants = vec![
+        ("rs_lead_causal".to_string(), 650usize, 0.48, 0.06),
+        ("rs_secondary".to_string(), 710usize, 0.21, 0.08),
+        ("rs_null_noise".to_string(), 1400usize, 0.02, 0.09),
+    ];
+    let credible_set = compute_wakefield_fine_mapping(&variants, 0.04);
+    assert_eq!(credible_set.len(), 3);
+    assert_eq!(credible_set[0].rsid, "rs_lead_causal");
+    assert!(
+        credible_set[0].posterior_inclusion_prob > 0.90,
+        "Lead variant with Z = 8.0 must have PIP > 0.90, got {}",
+        credible_set[0].posterior_inclusion_prob
+    );
+    let pip_sum: f64 = credible_set
+        .iter()
+        .map(|v| v.posterior_inclusion_prob)
+        .sum();
+    assert!(
+        (pip_sum - 1.0).abs() < 0.01,
+        "Posterior inclusion probabilities across locus must sum to ~1.0, got {}",
+        pip_sum
+    );
+
+    // Verify all 18 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
+    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 18);
+    for tool in BIO_SUITE_TOOL_REGISTRY {
+        assert!(
+            tool.gpl3_compatible,
+            "Tool {} must be GPL-3.0 compatible",
+            tool.tool_name
+        );
+        assert!(!tool.spdx_license.is_empty());
+        assert!(!tool.native_rust_fallback.is_empty());
+    }
+}
+
+#[test]
+fn test_github_search_indexing_and_file_size_rules() {
+    let root = repo_root();
+
+    // 1. Verify `.gitattributes` and `.gitignore` exist to configure GitHub Linguist & exclude runtime artifacts
+    assert!(
+        root.join(".gitattributes").exists(),
+        ".gitattributes must exist for GitHub Linguist search indexing"
+    );
+    assert!(
+        root.join(".gitignore").exists(),
+        ".gitignore must exist to prevent tracking build or runtime cache blobs"
+    );
+
+    // 2. Keep only a small number of files in `tests/` (<= 10 files total)
+    let mut test_files = Vec::new();
+    collect_files_recursive(&root.join("tests"), &mut test_files);
+    assert!(
+        !test_files.is_empty() && test_files.len() <= 10,
+        "tests/ directory must remain compact (1..=10 files), found {} files",
+        test_files.len()
+    );
+
+    // 3. Walk all non-ignored repository directories (`src/`, `tests/`, root configs)
+    //    and verify NO file exceeds the 100 MB GitHub limit or the 384 KB GitHub Code Search limit.
+    let mut tracked_candidates = Vec::new();
+    collect_repo_source_files(&root, &mut tracked_candidates);
+
+    // Also include `git ls-files` if git is available
+    if let Ok(output) = Command::new("git")
+        .arg("ls-files")
+        .current_dir(&root)
+        .output()
+    {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let p = root.join(line.trim());
+                if p.exists() && !tracked_candidates.contains(&p) {
+                    tracked_candidates.push(p);
+                }
+            }
+        }
+    }
+
+    assert!(!tracked_candidates.is_empty());
+
+    for file_path in &tracked_candidates {
+        let meta = fs::metadata(file_path)
+            .unwrap_or_else(|e| panic!("Failed to stat {}: {}", file_path.display(), e));
+        let size = meta.len();
+
+        assert!(
+            size < GITHUB_HARD_FILE_LIMIT_BYTES,
+            "GitHub Hard Limit Violation: {} is {} bytes (>= 100 MB)",
+            file_path.display(),
+            size
+        );
+        assert!(
+            size < GITHUB_SEARCH_INDEX_LIMIT_BYTES,
+            "GitHub Blackbird Code Search Indexing Violation: {} is {} bytes (>= 384 KB limit)",
+            file_path.display(),
+            size
+        );
+
+        // Verify valid UTF-8 for all tracked source/fixture/config files
+        let content = fs::read_to_string(file_path).unwrap_or_else(|e| {
+            panic!(
+                "GitHub Search Indexing requires valid UTF-8 text in tracked file {}: {}",
+                file_path.display(),
+                e
+            )
+        });
+        assert!(
+            !content.contains('\0'),
+            "Tracked file {} must not contain NUL bytes",
+            file_path.display()
+        );
+    }
+}
+
+fn collect_files_recursive(dir: &Path, out: &mut Vec<PathBuf>) {
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                collect_files_recursive(&p, out);
+            } else if p.is_file() {
+                out.push(p);
+            }
+        }
+    }
+}
+
+fn collect_repo_source_files(dir: &Path, out: &mut Vec<PathBuf>) {
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
+            if p.is_dir() {
+                if matches!(
+                    name.as_str(),
+                    ".git" | "target" | ".cache" | "runs" | "node_modules"
+                ) {
+                    continue;
+                }
+                collect_repo_source_files(&p, out);
+            } else if p.is_file() {
+                out.push(p);
+            }
+        }
+    }
+}

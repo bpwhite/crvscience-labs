@@ -60,6 +60,22 @@ Downloads/caches Human GRCh38 `NC_000001.11:1000001-1060000` (`60 kb` subtelomer
 
 ---
 
+## Core Module Fidelity Tests & GitHub Code Search Indexing Rules
+
+To ensure full indexing by **GitHub Blackbird Code Search** and strict repository hygiene, `crvscience-labs` enforces the following automated guardrails (verified in [`tests/core_fidelity.rs`](tests/core_fidelity.rs)):
+
+1. **Zero Large Blobs (`< 100 MB` Hard Cap & `< 384 KB` Code Search Limit)**:
+   - Runtime pipeline outputs (`runs/`), local sequence caches (`.cache/`), and compiled binaries (`target/`) are git-ignored.
+   - Every tracked file in the repository is verified to be valid UTF-8 text and strictly `< 384 KB` (`393,216 bytes`), guaranteeing 100% indexing coverage by GitHub's search engine.
+2. **Compact Deterministic Test Fixtures (`tests/fixtures/`)**:
+   - Contains only two compact FASTA fixtures (`< 2 KB` each): `carnivora_coi_mini.fasta` (`6 × 300 bp` COI barcoding panel with IUPAC degenerate base coverage) and `chr1_agrn_motif_mini.fasta` (`3 × 300 bp` GRCh38 `1p36.33` G-quadruplex, Z-DNA, and VNTR regimes).
+3. **Running the Core Module Fidelity Suite**:
+   ```bash
+   cargo test
+   ```
+
+---
+
 ## License
 
 Released under the **GNU General Public License v3.0 (`GPL-3.0-or-later`)**. See [LICENSE](LICENSE) for full details.

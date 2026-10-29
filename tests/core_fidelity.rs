@@ -22,6 +22,14 @@ use bio_suite::phylo::{
     align_sequences, compute_k2p_and_tn93, neighbor_joining_newick,
     run_coi_phylo_and_barcode_analysis,
 };
+use bio_suite::pipelines::{
+    analyze_gfa_pangenome_bubble, compute_codon_dn_ds_and_relax_k,
+    compute_isoform_splicing_entropy, compute_kl_divergence_bits,
+    compute_rin_betweenness_centrality, compute_rscu_cosine_distance, compute_rscu_vector,
+    compute_tetranucleotide_spectrum, profile_amp_peptide_biophysics, run_bgc_amp_miner_agent,
+    run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
+    run_pseudogene_trait_loss_agent,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -363,8 +371,8 @@ fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping()
         pip_sum
     );
 
-    // Verify all 18 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
-    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 18);
+    // Verify all 22 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
+    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 22);
     for tool in BIO_SUITE_TOOL_REGISTRY {
         assert!(
             tool.gpl3_compatible,
@@ -374,6 +382,103 @@ fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping()
         assert!(!tool.spdx_license.is_empty());
         assert!(!tool.native_rust_fallback.is_empty());
     }
+}
+
+#[test]
+fn test_pipelines_3_to_6_hgt_bgc_pseudoloss_and_pancryptic_fidelity() {
+    // 1. Pipeline 3 (`hgt-scan`): Tetranucleotide KL-divergence, RSCU distance & Genomic Island detection
+    let gc_rich_host = b"CGCGCCGACGAGTTCCTCGCCGGCCTGGACGCCGTCGGCAAGCGCCTGGCCATCGAGGCCCTCAAGGACGGC";
+    let at_rich_island = b"TTAATTAAATGAAATTTAATAATGCATATTATAAATTTGCAATTAATAGAAATTTAATTATGCAATTTAATG";
+    let spec_host = compute_tetranucleotide_spectrum(gc_rich_host);
+    let spec_island = compute_tetranucleotide_spectrum(at_rich_island);
+    let kl_div = compute_kl_divergence_bits(&spec_island, &spec_host);
+    assert!(
+        kl_div > 0.02,
+        "AT-rich foreign island vs GC-rich host must yield positive tetranucleotide KL-divergence, got {}",
+        kl_div
+    );
+    let rscu_host = compute_rscu_vector(gc_rich_host);
+    let rscu_island = compute_rscu_vector(at_rich_island);
+    let rscu_dist = compute_rscu_cosine_distance(&rscu_island, &rscu_host);
+    assert!(
+        rscu_dist > 0.05,
+        "Foreign island vs host must exhibit distinct RSCU codon usage bias, got {}",
+        rscu_dist
+    );
+
+    let hgt_report = run_hgt_resistome_scanner_agent().expect("Pipeline 3 hgt-scan must succeed");
+    assert_eq!(hgt_report.pipeline_id, "hgt-scan-v1");
+    assert_eq!(hgt_report.genomic_islands.len(), 1);
+    assert!(hgt_report.genomic_islands[0].max_composite_anomaly_z >= 2.0);
+    assert!(!hgt_report.genomic_islands[0].resistome_cargo.is_empty());
+
+    // 2. Pipeline 4 (`bgc-mine`): Amphipathic AMP biophysics, MIBiG dereplication & ARTS self-resistance
+    let amp = profile_amp_peptide_biophysics(
+        "TEST_AMP_01",
+        "GIGKFLHSAKKFGKAFVGEIMNSKWRKVGRK",
+        "Amphipathic alpha-helix",
+    );
+    assert_eq!(amp.length_aa, 31);
+    assert!(amp.net_charge_ph7 >= 5.0);
+    assert!(amp.hydrophobic_moment_mu_h > 0.25);
+    assert!(amp.membrane_disruption_prob > 0.50);
+
+    let bgc_report = run_bgc_amp_miner_agent().expect("Pipeline 4 bgc-mine must succeed");
+    assert_eq!(bgc_report.pipeline_id, "bgc-mine-v1");
+    assert_eq!(bgc_report.total_clusters_detected, 3);
+    assert_eq!(bgc_report.known_clusters_dereplicated, 1);
+    assert_eq!(bgc_report.novel_prioritized_clusters, 2);
+    assert!(bgc_report.novel_product_dossiers[0].self_resistance_hook.is_some());
+
+    // 3. Pipeline 5 (`pseudo-loss`): Codon dN/dS, premature stop detection & HyPhy RELAX k
+    let intact_cds = "ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCGCTGCTGGCCCTCTGGGGACCTGACCCAGCCGCAGCC";
+    let pseudo_cds = "ATGTCCCTGTGGATGTGACTCCTGCCCCTGCTGGAGCTGTTGGCCCTCTGGTGACCTGACACAGCCGCAGCC";
+    let (omega, relax_k, _dn, stops) =
+        compute_codon_dn_ds_and_relax_k(intact_cds, pseudo_cds, 0.12);
+    assert!(stops >= 1, "Pseudogene sequence must contain premature TGA stop codons");
+    assert!(omega > 0.20 && relax_k < 1.0);
+
+    let pseudo_report =
+        run_pseudogene_trait_loss_agent().expect("Pipeline 5 pseudo-loss must succeed");
+    assert_eq!(pseudo_report.pipeline_id, "pseudo-loss-v1");
+    assert_eq!(pseudo_report.sequencing_errors_filtered, 1);
+    assert_eq!(pseudo_report.validated_losses_and_targets, 3);
+
+    // 4. Pipeline 6 (`pan-cryptic`): GFA walk entropy, Ollivier-Ricci curvature, H_iso & RIN betweenness
+    let mini_gfa = "\
+H\tVN:Z:1.0
+S\tN1\tACGT
+S\tN2\tCACA
+S\tN3\tGAGA
+S\tN4\tTGCA
+L\tN1\t+\tN2\t+\t0M
+L\tN1\t+\tN3\t+\t0M
+L\tN2\t+\tN3\t+\t0M
+L\tN2\t+\tN4\t+\t0M
+L\tN3\t+\tN4\t+\t0M
+P\tP1\tN1+,N2+,N4+\t*
+P\tP2\tN1+,N3+,N4+\t*
+P\tP3\tN1+,N2+,N3+,N4+\t*
+";
+    let bubble = analyze_gfa_pangenome_bubble("B1", "TEST_LOCUS", "chr1:1-100", mini_gfa);
+    assert_eq!(bubble.gfa_node_count, 4);
+    assert_eq!(bubble.gfa_edge_count, 5);
+    assert_eq!(bubble.cyclomatic_number_beta1, 2);
+    assert!(bubble.walk_shannon_entropy_bits > 0.8);
+
+    let (h_wt, h_sv, jsd) =
+        compute_isoform_splicing_entropy(&[0.85, 0.10, 0.05], &[0.30, 0.35, 0.35]);
+    assert!(h_sv > h_wt && jsd > 0.10);
+
+    let cb = compute_rin_betweenness_centrality(5, &[(0, 1), (1, 2), (2, 3), (3, 4)]);
+    assert_eq!(cb.len(), 5);
+    assert!(cb[2] > cb[0], "Central bridge node in linear chain must have peak betweenness");
+
+    let pan_report =
+        run_pangenome_cryptic_target_agent().expect("Pipeline 6 pan-cryptic must succeed");
+    assert_eq!(pan_report.pipeline_id, "pan-cryptic-v1");
+    assert_eq!(pan_report.stage1_pangenome_bubbles.len(), 2);
+    assert!(pan_report.stage4_cryptic_allosteric_pockets[0].disease_isoform_pocket_miner_prob > 0.85);
 }
 
 #[test]

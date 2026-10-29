@@ -1,0 +1,29 @@
+[package]
+name = "bio-suite"
+version = "0.1.0"
+edition = "2021"
+authors = ["CRV Science Labs <labs@crvscience.com>"]
+description = "High-throughput GPL-3.0 bioinformatics, chemoinformatics, molecular systematics, and information-theoretic genome complexity suite with deterministic worker-agent pipelines."
+license = "GPL-3.0-or-later"
+repository = "https://github.com/bpwhite/crvscience-labs"
+homepage = "https://crvscience.com/labs"
+readme = "README.md"
+keywords = ["bioinformatics", "phylogenetics", "genomics", "complexity", "barcoding"]
+categories = ["science", "command-line-utilities"]
+
+[[bin]]
+name = "bio-suite"
+path = "src/main.rs"
+
+[dependencies]
+rayon = "1.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+ureq = { version = "2.10", features = ["json"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = false

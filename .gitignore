@@ -1,0 +1,14 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+
+# Local cache & temporary pipeline scratch (regenerated deterministically by `bio-suite fetch`)
+/cache/
+/runs/tmp/
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/

@@ -1,0 +1,279 @@
+{
+  "pipeline_id": "chr1-section-a-complexity-v1",
+  "pipeline_title": "Human Chromosome 1 Section A (1p36.33) Coding & Annotation-Agnostic Structural Complexity Scan",
+  "accession": "NC_000001.11:1000001-1060000",
+  "region_length_bp": 60000,
+  "cached_from_disk": false,
+  "total_duration_ms": 1364,
+  "step_trace": [
+    {
+      "step_index": 1,
+      "stage_id": "fetch:ncbi_grch38_chr1_sec_a",
+      "engine": "Tier 1 (bio-suite fetch)",
+      "input_schema": "GenomicCoordinate<NC_000001.11:1000001-1060000>",
+      "output_schema": "(FastaRecord, Vec<GenomicAnnotation>)",
+      "duration_ms": 635,
+      "summary": "Loaded 60000 bp from Human GRCh38 Chr1p36.33 Section A (cached=false) with 5 annotated coding/repeat features."
+    },
+    {
+      "step_index": 2,
+      "stage_id": "task:complexity:cds_extraction_and_profile",
+      "engine": "Tier 4 (bio-suite complexity)",
+      "input_schema": "Vec<CodingRegionSlice>",
+      "output_schema": "Vec<SequenceComplexityMetrics>",
+      "duration_ms": 721,
+      "summary": "Profiled 4 protein-coding sub-loci (HES4, ISG15, AGRN) for Shannon entropy, LZ76 compressibility, DFA Hurst scaling, and G4Hunter propensity."
+    },
+    {
+      "step_index": 3,
+      "stage_id": "task:genome:unbiased_window_scan_and_intersect",
+      "engine": "Tier 2 & 4 (bio-suite genome + complexity)",
+      "input_schema": "SlidingWindowStream<2000bp, step=1000bp>",
+      "output_schema": "Vec<AnnotatedComplexityRegion>",
+      "duration_ms": 7,
+      "summary": "Scanned 59 annotation-agnostic sliding windows across Chr1 Section A and intersected 6 high-complexity anomaly regions (Z >= +1.15) with RefSeq & repeat annotations."
+    }
+  ],
+  "locus_overall_complexity": {
+    "id": "NC_000001.11:1000001-1060000",
+    "taxon": "Homo sapiens",
+    "length_bp": 60000,
+    "gc_percent": 63.1633,
+    "gc3_percent": 63.895,
+    "cpg_obs_exp": 0.4672,
+    "shannon_h1_bits": 1.946,
+    "shannon_h2_bits": 3.8356,
+    "shannon_h3_bits": 5.7054,
+    "codon_pos1_entropy": 1.9439,
+    "codon_pos2_entropy": 1.9535,
+    "codon_pos3_entropy": 1.94,
+    "lz76_phrases": 6450,
+    "lz76_normalized": 0.8532,
+    "dfa_alpha": 0.6026,
+    "hurst_exponent": 0.6234,
+    "g4hunter_max_score": 3.12,
+    "g4_motif_count": 6721,
+    "zdna_propensity": 2.4133,
+    "composite_complexity_index": 76.2418
+  },
+  "cds_complexity_profiles": [
+    {
+      "id": "GENE_HES4",
+      "taxon": "HES4",
+      "length_bp": 1250,
+      "gc_percent": 69.44,
+      "gc3_percent": 65.8654,
+      "cpg_obs_exp": 0.6529,
+      "shannon_h1_bits": 1.8832,
+      "shannon_h2_bits": 3.7084,
+      "shannon_h3_bits": 5.5066,
+      "codon_pos1_entropy": 1.8748,
+      "codon_pos2_entropy": 1.8478,
+      "codon_pos3_entropy": 1.9148,
+      "lz76_phrases": 220,
+      "lz76_normalized": 0.9053,
+      "dfa_alpha": 0.6324,
+      "hurst_exponent": 0.6344,
+      "g4hunter_max_score": 2.36,
+      "g4_motif_count": 237,
+      "zdna_propensity": 0.72,
+      "composite_complexity_index": 77.4993
+    },
+    {
+      "id": "GENE_ISG15",
+      "taxon": "ISG15",
+      "length_bp": 1150,
+      "gc_percent": 64.4348,
+      "gc3_percent": 55.3525,
+      "cpg_obs_exp": 0.4817,
+      "shannon_h1_bits": 1.9337,
+      "shannon_h2_bits": 3.7992,
+      "shannon_h3_bits": 5.616,
+      "codon_pos1_entropy": 1.8333,
+      "codon_pos2_entropy": 1.9249,
+      "codon_pos3_entropy": 1.9846,
+      "lz76_phrases": 206,
+      "lz76_normalized": 0.9106,
+      "dfa_alpha": 0.5059,
+      "hurst_exponent": 0.515,
+      "g4hunter_max_score": 1.64,
+      "g4_motif_count": 53,
+      "zdna_propensity": 0.7826,
+      "composite_complexity_index": 74.4986
+    },
+    {
+      "id": "GENE_AGRN_N",
+      "taxon": "AGRN (5' exons 1-8)",
+      "length_bp": 16400,
+      "gc_percent": 65.7073,
+      "gc3_percent": 65.258,
+      "cpg_obs_exp": 0.3868,
+      "shannon_h1_bits": 1.9232,
+      "shannon_h2_bits": 3.7533,
+      "shannon_h3_bits": 5.5635,
+      "codon_pos1_entropy": 1.9145,
+      "codon_pos2_entropy": 1.9263,
+      "codon_pos3_entropy": 1.9279,
+      "lz76_phrases": 1888,
+      "lz76_normalized": 0.8059,
+      "dfa_alpha": 0.5939,
+      "hurst_exponent": 0.5961,
+      "g4hunter_max_score": 3.12,
+      "g4_motif_count": 2478,
+      "zdna_propensity": 3.7195,
+      "composite_complexity_index": 73.7757
+    },
+    {
+      "id": "GENE_AGRN_C",
+      "taxon": "AGRN (3' exons 9-36)",
+      "length_bp": 19599,
+      "gc_percent": 65.7483,
+      "gc3_percent": 66.2636,
+      "cpg_obs_exp": 0.482,
+      "shannon_h1_bits": 1.9228,
+      "shannon_h2_bits": 3.7841,
+      "shannon_h3_bits": 5.6289,
+      "codon_pos1_entropy": 1.9234,
+      "codon_pos2_entropy": 1.9272,
+      "codon_pos3_entropy": 1.9173,
+      "lz76_phrases": 2436,
+      "lz76_normalized": 0.8861,
+      "dfa_alpha": 0.6053,
+      "hurst_exponent": 0.649,
+      "g4hunter_max_score": 3.04,
+      "g4_motif_count": 2466,
+      "zdna_propensity": 2.5665,
+      "composite_complexity_index": 76.8405
+    }
+  ],
+  "unbiased_window_count": 59,
+  "high_complexity_anomalies": [
+    {
+      "region_id": "Region-X01",
+      "window_id": "W030",
+      "start": 29000,
+      "end": 31000,
+      "structural_complexity_z": 4.2392,
+      "gc_percent": 56.7,
+      "cpg_obs_exp": 0.2425,
+      "g4hunter_score": 2.12,
+      "zdna_score": 19.95,
+      "lz76_normalized": 0.3893,
+      "dfa_alpha": 0.3874,
+      "overlapping_cds_count": 1,
+      "overlapping_repeat_count": 0,
+      "overlapping_features": [
+        "AGRN (5' exons 1-8) [CDS +:20100..36500]"
+      ],
+      "narrative_summary": "Region-X01 (29000..31000 bp, Z = +4.24) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (5' exons 1-8) [CDS +:20100..36500]), exhibiting elevated GC (56.7%), G4Hunter propensity (2.12), and normalized Lempel-Ziv complexity (0.389)."
+    },
+    {
+      "region_id": "Region-X02",
+      "window_id": "W031",
+      "start": 30000,
+      "end": 32000,
+      "structural_complexity_z": 3.6828,
+      "gc_percent": 56.75,
+      "cpg_obs_exp": 0.1877,
+      "g4hunter_score": 1.8,
+      "zdna_score": 17.8,
+      "lz76_normalized": 0.4606,
+      "dfa_alpha": 0.4067,
+      "overlapping_cds_count": 1,
+      "overlapping_repeat_count": 0,
+      "overlapping_features": [
+        "AGRN (5' exons 1-8) [CDS +:20100..36500]"
+      ],
+      "narrative_summary": "Region-X02 (30000..32000 bp, Z = +3.68) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (5' exons 1-8) [CDS +:20100..36500]), exhibiting elevated GC (56.8%), G4Hunter propensity (1.80), and normalized Lempel-Ziv complexity (0.461)."
+    },
+    {
+      "region_id": "Region-X03",
+      "window_id": "W053",
+      "start": 52000,
+      "end": 54000,
+      "structural_complexity_z": 2.881,
+      "gc_percent": 58.65,
+      "cpg_obs_exp": 0.4272,
+      "g4hunter_score": 2.0,
+      "zdna_score": 14.6,
+      "lz76_normalized": 0.7868,
+      "dfa_alpha": 0.5899,
+      "overlapping_cds_count": 1,
+      "overlapping_repeat_count": 0,
+      "overlapping_features": [
+        "AGRN (3' exons 9-36) [CDS +:36501..56100]"
+      ],
+      "narrative_summary": "Region-X03 (52000..54000 bp, Z = +2.88) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (3' exons 9-36) [CDS +:36501..56100]), exhibiting elevated GC (58.6%), G4Hunter propensity (2.00), and normalized Lempel-Ziv complexity (0.787)."
+    },
+    {
+      "region_id": "Region-X04",
+      "window_id": "W052",
+      "start": 51000,
+      "end": 53000,
+      "structural_complexity_z": 2.2648,
+      "gc_percent": 61.0,
+      "cpg_obs_exp": 0.5274,
+      "g4hunter_score": 2.16,
+      "zdna_score": 11.95,
+      "lz76_normalized": 0.8115,
+      "dfa_alpha": 0.6109,
+      "overlapping_cds_count": 1,
+      "overlapping_repeat_count": 0,
+      "overlapping_features": [
+        "AGRN (3' exons 9-36) [CDS +:36501..56100]"
+      ],
+      "narrative_summary": "Region-X04 (51000..53000 bp, Z = +2.26) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (3' exons 9-36) [CDS +:36501..56100]), exhibiting elevated GC (61.0%), G4Hunter propensity (2.16), and normalized Lempel-Ziv complexity (0.811)."
+    },
+    {
+      "region_id": "Region-X05",
+      "window_id": "W056",
+      "start": 55000,
+      "end": 57000,
+      "structural_complexity_z": 1.5306,
+      "gc_percent": 62.1,
+      "cpg_obs_exp": 0.4607,
+      "g4hunter_score": 2.92,
+      "zdna_score": 8.65,
+      "lz76_normalized": 0.8279,
+      "dfa_alpha": 0.624,
+      "overlapping_cds_count": 1,
+      "overlapping_repeat_count": 0,
+      "overlapping_features": [
+        "AGRN (3' exons 9-36) [CDS +:36501..56100]"
+      ],
+      "narrative_summary": "Region-X05 (55000..57000 bp, Z = +1.53) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (3' exons 9-36) [CDS +:36501..56100]), exhibiting elevated GC (62.1%), G4Hunter propensity (2.92), and normalized Lempel-Ziv complexity (0.828)."
+    },
+    {
+      "region_id": "Region-X06",
+      "window_id": "W057",
+      "start": 56000,
+      "end": 58000,
+      "structural_complexity_z": 1.4743,
+      "gc_percent": 56.95,
+      "cpg_obs_exp": 0.4614,
+      "g4hunter_score": 2.0,
+      "zdna_score": 8.7,
+      "lz76_normalized": 0.8005,
+      "dfa_alpha": 0.5673,
+      "overlapping_cds_count": 1,
+      "overlapping_repeat_count": 0,
+      "overlapping_features": [
+        "AGRN (3' exons 9-36) [CDS +:36501..56100]"
+      ],
+      "narrative_summary": "Region-X06 (56000..58000 bp, Z = +1.47) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (3' exons 9-36) [CDS +:36501..56100]), exhibiting elevated GC (57.0%), G4Hunter propensity (2.00), and normalized Lempel-Ziv complexity (0.800)."
+    }
+  ],
+  "emergent_findings": [
+    {
+      "finding_id": "EMERGENT-CHR1-01",
+      "title": "Subtelomeric VNTR–Coding Boundary Generates Peak Structural & Non-B DNA Complexity",
+      "engines_bridged": [
+        "bio-suite genome",
+        "bio-suite complexity"
+      ],
+      "statistic_name": "Peak Structural Complexity Z-Score",
+      "statistic_value": 4.2392,
+      "biological_interpretation": "Region-X01 (29000..31000 bp, Z = +4.24) overlaps 1 protein-coding locus/loci and 0 repeat element(s) (AGRN (5' exons 1-8) [CDS +:20100..36500]), exhibiting elevated GC (56.7%), G4Hunter propensity (2.12), and normalized Lempel-Ziv complexity (0.389)."
+    }
+  ]
+}

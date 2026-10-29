@@ -5,6 +5,10 @@
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
 use bio_suite::agent::{run_chr1_complexity_agent, run_coi_barcode_cluster_agent};
+use bio_suite::dag_pipelines::{
+    run_chromatin_condensate_scaffolder_agent, run_coevo_epistatic_escape_agent,
+    run_master_dag_chain_agent, run_somatic_clonal_synthetic_lethal_agent,
+};
 use bio_suite::fetch::PoliteCacheManager;
 use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
 use bio_suite::pipelines::{
@@ -94,9 +98,49 @@ fn dispatch_pipeline(workflow: &str, cache: &PoliteCacheManager, out_file: Optio
                 }
             }
         }
+        "co-evo" => {
+            eprintln!("[bio-suite] Launching Pipeline 7: co-evo (Co-Evolutionary Host-Pathogen Interface & Epistatic Escape Predictor)...");
+            match run_coevo_epistatic_escape_agent() {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] Pipeline failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "chrom-condensate" => {
+            eprintln!("[bio-suite] Launching Pipeline 8: chrom-condensate (3D Chromatin Phase-Separation & Non-Coding RNA Scaffolder)...");
+            match run_chromatin_condensate_scaffolder_agent() {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] Pipeline failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "clonal-synth" => {
+            eprintln!("[bio-suite] Launching Pipeline 9: clonal-synth (Somatic Mosaicism, Clonal Entropy & Synthetic Lethal Neoantigen Engine)...");
+            match run_somatic_clonal_synthetic_lethal_agent() {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] Pipeline failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "dag-chain" => {
+            eprintln!("[bio-suite] Launching Master DAG Meta-Pipeline: dag-chain (Chaining Pipelines 1-9)...");
+            match run_master_dag_chain_agent() {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] Pipeline failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
-                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic",
+                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, dag-chain",
                 workflow
             );
             std::process::exit(1);
@@ -175,11 +219,12 @@ fn main() {
                 .unwrap_or("coi-barcode-cluster");
             dispatch_pipeline(workflow, &cache, out_file);
         }
-        "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" => {
+        "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
+        | "chrom-condensate" | "clonal-synth" | "dag-chain" => {
             dispatch_pipeline(cmd, &cache, out_file);
         }
         _ => {
-            println!("CRV Science Labs — bio-suite v0.2.0 (GPL-3.0-or-later)");
+            println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");
             println!("Repository: https://github.com/bpwhite/crvscience-labs.git");
             println!();
             println!("USAGE:");
@@ -190,6 +235,10 @@ fn main() {
             println!("  bio-suite bgc-mine                  [--out runs/bgc-mine-report.json]");
             println!("  bio-suite pseudo-loss               [--out runs/pseudo-loss-report.json]");
             println!("  bio-suite pan-cryptic               [--out runs/pan-cryptic-report.json]");
+            println!("  bio-suite co-evo                    [--out runs/co-evo-report.json]");
+            println!("  bio-suite chrom-condensate          [--out runs/chrom-condensate-report.json]");
+            println!("  bio-suite clonal-synth              [--out runs/clonal-synth-report.json]");
+            println!("  bio-suite dag-chain                 [--out runs/master-dag-report.json]");
             println!("  bio-suite registry");
         }
     }

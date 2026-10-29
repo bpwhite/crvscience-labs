@@ -1027,10 +1027,17 @@ pub fn run_haplotype_cluster_pipeline_agent() -> Result<HaplotypePipelineReport,
         "Ursidae",
         "COX1",
     )?;
-    let u_arctos_hok = cache.fetch_ncbi_fasta_slice(
-        "AP012578.1:6392-7936",
+    let u_arctos_abc1 = cache.fetch_ncbi_fasta_slice(
+        "JX196368.1:5883-7427",
         "Ursus arctos",
-        "Brown bear (Hokkaido isolate)",
+        "Brown bear (ABC Islands isolate 1)",
+        "Ursidae",
+        "COX1",
+    )?;
+    let u_arctos_abc2 = cache.fetch_ncbi_fasta_slice(
+        "JX196370.1:5883-7427",
+        "Ursus arctos",
+        "Brown bear (Interior Alaska isolate)",
         "Ursidae",
         "COX1",
     )?;
@@ -1041,13 +1048,6 @@ pub fn run_haplotype_cluster_pipeline_agent() -> Result<HaplotypePipelineReport,
         "Ursidae",
         "COX1",
     )?;
-    let u_maritimus_495 = cache.fetch_ncbi_fasta_slice(
-        "GU573490.1:6272-7816",
-        "Ursus maritimus",
-        "Polar bear (Isolate 495)",
-        "Ursidae",
-        "COX1",
-    )?;
     let u_amer_ref = cache.fetch_ncbi_fasta_slice(
         "NC_003426.1:6291-7835",
         "Ursus americanus",
@@ -1055,207 +1055,101 @@ pub fn run_haplotype_cluster_pipeline_agent() -> Result<HaplotypePipelineReport,
         "Ursidae",
         "COX1",
     )?;
-    let u_amer_blk = cache.fetch_ncbi_fasta_slice(
-        "JX196366.1:5883-7427",
-        "Ursus americanus",
-        "American black bear (Isolate BLK014)",
-        "Ursidae",
-        "COX1",
-    )?;
 
     let slice_600 = |s: &str| -> String { s.chars().take(600).collect() };
-    let mutate_pos = |seq: &str, mutations: &[(usize, char)]| -> String {
-        let mut chars: Vec<char> = seq.chars().collect();
-        for &(pos_1based, alt) in mutations {
-            if pos_1based > 0 && pos_1based <= chars.len() {
-                let curr = chars[pos_1based - 1];
-                chars[pos_1based - 1] = if curr == alt {
-                    match curr {
-                        'A' => 'G',
-                        'G' => 'A',
-                        'C' => 'T',
-                        _ => 'C',
-                    }
-                } else {
-                    alt
-                };
-            }
-        }
-        chars.into_iter().collect()
-    };
+    let h01_seq = slice_600(&u_arctos_eur.sequence);
+    let h02_seq = slice_600(&u_arctos_abc1.sequence);
+    let h03_seq = slice_600(&u_arctos_abc2.sequence);
+    let h04_seq = slice_600(&u_maritimus_ref.sequence);
+    let h05_seq = slice_600(&u_amer_ref.sequence);
 
-    // Real 600 bp 5' COX1 barcode slices from NCBI RefSeq Ursus mitogenomes (NC_003427.1, NC_003428.1, NC_003426.1)
-    let _ = (&u_arctos_hok, &u_maritimus_495, &u_amer_blk);
-    let h01_seq = slice_600(&u_arctos_eur.sequence); // Real NC_003427.1 U. arctos hub (n=6)
-    let h02_seq = mutate_pos(&h01_seq, &[(42, 'C')]); // 1 step from real NC_003427.1 (n=2)
-    let h03_seq = mutate_pos(&h01_seq, &[(108, 'G')]); // 1 step from real NC_003427.1 (n=2)
-    let h04_seq = mutate_pos(&h01_seq, &[(42, 'C'), (195, 'T')]); // 2 steps from real NC_003427.1 (n=1)
-
-    // Cluster 2: Real NC_003428.1 U. maritimus + ABC-Islands peripatric introgression clade
-    let h05_seq = slice_600(&u_maritimus_ref.sequence); // Real NC_003428.1 U. maritimus hub (n=5)
-    let h06_seq = mutate_pos(&h05_seq, &[(348, 'T')]); // 1 step from real NC_003428.1 (n=2)
-    let h07_seq = mutate_pos(&h05_seq, &[(162, 'C'), (414, 'T')]); // Admiralty Island ABC U. arctos 2 steps from real NC_003428.1 (n=2)
-    let h08_seq = mutate_pos(&h05_seq, &[(162, 'C'), (414, 'T'), (558, 'A')]); // Baranof Island ABC U. arctos 3 steps from real NC_003428.1 (n=1)
-
-    // Cluster 3: Real NC_003426.1 U. americanus outgroup clade
-    let h09_seq = slice_600(&u_amer_ref.sequence); // Real NC_003426.1 U. americanus hub (n=2)
-    let h10_seq = mutate_pos(&h09_seq, &[(84, 'A')]); // 1 step from real NC_003426.1 (n=1)
-
-    let small_specs: Vec<(&str, &str, &str, usize, &str)> = vec![
-        ("NC_003427.1", "Ursus arctos", "Eurasia-Beringia", 6, &h01_seq),
-        ("AP012578.1", "Ursus arctos", "Hokkaido", 2, &h02_seq),
-        ("AB086568.1", "Ursus arctos", "Kamchatka", 2, &h03_seq),
-        ("JX196370.1", "Ursus arctos", "Interior-Alaska", 1, &h04_seq),
-        ("NC_003428.1", "Ursus maritimus", "Arctic-Basin", 5, &h05_seq),
-        ("GU573490.1", "Ursus maritimus", "Chukchi-Sea", 2, &h06_seq),
-        ("JX196388.1", "Ursus arctos (ABC Clade)", "ABC-Islands-Alaska", 2, &h07_seq),
-        ("JX196392.1", "Ursus arctos (ABC Clade)", "Baranof-Island", 1, &h08_seq),
-        ("NC_003426.1", "Ursus americanus", "Appalachian-Refugium", 2, &h09_seq),
-        ("JX196366.1", "Ursus americanus", "Cascadia-Refugium", 1, &h10_seq),
+    let small_specs: Vec<(&str, &str, &str, &str)> = vec![
+        ("NC_003427.1", "Ursus arctos", "Eurasia-Beringia", &h01_seq),
+        ("JX196368.1", "Ursus arctos", "ABC-Islands-Alaska", &h02_seq),
+        ("JX196370.1", "Ursus arctos", "Interior-Alaska", &h03_seq),
+        ("NC_003428.1", "Ursus maritimus", "Arctic-Basin", &h04_seq),
+        ("NC_003426.1", "Ursus americanus", "Appalachian-Refugium", &h05_seq),
     ];
 
     let mut small_records = Vec::new();
-    for (acc_prefix, taxon, region, count, seq) in small_specs {
-        for rep in 1..=count {
-            small_records.push(FastaRecord {
-                id: format!("{}_iso{:02}", acc_prefix, rep),
-                accession: acc_prefix.to_string(),
-                taxon: taxon.to_string(),
-                common_name: format!("{} ({})", taxon, region),
-                family: region.to_string(),
-                gene: "COX1".to_string(),
-                description: format!("{} {}", taxon, region),
-                sequence: seq.to_string(),
-                cached_from_disk: true,
-            });
-        }
+    for (acc_prefix, taxon, region, seq) in small_specs {
+        small_records.push(FastaRecord {
+            id: acc_prefix.to_string(),
+            accession: acc_prefix.to_string(),
+            taxon: taxon.to_string(),
+            common_name: format!("{} ({})", taxon, region),
+            family: region.to_string(),
+            gene: "COX1".to_string(),
+            description: format!("{} {}", taxon, region),
+            sequence: seq.to_string(),
+            cached_from_disk: true,
+        });
     }
 
     let small_report = analyze_haplotype_clusters(
-        "HAPLO-SMALL-URSUS-24",
-        "Ursus Holarctic, Arctic & ABC-Islands Peripatric Introgression Panel (24 Specimens / 10 Haplotypes)",
+        "HAPLO-URSUS-EMPIRICAL-5",
+        "Empirical NCBI RefSeq/GenBank Ursus COX1 Panel (NC_003427.1, JX196368.1, JX196370.1, NC_003428.1, NC_003426.1)",
         &small_records,
-        4,
+        15,
     );
 
-    // 2. Large Dataset Cohort: Fetch real NCBI RefSeq Scombridae (Thunnus) mitogenome COX1 sequences
-    //    and evaluate 120 pelagic specimens -> 40 unique haplotypes across 5 ocean basins
+    // 2. Second Empirical Cohort: Real NCBI RefSeq Pelagic Scombridae & Istiophoridae Mitogenome COX1 Panel
     let t_thynnus = cache.fetch_ncbi_fasta_slice(
-        "NC_014052.1:5471-7021",
+        "NC_014052.1:6341-7891",
         "Thunnus thynnus",
         "Atlantic bluefin tuna (RefSeq)",
         "Scombridae",
         "COX1",
     )?;
-    let t_orientalis = cache.fetch_ncbi_fasta_slice(
-        "NC_008455.1:5471-7021",
-        "Thunnus orientalis",
-        "Pacific bluefin tuna (RefSeq)",
-        "Scombridae",
-        "COX1",
-    )?;
-    let t_albacares = cache.fetch_ncbi_fasta_slice(
-        "NC_014061.1:5471-7021",
-        "Thunnus albacares",
-        "Yellowfin tuna (RefSeq)",
-        "Scombridae",
-        "COX1",
-    )?;
-    let t_maccoyii = cache.fetch_ncbi_fasta_slice(
-        "NC_014101.1:5471-7021",
-        "Thunnus maccoyii",
-        "Southern bluefin tuna (RefSeq)",
-        "Scombridae",
-        "COX1",
-    )?;
     let t_obesus = cache.fetch_ncbi_fasta_slice(
-        "NC_005317.1:5471-7021",
+        "NC_005317.1:6341-7891",
         "Thunnus obesus",
         "Bigeye tuna (RefSeq)",
         "Scombridae",
         "COX1",
     )?;
+    let k_pelamis = cache.fetch_ncbi_fasta_slice(
+        "NC_002081.1:6341-7891",
+        "Katsuwonus pelamis",
+        "Skipjack tuna (RefSeq)",
+        "Scombridae",
+        "COX1",
+    )?;
+    let x_gladius = cache.fetch_ncbi_fasta_slice(
+        "NC_012575.1:6341-7891",
+        "Xiphias gladius",
+        "Swordfish (RefSeq)",
+        "Xiphiidae",
+        "COX1",
+    )?;
 
-    let real_thunnus_base = slice_600(&t_thynnus.sequence);
-    let _ = (&t_orientalis, &t_albacares, &t_maccoyii, &t_obesus);
-
-    let mut large_records = Vec::new();
-    let basins = [
-        ("North-Atlantic-Gyre", "Thunnus thynnus", "NC_014052.1", 0usize),
-        ("Mediterranean-Spawning-Basin", "Thunnus obesus", "NC_005317.1", 11usize),
-        ("North-Pacific-Kuroshio", "Thunnus orientalis", "NC_008455.1", 22usize),
-        ("Indo-Pacific-Warm-Pool", "Thunnus albacares", "NC_014061.1", 34usize),
-        ("Southern-Ocean-Subantarctic", "Thunnus maccoyii", "NC_014101.1", 46usize),
+    let large_specs: Vec<(&str, &str, &str, String)> = vec![
+        ("NC_014052.1", "Thunnus thynnus", "North-Atlantic", slice_600(&t_thynnus.sequence)),
+        ("NC_005317.1", "Thunnus obesus", "Pelagic-Tropics", slice_600(&t_obesus.sequence)),
+        ("NC_002081.1", "Katsuwonus pelamis", "Cosmopolitan-Pelagic", slice_600(&k_pelamis.sequence)),
+        ("NC_012575.1", "Xiphias gladius", "Mesopelagic-Outgroup", slice_600(&x_gladius.sequence)),
     ];
 
-    for (b_idx, &(basin_name, taxon, ref_acc, base_offset)) in basins.iter().enumerate() {
-        let mut hub_muts = Vec::new();
-        for m in 0..(b_idx * 8) {
-            let pos = ((base_offset * 9 + m * 13 + 17) % 580) + 10;
-            let alt = match (pos + b_idx) % 4 {
-                0 => 'A',
-                1 => 'C',
-                2 => 'G',
-                _ => 'T',
-            };
-            hub_muts.push((pos, alt));
-        }
-        let basin_hub_seq = mutate_pos(&real_thunnus_base, &hub_muts);
-
-        // Add 8 samples of the modal basin hub haplotype
-        for r in 1..=8 {
-            large_records.push(FastaRecord {
-                id: format!("BASIN{}_HUB_{:02}", b_idx + 1, r),
-                accession: ref_acc.to_string(),
-                taxon: taxon.to_string(),
-                common_name: format!("{} ({})", taxon, basin_name),
-                family: basin_name.to_string(),
-                gene: "COX1".to_string(),
-                description: basin_name.to_string(),
-                sequence: basin_hub_seq.clone(),
-                cached_from_disk: true,
-            });
-        }
-
-        // Add 7 distinct satellite haplotypes per basin (5 * 8 = 40 total unique haplotypes > 30 threshold)
-        for sat_k in 1..=7 {
-            let sat_pos = ((b_idx * 73 + sat_k * 29 + 5) % 585) + 8;
-            let current_char = basin_hub_seq.as_bytes()[sat_pos - 1] as char;
-            let alt_char = match current_char {
-                'A' => 'G',
-                'G' => 'A',
-                'C' => 'T',
-                _ => 'C',
-            };
-            let mut sat_muts = vec![(sat_pos, alt_char)];
-            if sat_k >= 5 {
-                let pos2 = ((sat_pos + 61) % 585) + 8;
-                let c2 = basin_hub_seq.as_bytes()[pos2 - 1] as char;
-                sat_muts.push((pos2, if c2 == 'A' { 'C' } else { 'A' }));
-            }
-            let sat_seq = mutate_pos(&basin_hub_seq, &sat_muts);
-            let copies = if sat_k <= 2 { 3 } else { 2 };
-            for c in 1..=copies {
-                large_records.push(FastaRecord {
-                    id: format!("BASIN{}_SAT{}_{:02}", b_idx + 1, sat_k, c),
-                    accession: format!("{}_iso{}{}", ref_acc, sat_k, c),
-                    taxon: taxon.to_string(),
-                    common_name: format!("{} ({})", taxon, basin_name),
-                    family: basin_name.to_string(),
-                    gene: "COX1".to_string(),
-                    description: basin_name.to_string(),
-                    sequence: sat_seq.clone(),
-                    cached_from_disk: true,
-                });
-            }
-        }
+    let mut large_records = Vec::new();
+    for (acc, taxon, basin, seq) in large_specs {
+        large_records.push(FastaRecord {
+            id: acc.to_string(),
+            accession: acc.to_string(),
+            taxon: taxon.to_string(),
+            common_name: format!("{} ({})", taxon, basin),
+            family: basin.to_string(),
+            gene: "COX1".to_string(),
+            description: basin.to_string(),
+            sequence: seq,
+            cached_from_disk: true,
+        });
     }
 
     let large_report = analyze_haplotype_clusters(
-        "HAPLO-LARGE-SCOMBRIDAE-120",
-        "Global Pelagic Scombridae 5-Basin Mitogenome Panel (120 Specimens / 40 Unique Haplotypes)",
+        "HAPLO-SCOMBRIDAE-EMPIRICAL-4",
+        "Empirical NCBI RefSeq Scombridae & Xiphiidae Pelagic Mitogenome COX1 Panel (NC_014052.1, NC_005317.1, NC_002081.1, NC_012575.1)",
         &large_records,
-        3,
+        15,
     );
 
     let emergent_synthesis = vec![

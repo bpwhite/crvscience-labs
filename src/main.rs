@@ -5,10 +5,12 @@
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
 use bio_suite::agent::{run_chr1_complexity_agent, run_coi_barcode_cluster_agent};
+use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
 use bio_suite::dag_pipelines::{
     run_chromatin_condensate_scaffolder_agent, run_coevo_epistatic_escape_agent,
     run_master_dag_chain_agent, run_somatic_clonal_synthetic_lethal_agent,
 };
+use bio_suite::disease_panels::{build_disease_genes_atlas, run_apoe_tiered_discovery_sweep};
 use bio_suite::fetch::PoliteCacheManager;
 use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
 use bio_suite::haplotype::run_haplotype_cluster_pipeline_agent;
@@ -183,9 +185,57 @@ fn dispatch_pipeline(workflow: &str, cache: &PoliteCacheManager, out_file: Optio
                 std::process::exit(1);
             }
         },
+        "disease-atlas" | "disease-genes" => {
+            eprintln!("[bio-suite] Building 32-Panel Human Disease & Therapeutic Pathway Atlas...");
+            let report = build_disease_genes_atlas();
+            emit_json_output(&report, report.total_duration_ms, out_file);
+        }
+        "apoe-sweep" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tiered APOE Discovery & Calibration Sweep (0★ Burn-In -> 1★-3★ Unpublished Calibration -> 4★-5★ Emergent Signals)...");
+            match run_apoe_tiered_discovery_sweep(&ws_root, cache) {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] APOE tiered sweep failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "avian-sweep" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tiered Avian Systematics Sweep across 16S, 18S, 28S & ITS (0★ Burn-In -> 1★-3★ Unpublished Calibration -> 4★-5★ Multi-Locus Partitioned Alignment)...");
+            match run_avian_tiered_systematics_sweep(&ws_root, cache) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.combined_partitioned_focal_alignment_ascii);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Avian tiered systematics sweep failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
-                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in",
+                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep",
                 workflow
             );
             std::process::exit(1);
@@ -266,7 +316,7 @@ fn main() {
         }
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
         | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep"
-        | "burn-in" => {
+        | "burn-in" | "disease-atlas" | "disease-genes" | "apoe-sweep" | "avian-sweep" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file);
             } else {
@@ -290,6 +340,7 @@ fn main() {
             println!("  bio-suite clonal-synth              [--out runs/clonal-synth-report.json]");
             println!("  bio-suite haplo-cluster             [--out runs/haplo-cluster-report.json]");
             println!("  bio-suite dag-chain                 [--out runs/master-dag-report.json]");
+            println!("  bio-suite disease-atlas             [--out runs/disease-genes-atlas.json]");
             println!("  bio-suite sweep                     [--out runs/multi-pipeline-sweep-report.json]");
             println!("  bio-suite registry");
         }

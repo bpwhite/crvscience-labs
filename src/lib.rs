@@ -5,8 +5,10 @@
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
 pub mod agent;
+pub mod avian_systematics;
 pub mod complexity;
 pub mod dag_pipelines;
+pub mod disease_panels;
 pub mod fetch;
 pub mod genome_target;
 pub mod haplotype;

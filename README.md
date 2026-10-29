@@ -83,7 +83,7 @@ The standalone native binary is produced at `target/release/bio-suite` (`target/
 
 ---
 
-### Part 2: Deep Multi-Modal Pipeline (High Complexity, Multi-Dataset Integration)
+### Part 2: Deep Multi-Modal & Chained DAG Pipelines (High Complexity, Multi-Dataset Integration)
 
 6. **Pipeline 6 — Pangenome Structural-Entropy & Allosteric Cryptic Target Engine (`bio-suite pan-cryptic`)**
    - **Stage 1 (Pangenome Graph Topology & Walk-Entropy):** Parses `.gfa` variation graphs (`Minigraph-Cactus` / `PGGB` / `odgi`) to compute **Graph Walk Shannon Entropy ($H_{\text{walk}}$)**, **Cyclomatic Number ($\beta_1$)**, and **Ollivier-Ricci Graph Curvature ($\kappa$)**.
@@ -94,16 +94,82 @@ The standalone native binary is produced at `target/release/bio-suite` (`target/
    ./target/release/bio-suite pan-cryptic --out runs/pan-cryptic-report.json
    ```
 
+7. **Pipeline 7 — Co-Evolutionary Host-Pathogen Interface & Epistatic Escape Predictor (`bio-suite co-evo`)**
+   - **Upstream Triggers:** Ingests cryptic lineages from **P1**, horizontally transferred AMR/virulence islands from **P3 (`hgt-scan`)**, self-resistance scaffolds from **P4 (`bgc-mine`)**, and host immune pangenome paths from **P6 (`pan-cryptic`)**.
+   - **Stage 1 (Cophylogenetic Reconciliation & Interface Harmonization):** Event-based cophylogenetic reconciliation (`eMPRESS` / `ALE` / `IQ-TREE 2`) and `HyPhy` (`MEME` / `BUSTED`) episodic diversifying selection across host-pathogen interfaces.
+   - **Stage 2 (APC-Corrected Mutual Information & Potts Epistatic Landscape):** Computes $MI_{i,j}^{\text{APC}}$ and fits a global statistical mechanics **Potts Hamiltonian ($E(\sigma)$)** (`plmDCA` / `CCMpred`) to map cross-species couplings and local energetic frustration.
+   - **Stage 3 (Multimer Folding & Escape MCMC):** Runs `AlphaFold 3` Multimer and Metropolis-Hastings MCMC over the Potts landscape to simulate compensatory 2–4 mutation escape pathways.
+   - **Stage 4 (Allosteric "Dead-End" Target Design):** Targets frustrated epistatic hubs (`PocketMiner` / `DiffDock` / `GNINA`) where escape requires $\ge 4$ simultaneous mutations.
+   ```bash
+   ./target/release/bio-suite co-evo --out runs/co-evo-report.json
+   ```
+
+8. **Pipeline 8 — 3D Chromatin Phase-Separation & Non-Coding RNA Scaffolder (`bio-suite chrom-condensate`)**
+   - **Upstream Triggers:** Chains from **P2 (`chr1-unbiased-scan`)** non-B DNA / G4 loop anchors and **P6 (`pan-cryptic`)** VNTR epigenetic phase-switches.
+   - **Stage 1 (3D Contact Graph Laplacian Spectral Entropy):** Converts `.mcool` Micro-C / Pore-C matrices into spatial graphs to compute **Von Neumann Graph Spectral Entropy ($S_{\text{VN}}$)**, **Algebraic Connectivity (Fiedler value $\lambda_2$)**, and **Ollivier-Ricci Curvature**.
+   - **Stage 2 (SCFG Structural RNA Grammar & IDP Sticker-Spacer Parsing):** Maps conserved lncRNA aptamer stem-loops (`Infernal`, `RNAfold`, `R-scape`) and partner Transcription Factor IDR "sticker-and-spacer" LLPS grammar (`GeCo3`).
+   - **Stage 3 (Native Epitranscriptomic Modification Calling):** Repurposes `Modkit` on Direct RNA Nanopore (`POD5`) reads to call **m6A and pseudouridine ($\Psi$)** phase-separation switches.
+   - **Stage 4 (RNA-Protein Pocket Docking & ASO Walk):** Dual-tracks steric-blocking 2'-MOE ASOs and small-molecule RNA G4/pseudoknot condensate dissolvers (`AlphaFold 3` + `GNINA`).
+   ```bash
+   ./target/release/bio-suite chrom-condensate --out runs/chrom-condensate-report.json
+   ```
+
+9. **Pipeline 9 — Somatic Mosaicism, Clonal Entropy & Synthetic Lethal Neoantigen Engine (`bio-suite clonal-synth`)**
+   - **Upstream Triggers:** Chains from **P2 (`chr1-unbiased-scan`)** non-B DNA fragility sites, **P5 (`pseudo-loss`)** somatic gene knockouts, and **P6 (`pan-cryptic`)** somatic SVs and splicing chaos.
+   - **Stage 1 (Single-Cell Somatic Coalescent & Lineage Tracing):** Reconstructs ultrametric single-cell somatic phylogenies (`scMultiome` + `scNanoGPS`, `IQ-TREE 2` / `BEAST 2` / `PhyloWGS`) and effective population growth rate ($N_e$).
+   - **Stage 2 (96-Channel Mutational Signature Deconvolution & Trajectory Entropy):** Computes trinucleotide **Jensen-Shannon Divergence ($JSD$)** and **Kolmogorov-Smirnov ($D_{\text{KS}}$)** complexity (`SigProfiler`) to separate neutral $1/f$ drift from APOBEC/HRD clonal sweeps.
+   - **Stage 3 (Clonal LoF $\rightarrow$ CRISPR Synthetic Lethality Bridging):** Pairs truncal biallelic gene losses (*MTAP*, *ARID1A*) with `DepMap` CRISPR `MAGeCK`/`Chronos` synthetic-lethal paralogs (*PRMT5*, *ARID1B*).
+   - **Stage 4 (Cryptic Splice-Neoantigen & Paralog Selective Docking):** Combines `PocketMiner` paralog-selective allosteric docking with `AlphaFold 3` patient-phased HLA class I neoantigen presentation.
+   ```bash
+   ./target/release/bio-suite clonal-synth --out runs/clonal-synth-report.json
+   ```
+
 ---
 
-## Summary Comparison of Pipelines 3–6
+## Master Directed Acyclic Meta-Pipeline (`bio-suite dag-chain`)
 
-| Pipeline | Complexity Tier | Primary Data Inputs | Core Analytical Hook | Discovery Deliverable |
-| --- | --- | --- | --- | --- |
-| **3. `hgt-scan`** | **Low (Easy Win)** | Draft assemblies (`.fasta`) | KL-divergence of $k$-mer spectra + flanking integrase/tRNA calls | Mobilized AMR cassettes and horizontally transferred metabolic islands |
-| **4. `bgc-mine`** | **Low (Easy Win)** | Bacterial/Fungal genomes, MAGs | `antiSMASH` + `MIBiG` dereplication + `ARTS` self-resistance duplication | Novel natural product clusters paired with their exact molecular target |
-| **5. `pseudo-loss`** | **Low (Easy Win)** | Multi-species alignments, Biobank VCFs | `TOGA`/`MACSE` frameshift detection + `HyPhy RELAX` ($\omega \rightarrow 1.0$) | Convergent trait-loss markers and safe, dispensable human knockout drug targets |
-| **6. `pan-cryptic`** | **High (Deep Data)** | Pangenome `.gfa`, ONT 5mC, scIso-Seq, MD trajectories | Graph walk entropy ($H_{\text{walk}}$) $\rightarrow$ Isoform entropy ($H_{\text{iso}}$) $\rightarrow$ `PocketMiner` | Isoform-specific cryptic allosteric drug pockets driven by complex structural variants |
+```text
+   [PIPELINE 1: phylo-audit]                  [PIPELINE 3: hgt-scan]             [PIPELINE 4: bgc-mine]
+   (rRNA SCFGs, ETE3, IQ-TREE)                (KL-Divergence, AMRFinder)         (antiSMASH, ARTS, ESMFold)
+               │                                          │                                  │
+               └────────────────────┬─────────────────────┘                                  │
+                                    ▼                                                        │
+                       [PIPELINE 7: co-evo] ◄────────────────────────────────────────────────┘
+         (Potts Epistasis + Host-Pathogen AF3 Multimer + Escape MCMC)        (Feeds novel BGC scaffolds +
+                                    │                                         resistance targets into
+                                    ▼                                         co-evolutionary docking)
+                    (Identifies Conserved Allosteric
+                     Pockets & Escape-Proof Ligands)
+
+   [PIPELINE 2: chr-probe]                    [PIPELINE 6: pan-cryptic]          [PIPELINE 5: pseudo-loss]
+   (GeCo3, DFA, G4Hunter, Micro-C)            (odgi Graph Entropy, Modkit,       (TOGA, MACSE, HyPhy RELAX)
+               │                               IsoQuant, PocketMiner)                        │
+               │                                    │             │                          │
+               └──────────────────┬─────────────────┘             └─────────────┬────────────┘
+                                  ▼                                             ▼
+                  [PIPELINE 8: chrom-condensate]                 [PIPELINE 9: clonal-synth]
+           (3D Graph Laplacians + lncRNA SCFGs + m6A +     (Somatic BEAST2 Trees + CRISPR MAGeCK +
+             Condensate Dissolving ASOs/Small Mols)          Paralog PocketMiner + HLA Neoantigens)
+```
+
+```bash
+./target/release/bio-suite dag-chain --out runs/master-dag-report.json
+```
+
+---
+
+## Tool Reuse & Chaining Matrix Across All 9 Pipelines
+
+| Core Tool / Engine | Primary Function | Reused Across Pipelines |
+| --- | --- | --- |
+| **`Infernal` / `RNAfold` / `R-scape`** | SCFG RNA secondary structure & covariation | **P1** (rRNA validation) $\rightarrow$ **P2** (Chr1 non-coding scan) $\rightarrow$ **P8** (lncRNA condensate scaffolds) |
+| **`GeCo3` / DFA / KL-Divergence / Potts MI** | Algorithmic complexity, Hurst scaling, $k$-mer & epistatic entropy | **P2** (Chr1 anomaly) $\rightarrow$ **P3** (HGT island detection) $\rightarrow$ **P7** (Potts epistasis) $\rightarrow$ **P8** (IDP sticker-spacer grammar) $\rightarrow$ **P9** (Clonal mutational entropy) |
+| **`IQ-TREE 2` / `BEAST 2` / `ETE3`** | ML/Bayesian phylogenetics & topological reconciliation | **P1** (Taxonomy audit) $\rightarrow$ **P5** (Trait-loss dating) $\rightarrow$ **P6** (Haplotype trees) $\rightarrow$ **P7** (Host-pathogen cophylogeny) $\rightarrow$ **P9** (Single-cell somatic trees) |
+| **`HyPhy` (`RELAX`, `MEME`, `BUSTED`)** | Codon selection regimes ($d_N/d_S$ shifts) | **P5** (Neutral drift in pseudogenes) $\rightarrow$ **P7** (Episodic diversifying selection at host-pathogen interfaces) |
+| **`Minigraph-Cactus` / `odgi` / `vg`** | Pangenome variation graphs & path topology | **P2** (Population constraint) $\rightarrow$ **P6** (Structural bubble entropy) $\rightarrow$ **P7** (Pathogen pangenome MSAs) $\rightarrow$ **P9** (Patient somatic graph) |
+| **`Modkit` (Nanopore/PacBio)** | Native base modification entropy | **P6** (DNA 5mC/5hmC phasing) $\rightarrow$ **P8** (Direct RNA m6A/$\Psi$ condensate switches) |
+| **`IsoQuant` / `LeafCutter`** | Long-read isoform phasing & splicing entropy | **P6** (SV-driven cryptic exons) $\rightarrow$ **P8** (Nascent enhancer RNAs) $\rightarrow$ **P9** (NMD-escaping frameshift neoantigens) |
+| **`AlphaFold 3` + `OpenMM` + `PocketMiner`** | Biomolecular complex folding, MD ensembles, cryptic pockets | **P4** (AMP peptides) $\rightarrow$ **P6** (Isoform allosteric pockets) $\rightarrow$ **P7** (Host-pathogen multimers) $\rightarrow$ **P8** (RNA-protein interfaces) $\rightarrow$ **P9** (Paralog selectivity & HLA-peptide binding) |
 
 ---
 

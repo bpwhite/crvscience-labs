@@ -6,6 +6,7 @@
 
 pub mod agent;
 pub mod complexity;
+pub mod dag_pipelines;
 pub mod fetch;
 pub mod genome_target;
 pub mod phylo;

@@ -14,6 +14,13 @@ use bio_suite::complexity::{
     compute_sequence_complexity, compute_zdna_propensity, kmer_shannon_entropy, lempel_ziv_76,
     scan_g4hunter, scan_sliding_windows_parallel,
 };
+use bio_suite::dag_pipelines::{
+    analyze_idp_sticker_spacer_grammar, compute_3d_contact_laplacian_spectral_metrics,
+    compute_apc_corrected_mi_and_potts_couplings, compute_mutational_spectrum_jsd_and_ks,
+    evaluate_potts_hamiltonian_escape_barrier, run_chromatin_condensate_scaffolder_agent,
+    run_coevo_epistatic_escape_agent, run_master_dag_chain_agent,
+    run_somatic_clonal_synthetic_lethal_agent,
+};
 use bio_suite::fetch::{parse_single_fasta, FastaRecord, GenomicAnnotation, CARNIVORA_COI_PANEL};
 use bio_suite::genome_target::{
     compute_wakefield_fine_mapping, intersect_high_complexity_windows, BIO_SUITE_TOOL_REGISTRY,
@@ -479,6 +486,84 @@ P\tP3\tN1+,N2+,N3+,N4+\t*
     assert_eq!(pan_report.pipeline_id, "pan-cryptic-v1");
     assert_eq!(pan_report.stage1_pangenome_bubbles.len(), 2);
     assert!(pan_report.stage4_cryptic_allosteric_pockets[0].disease_isoform_pocket_miner_prob > 0.85);
+}
+
+#[test]
+fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
+    // 1. Pipeline 7 (`co-evo`): APC-corrected Mutual Information & Potts Hamiltonian Escape Barrier
+    // Columns (0, 1) co-vary strictly (H<->D, Q<->E, A<->N) while columns 2..5 vary independently
+    let msa: Vec<&[u8]> = vec![
+        b"HDKMWY", b"HDKLVY", b"HDRMWF", b"HDRLVF", b"QEKMWY", b"QEKLVY", b"QERMWF", b"QERLVF",
+        b"ANKMWY", b"ANKLVY", b"ANRMWF", b"ANRLVF",
+    ];
+    let couplings = compute_apc_corrected_mi_and_potts_couplings(&msa);
+    assert!(!couplings.is_empty());
+    assert_eq!((couplings[0].0, couplings[0].1), (0, 1));
+    assert!(couplings[0].2 > 1.4 && couplings[0].3 > 1.0);
+
+    let (de1_ortho, de_net_ortho, _) =
+        evaluate_potts_hamiltonian_escape_barrier(&[2.35, 0.45], &[(0, 1, 3.12)], 0.85);
+    let (_, de_net_allo, _) =
+        evaluate_potts_hamiltonian_escape_barrier(&[6.40, 4.85, 3.90], &[(0, 1, 0.45)], 0.85);
+    assert!(
+        de_net_ortho < 0.0 && de_net_allo > 10.0 && de1_ortho > 0.0,
+        "Compensatory orthosteric path must be thermodynamically permissive while frustrated allosteric hub blocks escape"
+    );
+
+    let coevo_report = run_coevo_epistatic_escape_agent().expect("Pipeline 7 must succeed");
+    assert_eq!(coevo_report.pipeline_id, "co-evo-v1");
+    assert_eq!(coevo_report.stage4_dead_end_target_dossiers.len(), 2);
+
+    // 2. Pipeline 8 (`chrom-condensate`): 3D Contact Graph Laplacian & IDP Sticker-Spacer Grammar
+    let clique_4 = vec![
+        vec![0.0, 10.0, 10.0, 10.0],
+        vec![10.0, 0.0, 10.0, 10.0],
+        vec![10.0, 10.0, 0.0, 10.0],
+        vec![10.0, 10.0, 10.0, 0.0],
+    ];
+    let (vn_s, fiedler_l2, _) = compute_3d_contact_laplacian_spectral_metrics(&clique_4);
+    assert!(
+        vn_s > 1.4 && fiedler_l2 > 20.0,
+        "Dense condensate hub must yield positive Von Neumann entropy ({}) and strong Fiedler connectivity ({})",
+        vn_s,
+        fiedler_l2
+    );
+
+    let (sticker_f, spacer_f, h_gram, csat) = analyze_idp_sticker_spacer_grammar(
+        "SYSGYSSYGQSGYSSYSGYSSYQQNTGYSSYRGGRGGRGGYSSYQQSYSGYSSYGQSRGGFGGSRGGYSSYSGYSSYQQS",
+    );
+    assert!(sticker_f > 0.30 && spacer_f > 0.40 && h_gram > 0.8 && csat < 10.0);
+
+    let cond_report =
+        run_chromatin_condensate_scaffolder_agent().expect("Pipeline 8 must succeed");
+    assert_eq!(cond_report.pipeline_id, "chrom-condensate-v1");
+    assert_eq!(cond_report.stage4_condensate_therapeutics.len(), 2);
+
+    // 3. Pipeline 9 (`clonal-synth`): 96-Channel Mutational JSD & KS Complexity + CRISPR Synthetic Lethality
+    let neutral_96 = vec![1.0f64; 96];
+    let mut apobec_96 = vec![0.2f64; 96];
+    for ch in 48..56 {
+        apobec_96[ch] = 25.0;
+    }
+    let (h_apobec, jsd_apobec, ks_apobec) =
+        compute_mutational_spectrum_jsd_and_ks(&apobec_96, &neutral_96);
+    assert!(
+        h_apobec < 6.0 && jsd_apobec > 0.25 && ks_apobec > 0.30,
+        "APOBEC kataegis burst must show significant JSD ({}) and KS divergence ({})",
+        jsd_apobec,
+        ks_apobec
+    );
+
+    let clonal_report =
+        run_somatic_clonal_synthetic_lethal_agent().expect("Pipeline 9 must succeed");
+    assert_eq!(clonal_report.pipeline_id, "clonal-synth-v1");
+    assert_eq!(clonal_report.stage3_synthetic_lethal_pairs.len(), 2);
+
+    // 4. Master DAG Chain (`dag-chain`): Verify all 9 pipelines interlock cleanly
+    let dag_report = run_master_dag_chain_agent().expect("Master DAG must succeed");
+    assert_eq!(dag_report.total_pipelines_executed, 9);
+    assert_eq!(dag_report.dag_edges.len(), 3);
+    assert_eq!(dag_report.tool_reuse_matrix.len(), 8);
 }
 
 #[test]

@@ -12,6 +12,7 @@ pub mod disease_panels;
 pub mod fetch;
 pub mod genome_target;
 pub mod haplotype;
+pub mod msa_calibration;
 pub mod phylo;
 pub mod pipelines;
 pub mod sweep;

@@ -10,7 +10,9 @@ use crate::complexity::{
 };
 use crate::fetch::{FastaRecord, GenomicAnnotation, PoliteCacheManager};
 use crate::genome_target::{intersect_high_complexity_windows, AnnotatedComplexityRegion};
-use crate::phylo::{run_coi_phylo_and_barcode_analysis, PhyloAnalysisResult};
+use crate::phylo::{
+    run_coi_phylo_and_barcode_analysis_with_mode, AlignerMode, PhyloAnalysisResult,
+};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
@@ -90,10 +92,20 @@ pub struct Chr1ComplexityPipelineReport {
 }
 
 /// Worker-Agent 1: Carnivora Mitochondrial COI DNA Barcoding, K2P/NJ Phylogenetics,
-/// ABGD Cluster Analysis & Emergent Information-Theoretic Complexity Pipeline.
+/// ABGD Cluster Analysis & Emergent Information-Theoretic Complexity Pipeline
+/// (defaults to `AlignerMode::Native`).
 pub fn run_coi_barcode_cluster_agent(
     cache: &PoliteCacheManager,
     bootstrap_replicates: usize,
+) -> Result<CoiBarcodePipelineReport, String> {
+    run_coi_barcode_cluster_agent_with_mode(cache, bootstrap_replicates, AlignerMode::Native)
+}
+
+/// Worker-Agent 1 with explicit `AlignerMode` (`Native` default vs. `Mafft`).
+pub fn run_coi_barcode_cluster_agent_with_mode(
+    cache: &PoliteCacheManager,
+    bootstrap_replicates: usize,
+    aligner_mode: AlignerMode,
 ) -> Result<CoiBarcodePipelineReport, String> {
     let pipeline_start = Instant::now();
     let mut step_trace = Vec::new();
@@ -115,9 +127,10 @@ pub fn run_coi_barcode_cluster_agent(
         ),
     });
 
-    // Step 2: Tier-2 Phylo Engine (Codon-Preserving MSA + K2P/TN93 + NJ Tree + Bootstrap + ABGD Clustering)
+    // Step 2: Tier-2 Phylo Engine (MSA + K2P/TN93 + NJ Tree + Bootstrap + ABGD Clustering)
     let t1 = Instant::now();
-    let phylo = run_coi_phylo_and_barcode_analysis(&records, bootstrap_replicates);
+    let (phylo, _aligned, _msa_tel) =
+        run_coi_phylo_and_barcode_analysis_with_mode(&records, bootstrap_replicates, aligner_mode);
     step_trace.push(PipelineStepTrace {
         step_index: 2,
         stage_id: "task:phylo:msa_k2p_nj_abgd".to_string(),

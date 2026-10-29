@@ -15,6 +15,7 @@ use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
 };
+use bio_suite::sweep::run_multi_pipeline_discovery_sweep;
 use serde::Serialize;
 use std::env;
 use std::fs;
@@ -138,9 +139,28 @@ fn dispatch_pipeline(workflow: &str, cache: &PoliteCacheManager, out_file: Optio
                 }
             }
         }
+        "sweep" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            match run_multi_pipeline_discovery_sweep(&ws_root) {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] Sweep failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
-                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, dag-chain",
+                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, dag-chain, sweep",
                 workflow
             );
             std::process::exit(1);
@@ -220,7 +240,7 @@ fn main() {
             dispatch_pipeline(workflow, &cache, out_file);
         }
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
-        | "chrom-condensate" | "clonal-synth" | "dag-chain" => {
+        | "chrom-condensate" | "clonal-synth" | "dag-chain" | "sweep" => {
             dispatch_pipeline(cmd, &cache, out_file);
         }
         _ => {

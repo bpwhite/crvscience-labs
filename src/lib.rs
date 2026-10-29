@@ -11,3 +11,4 @@ pub mod fetch;
 pub mod genome_target;
 pub mod phylo;
 pub mod pipelines;
+pub mod sweep;

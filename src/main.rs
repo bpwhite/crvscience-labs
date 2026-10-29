@@ -11,6 +11,7 @@ use bio_suite::dag_pipelines::{
 };
 use bio_suite::fetch::PoliteCacheManager;
 use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
+use bio_suite::haplotype::run_haplotype_cluster_pipeline_agent;
 use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
@@ -139,6 +140,21 @@ fn dispatch_pipeline(workflow: &str, cache: &PoliteCacheManager, out_file: Optio
                 }
             }
         }
+        "haplo-cluster" => {
+            eprintln!("[bio-suite] Launching Pipeline 10: haplo-cluster (Haplotype Clustering & Adaptive ASCII/SVG/DOT Network Engine)...");
+            match run_haplotype_cluster_pipeline_agent() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.small_dataset_cohort.visualizations.ascii_cluster_network_viewpoint);
+                    eprintln!("{}", report.small_dataset_cohort.visualizations.ascii_polymorphic_site_matrix);
+                    eprintln!("{}", report.large_dataset_cohort.visualizations.ascii_supercluster_heatmap);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Haplotype clustering failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         "sweep" => {
             let ws_root = env::current_dir()
                 .ok()
@@ -240,7 +256,7 @@ fn main() {
             dispatch_pipeline(workflow, &cache, out_file);
         }
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
-        | "chrom-condensate" | "clonal-synth" | "dag-chain" | "sweep" => {
+        | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep" => {
             dispatch_pipeline(cmd, &cache, out_file);
         }
         _ => {
@@ -258,7 +274,9 @@ fn main() {
             println!("  bio-suite co-evo                    [--out runs/co-evo-report.json]");
             println!("  bio-suite chrom-condensate          [--out runs/chrom-condensate-report.json]");
             println!("  bio-suite clonal-synth              [--out runs/clonal-synth-report.json]");
+            println!("  bio-suite haplo-cluster             [--out runs/haplo-cluster-report.json]");
             println!("  bio-suite dag-chain                 [--out runs/master-dag-report.json]");
+            println!("  bio-suite sweep                     [--out runs/multi-pipeline-sweep-report.json]");
             println!("  bio-suite registry");
         }
     }

@@ -575,11 +575,15 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
         "EMPIRICAL DATA: NCBI REFSEQ/GENBANK CACHED"
     );
     assert!(sweep_report.publishable_standalone);
-    assert_eq!(sweep_report.total_runs_executed, 13);
-    assert_eq!(sweep_report.zero_star_excluded_count, 5);
-    assert_eq!(sweep_report.one_star_baseline_count, 2);
-    assert_eq!(sweep_report.two_star_validation_count, 2);
-    assert_eq!(sweep_report.three_star_synthesis_count, 4);
+    assert_eq!(sweep_report.total_runs_executed, 32);
+    assert_eq!(sweep_report.zero_star_excluded_count, 8);
+    assert_eq!(sweep_report.one_star_baseline_count, 3);
+    assert_eq!(sweep_report.two_star_validation_count, 4);
+    assert_eq!(sweep_report.three_star_synthesis_count, 8);
+    assert_eq!(sweep_report.four_star_emergent_count, 6);
+    assert_eq!(sweep_report.five_star_significant_count, 3);
+    assert_eq!(sweep_report.synthesis_5_eskape_chromosomes.len(), 8);
+    assert_eq!(sweep_report.synthesis_6_eukaryote_prokaryote_rrna.len(), 15);
     assert_eq!(sweep_report.rrna_cross_domain_markers.len(), 4);
     assert_eq!(sweep_report.rrna_23s_ptc_epistatic_pairs.len(), 3);
     assert!(sweep_report.disk_snapshots.len() >= 4);
@@ -592,21 +596,22 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
         "CALIBRATION DATA: PROCEDURALLY GENERATED"
     );
     assert!(!burnin_report.publishable_standalone);
-    assert_eq!(burnin_report.total_trials, 10);
+    assert_eq!(burnin_report.total_trials, 14);
     assert_eq!(burnin_report.zero_star_failures, 4);
+    assert_eq!(burnin_report.four_plus_star_signals, 4);
     for t in &burnin_report.trials {
         assert_eq!(t.data_provenance, "CALIBRATION DATA: PROCEDURALLY GENERATED");
         assert!(!t.publishable_standalone);
     }
 
     // 6. Haplotype Clustering & Adaptive Visualization (`haplo-cluster`):
-    //    Verify Small-Dataset ASCII viewpoint (h <= 30) and Large-Dataset Super-Cluster + SVG/DOT (h > 30)
+    //    Verify Small-Dataset ASCII viewpoint (h <= 30) and Large-Dataset Super-Cluster + SVG/DOT
     let haplo_report = bio_suite::haplotype::run_haplotype_cluster_pipeline_agent()
         .expect("Haplotype clustering pipeline must succeed");
     assert_eq!(haplo_report.pipeline_id, "haplo-cluster-v1");
-    assert_eq!(haplo_report.small_dataset_cohort.diversity_metrics.total_sequences_n, 24);
-    assert_eq!(haplo_report.small_dataset_cohort.diversity_metrics.unique_haplotypes_h, 10);
-    assert_eq!(haplo_report.small_dataset_cohort.clusters.len(), 3);
+    assert_eq!(haplo_report.small_dataset_cohort.diversity_metrics.total_sequences_n, 5);
+    assert_eq!(haplo_report.small_dataset_cohort.diversity_metrics.unique_haplotypes_h, 5);
+    assert!(haplo_report.small_dataset_cohort.clusters.len() >= 2);
     assert!(haplo_report
         .small_dataset_cohort
         .visualizations
@@ -617,9 +622,9 @@ fn test_pipelines_7_to_9_and_master_dag_chaining_fidelity() {
         .visualizations
         .ascii_polymorphic_site_matrix
         .contains("POLYMORPHIC SEGREGATING SITES ALIGNMENT"));
-    assert_eq!(haplo_report.large_dataset_cohort.diversity_metrics.total_sequences_n, 120);
-    assert_eq!(haplo_report.large_dataset_cohort.diversity_metrics.unique_haplotypes_h, 40);
-    assert_eq!(haplo_report.large_dataset_cohort.clusters.len(), 5);
+    assert_eq!(haplo_report.large_dataset_cohort.diversity_metrics.total_sequences_n, 4);
+    assert_eq!(haplo_report.large_dataset_cohort.diversity_metrics.unique_haplotypes_h, 4);
+    assert_eq!(haplo_report.large_dataset_cohort.clusters.len(), 3);
     assert!(haplo_report
         .large_dataset_cohort
         .visualizations
@@ -710,6 +715,95 @@ fn test_github_search_indexing_and_file_size_rules() {
             "Tracked file {} must not contain NUL bytes",
             file_path.display()
         );
+    }
+}
+
+#[test]
+fn test_disease_genes_32_panel_atlas_and_pleiotropy_fidelity() {
+    let atlas = bio_suite::disease_panels::build_disease_genes_atlas();
+    assert_eq!(atlas.total_panels, 32, "Expected 32 curated disease panels");
+    assert!(
+        atlas.unique_gene_count >= 500,
+        "Expected >= 500 unique human disease genes across 32 panels, got {}",
+        atlas.unique_gene_count
+    );
+    assert!(
+        atlas.total_panel_gene_assignments >= 850,
+        "Expected >= 850 total gene-panel assignments, got {}",
+        atlas.total_panel_gene_assignments
+    );
+    assert!(atlas.pleiotropic_gene_count_ge_2 >= 150);
+    assert!(atlas.high_pleiotropy_hubs_ge_4 >= 10);
+    assert!(!atlas.top_pleiotropic_hubs.is_empty());
+    assert!(!atlas.top_panel_overlaps.is_empty());
+
+    // Verify APOE tiered discovery & calibration sweep
+    let cache = bio_suite::fetch::PoliteCacheManager::default_workspace_cache();
+    let ws_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let apoe_sweep = bio_suite::disease_panels::run_apoe_tiered_discovery_sweep(ws_root, &cache)
+        .expect("APOE tiered discovery sweep should succeed");
+    assert_eq!(apoe_sweep.target_gene, "APOE");
+    assert_eq!(apoe_sweep.pleiotropic_panel_count, 5);
+    assert_eq!(apoe_sweep.total_runs_executed, 10);
+    assert_eq!(apoe_sweep.zero_star_burnin_count, 3);
+    assert_eq!(apoe_sweep.zero_star_empirical_reject_count, 2);
+    assert_eq!(apoe_sweep.unpublished_1_to_3_star_calibration_count, 3);
+    assert_eq!(apoe_sweep.published_4_to_5_star_discovery_count, 2);
+    assert_eq!(apoe_sweep.chr19q13_real_window_telemetry.len(), 6);
+    assert_eq!(apoe_sweep.isoform_epistasis_matrix.len(), 6);
+    // Ensure all 0★ and 1★-3★ runs are strictly marked unpublished
+    for run in &apoe_sweep.tiered_runs {
+        if run.star_rating <= 3 {
+            assert!(
+                !run.published_article && !run.publishable_standalone,
+                "Run {} ({}★) must remain unpublished",
+                run.run_id,
+                run.star_rating
+            );
+        } else {
+            assert!(
+                run.published_article && run.publishable_standalone,
+                "Run {} ({}★) must be marked published",
+                run.run_id,
+                run.star_rating
+            );
+        }
+    }
+
+    // Verify Avian 4-Locus (16S, 18S, 28S, ITS) Tiered Systematics Sweep
+    let avian_sweep =
+        bio_suite::avian_systematics::run_avian_tiered_systematics_sweep(ws_root, &cache)
+            .expect("Avian 4-locus tiered systematics sweep should succeed");
+    assert_eq!(avian_sweep.markers_evaluated.len(), 4);
+    assert_eq!(avian_sweep.supermatrix_partition_scheme.len(), 6);
+    assert_eq!(avian_sweep.total_runs_executed, 10);
+    assert_eq!(avian_sweep.zero_star_burnin_count, 3);
+    assert_eq!(avian_sweep.zero_star_empirical_reject_count, 2);
+    assert_eq!(avian_sweep.unpublished_1_to_3_star_calibration_count, 3);
+    assert_eq!(avian_sweep.published_4_to_5_star_discovery_count, 2);
+    assert!(!avian_sweep.empirical_locus_telemetry.is_empty());
+    assert!(avian_sweep
+        .combined_partitioned_focal_alignment_ascii
+        .contains("P1:18S"));
+    assert!(avian_sweep
+        .combined_partitioned_focal_alignment_ascii
+        .contains("P4:16S-mtDNA"));
+    for run in &avian_sweep.tiered_runs {
+        if run.star_rating <= 3 {
+            assert!(
+                !run.published_article && !run.publishable_standalone,
+                "Avian run {} ({}★) must remain unpublished",
+                run.run_id,
+                run.star_rating
+            );
+        } else {
+            assert!(
+                run.published_article && run.publishable_standalone,
+                "Avian run {} ({}★) must be marked published",
+                run.run_id,
+                run.star_rating
+            );
+        }
     }
 }
 

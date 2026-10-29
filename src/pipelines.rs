@@ -11,6 +11,7 @@
 
 use crate::agent::{EmergentFinding, PipelineStepTrace};
 use crate::complexity::round4;
+use crate::fetch::PoliteCacheManager;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, VecDeque};
@@ -204,7 +205,7 @@ pub fn run_hgt_resistome_scanner_agent() -> Result<HgtScanPipelineReport, String
     // (ICE, coordinates 35,000..55,000 bp, GC ~41.2%) flanked by tRNA-Gly attB/attP direct repeats.
     let t0 = Instant::now();
     let contig_id = "NZ_CP089412.1_Pseudomonas_aeruginosa_ENV26".to_string();
-    let contig_seq = build_benchmark_hgt_contig();
+    let contig_seq = build_benchmark_hgt_contig()?;
     let bg_tetra = compute_tetranucleotide_spectrum(&contig_seq);
     let bg_rscu = compute_rscu_vector(&contig_seq);
     let bg_gc = compute_gc_percent(&contig_seq);
@@ -470,45 +471,36 @@ pub fn run_hgt_resistome_scanner_agent() -> Result<HgtScanPipelineReport, String
     })
 }
 
-fn build_benchmark_hgt_contig() -> Vec<u8> {
-    // 90,000 bp contig:
-    // - 0..35,000 and 55,000..90,000: Pseudomonas-like GC-rich (~67% GC) background with strong GC3 codon bias
-    // - 35,000..55,000: Acinetobacter-like AT-rich (~39% GC) foreign genomic island with inverted GC-skew
-    let mut seq = Vec::with_capacity(90_000);
-    let host_motifs: &[&[u8]] = &[
-        b"GTCCTCGACCTGGCCGGCAAGGTC",
-        b"CGCGCCGACGAGTTCCTCGCCGGC",
-        b"CTGGACGCCGTCGGCAAGCGCCTG",
-        b"GCCATCGAGGCCCTcaAGGACGGC",
-    ];
-    let island_motifs: &[&[u8]] = &[
-        b"TTAATTAAATGAAATTTAATAATG",
-        b"CATATTATAAATTTGCAATTAATA",
-        b"GAAATTTAATTATGCAATTTAATG",
-        b"TATATTAATAAAGGTTTAAATATG",
-    ];
+fn build_benchmark_hgt_contig() -> Result<Vec<u8>, String> {
+    // 90,000 bp empirical chimeric chromosome segment constructed from real NCBI RefSeq chromosomes:
+    // - 0..35,000 and 55,000..90,000: Real Pseudomonas aeruginosa PAO1 chromosome (NC_002516.2:1-70000, ~66.6% GC)
+    // - 35,000..55,000: Real Acinetobacter baumannii AYE genomic island donor region (NC_010410.1:1-20000, ~39.2% GC)
+    let cache = PoliteCacheManager::default_workspace_cache();
+    let pae_host = cache.fetch_ncbi_fasta_slice(
+        "NC_002516.2:1-70000",
+        "Pseudomonas aeruginosa PAO1",
+        "P. aeruginosa PAO1 Core Chromosome Background (70 kb)",
+        "Pseudomonadaceae",
+        "PAO1_CHR",
+    )?;
+    let aba_island = cache.fetch_ncbi_fasta_slice(
+        "NC_010410.1:1-20000",
+        "Acinetobacter baumannii AYE",
+        "A. baumannii AYE Mobile Resistome Donor Segment (20 kb)",
+        "Moraxellaceae",
+        "ABA_GI_DONOR",
+    )?;
 
-    let mut pos = 0usize;
-    let mut state = 0x9E3779B97F4A7C15u64;
-    while pos < 90_000 {
-        state = state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        let in_island = (35_000..55_000).contains(&pos);
-        let motifs = if in_island {
-            island_motifs
-        } else {
-            host_motifs
-        };
-        let m = motifs[((state >> 32) as usize) % motifs.len()];
-        for &b in m {
-            if pos < 90_000 {
-                seq.push(b.to_ascii_uppercase());
-                pos += 1;
-            }
-        }
+    let host_bytes = pae_host.sequence.as_bytes();
+    let island_bytes = aba_island.sequence.as_bytes();
+    let mut seq = Vec::with_capacity(90_000);
+    let flank_left = 35_000.min(host_bytes.len());
+    seq.extend_from_slice(&host_bytes[0..flank_left]);
+    seq.extend_from_slice(&island_bytes[0..20_000.min(island_bytes.len())]);
+    if host_bytes.len() >= 70_000 {
+        seq.extend_from_slice(&host_bytes[35_000..70_000]);
     }
-    seq
+    Ok(seq)
 }
 
 fn compute_gc_percent(seq: &[u8]) -> f64 {

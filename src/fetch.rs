@@ -165,6 +165,16 @@ impl PoliteCacheManager {
         Self { cache_dir: dir }
     }
 
+    /// Resolve the canonical `crvscience-labs/cache` directory whether invoked from workspace root or `crvscience-labs/`.
+    pub fn default_workspace_cache() -> Self {
+        let ws_cache = Path::new("crvscience-labs").join("cache");
+        if ws_cache.exists() || Path::new("crvscience-labs").join("Cargo.toml").exists() {
+            Self::new(ws_cache)
+        } else {
+            Self::new("cache")
+        }
+    }
+
     fn cache_key_path(&self, key: &str, ext: &str) -> PathBuf {
         let mut hasher = Sha256::new();
         hasher.update(key.as_bytes());

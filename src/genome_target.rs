@@ -234,6 +234,47 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
         native_rust_fallback: "bio-suite spectral graph Laplacian & Von Neumann entropy calculator",
         description: "Parses Chomsky hierarchy RNA/protein grammars and quantifies 3D chromatin / phylogenetic network entropy.",
     },
+    // Pipeline 3 (`hgt-scan`) & Pipeline 4 (`bgc-mine`) & Pipeline 5 (`pseudo-loss`) & Pipeline 6 (`pan-cryptic`) Adapters
+    ToolAdapterEntry {
+        engine: "genome",
+        category: "Horizontal Gene Transfer & Mobile Resistome (Pipeline 3: hgt-scan)",
+        tool_name: "tRNAscan-SE 2.0 / VirSorter2 / PhiSpy / ISEScan / MOB-suite / AMRFinderPlus / RGI",
+        binary_cmd: "amrfinder",
+        spdx_license: "GPL-3.0 / Public-Domain / Apache-2.0",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite 256-dim tetranucleotide KL-divergence, 64-codon RSCU & attB/resistome scanner",
+        description: "Detects horizontally transferred genomic islands via k-mer KL-divergence, tRNA/integrase flanks, and CARD/AMRFinderPlus cargo.",
+    },
+    ToolAdapterEntry {
+        engine: "target",
+        category: "Cryptic BGC, Self-Resistance & AMP Mining (Pipeline 4: bgc-mine)",
+        tool_name: "Prodigal-gv / antiSMASH 7 / GECCO / BiG-SCAPE / ARTS / Macrel / ESMFold",
+        binary_cmd: "antismash",
+        spdx_license: "GPL-3.0 / AGPL-3.0 / BSD-3-Clause / MIT",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite MIBiG domain-Jaccard dereplicator, ARTS paralog scanner & Eisenberg mu_H AMP profiler",
+        description: "Mines cryptic NRPS/PKS/RiPP clusters, dereplicates against MIBiG, and pairs scaffolds with duplicated self-resistance targets.",
+    },
+    ToolAdapterEntry {
+        engine: "phylo",
+        category: "Syntenic Pseudogenization & Selection Relaxation (Pipeline 5: pseudo-loss)",
+        tool_name: "TOGA / Miniprot / MACSE / HyPhy RELAX / bcftools / gnomAD pLoF",
+        binary_cmd: "hyphy",
+        spdx_license: "MIT / GPL-3.0 / CeCILL",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite codon frameshift/stop-gain caller, Nei-Gojobori dN/dS & HyPhy RELAX k estimator",
+        description: "Distinguishes true evolutionary gene loss (omega -> 1.0) from sequencing artifacts and identifies safe human knockout drug targets.",
+    },
+    ToolAdapterEntry {
+        engine: "complexity",
+        category: "Pangenome Graph Entropy & Cryptic Allosteric Pockets (Pipeline 6: pan-cryptic)",
+        tool_name: "odgi / panacus / tskit / Modkit / IsoQuant / Boltz-1 / BioEmu / PocketMiner",
+        binary_cmd: "odgi",
+        spdx_license: "MIT / GPL-3.0 / Apache-2.0",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite GFA walk Shannon entropy (H_walk), Ollivier-Ricci curvature, H_iso & RIN betweenness engine",
+        description: "Links pangenome variation graph bubble entropy and 5mC/scIso-Seq phase-switching to isoform-specific cryptic allosteric pockets.",
+    },
 ];
 
 /// Intersect high-complexity sliding windows with genomic annotations (genes, CDS, repeats)

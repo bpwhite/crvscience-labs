@@ -54,12 +54,12 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     ToolAdapterEntry {
         engine: "phylo",
         category: "Orthology & Homology Inference",
-        tool_name: "OrthoFinder / DIAMOND / BUSCO",
-        binary_cmd: "orthofinder",
+        tool_name: "DIAMOND v2.2.8 (blastp --swipe) / OrthoFinder / BUSCO",
+        binary_cmd: "diamond",
         spdx_license: "GPL-3.0-or-later / MIT",
         gpl3_compatible: true,
-        native_rust_fallback: "Reciprocal Best-Hit (RBH) k-mer homology & NCBI Ortholog Fetcher",
-        description: "Identifies single-copy orthologs, paralogs, and conserved benchmark loci across proteomes and coding sequences.",
+        native_rust_fallback: "bio-suite 4-Stage Smith-Waterman BLOSUM62, Emms-Kelly Length-Normalized RBH & Paralog Graph Engine",
+        description: "Identifies single-copy orthologs, co-ortholog in-paralogs, and out-paralogs across proteomes and coding sequences.",
     },
     ToolAdapterEntry {
         engine: "phylo",

@@ -3443,6 +3443,15 @@ fn pearson_r(xs: &[f64], ys: &[f64]) -> f64 {
 // 6. MASTER CALIBRATION BENCHMARK: NATIVE ML TREE BUILDER VS. IQ-TREE v2.4.0
 // ============================================================================
 
+pub fn infer_native_ml_gene_tree(
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    rm: PhyloRunModel,
+) -> SingleTreeRunMetrics {
+    let aln = compress_alignment_and_estimate_rates(raw_aligned_strings);
+    run_native_ml_tree_builder_fast(raw_aligned_strings, labels, &aln, rm)
+}
+
 pub fn run_tree_builder_native_vs_iqtree_calibration(
     cache: &PoliteCacheManager,
 ) -> Result<TreeBuilderCalibrationReport, String> {

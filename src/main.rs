@@ -8,6 +8,7 @@ use bio_suite::agent::{
     run_chr1_complexity_agent, run_coi_barcode_cluster_agent_with_mode,
 };
 use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
+use bio_suite::coalescent::run_coalescent_native_vs_astral_calibration;
 use bio_suite::dag_pipelines::{
     run_chromatin_condensate_scaffolder_agent, run_coevo_epistatic_escape_agent,
     run_master_dag_chain_agent, run_somatic_clonal_synthetic_lethal_agent,
@@ -104,6 +105,33 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Tree builder calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "coalescent-compare" | "astral-compare" | "coalescent-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 4 Calibration: Native Rust Quartet Multispecies Coalescent (MSC + LPP + ABBA-BABA) vs. ASTRAL v5.7.8...");
+            match run_coalescent_native_vs_astral_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    for c in &report.cohorts {
+                        eprintln!("\n{}", c.ascii_cohort_comparison_table);
+                    }
+                    eprintln!("\n{}", report.ascii_mammalian_species_cladogram);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Coalescent calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -461,7 +489,8 @@ fn main() {
         | "burn-in" | "disease-atlas" | "disease-genes" | "apoe-sweep" | "avian-sweep"
         | "align-compare" | "msa-calibration" | "modeltest" | "modeltest-compare"
         | "modeltest-calibration" | "phylo-2x2-compare" | "phylo-factorial"
-        | "tree-compare" | "tree-calibration" | "iqtree-compare" => {
+        | "tree-compare" | "tree-calibration" | "iqtree-compare"
+        | "coalescent-compare" | "astral-compare" | "coalescent-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

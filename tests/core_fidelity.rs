@@ -1026,4 +1026,29 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
     assert_eq!(sel_res.codon_sites, 12);
     assert!(sel_res.m0_lnl < 0.0);
     assert!(sel_res.m2a_lnl >= sel_res.m1a_lnl - 1e-4);
+
+    // 6. Verify OrthologyMode default policy == OrthologyMode::Native and Smith-Waterman BLOSUM62 + RBH Orthogroup fidelity
+    use bio_suite::orthology::{
+        build_cohort4_euk_globin_apoe_paralogs, run_native_orthology_engine,
+        smith_waterman_blosum62_local, OrthologyMode,
+    };
+    assert_eq!(
+        OrthologyMode::default(),
+        OrthologyMode::Native,
+        "Default orthology mode must be Native unless --orthology diamond is explicitly specified"
+    );
+    assert_eq!(OrthologyMode::from_cli_arg("native"), OrthologyMode::Native);
+    assert_eq!(OrthologyMode::from_cli_arg("diamond"), OrthologyMode::Diamond);
+
+    let c4_prots = build_cohort4_euk_globin_apoe_paralogs();
+    assert_eq!(c4_prots.len(), 20);
+    let sw_self = smith_waterman_blosum62_local(&c4_prots[0], &c4_prots[0], 3997, 20)
+        .expect("Self hit on HUMAN_HBA1 must succeed");
+    assert_eq!(sw_self.raw_sw_score, 733);
+    assert!((sw_self.bit_score - 286.0).abs() <= 1.0);
+
+    let (orth_res, _hits) = run_native_orthology_engine(&c4_prots);
+    assert_eq!(orth_res.protein_count, 20);
+    assert_eq!(orth_res.inferred_orthogroups_count, 5);
+    assert!(orth_res.in_paralog_pairs_count >= 2);
 }

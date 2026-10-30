@@ -23,6 +23,7 @@ use bio_suite::modeltest::{
     run_modeltest_with_mode, ModelTestMode,
 };
 use bio_suite::msa_calibration::run_msa_native_vs_mafft_calibration;
+use bio_suite::orthology::run_orthology_native_vs_diamond_calibration;
 use bio_suite::phylo::{align_sequences_with_mode, AlignerMode};
 use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
@@ -157,6 +158,34 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Codon selection calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "orthology-compare" | "diamond-compare" | "orthology-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 6 Calibration: Native Rust 4-Stage Smith-Waterman BLOSUM62, Emms-Kelly Length Normalization & RBH Orthology Engine vs. DIAMOND v2.2.8...");
+            match run_orthology_native_vs_diamond_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    for c in &report.cohorts {
+                        eprintln!("\n{}", c.ascii_cohort_table);
+                    }
+                    eprintln!("\n{}", report.ascii_focal_alignment_gyrb);
+                    eprintln!("\n{}", report.ascii_supermatrix_cladogram);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Orthology calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -516,7 +545,8 @@ fn main() {
         | "modeltest-calibration" | "phylo-2x2-compare" | "phylo-factorial"
         | "tree-compare" | "tree-calibration" | "iqtree-compare"
         | "coalescent-compare" | "astral-compare" | "coalescent-calibration"
-        | "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration" => {
+        | "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration"
+        | "orthology-compare" | "diamond-compare" | "orthology-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

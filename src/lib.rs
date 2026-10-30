@@ -16,6 +16,7 @@ pub mod genome_target;
 pub mod haplotype;
 pub mod modeltest;
 pub mod msa_calibration;
+pub mod orthology;
 pub mod phylo;
 pub mod pipelines;
 pub mod sweep;

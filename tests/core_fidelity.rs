@@ -922,4 +922,64 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
     assert_eq!(mt_res.engine_mode, "Native");
     assert_eq!(mt_res.models_evaluated.len(), 24);
     assert!(mt_res.best_bic_ln_l < 0.0);
+
+    // 4. Verify TreeBuilderMode & CoalescentMode default policies == Native and Quartet MSC fidelity
+    use bio_suite::coalescent::{
+        compute_abba_baba_patterson_d, compute_coalescent_units_branch_length,
+        compute_local_posterior_probability, run_native_quartet_coalescent, CoalescentMode,
+    };
+    use bio_suite::tree_builder::TreeBuilderMode;
+
+    assert_eq!(
+        TreeBuilderMode::default(),
+        TreeBuilderMode::Native,
+        "Default tree builder mode must be Native unless an external tool is explicitly specified"
+    );
+    assert_eq!(
+        CoalescentMode::default(),
+        CoalescentMode::Native,
+        "Default coalescent mode must be Native unless --coalescent astral is explicitly specified"
+    );
+    assert_eq!(CoalescentMode::from_cli_arg("native"), CoalescentMode::Native);
+    assert_eq!(CoalescentMode::from_cli_arg("astral"), CoalescentMode::Astral);
+
+    let gts = vec![
+        "(((TaxA:0.01,TaxB:0.01):0.03,TaxC:0.02):0.04,(TaxD:0.01,TaxE:0.01):0.04);".to_string(),
+        "(((TaxA:0.01,TaxB:0.01):0.03,TaxC:0.02):0.04,(TaxD:0.01,TaxE:0.01):0.04);".to_string(),
+        "(((TaxA:0.01,TaxB:0.01):0.03,TaxC:0.02):0.04,(TaxD:0.01,TaxE:0.01):0.04);".to_string(),
+        "(((TaxA:0.01,TaxC:0.01):0.02,TaxB:0.02):0.04,(TaxD:0.01,TaxE:0.01):0.04);".to_string(),
+    ];
+    let (msc_res, _sp_tree, _taxa) =
+        run_native_quartet_coalescent("TEST-COALESCENT-5TAXA", &gts)
+            .expect("Native quartet coalescent must succeed on 5-taxon gene tree ensemble");
+    assert_eq!(msc_res.taxa_count, 5);
+    assert_eq!(msc_res.gene_tree_count, 4);
+    assert_eq!(msc_res.total_quartets_evaluated, 20);
+    assert!(msc_res.satisfied_quartet_score >= 18);
+    assert!(msc_res.normalized_quartet_score >= 0.90);
+
+    let lpp = compute_local_posterior_probability(65.0, 17.0, 18.0);
+    assert!(lpp > 0.99, "Expected high LPP for q1=0.65 over 100 loci, got {}", lpp);
+    let cu = compute_coalescent_units_branch_length(0.6503, 424.0);
+    assert!(
+        (cu - 0.645).abs() < 0.02,
+        "Expected ~0.645 CU for Homininae q1=0.6503, got {}",
+        cu
+    );
+
+    let abba = compute_abba_baba_patterson_d(
+        "TEST-ABBA",
+        "P1",
+        b"ACGTACGTACGTACGT",
+        "P2",
+        b"ACGTTCGTACGTTCGT",
+        "P3",
+        b"ACGTTCGTACGTTCGT",
+        "Out",
+        b"ACGTACGTACGTACGT",
+        "Test introgression P2<->P3",
+    );
+    assert_eq!(abba.abba_shared_p2_p3_sites, 2);
+    assert_eq!(abba.baba_shared_p1_p3_sites, 0);
+    assert!((abba.patterson_d_stat - 1.0).abs() < 1e-6);
 }

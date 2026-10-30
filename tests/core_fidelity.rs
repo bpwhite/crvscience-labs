@@ -982,4 +982,48 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
     assert_eq!(abba.abba_shared_p2_p3_sites, 2);
     assert_eq!(abba.baba_shared_p1_p3_sites, 0);
     assert!((abba.patterson_d_stat - 1.0).abs() < 1e-6);
+
+    // 5. Verify SelectionMode default policy == SelectionMode::Native and 61-State / 60-State Goldman-Yang + BEB fidelity
+    use bio_suite::codon_selection::{
+        annotate_primate_lysozyme_domain, run_native_codon_selection, CodonModelSpace,
+        GoldmanYangEigenSystem, SelectionMode,
+    };
+    assert_eq!(
+        SelectionMode::default(),
+        SelectionMode::Native,
+        "Default selection mode must be Native unless --selection paml is explicitly specified"
+    );
+    assert_eq!(SelectionMode::from_cli_arg("native"), SelectionMode::Native);
+    assert_eq!(SelectionMode::from_cli_arg("paml"), SelectionMode::Paml);
+    assert_eq!(SelectionMode::from_cli_arg("codeml"), SelectionMode::Paml);
+
+    let space_univ = CodonModelSpace::from_alignment(&[], 0);
+    let space_mt = CodonModelSpace::from_alignment(&[], 1);
+    assert_eq!(space_univ.sense_to_64.len(), 61);
+    assert_eq!(space_mt.sense_to_64.len(), 60);
+
+    let eig_test = GoldmanYangEigenSystem::build(&space_univ, 2.5, 0.3, None);
+    let p_mat = eig_test.transition_matrix(0.10);
+    assert_eq!(p_mat.len(), 61 * 61);
+    let row0_sum: f64 = p_mat[0..61].iter().sum();
+    assert!((row0_sum - 1.0).abs() < 1e-6);
+
+    let mini_codon_seqs = vec![
+        ("Tax1".to_string(), "AAGGTCTTTGAAAGGTGTGAGTTGGCCAGAACTCTG".to_string()),
+        ("Tax2".to_string(), "AAGGTCTTTGAAAGGTGTGAGTTGGCCAGAACTCTG".to_string()),
+        ("Tax3".to_string(), "AAGATCTTTGAAAGGTGTGAGTTGGCCAGAACTCTG".to_string()),
+        ("Tax4".to_string(), "AAGATCTTTGAAAGGTGTGAGTTGGCCAGAACTCTG".to_string()),
+    ];
+    let mini_tree = "((Tax1:0.02,Tax2:0.02):0.05,(Tax3:0.02,Tax4:0.02) #1:0.08);";
+    let sel_res = run_native_codon_selection(
+        &mini_codon_seqs,
+        mini_tree,
+        0,
+        true,
+        &annotate_primate_lysozyme_domain,
+    );
+    assert_eq!(sel_res.sense_codon_states, 61);
+    assert_eq!(sel_res.codon_sites, 12);
+    assert!(sel_res.m0_lnl < 0.0);
+    assert!(sel_res.m2a_lnl >= sel_res.m1a_lnl - 1e-4);
 }

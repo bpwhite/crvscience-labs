@@ -44,7 +44,6 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
 | --- | --- | --- |
 | `coi-barcode-cluster` | Aligns mitochondrial `COX1` or ribosomal RNA sequences, computes evolutionary distances (`K2P` / `TN93`), builds Neighbor-Joining trees, and measures species barcoding gaps. | `./target/release/bio-suite agent coi-barcode-cluster --out runs/coi-barcode-report.json` |
 | `haplo-cluster` | Builds within-species haplotype networks, polymorphic site matrices, and minimum spanning trees from population sequence panels. | `./target/release/bio-suite haplo-cluster --out runs/haplo-cluster-report.json` |
-| `avian-sweep` | Runs a multi-locus systematics comparison across mitochondrial `16S` and nuclear `18S`, `28S`, and `ITS1–5.8S–ITS2` sequences in birds, building a combined partitioned alignment. | `./target/release/bio-suite avian-sweep --out runs/avian-tiered-systematics-sweep.json` |
 
 ---
 
@@ -79,7 +78,6 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
 | Command | What It Does | Example |
 | --- | --- | --- |
 | `disease-atlas` | Builds the 32-panel (630-gene) human disease and pharmacogenomic pathway catalog, ranking cross-panel pleiotropic hub genes. | `./target/release/bio-suite disease-atlas --out runs/disease-genes-atlas.json` |
-| `apoe-sweep` | Runs a comparative mammalian, pangenome haplotype, and co-evolutionary screen centered on `APOE` and lipid/neurodegenerative pathway loci. | `./target/release/bio-suite apoe-sweep --out runs/apoe-tiered-discovery-sweep.json` |
 | `dag-chain` | Chains outputs across the core genomic, structural, and comparative modules into a combined multi-stage summary report. | `./target/release/bio-suite dag-chain --out runs/master-dag-report.json` |
 | `sweep` | Executes the cross-kingdom calibration sweep (including negative controls and multi-locus benchmarks) across prokaryotic and eukaryotic datasets. | `./target/release/bio-suite sweep --out runs/multi-pipeline-sweep-report.json` |
 
@@ -99,12 +97,11 @@ crvscience-labs/
 │   ├── tree_builder.rs        # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE 2
 │   ├── coalescent.rs          # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL
 │   ├── haplotype.rs           # Haplotype networks & polymorphic site matrices
-│   ├── avian_systematics.rs   # Multi-locus partitioned avian systematics (16S/18S/28S/ITS)
 │   ├── complexity.rs          # Shannon entropy, KL divergence, RSCU & DNA walk scaling
 │   ├── genome_target.rs       # Non-B DNA scanners, fine-mapping & tool registry
 │   ├── pipelines.rs           # HGT resistome, BGC mining, pseudogene & pangenome modules
 │   ├── dag_pipelines.rs       # Co-evolution, chromatin & somatic evolution modules
-│   ├── disease_panels.rs      # 32-panel (630-gene) human disease catalog & APOE sweep
+│   ├── disease_panels.rs      # 32-panel (630-gene) human disease catalog
 │   └── sweep.rs               # Cross-kingdom calibration sweep & 0★–5★ scoring gates
 └── tests/
     └── core_fidelity.rs       # Automated unit & integration test suite

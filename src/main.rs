@@ -9,6 +9,7 @@ use bio_suite::agent::{
 };
 use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
 use bio_suite::coalescent::run_coalescent_native_vs_astral_calibration;
+use bio_suite::codon_selection::run_codon_selection_native_vs_paml_calibration;
 use bio_suite::dag_pipelines::{
     run_chromatin_condensate_scaffolder_agent, run_coevo_epistatic_escape_agent,
     run_master_dag_chain_agent, run_somatic_clonal_synthetic_lethal_agent,
@@ -132,6 +133,30 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Coalescent calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 5 Calibration: Native Rust 61-State Goldman-Yang Codon CTMC + 4D Grid BEB vs. PAML v4.10.10 (codeml)...");
+            match run_codon_selection_native_vs_paml_calibration(cache, &ws_root) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    eprintln!("\n{}", report.ascii_site_posterior_table);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Codon selection calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -490,7 +515,8 @@ fn main() {
         | "align-compare" | "msa-calibration" | "modeltest" | "modeltest-compare"
         | "modeltest-calibration" | "phylo-2x2-compare" | "phylo-factorial"
         | "tree-compare" | "tree-calibration" | "iqtree-compare"
-        | "coalescent-compare" | "astral-compare" | "coalescent-calibration" => {
+        | "coalescent-compare" | "astral-compare" | "coalescent-calibration"
+        | "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

@@ -93,13 +93,13 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     },
     ToolAdapterEntry {
         engine: "phylo",
-        category: "Molecular Clock & Selection (dN/dS)",
-        tool_name: "HyPhy (MEME/BUSTED/aBSREL) / TreePL / BEAST 2",
-        binary_cmd: "hyphy",
-        spdx_license: "MIT / GPL-3.0 / LGPL-2.1",
+        category: "Codon Selection (dN/dS, Site/Branch & BEB)",
+        tool_name: "PAML v4.10.10 (codeml / yn00) / HyPhy",
+        binary_cmd: "codeml",
+        spdx_license: "GPL-3.0-or-later",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite Nei-Gojobori dN/dS & synapomorphic codon state reconstructor",
-        description: "Detects episodic diversifying selection and reconstructs ancestral nucleotide/amino-acid states.",
+        native_rust_fallback: "bio-suite 61-State Goldman-Yang Codon CTMC (M0/M1a/M2a/Branch) & 4D Grid BEB Engine",
+        description: "Evaluates nested site and branch codon substitution models (M0, M1a, M2a, Branch 2-Ratio, RELAX k) and Bayes Empirical Bayes (BEB) site posteriors.",
     },
     // Engine 2: Structural, Population & Functional Genomics (`bio-suite genome`)
     ToolAdapterEntry {

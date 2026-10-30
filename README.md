@@ -6,7 +6,7 @@
 
 **`bio-suite`** is the open-source Rust command-line toolkit powering [CRV Science Labs](https://crvscience.com/labs). It provides fast, self-contained pipelines for molecular systematics, comparative genomics, sequence complexity analysis, and human disease gene mapping.
 
-Every pipeline runs in native multi-threaded Rust out of the box—requiring zero external software—while offering optional command-line flags to benchmark results directly against standard external tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, and `ASTRAL`).
+Every pipeline runs in native multi-threaded Rust out of the box—requiring zero external software—while offering optional command-line flags to benchmark results directly against standard external tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, and `PAML codeml`).
 
 ---
 
@@ -29,8 +29,8 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
    - Downloads verified RefSeq and GenBank sequences from NCBI Entrez under a strict rate limit (`<= 2.5 requests/sec`) and saves them in a local SHA-256 disk cache (`./cache/`).
    - Once cached, subsequent runs execute offline in milliseconds with zero network traffic.
 2. **Native-First Execution with Optional External Tool Benchmarks**:
-   - By default, all alignments, substitution model tests, maximum-likelihood trees, and species-tree coalescent analyses run in native Rust.
-   - Pass `--aligner mafft`, `--modeltest jmodeltest`, `--tree-builder iqtree`, or `--coalescent astral` to compare native outputs side by side against external benchmark binaries.
+   - By default, all alignments, substitution model tests, maximum-likelihood trees, species-tree coalescent analyses, and codon selection models run in native Rust.
+   - Pass `--aligner mafft`, `--modeltest jmodeltest`, `--tree-builder iqtree`, `--coalescent astral`, or `--selection paml` to compare native outputs side by side against external benchmark binaries.
 3. **Structured JSON Telemetry & Calibrated Signal Scoring**:
    - Every command outputs a reproducible `.json` report containing sequence accession metadata, focal alignments, phylogenetic trees, and statistical effect sizes used in the [CRV Science Lab Discoveries Journal](https://crvscience.com/labs#discoveries).
 
@@ -55,6 +55,7 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
 | `modeltest-compare` | 24-model Felsenstein pruning engine (`--modeltest native`) | `jModelTest v2.1.9` / `PhyML` (`--modeltest jmodeltest`) | Log-likelihood scores, AICc/BIC model selection, and downstream tree topology. |
 | `tree-compare` | 4-stage BIONJ + pulley NNI ML tree builder (`--tree-builder native`) | `IQ-TREE v2.4.0` (`--tree-builder iqtree`) | Maximum-likelihood scores, branch lengths, and clade recovery across 54 vertebrate species. |
 | `coalescent-compare` | Quartet multispecies coalescent & `ABBA-BABA` (`--coalescent native`) | `ASTRAL v5.7.8` (`--coalescent astral`) | Species-tree topology, quartet support (`q1, q2, q3`), local posterior probabilities, and introgression across 1,064 gene trees. |
+| `selection-compare` | 61/60-state Goldman-Yang codon CTMC & 4D Grid BEB (`--selection native`) | `PAML v4.10.10` (`codeml`, `--selection paml`) | Nested site & branch selection models (`M0`, `M1a`, `M2a`, Branch 2-Ratio, `RELAX` `k`) and Bayes Empirical Bayes site posteriors. |
 
 ---
 
@@ -96,6 +97,7 @@ crvscience-labs/
 │   ├── modeltest.rs           # 24-model Felsenstein pruning vs. jModelTest
 │   ├── tree_builder.rs        # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE 2
 │   ├── coalescent.rs          # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL
+│   ├── codon_selection.rs     # 61/60-state Goldman-Yang codon CTMC & 4D BEB vs. PAML codeml
 │   ├── haplotype.rs           # Haplotype networks & polymorphic site matrices
 │   ├── complexity.rs          # Shannon entropy, KL divergence, RSCU & DNA walk scaling
 │   ├── genome_target.rs       # Non-B DNA scanners, fine-mapping & tool registry

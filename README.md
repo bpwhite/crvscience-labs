@@ -19,6 +19,10 @@ By default, all `bio-suite` pipelines execute **Native Mode (`AlignerMode::Nativ
    - **Mode 2 (9-mer Anchor-Segmented Gotoh 3-State Affine-Gap Dynamic Programming)**: Automatically activates for variable-length / indel-rich structural rRNAs (`16S`, `18S`, `23S`, `28S`) and nuclear ribosomal spacers (`ITS1–5.8S–ITS2`). Selects the 6-mer Jaccard medoid guide reference, locks onto colinear unique 9-mer anchors ($\ge 24\text{ bp}$ spacing), and executes exact Gotoh (`1982`) 3-matrix (`M`, `I`, `D`) affine-gap dynamic programming (`Match = +4`, `Transition = +1`, `Transversion = -3`, `GapOpen = -10`, `GapExtend = -1`), achieving $r = 0.9849\text{–}0.9867$ K2P concordance with `MAFFT L-INS-i` at **`122×`–`222×` faster runtime**.
 2. **`AlignerMode::Mafft` (Explicit On-Demand External Tool — `--aligner mafft`)**:
    - Invokes the local `MAFFT v7.526` (`--auto` $\rightarrow$ `L-INS-i` / `FFT-NS-i` / `FFT-NS-2`, `model=DNA200`) installation (`tools/mafft-win/mafft-win/mafft.bat` or system `mafft` in `PATH`) only when `--aligner mafft` is explicitly passed on the CLI or during head-to-head calibration (`bio-suite align-compare`).
+3. **`TreeBuilderMode::Native` (Default 4-Stage ML Tree Search), `TreeBuilderMode::NativeFast` (`--tree-builder native-fast`), & `TreeBuilderMode::IqTree` (`--tree-builder iqtree`)**:
+   - **Default 4-Stage Native ML Engine (`TreeBuilderMode::Native`, `--tree-builder native`)**: Executes a 4-stage maximum-likelihood architecture in native Rust (`src/tree_builder.rs`): (Stage 1) 5-candidate multi-distance BIONJ starting pool (Gamma-K2P, transversion-weighted TN93, codon 1st/2nd-position weighted, and vertebrate mitochondrial amino-acid + transversion distances), (Stage 2) on-tree coordinate-ascent optimization of substitution rate matrix $Q$, exact Yang (1994) regularized incomplete-Gamma category means (`yang_exact_discrete_gamma4_rates`), invariant site proportion $p_{\text{inv}}$, and 2-category FreeRate (`+R2`) weights/rates enforcing strict nested likelihood monotonicity (`JC` $\subset$ `K80` $\subset$ `HKY` $\subset$ `TN93` $\subset$ `TIM2` $\subset$ `GTR`), (Stage 3) Felsenstein Inside-Outside Pulley Principle (`run_inside_outside_pulley_pass`) caching `99 KB` boundary likelihood vectors in L1/L2 cache to optimize all 107 individual branch lengths ($t_v$) and evaluate all 3 NNI quartet topologies with central-branch optimization in `~15 μs` per edge, and (Stage 4) post-NNI model parameter re-optimization & SH-aLRT support. Runs **`5.28×`–`24.42×` faster** than standard `IQ-TREE v2.4.0` (`0.61–6.43 s` vs. `15.01–50.09 s`) on the 55-taxon (108-node) Jawed Vertebrate (`Gnathostomata`) panel, closes **90%–97%** of the log-likelihood gap ($r = 0.9885\text{–}0.9964$ branch-length correlation, up to `90.38%` split match), recovers **`20 / 20` (`100%`)** reference vertebrate clades on 5 models, and **outperforms `IQ-TREE v2.4.0` by `+40.04` log-units on `GTR+F+R2`**.
+   - **Preserved 2-Stage Fast Mode (`TreeBuilderMode::NativeFast`, `--tree-builder native-fast`)**: Preserves the original 2-stage BIONJ + global tree-scalar NNI engine (`run_native_ml_tree_builder_fast`), delivering a **`69.9×`–`152.1×` speedup** (`98.7–420.2 ms`) for high-throughput screening and barcoding sweeps.
+   - **External Tool Adapter (`TreeBuilderMode::IqTree`, `--tree-builder iqtree`)**: Invokes `IQ-TREE v2.4.0` (`tools/iqtree2/iqtree-2.4.0-Windows/bin/iqtree2.exe`) on demand or during head-to-head 3-way calibration (`bio-suite tree-compare`).
    - Note: `tools/` is git-ignored to keep the repository lightweight and compliant with GitHub Blackbird code search limits (`< 384 KB` per tracked file).
 
 ```bash
@@ -30,6 +34,21 @@ By default, all `bio-suite` pipelines execute **Native Mode (`AlignerMode::Nativ
 
 # Head-to-Head Calibration Benchmark (Native Rust v2 vs. MAFFT v7.526 L-INS-i across 4 cohorts)
 ./target/release/bio-suite align-compare --out runs/msa-native-vs-mafft-calibration.json
+
+# Default: Runs Native Rust 24-Model Phylogenetic Model Selection (ModelTestMode::Native)
+./target/release/bio-suite modeltest --out runs/modeltest-report.json
+
+# Explicit External Tool Override: Runs jModelTest v2.1.9 + PhyML v3.0 (ModelTestMode::JModelTest)
+./target/release/bio-suite modeltest --modeltest jmodeltest --out runs/modeltest-jmt.json
+
+# Head-to-Head ModelTest Calibration (Native Felsenstein Pruning vs. jModelTest v2.1.9 across 4 cohorts)
+./target/release/bio-suite modeltest-compare --out runs/modeltest-native-vs-jmodeltest-calibration.json
+
+# 2x2 Factorial Calibration ([Native MSA vs. MAFFT v7.526] x [Native ModelTest vs. jModelTest v2.1.9])
+./target/release/bio-suite phylo-2x2-compare --out runs/phylo-2x2-factorial-calibration.json
+
+# 55-Taxon (108-Node) Maximum-Likelihood Tree Search Calibration (Native BIONJ+NNI vs. IQ-TREE v2.4.0 across 8 run models, using Native ModelTest pre-screen)
+./target/release/bio-suite tree-compare --out runs/tree-builder-native-vs-iqtree-calibration.json
 ```
 
 ---

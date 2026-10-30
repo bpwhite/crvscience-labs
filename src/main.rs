@@ -16,8 +16,12 @@ use bio_suite::disease_panels::{build_disease_genes_atlas, run_apoe_tiered_disco
 use bio_suite::fetch::PoliteCacheManager;
 use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
 use bio_suite::haplotype::run_haplotype_cluster_pipeline_agent;
+use bio_suite::modeltest::{
+    run_factorial_msa_x_modeltest_calibration, run_modeltest_native_vs_jmodeltest_calibration,
+    run_modeltest_with_mode, ModelTestMode,
+};
 use bio_suite::msa_calibration::run_msa_native_vs_mafft_calibration;
-use bio_suite::phylo::AlignerMode;
+use bio_suite::phylo::{align_sequences_with_mode, AlignerMode};
 use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
@@ -25,6 +29,7 @@ use bio_suite::pipelines::{
 use bio_suite::sweep::{
     run_multi_pipeline_discovery_sweep, run_procedural_burnin_calibration_sweep,
 };
+use bio_suite::tree_builder::run_tree_builder_native_vs_iqtree_calibration;
 use serde::Serialize;
 use std::env;
 use std::fs;
@@ -62,6 +67,99 @@ fn dispatch_pipeline(
                 Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
                 Err(e) => {
                     eprintln!("[bio-suite] Pipeline failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "modeltest" => {
+            let modeltest_mode = env::args()
+                .position(|a| a == "--modeltest")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(|s| ModelTestMode::from_cli_arg(&s))
+                .unwrap_or(ModelTestMode::Native);
+            eprintln!(
+                "[bio-suite] Launching Nucleotide Substitution Model Selection (engine={:?}, aligner={:?})...",
+                modeltest_mode, aligner_mode
+            );
+            match cache.fetch_carnivora_coi_panel() {
+                Ok(records) => {
+                    let (_, aligned, _) = align_sequences_with_mode(&records, aligner_mode);
+                    let res = run_modeltest_with_mode(&aligned, modeltest_mode);
+                    eprintln!("\n{}", res.ascii_model_ranking_table);
+                    emit_json_output(&res, res.duration_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] ModelTest failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "tree-compare" | "tree-calibration" | "iqtree-compare" => {
+            eprintln!("[bio-suite] Launching 54-Taxon (106-Node) Jawed Vertebrate Tree Builder Calibration: Native ML Tree Builder (BIONJ+NNI) vs. IQ-TREE v2.4.0 (Using Native ModelTest Only)...");
+            match run_tree_builder_native_vs_iqtree_calibration(cache) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    eprintln!("\n{}", report.ascii_vertebrate_cladogram);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Tree builder calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "phylo-2x2-compare" | "phylo-factorial" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching 2×2 Factorial Phylogenomic Calibration: [Native Aligner v2 vs. MAFFT v7.526] × [Native ModelTest vs. jModelTest v2.1.9]...");
+            match run_factorial_msa_x_modeltest_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    for c in &report.cohorts {
+                        eprintln!("\n{}", c.ascii_factorial_summary_box);
+                    }
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] 2×2 Factorial calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "modeltest-compare" | "modeltest-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Head-to-Head ModelTest Calibration: Native Rust (Felsenstein Pruning + Yang G4) vs. jModelTest v2.1.9 (PhyML v3.0)...");
+            match run_modeltest_native_vs_jmodeltest_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    for c in &report.cohorts {
+                        eprintln!(
+                            "\n=== {} ({}) ===\n{}\n{}",
+                            c.cohort_id,
+                            c.title,
+                            c.native_result.ascii_model_ranking_table,
+                            c.jmodeltest_result.ascii_model_ranking_table
+                        );
+                    }
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] ModelTest calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -361,7 +459,9 @@ fn main() {
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
         | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep"
         | "burn-in" | "disease-atlas" | "disease-genes" | "apoe-sweep" | "avian-sweep"
-        | "align-compare" | "msa-calibration" => {
+        | "align-compare" | "msa-calibration" | "modeltest" | "modeltest-compare"
+        | "modeltest-calibration" | "phylo-2x2-compare" | "phylo-factorial"
+        | "tree-compare" | "tree-calibration" | "iqtree-compare" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

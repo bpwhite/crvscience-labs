@@ -905,4 +905,21 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
         aligned[1].aligned_seq
     );
     assert!(telemetry.sum_of_pairs_identity > 0.90);
+
+    // 3. Verify ModelTestMode default policy == ModelTestMode::Native and 24-model evaluation
+    use bio_suite::modeltest::{run_modeltest_with_mode, ModelTestMode};
+    assert_eq!(
+        ModelTestMode::default(),
+        ModelTestMode::Native,
+        "Default modeltest mode must be Native unless an external tool is explicitly specified"
+    );
+    assert_eq!(ModelTestMode::from_cli_arg("native"), ModelTestMode::Native);
+    assert_eq!(
+        ModelTestMode::from_cli_arg("jmodeltest"),
+        ModelTestMode::JModelTest
+    );
+    let mt_res = run_modeltest_with_mode(&aligned, ModelTestMode::Native);
+    assert_eq!(mt_res.engine_mode, "Native");
+    assert_eq!(mt_res.models_evaluated.len(), 24);
+    assert!(mt_res.best_bic_ln_l < 0.0);
 }

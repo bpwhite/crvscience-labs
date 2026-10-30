@@ -242,10 +242,16 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
                             }
                         }
                     }
-                    if matches > best_matches {
+                    if codon_shift == 0 {
+                        best_matches = matches;
+                    } else if matches > best_matches {
                         best_matches = matches;
                         best_offset = offset;
                     }
+                }
+                // Only apply non-zero codon shift if sequence lengths differ (un-trimmed flanking codons)
+                if seq_bytes.len() == ref_seq.len() {
+                    best_offset = 0;
                 }
 
                 let mut out = String::with_capacity(aligned_len);

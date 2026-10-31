@@ -16,6 +16,7 @@ use bio_suite::dag_pipelines::{
 };
 use bio_suite::disease_panels::{build_disease_genes_atlas, run_apoe_tiered_discovery_sweep};
 use bio_suite::fetch::PoliteCacheManager;
+use bio_suite::gene_caller::run_gene_caller_native_vs_prodigal_calibration;
 use bio_suite::genome_target::BIO_SUITE_TOOL_REGISTRY;
 use bio_suite::haplotype::run_haplotype_cluster_pipeline_agent;
 use bio_suite::modeltest::{
@@ -215,6 +216,20 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Synteny calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "gene-compare" | "prodigal-compare" | "gene-calibration" => {
+            eprintln!("[bio-suite] Launching Tool Pair 8 Calibration: Native Rust 4-Stage 6-Frame ORF Graph, Dicodon Hexamer Markov Coding Model & 28-Bin Shine-Dalgarno RBS EM Trainer vs. Prodigal v2.6.3...");
+            match run_gene_caller_native_vs_prodigal_calibration() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_gc_frame_and_coding_track);
+                    eprintln!("\n{}", report.ascii_rbs_initiation_alignment);
+                    emit_json_output(&report, 0, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Gene caller calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -576,7 +591,8 @@ fn main() {
         | "coalescent-compare" | "astral-compare" | "coalescent-calibration"
         | "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration"
         | "orthology-compare" | "diamond-compare" | "orthology-calibration"
-        | "synteny-compare" | "minimap2-compare" | "synteny-calibration" => {
+        | "synteny-compare" | "minimap2-compare" | "synteny-calibration"
+        | "gene-compare" | "prodigal-compare" | "gene-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

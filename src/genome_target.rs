@@ -125,12 +125,12 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     ToolAdapterEntry {
         engine: "genome",
         category: "Ab Initio Annotation & Repeat Masking (GPL-3 Drop-In)",
-        tool_name: "Helixer + AUGUSTUS + EDTA + Liftoff",
-        binary_cmd: "helixer",
+        tool_name: "Prodigal v2.6.3 / Helixer / AUGUSTUS / EDTA / Liftoff",
+        binary_cmd: "prodigal",
         spdx_license: "GPL-3.0-or-later",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite ORF/CDS extractor & tandem-repeat / GFF3 coordinate intersector",
-        description: "100% GPL-3.0 replacement for restricted BRAKER3/RepeatMasker stacks for TE annotation and gene calling.",
+        native_rust_fallback: "bio-suite 4-Stage 6-Frame ORF Graph, Dicodon Hexamer Markov, 28-Bin Shine-Dalgarno RBS EM Trainer & Operon Overlap DP + Eukaryotic Kozak/GT-AG Splice Reconstructor",
+        description: "100% GPL-3.0 prokaryotic and eukaryotic ab initio gene calling, RBS/Kozak translation initiation scoring, and exon/repeat coordinate annotation.",
     },
     ToolAdapterEntry {
         engine: "genome",

@@ -1110,4 +1110,27 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
         syn_res.sv_calls.iter().any(|sv| sv.sv_class == "INV" && sv.strand == '-'),
         "Expected SyRI split-chain caller to identify '-' strand INV block"
     );
+
+    // 8. Verify GeneCallerMode default policy == GeneCallerMode::Native and 4-Stage ORF Graph + Shine-Dalgarno RBS scoring fidelity
+    use bio_suite::gene_caller::{
+        encode_prodigal_bitmaps, shine_dalgarno_exact, GeneCallerMode,
+    };
+    assert_eq!(
+        GeneCallerMode::default(),
+        GeneCallerMode::Native,
+        "Default gene caller mode must be Native"
+    );
+    let rbs_test_dna = "AATTAAAGGAGGTTTTTATTATGAAACGTTTAATT";
+    let (seq_bm, _rseq_bm, _useq_bm, slen_bm, _gc_bm) = encode_prodigal_bitmaps(rbs_test_dna);
+    assert_eq!(slen_bm, rbs_test_dna.len());
+    let mut rwt = [0.0f64; 28];
+    for (idx, w) in rwt.iter_mut().enumerate() {
+        *w = idx as f64;
+    }
+    let sd_bin = shine_dalgarno_exact(&seq_bm, 6, 20, &rwt);
+    assert_eq!(
+        sd_bin, 27,
+        "Canonical 6-mer AGGAGG with 8 bp spacer must map to highest RBS bin 27, got {}",
+        sd_bin
+    );
 }

@@ -226,13 +226,13 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     },
     ToolAdapterEntry {
         engine: "complexity",
-        category: "Formal Grammars & Topological Network Complexity",
-        tool_name: "HMMER / Infernal / igraph / graph-tool",
+        category: "Formal Grammars, Profile HMMs & Functional Domain Search (GPL-3 Drop-In)",
+        tool_name: "HMMER v3.4 (hmmbuild / hmmsearch --max) / Infernal / igraph / graph-tool",
         binary_cmd: "hmmsearch",
-        spdx_license: "BSD-3-Clause / GPL-2.0+ / LGPL-3.0",
+        spdx_license: "BSD-3-Clause / GPL-3.0-or-later",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite spectral graph Laplacian & Von Neumann entropy calculator",
-        description: "Parses Chomsky hierarchy RNA/protein grammars and quantifies 3D chromatin / phylogenetic network entropy.",
+        native_rust_fallback: "bio-suite 4-Stage Plan-7 Profile HMM Engine (p7_GMSV, p7_GViterbi, p7_GForward/Backward, p7_GDecoding, p7_GOptimalAccuracy & p7_GNull2) + spectral Laplacian entropy",
+        description: "100% GPL-3.0 Plan-7 Profile HMM construction, Forward-Backward ensemble log-odds, Optimal Posterior Accuracy domain alignment, Null2 bias correction, and Chomsky/network entropy.",
     },
     // Pipeline 3 (`hgt-scan`) & Pipeline 4 (`bgc-mine`) & Pipeline 5 (`pseudo-loss`) & Pipeline 6 (`pan-cryptic`) Adapters
     ToolAdapterEntry {

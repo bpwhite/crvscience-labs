@@ -20,6 +20,7 @@ pub mod msa_calibration;
 pub mod orthology;
 pub mod phylo;
 pub mod pipelines;
+pub mod profile_hmm;
 pub mod sweep;
 pub mod synteny;
 pub mod tree_builder;

@@ -32,6 +32,7 @@ use bio_suite::pipelines::{
 use bio_suite::sweep::{
     run_multi_pipeline_discovery_sweep, run_procedural_burnin_calibration_sweep,
 };
+use bio_suite::synteny::run_synteny_native_vs_minimap2_calibration;
 use bio_suite::tree_builder::run_tree_builder_native_vs_iqtree_calibration;
 use serde::Serialize;
 use std::env;
@@ -186,6 +187,34 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Orthology calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "synteny-compare" | "minimap2-compare" | "synteny-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 7 Calibration: Native Rust 4-Stage Double-Stranded (w,k)-Minimizer, Concave-Gap Chaining & SyRI SV Breakpoint Engine vs. Minimap2 v2.31-r1302...");
+            match run_synteny_native_vs_minimap2_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    for c in &report.cohorts {
+                        eprintln!("\n{}", c.ascii_synteny_dotplot);
+                        eprintln!("\n{}", c.ascii_cohort_table);
+                        eprintln!("\n{}", c.ascii_focal_breakpoint_alignment);
+                    }
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Synteny calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -546,7 +575,8 @@ fn main() {
         | "tree-compare" | "tree-calibration" | "iqtree-compare"
         | "coalescent-compare" | "astral-compare" | "coalescent-calibration"
         | "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration"
-        | "orthology-compare" | "diamond-compare" | "orthology-calibration" => {
+        | "orthology-compare" | "diamond-compare" | "orthology-calibration"
+        | "synteny-compare" | "minimap2-compare" | "synteny-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

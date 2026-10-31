@@ -135,12 +135,12 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     ToolAdapterEntry {
         engine: "genome",
         category: "Synteny & Whole-Genome Alignment (GPL-3 Drop-In)",
-        tool_name: "Minimap2 / MUMmer4 / SyRI / GENESPACE",
+        tool_name: "Minimap2 v2.31-r1302 (-c --cs -x asm5/asm10/asm20) / MUMmer4 / SyRI",
         binary_cmd: "minimap2",
         spdx_license: "MIT / GPL-3.0",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite k-mer synteny dotplot & collinear block detector",
-        description: "Detects chromosomal collinearity, inversions, and segmental duplications (replaces academic-only MCScanX).",
+        native_rust_fallback: "bio-suite 4-Stage Double-Stranded (w,k)-Minimizer, Concave-Gap Chaining & SyRI Split-Chain SV Engine",
+        description: "Detects chromosomal collinearity, inversions, genomic island indels, and segmental duplications (replaces academic-only MCScanX).",
     },
     ToolAdapterEntry {
         engine: "genome",

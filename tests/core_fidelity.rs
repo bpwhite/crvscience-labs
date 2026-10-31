@@ -1051,4 +1051,63 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
     assert_eq!(orth_res.protein_count, 20);
     assert_eq!(orth_res.inferred_orthogroups_count, 5);
     assert!(orth_res.in_paralog_pairs_count >= 2);
+
+    // 7. Verify SyntenyMode default policy == SyntenyMode::Native and 4-Stage (w,k)-Minimizer + Concave-Gap Chaining + SV Breakpoint fidelity
+    use bio_suite::synteny::{
+        reverse_complement_dna, run_native_synteny_engine, sketch_canonical_minimizers,
+        SyntenyMode,
+    };
+    assert_eq!(
+        SyntenyMode::default(),
+        SyntenyMode::Native,
+        "Default synteny mode must be Native unless --synteny minimap2 is explicitly specified"
+    );
+    assert_eq!(SyntenyMode::from_cli_arg("native"), SyntenyMode::Native);
+    assert_eq!(SyntenyMode::from_cli_arg("minimap2"), SyntenyMode::Minimap2);
+    assert_eq!(SyntenyMode::from_cli_arg("asm20"), SyntenyMode::Minimap2);
+
+    // Construct a deterministic 3,000 bp non-repetitive target sequence and a query with a 1,000 bp inversion in the middle
+    let mut target_synth = String::with_capacity(3000);
+    let mut state: u64 = 0x9E37_79B9_7F4A_7C15;
+    for _ in 0..3000 {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        let b = match state & 3 {
+            0 => 'A',
+            1 => 'C',
+            2 => 'G',
+            _ => 'T',
+        };
+        target_synth.push(b);
+    }
+    let seeds_t = sketch_canonical_minimizers(&target_synth, 5, 13);
+    assert!(!seeds_t.is_empty(), "Minimizer sketch must yield canonical seeds");
+
+    let mut query_synth = String::with_capacity(3000);
+    query_synth.push_str(&target_synth[0..1000]);
+    query_synth.push_str(&reverse_complement_dna(&target_synth[1000..2000]));
+    query_synth.push_str(&target_synth[2000..3000]);
+
+    let syn_res = run_native_synteny_engine(
+        "SYNTH_TARGET_3KB",
+        &target_synth,
+        "SYNTH_QUERY_INV1KB",
+        &query_synth,
+        "test",
+    );
+    assert!(
+        syn_res.primary_chains_count >= 3,
+        "Expected 3 primary chains (SYN -> INV -> SYN), got {}",
+        syn_res.primary_chains_count
+    );
+    assert!(
+        syn_res.target_coverage_pct >= 95.0,
+        "Expected >=95% target coverage across 3 kb synthetic inversion benchmark, got {}%",
+        syn_res.target_coverage_pct
+    );
+    assert!(
+        syn_res.sv_calls.iter().any(|sv| sv.sv_class == "INV" && sv.strand == '-'),
+        "Expected SyRI split-chain caller to identify '-' strand INV block"
+    );
 }

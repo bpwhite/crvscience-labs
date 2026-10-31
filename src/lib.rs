@@ -12,6 +12,7 @@ pub mod complexity;
 pub mod dag_pipelines;
 pub mod disease_panels;
 pub mod fetch;
+pub mod gene_caller;
 pub mod genome_target;
 pub mod haplotype;
 pub mod modeltest;

@@ -1133,4 +1133,46 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
         "Canonical 6-mer AGGAGG with 8 bp spacer must map to highest RBS bin 27, got {}",
         sd_bin
     );
+
+    // 9. Verify ProfileHmmMode default policy == ProfileHmmMode::Native and 4-Stage Plan-7 Forward/Backward + Optimal Accuracy + Null2 fidelity
+    use bio_suite::profile_hmm::{
+        build_native_plan7_from_msa, score_sequence_plan7_native, ProfileHmmMode,
+    };
+    assert_eq!(
+        ProfileHmmMode::default(),
+        ProfileHmmMode::Native,
+        "Default Profile HMM mode must be Native unless --hmm hmmer3 is explicitly specified"
+    );
+    assert_eq!(ProfileHmmMode::from_cli_arg("native"), ProfileHmmMode::Native);
+    assert_eq!(ProfileHmmMode::from_cli_arg("hmmer3"), ProfileHmmMode::Hmmer3);
+
+    let msa_bzip = [
+        ("GCN4_YEAST", "DPAAKRARNTEAARRSRARKLQRMKQLEDKVEELLSKNYHLENEVARLKKLVGER"),
+        ("JUN_HUMAN",  "ESQERIKAERKRMRNRIAASKCRKRKLERIARLEEKVKTLKAQNSELASTANMLR"),
+        ("FOS_HUMAN",  "SPEEEEKRRIRRERNKMAAAKCRNRRRELTDTLQAETDQLEDEKSALQTEIANLL"),
+    ];
+    let hmm_bzip = build_native_plan7_from_msa(
+        "TEST_bZIP",
+        "PF00170",
+        "Test bZIP Leucine Zipper",
+        &msa_bzip,
+        0.5,
+    )
+    .expect("Native MSA-to-Plan-7 builder must succeed");
+    assert_eq!(hmm_bzip.m, 55);
+    let hit_gcn4 = score_sequence_plan7_native(
+        &hmm_bzip,
+        "GCN4_TARGET",
+        "Yeast GCN4",
+        "MSEYQPSLFALNDPAAKRARNTEAARRSRARKLQRMKQLEDKVEELLSKNYHLENEVARLKKLVGER",
+        10.0,
+        1.0,
+    );
+    assert!(
+        hit_gcn4.seq_bitscore > 30.0,
+        "Expected strong Plan-7 Forward log-odds score (>30 bits) on true bZIP target, got {}",
+        hit_gcn4.seq_bitscore
+    );
+    assert!(!hit_gcn4.domains.is_empty());
+    assert!(hit_gcn4.domains[0].mean_post_acc > 0.70);
 }

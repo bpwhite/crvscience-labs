@@ -30,6 +30,7 @@ use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
 };
+use bio_suite::profile_hmm::run_profile_hmm_vs_hmmer3_calibration;
 use bio_suite::sweep::{
     run_multi_pipeline_discovery_sweep, run_procedural_burnin_calibration_sweep,
 };
@@ -230,6 +231,32 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Gene caller calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "hmm-compare" | "hmmer-compare" | "hmm-calibration" => {
+            let out_p = out_file
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("labs/releases/profile-hmm-native-vs-hmmer3-calibration.json"));
+            eprintln!("[bio-suite] Launching Tool Pair 9 Calibration: Native Rust 4-Stage Plan-7 Profile HMM Engine (p7_GMSV, p7_GViterbi, p7_GForward/Backward, p7_GDecoding, p7_GOptimalAccuracy & p7_GNull2) vs. HMMER v3.4 (hmmbuild / hmmsearch)...");
+            match run_profile_hmm_vs_hmmer3_calibration(&out_p) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Completed Tool Pair 9 Calibration across {} cohorts ({} targets, {} domains): Sensitivity = {:.4}, Specificity = {:.4}, Domain Bitscore Pearson r = {:.8}, Mean |Delta Bitscore| = {:.4} bits, Mean Envelope IoU = {:.4}",
+                        report.total_cohorts,
+                        report.total_targets_evaluated,
+                        report.total_domain_hits_compared,
+                        report.domain_detection_sensitivity,
+                        report.domain_detection_specificity,
+                        report.pearson_r_dom_bitscore,
+                        report.mean_abs_delta_dom_bitscore,
+                        report.mean_env_iou_jaccard
+                    );
+                    emit_json_output(&report, report.total_native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Profile HMM calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -592,7 +619,8 @@ fn main() {
         | "selection-compare" | "codeml-compare" | "paml-compare" | "selection-calibration"
         | "orthology-compare" | "diamond-compare" | "orthology-calibration"
         | "synteny-compare" | "minimap2-compare" | "synteny-calibration"
-        | "gene-compare" | "prodigal-compare" | "gene-calibration" => {
+        | "gene-compare" | "prodigal-compare" | "gene-calibration"
+        | "hmm-compare" | "hmmer-compare" | "hmm-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

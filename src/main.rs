@@ -32,6 +32,7 @@ use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
     run_pseudogene_trait_loss_agent,
 };
+use bio_suite::pocket_dock::run_pocket_dock_calibration_benchmark;
 use bio_suite::profile_hmm::run_profile_hmm_vs_hmmer3_calibration;
 use bio_suite::rna_fold::run_rna_fold_vs_viennarna_benchmark;
 use bio_suite::sweep::{
@@ -42,7 +43,7 @@ use bio_suite::tree_builder::run_tree_builder_native_vs_iqtree_calibration;
 use serde::Serialize;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn emit_json_output<T: Serialize>(report: &T, duration_ms: u128, out_file: Option<&String>) {
     let json = serde_json::to_string_pretty(report).expect("Failed to serialize pipeline report");
@@ -322,6 +323,38 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] NA 1D->2D->3D calibration sweep failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "pocket-dock-compare" | "vina-compare" | "fpocket-compare" | "docking-calibration" => {
+            let out_p = out_file.map(PathBuf::from).unwrap_or_else(|| {
+                if Path::new("../labs/releases").exists() {
+                    PathBuf::from("../labs/releases/pocket-dock-native-vs-fpocket-vina-calibration.json")
+                } else {
+                    PathBuf::from("labs/releases/pocket-dock-native-vs-fpocket-vina-calibration.json")
+                }
+            });
+            eprintln!("[bio-suite] Launching Tool Pair 12 Calibration: Native Rust 4-Stage Alpha-Sphere Voronoi Cavity, Shrake-Rupley SASA/Druggability & SE(3) Trott-Olson Vina Docking Engine vs. fpocket v4.2.3 & AutoDock Vina v1.2.7...");
+            match run_pocket_dock_calibration_benchmark(Some(&out_p)) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Completed Pocket & Docking Calibration across {} loci ({} positive, {} negative controls): Druggability r = {:.4}, Volume r = {:.4}, Mean Pocket DCA = {:.2} A, Vina dG r = {:.4} (MAE = {:.3} kcal/mol), Mean Redock RMSD = {:.2} A (Sub-2.0A Success = {:.1}%)",
+                        report.total_loci,
+                        report.positive_loci,
+                        report.negative_control_loci,
+                        report.mean_druggability_concordance_r,
+                        report.mean_volume_concordance_r,
+                        report.mean_pocket_dca_a,
+                        report.mean_vina_dg_correlation_r,
+                        report.mean_vina_dg_mae_kcal,
+                        report.mean_native_redock_rmsd_a,
+                        report.sub_2a_redock_success_rate * 100.0
+                    );
+                    emit_json_output(&report, report.total_native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Pocket & docking calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -688,7 +721,8 @@ fn main() {
         | "hmm-compare" | "hmmer-compare" | "hmm-calibration"
         | "nonb-dna-compare" | "g4hunter-compare" | "zhunt-compare" | "nonb-dna-calibration"
         | "rna-fold-compare" | "viennarna-compare" | "rnafold-compare" | "rna-fold-calibration"
-        | "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep" => {
+        | "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep"
+        | "pocket-dock-compare" | "vina-compare" | "fpocket-compare" | "docking-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

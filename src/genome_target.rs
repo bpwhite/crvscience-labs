@@ -206,12 +206,12 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     ToolAdapterEntry {
         engine: "target",
         category: "Biomolecular Structure & Virtual Screening (GPL-3 Drop-In)",
-        tool_name: "Boltz-1 / OpenFold / ESMFold / fpocket / AutoDock Vina / GNINA / OpenMM",
+        tool_name: "fpocket v4.2.3 (Le Guilloux et al. 2009; Schmidtke & Barril 2010) / AutoDock Vina v1.2.7 (Trott & Olson 2010; Eberhardt et al. 2021) / Boltz-1 / OpenFold",
         binary_cmd: "vina",
-        spdx_license: "MIT / Apache-2.0 / GPL-2.0+",
+        spdx_license: "MIT / Apache-2.0 / GPL-3.0",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite pocket hydropathy/volume profiler & ligand physicochemical scorer",
-        description: "100% open-source MIT/Apache-2.0 replacement for non-commercial AlphaFold 3 plus cryptic pocket & docking engines.",
+        native_rust_fallback: "bio-suite 4-Stage Alpha-Sphere Voronoi Cavity, Shrake-Rupley SASA/Druggability & SE(3) Trott-Olson 5-Term Empirical Vina Docking Engine",
+        description: "Detects druggable protein/RNA binding cavities via Voronoi alpha-spheres and docks small-molecule ligands using the Trott-Olson empirical scoring function and SE(3) pose optimization.",
     },
     // Engine 4: Complexity Theory & Information-Theoretic Genomics (`bio-suite complexity`)
     ToolAdapterEntry {

@@ -22,6 +22,7 @@ pub mod nonb_dna;
 pub mod orthology;
 pub mod phylo;
 pub mod pipelines;
+pub mod pocket_dock;
 pub mod profile_hmm;
 pub mod rna_fold;
 pub mod sweep;

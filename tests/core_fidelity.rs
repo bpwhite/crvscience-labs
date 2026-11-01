@@ -378,8 +378,8 @@ fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping()
         pip_sum
     );
 
-    // Verify all 24 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
-    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 24);
+    // Verify all 30 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
+    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 30);
     for tool in BIO_SUITE_TOOL_REGISTRY {
         assert!(
             tool.gpl3_compatible,
@@ -1233,4 +1233,242 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
         kl_kpc,
         kl_pmr
     );
+}
+
+#[test]
+fn test_bgc_rule_engine_architecture_guards_and_stockholm_parser() {
+    use bio_suite::bgc_mine::{
+        call_clusters_for_contig, classify_core_gene, parse_stockholm, BgcGene, DomainHit, RuleSet,
+        BGC_FAMILIES,
+    };
+    use std::collections::HashMap;
+
+    // 1. Stockholm parser: interleaved blocks are concatenated, '.' gaps become '-', GA is read.
+    let sto = "# STOCKHOLM 1.0\n#=GF GA   21.50 21.50;\nseqA  AC.DE\nseqB  AC-DE\n\nseqA  FG.HI\nseqB  FGXHI\n//\n";
+    let (rows, ga) = parse_stockholm(sto);
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0], ("seqA".to_string(), "AC-DEFG-HI".to_string()));
+    assert_eq!(rows[1].1, "AC-DEFGXHI");
+    assert!((ga - 21.5).abs() < 1e-6);
+    assert_eq!(BGC_FAMILIES.len(), 34);
+
+    let gene = |i: usize, accs: &[&str]| BgcGene {
+        seq_id: "t".to_string(),
+        gene_index: i,
+        beg: 1 + i * 1500,
+        end: 1200 + i * 1500,
+        strand: '+',
+        length_aa: 400,
+        hits: accs
+            .iter()
+            .map(|a| DomainHit { accession: a.to_string(), bitscore: 50.0, i_evalue: 1e-10, pvalue: 1e-13, ali_from: 1, ali_to: 300 })
+            .collect(),
+        core_class: None,
+        support_weight: 0.0,
+        smoothed_support: 0.0,
+    };
+    let weights: HashMap<String, f32> = BGC_FAMILIES.iter().map(|(a, _, w)| (a.to_string(), *w)).collect();
+
+    // 2. Architecture guards: a lone ketosynthase (fatty-acid synthase fabF-like) is not a core PKS gene,
+    //    a ketosynthase fused to an acyltransferase is; an adenylation domain alone (acyl-CoA ligase) is not NRPS.
+    assert_eq!(classify_core_gene(&gene(0, &["PF00109", "PF02801"]), RuleSet::V2), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00109", "PF00698"]), RuleSet::V2), Some("PKS-I"));
+    assert_eq!(classify_core_gene(&gene(0, &["PF00501"]), RuleSet::V2), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00668", "PF00501", "PF00550"]), RuleSet::V2), Some("NRPS"));
+
+    // 3. A fatty-acid-synthase-like operon (ACP + acyltransferase + reductase + one lone ketosynthase)
+    //    must not produce a cluster under either rule set.
+    let mut fas = vec![
+        gene(0, &["PF00550"]),
+        gene(1, &["PF00698"]),
+        gene(2, &["PF08659"]),
+        gene(3, &["PF00109", "PF02801"]),
+    ];
+    assert!(call_clusters_for_contig("t", &mut fas.clone(), &weights, RuleSet::V1).is_empty());
+    assert!(call_clusters_for_contig("t", &mut fas, &weights, RuleSet::V2).is_empty());
+
+    // 4. Stand-alone adenylation gene + neighbouring carrier-protein gene (enterobactin-like):
+    //    invisible to the V1 rules, called as one NRPS-like cluster by V2.
+    let build = || vec![
+        gene(0, &[]),
+        gene(1, &["PF00501"]),
+        gene(2, &["PF00550"]),
+        gene(3, &[]),
+    ];
+    assert!(call_clusters_for_contig("t", &mut build(), &weights, RuleSet::V1).is_empty());
+    let v2 = call_clusters_for_contig("t", &mut build(), &weights, RuleSet::V2);
+    assert_eq!(v2.len(), 1);
+    assert!(v2[0].classes.contains(&"NRPS-like".to_string()));
+}
+
+#[test]
+fn test_bgc_rule_set_v3_extensions_and_frozen_parameters() {
+    use bio_suite::bgc_mine::{
+        call_clusters_with_params, classify_core_gene, BgcGene, ClusterParams, DomainHit, RuleSet,
+        BGC_FAMILIES, BGC_FAMILIES_EXTRA, BGC_FAMILIES_EXTRA2, FROZEN_V3_PARAMS,
+    };
+    use std::collections::HashMap;
+
+    let gene = |i: usize, accs: &[&str]| BgcGene {
+        seq_id: "t".to_string(),
+        gene_index: i,
+        beg: 1 + i * 1500,
+        end: 1200 + i * 1500,
+        strand: '+',
+        length_aa: 400,
+        hits: accs
+            .iter()
+            .map(|a| DomainHit { accession: a.to_string(), bitscore: 60.0, i_evalue: 1e-12, pvalue: 1e-15, ali_from: 1, ali_to: 300 })
+            .collect(),
+        core_class: None,
+        support_weight: 0.0,
+        smoothed_support: 0.0,
+    };
+    let mut weights: HashMap<String, f32> = BGC_FAMILIES.iter().map(|(a, _, w)| (a.to_string(), *w)).collect();
+    weights.extend(BGC_FAMILIES_EXTRA.iter().map(|(a, _, w)| (a.to_string(), *w)));
+    weights.extend(BGC_FAMILIES_EXTRA2.iter().map(|(a, _, w)| (a.to_string(), *w)));
+    assert_eq!(BGC_FAMILIES_EXTRA.len(), 14);
+    assert_eq!(BGC_FAMILIES_EXTRA2.len(), 8);
+    assert_eq!(weights.len(), 56);
+
+    // Published defaults are untouched by the parameterisation.
+    let d = ClusterParams::default();
+    assert_eq!((d.support_window, d.extend_gap, d.pad), (4, 5000, 2000));
+    assert!((d.seed_min - 1.8).abs() < 1e-6);
+    // Frozen calibration values.
+    assert_eq!((FROZEN_V3_PARAMS.support_window, FROZEN_V3_PARAMS.extend_gap, FROZEN_V3_PARAMS.pad), (6, 5000, 1000));
+    assert!((FROZEN_V3_PARAMS.seed_min - 1.2).abs() < 1e-6);
+
+    // V3-only core definitions: bacterial terpene synthase, adenylation + terminal reductase,
+    // fungal starter-unit transacylase fused to a ketosynthase.
+    assert_eq!(classify_core_gene(&gene(0, &["PF19086"]), RuleSet::V2), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF19086"]), RuleSet::V3), Some("Terpene"));
+    assert_eq!(classify_core_gene(&gene(0, &["PF00501", "PF07993"]), RuleSet::V2), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00501", "PF07993"]), RuleSet::V3), Some("NRPS"));
+    assert_eq!(classify_core_gene(&gene(0, &["PF00109", "PF16073"]), RuleSet::V2), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00109", "PF16073"]), RuleSet::V3), Some("PKS-I"));
+
+    // V4-specific refinements: RamS/AmfS precursor (PF19402) is RiPP under V4, while lone YcaO (PF02624)
+    // is classified as RiPP-weak under V4 so it requires neighbouring support (>= 1.8) instead of seeding alone.
+    assert_eq!(classify_core_gene(&gene(0, &["PF19402"]), RuleSet::V3), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF19402"]), RuleSet::V4), Some("RiPP"));
+    assert_eq!(classify_core_gene(&gene(0, &["PF02624"]), RuleSet::V3), Some("RiPP"));
+    assert_eq!(classify_core_gene(&gene(0, &["PF02624"]), RuleSet::V4), Some("RiPP-weak"));
+
+    let lone_ycao = || vec![gene(0, &[]), gene(1, &["PF02624"]), gene(2, &["PF00067"]), gene(3, &[])];
+    assert_eq!(call_clusters_with_params("t", &mut lone_ycao(), &weights, RuleSet::V3, &FROZEN_V3_PARAMS).len(), 1);
+    assert!(call_clusters_with_params("t", &mut lone_ycao(), &weights, RuleSet::V4, &FROZEN_V3_PARAMS).is_empty());
+
+    // Stand-alone bacterial terpene synthase (PF19086) seeds a cluster under V4 even without extra tailoring hits.
+    let lone_terpene = || vec![gene(0, &[]), gene(1, &["PF19086"]), gene(2, &[])];
+    assert!(call_clusters_with_params("t", &mut lone_terpene(), &weights, RuleSet::V3, &FROZEN_V3_PARAMS).is_empty());
+    let v4_terp = call_clusters_with_params("t", &mut lone_terpene(), &weights, RuleSet::V4, &FROZEN_V3_PARAMS);
+    assert_eq!(v4_terp.len(), 1);
+    assert!(v4_terp[0].classes.contains(&"Terpene".to_string()));
+
+    // Guards remain: a lone ketosynthase and a lone adenylation gene are still not core genes under V3/V4.
+    assert_eq!(classify_core_gene(&gene(0, &["PF00109"]), RuleSet::V3), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00501"]), RuleSet::V3), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00109"]), RuleSet::V4), None);
+    assert_eq!(classify_core_gene(&gene(0, &["PF00501"]), RuleSet::V4), None);
+
+    // An adenylation gene immediately next to an MbtH partner gene is an NRPS-like cluster under V3 and V4,
+    // whereas an adenylation gene separated by 2 intervening genes from a carrier protein (Treponema-like)
+    // is rejected by V4's immediate-adjacency guard.
+    let build = || vec![gene(0, &[]), gene(1, &["PF00501"]), gene(2, &["PF03621"]), gene(3, &[])];
+    assert!(call_clusters_with_params("t", &mut build(), &weights, RuleSet::V2, &FROZEN_V3_PARAMS).is_empty());
+    let v3 = call_clusters_with_params("t", &mut build(), &weights, RuleSet::V3, &FROZEN_V3_PARAMS);
+    assert_eq!(v3.len(), 1);
+    assert!(v3[0].classes.contains(&"NRPS-like".to_string()));
+    let v4 = call_clusters_with_params("t", &mut build(), &weights, RuleSet::V4, &FROZEN_V3_PARAMS);
+    assert_eq!(v4.len(), 1);
+    assert!(v4[0].classes.contains(&"NRPS-like".to_string()));
+
+    let distant_nrps_like = || vec![gene(0, &["PF00501"]), gene(1, &[]), gene(2, &[]), gene(3, &["PF00550"])];
+    assert_eq!(call_clusters_with_params("t", &mut distant_nrps_like(), &weights, RuleSet::V3, &FROZEN_V3_PARAMS).len(), 1);
+    assert!(call_clusters_with_params("t", &mut distant_nrps_like(), &weights, RuleSet::V4, &FROZEN_V3_PARAMS).is_empty());
+}
+
+#[test]
+fn test_runie_pipeline_inference_engine_all_3_tiers_and_9_studies() {
+    use bio_suite::fetch::PoliteCacheManager;
+    use bio_suite::runie::{run_runie_master_pipeline_inference, RUNIE_TOOL_VOCABULARY};
+
+    let cache = PoliteCacheManager::default_workspace_cache();
+    let ws_root = Path::new(env!("CARGO_MANIFEST_DIR"));
+
+    // 1. Verify open-ended tool vocabulary (16 core + 6 synthesized domain tools = 22 states)
+    assert_eq!(RUNIE_TOOL_VOCABULARY.len(), 22);
+
+    // 2. Execute full RuNIE GA-MCMC Step-Up Pipeline Synthesis & 9-Study Validation
+    let report = run_runie_master_pipeline_inference(&cache, ws_root)
+        .expect("RuNIE master pipeline inference must succeed");
+
+    assert_eq!(report.engine_acronym, "RuNIE");
+    assert_eq!(report.total_tool_vocabulary_size, 22);
+    assert_eq!(report.autonomous_tools_synthesized_and_calibrated, 6);
+    assert_eq!(report.total_scientific_studies_solved, 9);
+    assert_eq!(report.tier_validation_summaries.len(), 3);
+
+    // 3. Verify all 6 synthesized native Rust domain tools pass head-to-head calibration
+    for cal in &report.synthesized_tool_calibrations {
+        assert!(
+            cal.calibration_gate_passed,
+            "Synthesized tool {} must pass mandatory calibration gate",
+            cal.tool_id
+        );
+        assert!(
+            cal.pearson_r_vs_reference >= 0.990,
+            "Synthesized tool {} Pearson r {} must be >= 0.990",
+            cal.tool_id,
+            cal.pearson_r_vs_reference
+        );
+        assert!(cal.negative_zero_beaker_controls >= 1);
+        assert_eq!(cal.signal_beakers_earned, 5);
+    }
+
+    // 4. Verify all 3 Experimental Tiers (Tier 1: Exploratory, Tier 2: Validation, Tier 3: Scientific) pass
+    for (idx, tier_sum) in report.tier_validation_summaries.iter().enumerate() {
+        assert_eq!(tier_sum.tier, (idx + 1) as u8);
+        assert!(tier_sum.validation_gate_passed);
+        assert_eq!(tier_sum.studies_evaluated, 9);
+        assert!(tier_sum.mean_posterior_probability >= 0.90);
+        assert!(tier_sum.mean_log_bayes_factor_bf10 >= 50.0);
+    }
+
+    // 5. Verify all 9 canonical scientific study pipelines converge via 4 Step-Up Generations
+    for study in &report.study_dossiers {
+        assert_eq!(study.step_up_generations.len(), 4);
+        assert_eq!(study.top_candidate_pipelines.len(), 4);
+        assert!(
+            study.winning_posterior_probability >= 0.88,
+            "Study #{} ({}) winning MAP posterior {} must be >= 0.88",
+            study.study_number,
+            study.study_id,
+            study.winning_posterior_probability
+        );
+        assert!(
+            study.winning_log_bayes_factor_bf10 >= 80.0,
+            "Study #{} ({}) winning ln(BF_10) {} must be >= 80.0",
+            study.study_number,
+            study.study_id,
+            study.winning_log_bayes_factor_bf10
+        );
+        assert!(study.winning_signal_z_score >= 4.50);
+        assert_eq!(study.signal_beakers, 5);
+        assert!(!study.emergent_scientific_conclusion.is_empty());
+
+        // Verify Gen 2 (K_min failure state) has lower log-posterior than Gen 1, Gen 3, and Gen 4
+        let g1 = &study.step_up_generations[0];
+        let g2 = &study.step_up_generations[1];
+        let g3 = &study.step_up_generations[2];
+        let g4 = &study.step_up_generations[3];
+        assert!(!g1.kmin_knowledge_recovered);
+        assert!(!g2.kmin_knowledge_recovered);
+        assert!(g3.kmin_knowledge_recovered);
+        assert!(g4.kmin_knowledge_recovered);
+        assert!(g2.log_posterior_unnormalized < g1.log_posterior_unnormalized);
+        assert!(g3.log_posterior_unnormalized > g1.log_posterior_unnormalized);
+        assert!(g4.log_posterior_unnormalized > g3.log_posterior_unnormalized);
+    }
 }

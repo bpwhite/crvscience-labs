@@ -5,6 +5,7 @@
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
 pub mod agent;
+pub mod amr_hgt;
 pub mod avian_systematics;
 pub mod coalescent;
 pub mod codon_selection;

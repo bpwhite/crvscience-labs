@@ -7,6 +7,7 @@
 use bio_suite::agent::{
     run_chr1_complexity_agent, run_coi_barcode_cluster_agent_with_mode,
 };
+use bio_suite::amr_hgt::run_amr_hgt_calibration_benchmark;
 use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
 use bio_suite::coalescent::run_coalescent_native_vs_astral_calibration;
 use bio_suite::codon_selection::run_codon_selection_native_vs_paml_calibration;
@@ -649,6 +650,30 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 14 Calibration: Native Rust Hierarchical AMR, Point-Mutation, Porin-Disruption & HGT Island Engine vs. NCBI AMRFinderPlus v4.2.7 (DB 2026-08-07.1)...");
+            match run_amr_hgt_calibration_benchmark(&ws_root) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    eprintln!("\n{}", report.ascii_hierarchy_walk_diagram);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] AMR & HGT calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep",
@@ -753,7 +778,8 @@ fn main() {
         | "rna-fold-compare" | "viennarna-compare" | "rnafold-compare" | "rna-fold-calibration"
         | "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep"
         | "pocket-dock-compare" | "vina-compare" | "fpocket-compare" | "docking-calibration"
-        | "pangenome-compare" | "minigraph-compare" | "gfatools-compare" | "pangenome-calibration" => {
+        | "pangenome-compare" | "minigraph-compare" | "gfatools-compare" | "pangenome-calibration"
+        | "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

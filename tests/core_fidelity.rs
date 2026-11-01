@@ -378,8 +378,8 @@ fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping()
         pip_sum
     );
 
-    // Verify all 22 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
-    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 22);
+    // Verify all 24 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
+    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 24);
     for tool in BIO_SUITE_TOOL_REGISTRY {
         assert!(
             tool.gpl3_compatible,

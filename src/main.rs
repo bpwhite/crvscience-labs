@@ -24,6 +24,8 @@ use bio_suite::modeltest::{
     run_modeltest_with_mode, ModelTestMode,
 };
 use bio_suite::msa_calibration::run_msa_native_vs_mafft_calibration;
+use bio_suite::na_structure_1d2d3d::run_na_1d2d3d_exploratory_calibration_sweep;
+use bio_suite::nonb_dna::run_nonb_dna_vs_g4hunter_zhunt_calibration;
 use bio_suite::orthology::run_orthology_native_vs_diamond_calibration;
 use bio_suite::phylo::{align_sequences_with_mode, AlignerMode};
 use bio_suite::pipelines::{
@@ -31,6 +33,7 @@ use bio_suite::pipelines::{
     run_pseudogene_trait_loss_agent,
 };
 use bio_suite::profile_hmm::run_profile_hmm_vs_hmmer3_calibration;
+use bio_suite::rna_fold::run_rna_fold_vs_viennarna_benchmark;
 use bio_suite::sweep::{
     run_multi_pipeline_discovery_sweep, run_procedural_burnin_calibration_sweep,
 };
@@ -257,6 +260,68 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Profile HMM calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "nonb-dna-compare" | "g4hunter-compare" | "zhunt-compare" | "nonb-dna-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 10 Calibration: Native Rust 4-Stage Non-B DNA Engine (G4Hunter + Z-Hunt-II Partition Function + CpG Islands) vs. Reference G4Hunter & ZHunt3...");
+            match run_nonb_dna_vs_g4hunter_zhunt_calibration(&ws_root, cache) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    eprintln!("\n{}", report.ascii_focal_myc_pbr322_alignment);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Non-B DNA calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "rna-fold-compare" | "viennarna-compare" | "rnafold-compare" | "rna-fold-calibration" => {
+            eprintln!("[bio-suite] Launching Tool Pair 11 Calibration: Native Rust 4-Stage Turner-2004 Zuker-Stiegler MFE + McCaskill Inside-Outside Partition Function + Lorenz rG4 Engine vs. ViennaRNA v2.7.2 (RNAfold)...");
+            match run_rna_fold_vs_viennarna_benchmark() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    eprintln!("\n{}", report.ascii_focal_structural_alignments);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] RNA folding calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Nucleic Acid 1D -> 2D -> 3D Structural Prediction & Exploratory Calibration Sweep (DNA & RNA vs. ViennaRNA v2.7.2, RNAPKplex & US-align v20261019)...");
+            match run_na_1d2d3d_exploratory_calibration_sweep(&ws_root) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_1d2d3d_table);
+                    eprintln!("\n{}", report.ascii_focal_1d2d3d_projections);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] NA 1D->2D->3D calibration sweep failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -620,7 +685,10 @@ fn main() {
         | "orthology-compare" | "diamond-compare" | "orthology-calibration"
         | "synteny-compare" | "minimap2-compare" | "synteny-calibration"
         | "gene-compare" | "prodigal-compare" | "gene-calibration"
-        | "hmm-compare" | "hmmer-compare" | "hmm-calibration" => {
+        | "hmm-compare" | "hmmer-compare" | "hmm-calibration"
+        | "nonb-dna-compare" | "g4hunter-compare" | "zhunt-compare" | "nonb-dna-calibration"
+        | "rna-fold-compare" | "viennarna-compare" | "rnafold-compare" | "rna-fold-calibration"
+        | "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

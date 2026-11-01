@@ -1,0 +1,40 @@
+name: Restrict Pull Requests to Owner Only
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  enforce-owner-only-pr:
+    if: github.event.pull_request.user.login != 'bpwhite'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close and lock unauthorized pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: '🔒 **Automated Repository Policy**: External pull/merge requests are disabled for this repository. Only `@bpwhite` is authorized to submit or merge changes.'
+            });
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: issue_number,
+              state: 'closed'
+            });
+            await github.rest.issues.lock({
+              owner,
+              repo,
+              issue_number,
+              lock_reason: 'resolved'
+            });

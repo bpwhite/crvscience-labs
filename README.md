@@ -6,7 +6,7 @@
 
 **`bio-suite`** is the open-source Rust command-line toolkit powering [CRV Science Labs](https://crvscience.com/labs). It provides fast, self-contained pipelines for molecular systematics, comparative genomics, pangenome variation graphs, nucleic acid 1D/2D/3D structural prediction, biomolecular pocket detection and small-molecule docking, sequence complexity analysis, and human disease gene mapping.
 
-Every pipeline runs in native multi-threaded Rust out of the box—requiring zero external software—while offering optional command-line flags and benchmark harnesses to compare results directly against standard public bioinformatics tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML codeml`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `G4Hunter`, `Z-Hunt-II`, `ViennaRNA`, `RNAPKplex`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, and `gfatools`).
+Every pipeline runs in native multi-threaded Rust out of the box—requiring zero external software—while offering optional command-line flags and benchmark harnesses to compare results directly against standard public bioinformatics tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML codeml`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `G4Hunter`, `Z-Hunt-II`, `ViennaRNA`, `RNAPKplex`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `gfatools`, and `AMRFinderPlus`).
 
 ---
 
@@ -27,7 +27,7 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
 
 ### 1. Head-to-Head Calibrated Native Engines vs. Public Counterparts (`✅ Validated`)
 
-All 13 core tool comparisons below have been calibrated head-to-head against compiled external reference binaries across real NCBI RefSeq and experimental PDB datasets:
+All 14 core tool comparisons below have been calibrated head-to-head against compiled external reference binaries across real NCBI RefSeq and experimental PDB datasets:
 
 | # | Native Tool (`bio-suite` Command & Module) | Public Counterpart(s) | Validation Status & Concordance Summary | Function of the Tool |
 | :---: | :--- | :--- | :--- | :--- |
@@ -44,6 +44,7 @@ All 13 core tool comparisons below have been calibrated head-to-head against com
 | **11** | **`rna-fold-compare`** & **`na-1d2d3d-compare`** (`src/rna_fold.rs`, `src/na_structure_1d2d3d.rs`) | `ViennaRNA v2.7.2` (`RNAfold -p -g`, `RNAPKplex`, `dna_mathews2004.par`), `US-align v20261019` | ✅ **Validated** (12 RNA families: MFE `r = 0.9992`, `F1 = 0.9854`; 7 PDB 3D benchmarks: mean `RMSD = 1.48 Å`, `TM-score = 0.724`) | Predicts 1D non-B propensity, 2D Turner-2004 MFE/McCaskill partition functions (*P*<sub>*i*,*j*</sub>), RNA G-quadruplexes (`rG4`), and H-type pseudoknots, and folds 5-atom coarse-grained 3D `.pdb` coordinates for DNA and RNA validated via Kabsch SVD `RMSD` and `TM-score`. |
 | **12** | **`pocket-dock-compare`** (`src/pocket_dock.rs`) | `fpocket v4.2.3`, `AutoDock Vina v1.2.7` | ✅ **Validated** (10 PDB complexes + negative controls: druggability `r = 0.9718`, Vina Δ*G*<sub>dock</sub> `r = 0.9906`, `MAE = 0.259 kcal/mol`, `100%` sub-`2.0 Å` redocking) | Detects protein binding pockets via 3D Voronoi *α*-sphere clustering and Schmidtke–Barril druggability scoring (*D*<sub>drug</sub>, polar/apolar SASA), and performs SE(3) rigid-body + torsional small-molecule docking under the AutoDock Vina empirical free-energy potential (Δ*G*<sub>dock</sub>). |
 | **13** | **`pangenome-compare`** (`src/pangenome.rs`) | `minigraph v0.21-r606` (`-cxggs`, `-cxasm --call`), `gfatools v0.5-r296` (`stat`, `bubble`) | ✅ **Validated** (10 loci, 60 haplotypes, 1.81 Mb: `100%` segment/link match, length `r = 1.000000`, `100%` bubble `F1` across 50 SVs, `100%` walk call match, `16.7×` speedup) | Constructs reference-tagged pangenome variation graphs (`rGFA`), decomposes biallelic and multi-allelic structural variant superbubbles via the Onodera–Sadakane–Shibuya algorithm, calls exact haplotype walk paths, and computes walk Shannon entropy (*H*<sub>walk</sub>), Ollivier–Ricci curvature (*κ*<sub>*u*,*v*</sub>), and Panacus growth scaling (*γ*). |
+| **14** | **`amr-compare`** & **`hgt-scan`** (`src/amr_hgt.rs`, `src/pipelines.rs`) | `NCBI AMRFinderPlus v4.2.7` (`amr_report`, `dna_mutation`, `disruption2genesymbol`, DB `2026-08-07.1`) | ✅ **Validated** (10 cohorts, 79 sequences across 6 ESKAPE taxgroups: `72/72` call match, symbol `Jaccard = 1.0000`, `100%` `fam.tsv` hierarchy node & method match, `9.67×` HGT *D*<sub>KL</sub> separation) | Traverses the 2,253-node `fam.tsv` Reference Gene Hierarchy (`ALLELEP/X`, `EXACTP/X`, `BLASTP/X`, `PARTIALP/X`, `INTERNAL_STOP`), calls protein/rRNA/promoter resistance point mutations (`POINTP/X`, `POINTN`) and porin/siderophore receptor disruptions (`POINT_DISRUPT`), and scores 256-tetranucleotide *D*<sub>KL</sub> HGT island divergence. |
 
 ---
 
@@ -53,7 +54,6 @@ The following native `bio-suite` engines and `BIO_SUITE_TOOL_REGISTRY` adapters 
 
 | Planned Benchmark Command & Module | Public Counterpart(s) Under Validation | Validation Status | Function & Planned Calibration Scope |
 | :--- | :--- | :---: | :--- |
-| **`hgt-scan` / `amr-compare`** (`src/pipelines.rs`, `src/genome_target.rs`) | `AMRFinderPlus v3.12`, `RGI v6` (`CARD`), `MOB-suite`, `tRNAscan-SE 2.0`, `ISEScan` | 🔬 **In Validation** | Detects horizontally transferred genomic islands and mobile antimicrobial resistance (`AMR`) plasmids via 256-dim tetranucleotide Kullback-Leibler divergence (*D*<sub>KL</sub>), 64-codon `RSCU` shift, `tRNA`/`attB` integration flanks, and `Inc` replicon typing across ESKAPE pathogens. |
 | **`bgc-mine` / `bgc-compare`** (`src/pipelines.rs`, `src/genome_target.rs`) | `antiSMASH 7`, `GECCO`, `BiG-SCAPE`, `ARTS`, `Macrel` | 🔬 **In Validation** | Mines microbial genomes for biosynthetic gene clusters (`NRPS`, `PKS`, `RiPP`), dereplicates against `MIBiG` reference clusters via domain-Jaccard similarity, detects duplicated self-resistance target paralogs, and profiles amphipathic antimicrobial peptides (Eisenberg *μ*<sub>H</sub>). |
 | **`pseudo-loss` / `relax-compare`** (`src/pipelines.rs`, `src/codon_selection.rs`) | `HyPhy RELAX`, `TOGA`, `MACSE v2`, `bcftools`, `gnomAD v4 pLoF` | 🔬 **In Validation** | Identifies shared frameshifts, premature stop codons, splice-site disruptions, and relaxed purifying selection (*ω* → 1.0, `RELAX` selection intensity parameter *k*) across syntenic vertebrate coding alignments paired with human homozygous loss-of-function (`pLoF`) biobank tolerances. |
 | **`co-evo` / `dca-compare`** (`src/dag_pipelines.rs`) | `plmDCA`, `CCMpred`, `EVcouplings`, `Infernal v1.1.5` | 🔬 **In Validation** | Computes pairwise mutual information (`MI`), Average Product Correction (`APC`), and *L*<sub>2</sub>-regularized pseudolikelihood Potts direct-coupling parameters (‖*J*<sub>*i*,*j*</sub>‖) to detect 3D contact pairs and compensatory epistatic resistance networks in proteins and `23S` ribosomal RNA. |
@@ -106,6 +106,7 @@ crvscience-labs/
 │   ├── na_structure_1d2d3d.rs   # Unified 1D->2D->3D DNA/RNA folding vs. ViennaRNA, RNAPKplex & US-align
 │   ├── pocket_dock.rs           # Alpha-sphere pocket druggability & SE(3) docking vs. fpocket & AutoDock Vina
 │   ├── pangenome.rs             # rGFA pangenome graph, superbubble SV & walk entropy vs. minigraph & gfatools
+│   ├── amr_hgt.rs               # Hierarchical AMR, point-mutation, porin-disruption & HGT island vs. AMRFinderPlus
 │   ├── haplotype.rs             # Haplotype networks & polymorphic site matrices
 │   ├── complexity.rs            # Shannon entropy, KL divergence, RSCU & DNA walk scaling
 │   ├── genome_target.rs         # Non-B DNA scanners, fine-mapping & GPL-3.0 tool registry

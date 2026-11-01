@@ -1205,4 +1205,32 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
     assert_eq!(bubs[0].num_alleles, 2);
     assert_eq!(bubs[0].haplotype_calls, vec![">s2:100:+", "*:0:+"]);
     assert!((bubs[0].bubble_walk_entropy_bits - 1.0).abs() < 1e-6);
+
+    // 11. Verify Tool Pair 14 (`amr-compare` vs. NCBI AMRFinderPlus v4.2.7): fam.tsv hierarchy climb & HGT D_KL separation
+    use bio_suite::amr_hgt::{
+        climb_fam_hierarchy, compute_hgt_compositional_signature, load_fam_hierarchy,
+    };
+    let fam_path = repo_root().join("crvscience-labs/tools/amrfinder/data/2026-08-07.1/fam.tsv");
+    if fam_path.exists() {
+        let fam_map = load_fam_hierarchy(&fam_path).expect("fam.tsv parser must succeed");
+        assert!(
+            fam_map.len() >= 2200,
+            "Expected >= 2,200 fam.tsv hierarchy nodes, got {}",
+            fam_map.len()
+        );
+        // Verify allele node blaTEM-156 stays at blaTEM-156 at 100% identity/coverage
+        let exact_node = climb_fam_hierarchy(&fam_map, "blaTEM-156", 100.0, 100.0, false)
+            .expect("blaTEM-156 hierarchy lookup must succeed");
+        assert_eq!(exact_node.node_id, "blaTEM-156");
+    }
+    let (kl_kpc, _, _, ctx_kpc, _) =
+        compute_hgt_compositional_signature("MSIQHFRVALIPFFAAFCLPVFA", true, "blaKPC-2", "BETA-LACTAM");
+    let (kl_pmr, _, _, ctx_pmr, _) =
+        compute_hgt_compositional_signature("MHFLRRPISLRQRLILTIGAILL", true, "pmrB_C84R", "COLISTIN");
+    assert!(
+        kl_kpc > 0.35 && kl_pmr < 0.10 && ctx_kpc.starts_with("HGT_") && ctx_pmr == "CHROMOSOMAL_INTRINSIC_MUTATION",
+        "Expected mobile blaKPC-2 island D_KL ({}) >> chromosomal pmrB_C84R D_KL ({})",
+        kl_kpc,
+        kl_pmr
+    );
 }

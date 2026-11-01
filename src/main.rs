@@ -27,6 +27,7 @@ use bio_suite::msa_calibration::run_msa_native_vs_mafft_calibration;
 use bio_suite::na_structure_1d2d3d::run_na_1d2d3d_exploratory_calibration_sweep;
 use bio_suite::nonb_dna::run_nonb_dna_vs_g4hunter_zhunt_calibration;
 use bio_suite::orthology::run_orthology_native_vs_diamond_calibration;
+use bio_suite::pangenome::run_pangenome_calibration_benchmark;
 use bio_suite::phylo::{align_sequences_with_mode, AlignerMode};
 use bio_suite::pipelines::{
     run_bgc_amp_miner_agent, run_hgt_resistome_scanner_agent, run_pangenome_cryptic_target_agent,
@@ -355,6 +356,35 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] Pocket & docking calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "pangenome-compare" | "minigraph-compare" | "gfatools-compare" | "pangenome-calibration" => {
+            eprintln!("[bio-suite] Launching Tool Pair 13 Calibration: Native Rust 4-Stage rGFA Pangenome Constructor, Onodera-Sadakane-Shibuya Superbubble Decomposer & Walk Genotyper vs. minigraph v0.21-r606 & gfatools v0.5-r296...");
+            match run_pangenome_calibration_benchmark(cache) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Completed Pangenome Calibration across {} loci ({} Prokaryota, {} Eukaryota; {} haplotypes, {} bp, {} superbubbles, {} genotype calls): Segment Exact Match = {:.1}%, Link Exact Match = {:.1}%, Graph Length r = {:.8}, Bubble F1 = {:.2}%, Mean Breakpoint Err = {:.2} bp, Haplotype Walk Call Concordance = {:.2}%, Speedup = {:.2}x",
+                        report.num_loci,
+                        report.num_prokaryotic_loci,
+                        report.num_eukaryotic_loci,
+                        report.total_haplotypes_analyzed,
+                        report.total_haplotype_bases_bp,
+                        report.total_superbubbles,
+                        report.total_genotype_calls,
+                        report.segment_count_exact_match_rate_pct,
+                        report.link_count_exact_match_rate_pct,
+                        report.total_graph_len_pearson_r,
+                        report.mean_bubble_f1_pct,
+                        report.mean_breakpoint_error_bp,
+                        report.overall_haplotype_call_concordance_pct,
+                        report.mean_speedup_factor
+                    );
+                    emit_json_output(&report, report.total_native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Pangenome calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -722,7 +752,8 @@ fn main() {
         | "nonb-dna-compare" | "g4hunter-compare" | "zhunt-compare" | "nonb-dna-calibration"
         | "rna-fold-compare" | "viennarna-compare" | "rnafold-compare" | "rna-fold-calibration"
         | "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep"
-        | "pocket-dock-compare" | "vina-compare" | "fpocket-compare" | "docking-calibration" => {
+        | "pocket-dock-compare" | "vina-compare" | "fpocket-compare" | "docking-calibration"
+        | "pangenome-compare" | "minigraph-compare" | "gfatools-compare" | "pangenome-calibration" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

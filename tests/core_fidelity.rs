@@ -1175,4 +1175,34 @@ fn test_native_aligner_default_policy_and_gotoh_affine_gap_fidelity() {
     );
     assert!(!hit_gcn4.domains.is_empty());
     assert!(hit_gcn4.domains[0].mean_post_acc > 0.70);
+
+    // 10. Verify Native 4-Stage rGFA Pangenome Constructor, Onodera-Sadakane-Shibuya Superbubble Decomposer & Walk Genotyper fidelity
+    use bio_suite::pangenome::{
+        analyze_rgfa_pangenome, build_native_rgfa_pangenome, build_pangenome_benchmark_cohort,
+    };
+    let pan_cohort = build_pangenome_benchmark_cohort();
+    assert_eq!(pan_cohort.len(), 10);
+    assert_eq!(
+        pan_cohort.iter().filter(|c| c.kingdom == "Prokaryota").count(),
+        5
+    );
+    assert_eq!(
+        pan_cohort.iter().filter(|c| c.kingdom == "Eukaryota").count(),
+        5
+    );
+    let left_flank = "ACGTACGTAGCTAGCTAGCTGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATC";
+    let del_core = "TTGGAACCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATTGGCCAATT";
+    let right_flank = "GGCCAATTGGCCAATTGGCCAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCT";
+    let h0 = format!("{}{}{}", left_flank, del_core, right_flank);
+    let h1 = format!("{}{}", left_flank, right_flank);
+    let haps = vec![("H0_REF".to_string(), h0), ("H1_DEL".to_string(), h1)];
+    let (segs, lnks, gfa_txt) = build_native_rgfa_pangenome(&haps, 50);
+    assert_eq!(segs.len(), 3);
+    assert_eq!(lnks.len(), 3);
+    assert!(gfa_txt.contains("S\ts1\t"));
+    let (summary, bubs) = analyze_rgfa_pangenome(&pan_cohort[0], &haps, &segs, &lnks);
+    assert_eq!(summary.num_superbubbles, 1);
+    assert_eq!(bubs[0].num_alleles, 2);
+    assert_eq!(bubs[0].haplotype_calls, vec![">s2:100:+", "*:0:+"]);
+    assert!((bubs[0].bubble_walk_entropy_bits - 1.0).abs() < 1e-6);
 }

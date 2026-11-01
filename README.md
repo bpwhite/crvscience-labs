@@ -6,7 +6,7 @@
 
 **`bio-suite`** is the open-source Rust command-line toolkit powering [CRV Science Labs](https://crvscience.com/labs). It provides fast, self-contained pipelines for molecular systematics, comparative genomics, nucleic acid 1D/2D/3D structural prediction, biomolecular pocket detection and small-molecule docking, sequence complexity analysis, and human disease gene mapping.
 
-Every pipeline runs in native multi-threaded Rust out of the box—requiring zero external software—while offering optional command-line flags and benchmark harnesses to compare results directly against standard public bioinformatics tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML codeml`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `G4Hunter`, `Z-Hunt-II`, `ViennaRNA`, `RNAPKplex`, `US-align`, `fpocket`, and `AutoDock Vina`).
+Every pipeline runs in native multi-threaded Rust out of the box—requiring zero external software—while offering optional command-line flags and benchmark harnesses to compare results directly against standard public bioinformatics tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML codeml`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `G4Hunter`, `Z-Hunt-II`, `ViennaRNA`, `RNAPKplex`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, and `gfatools`).
 
 ---
 
@@ -42,6 +42,7 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
 | **`rna-fold-compare`** (`src/rna_fold.rs`) | `ViennaRNA v2.7.2` (`RNAfold -p -g`) | Predicts RNA secondary structure via $O(N^3)$ Turner 2004 nearest-neighbor Zuker-Stiegler minimum free energy (`MFE`) dynamic programming, McCaskill inside-outside partition functions ($P_{ij}$), positional pairing entropy $S(i)$, RNA G-quadruplexes (`rG4`), and Compensatory Base Changes (`CBC`). |
 | **`na-1d2d3d-compare`** (`src/na_structure_1d2d3d.rs`) | `US-align v20261019`, `ViennaRNA v2.7.2` (`RNAPKplex`, `dna_mathews2004.par`) | Unifies `1D → 2D → 3D` nucleic acid structural prediction for both DNA (`B-DNA`, `Z-DNA`, parallel/antiparallel `G4`) and RNA (`A-RNA`, coaxial `tRNA` L-hinges, H-type pseudoknots), generating 5-atom coarse-grained `.pdb` coordinates validated via Kabsch SVD `RMSD`, `TM-score`, and `INF`. |
 | **`pocket-dock-compare`** (`src/pocket_dock.rs`) | `fpocket v4.2.3`, `AutoDock Vina v1.2.7` | Detects protein binding pockets via 3D Voronoi $\alpha$-sphere clustering and Schmidtke–Barril druggability scoring ($D_{\text{drug}}$, polar/apolar SASA), and performs $\text{SE}(3)$ rigid-body + torsional small-molecule docking under the 6-term AutoDock Vina empirical free-energy potential ($\Delta G_{\text{dock}}$). |
+| **`pangenome-compare`** (`src/pangenome.rs`) | `minigraph v0.21-r606` (`-cxggs`, `-cxasm --call`), `gfatools v0.5-r296` (`stat`, `bubble`) | Constructs reference-tagged pangenome variation graphs (`rGFA`), decomposes biallelic and multi-allelic structural variant superbubbles via the Onodera–Sadakane–Shibuya algorithm, calls exact haplotype walk paths, and computes walk Shannon entropy ($H_{\text{walk}}$), Ollivier–Ricci curvature ($\kappa_{uv}$), and Panacus growth scaling ($\gamma$). |
 
 ---
 
@@ -100,6 +101,7 @@ crvscience-labs/
 │   ├── rna_fold.rs              # Turner-2004 MFE, McCaskill PF & rG4 vs. ViennaRNA v2.7.2
 │   ├── na_structure_1d2d3d.rs   # Unified 1D->2D->3D DNA/RNA folding vs. ViennaRNA, RNAPKplex & US-align
 │   ├── pocket_dock.rs           # Alpha-sphere pocket druggability & SE(3) docking vs. fpocket & AutoDock Vina
+│   ├── pangenome.rs             # rGFA pangenome graph, superbubble SV & walk entropy vs. minigraph & gfatools
 │   ├── haplotype.rs             # Haplotype networks & polymorphic site matrices
 │   ├── complexity.rs            # Shannon entropy, KL divergence, RSCU & DNA walk scaling
 │   ├── genome_target.rs         # Non-B DNA scanners, fine-mapping & GPL-3.0 tool registry

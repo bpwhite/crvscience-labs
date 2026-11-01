@@ -114,13 +114,13 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     },
     ToolAdapterEntry {
         engine: "genome",
-        category: "Pangenome Graphs & Structural Variants",
-        tool_name: "Minigraph-Cactus / PGGB / vg / Sniffles2",
-        binary_cmd: "vg",
-        spdx_license: "MIT",
+        category: "Pangenome Graphs & Structural Variants (GPL-3 Drop-In)",
+        tool_name: "minigraph v0.21-r606 (-cxggs / -cxasm --call, Li et al. 2020) / gfatools v0.5-r296 (stat / bubble, Onodera et al. 2013) / Minigraph-Cactus / PGGB / vg",
+        binary_cmd: "minigraph",
+        spdx_license: "MIT / GPL-3.0-or-later",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite indel/inversion breakpoint & variant spectrum analyzer",
-        description: "Constructs reference-bias-free variation graphs and calls SNPs, indels, and structural variants.",
+        native_rust_fallback: "bio-suite 4-Stage Native rGFA Pangenome Constructor, Onodera-Sadakane-Shibuya Superbubble Decomposer & Walk Genotyper",
+        description: "Constructs reference-tagged pangenome variation graphs (rGFA), decomposes biallelic and multi-allelic structural variant superbubbles, and calls exact haplotype walk genotypes.",
     },
     ToolAdapterEntry {
         engine: "genome",
@@ -288,12 +288,12 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     ToolAdapterEntry {
         engine: "complexity",
         category: "Pangenome Graph Entropy & Cryptic Allosteric Pockets (Pipeline 6: pan-cryptic)",
-        tool_name: "odgi / panacus / tskit / Modkit / IsoQuant / Boltz-1 / BioEmu / PocketMiner",
-        binary_cmd: "odgi",
+        tool_name: "minigraph v0.21-r606 / gfatools v0.5-r296 / odgi / panacus / Modkit / IsoQuant / Boltz-1 / PocketMiner",
+        binary_cmd: "gfatools",
         spdx_license: "MIT / GPL-3.0 / Apache-2.0",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite GFA walk Shannon entropy (H_walk), Ollivier-Ricci curvature, H_iso & RIN betweenness engine",
-        description: "Links pangenome variation graph bubble entropy and 5mC/scIso-Seq phase-switching to isoform-specific cryptic allosteric pockets.",
+        native_rust_fallback: "bio-suite 4-Stage rGFA Walk Shannon Entropy (H_walk), Ollivier-Ricci Curvature (kappa_uv), Panacus Growth Scaling (gamma) & Cryptic Allosteric Pocket Engine",
+        description: "Links pangenome variation graph superbubble walk entropy (H_walk), Ollivier-Ricci edge curvature, and Panacus open-pangenome growth scaling to isoform-specific cryptic allosteric pockets.",
     },
 ];
 

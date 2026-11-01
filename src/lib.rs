@@ -20,6 +20,7 @@ pub mod msa_calibration;
 pub mod na_structure_1d2d3d;
 pub mod nonb_dna;
 pub mod orthology;
+pub mod pangenome;
 pub mod phylo;
 pub mod pipelines;
 pub mod pocket_dock;

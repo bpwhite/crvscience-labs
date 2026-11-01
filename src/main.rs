@@ -9,6 +9,7 @@ use bio_suite::agent::{
 };
 use bio_suite::amr_hgt::run_amr_hgt_calibration_benchmark;
 use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
+use bio_suite::bgc_mine::run_bgc_calibration_benchmark;
 use bio_suite::coalescent::run_coalescent_native_vs_astral_calibration;
 use bio_suite::codon_selection::run_codon_selection_native_vs_paml_calibration;
 use bio_suite::dag_pipelines::{
@@ -37,6 +38,7 @@ use bio_suite::pipelines::{
 use bio_suite::pocket_dock::run_pocket_dock_calibration_benchmark;
 use bio_suite::profile_hmm::run_profile_hmm_vs_hmmer3_calibration;
 use bio_suite::rna_fold::run_rna_fold_vs_viennarna_benchmark;
+use bio_suite::runie::run_runie_master_pipeline_inference;
 use bio_suite::sweep::{
     run_multi_pipeline_discovery_sweep, run_procedural_burnin_calibration_sweep,
 };
@@ -650,6 +652,116 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "bgc-round4" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching BGC calibration round 4: revision 4 rules, wider grid, second reserve set...");
+            match bio_suite::bgc_mine::run_bgc_calibration_round4(&ws_root) {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] BGC calibration round 4 failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "bgc-detect" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            let Some(fasta) = env::args().nth(2).filter(|a| !a.starts_with("--")) else {
+                eprintln!("Usage: bio-suite bgc-detect <genome.fasta> [--out runs/bgc-detect.json]");
+                std::process::exit(2);
+            };
+            eprintln!("[bio-suite] Detecting biosynthetic gene clusters in {} (frozen V3 configuration)...", fasta);
+            match bio_suite::bgc_mine::run_bgc_detect(&ws_root, std::path::Path::new(&fasta)) {
+                Ok(report) => {
+                    eprintln!("[bio-suite] {} clusters in {:.2} Mb ({} genes)", report.clusters.len(), report.genome_bp as f64 / 1e6, report.genes_called);
+                    emit_json_output(&report, report.gene_call_ms + report.domain_scan_ms, out_file)
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] BGC detection failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "bgc-round3" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching BGC calibration round 3: rule set V3, development grid search, frozen reserve-set evaluation...");
+            match bio_suite::bgc_mine::run_bgc_calibration_round3(&ws_root) {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] BGC calibration round 3 failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "bgc-calibrate" | "bgc-round2" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching BGC calibration round 2: model source x cut-off policy, negative controls & held-out genomes...");
+            match bio_suite::bgc_mine::run_bgc_calibration_round2(&ws_root) {
+                Ok(report) => emit_json_output(&report, report.total_duration_ms, out_file),
+                Err(e) => {
+                    eprintln!("[bio-suite] BGC calibration round 2 failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "bgc-compare" | "gecco-compare" | "bgc-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Pair 15 Calibration: Native Architecture-Aware BGC Engine vs. GECCO v0.11.0 (MIBiG 4.0 ground truth)...");
+            match run_bgc_calibration_benchmark(&ws_root) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_master_summary_table);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] BGC calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration" => {
             let ws_root = env::current_dir()
                 .ok()
@@ -674,9 +786,34 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching RuNIE (Rust Native Inference Engine): Candle-Core Tensor + Rayon Parallel-Tempering GA-MCMC Step-Up Pipeline Synthesis & 9-Study Validation...");
+            match run_runie_master_pipeline_inference(cache, &ws_root) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_tool_calibration_table);
+                    eprintln!("\n{}", report.ascii_master_inference_table);
+                    eprintln!("\n{}", report.ascii_markov_dag_convergence_plot);
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] RuNIE pipeline inference failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
-                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep",
+                "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
                 workflow
             );
             std::process::exit(1);
@@ -779,7 +916,9 @@ fn main() {
         | "na-1d2d3d-compare" | "na-3d-sweep" | "na3d-compare" | "na-structure-sweep"
         | "pocket-dock-compare" | "vina-compare" | "fpocket-compare" | "docking-calibration"
         | "pangenome-compare" | "minigraph-compare" | "gfatools-compare" | "pangenome-calibration"
-        | "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration" => {
+        | "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration"
+        | "bgc-compare" | "gecco-compare" | "bgc-calibration" | "bgc-calibrate" | "bgc-round2" | "bgc-round3" | "bgc-round4" | "bgc-detect"
+        | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);
             } else {

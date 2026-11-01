@@ -7,6 +7,7 @@
 pub mod agent;
 pub mod amr_hgt;
 pub mod avian_systematics;
+pub mod bgc_mine;
 pub mod coalescent;
 pub mod codon_selection;
 pub mod complexity;
@@ -27,6 +28,8 @@ pub mod pipelines;
 pub mod pocket_dock;
 pub mod profile_hmm;
 pub mod rna_fold;
+pub mod runie;
+pub mod runie_tools;
 pub mod sweep;
 pub mod synteny;
 pub mod tree_builder;

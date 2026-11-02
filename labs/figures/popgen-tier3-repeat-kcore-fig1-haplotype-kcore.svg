@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 540" width="100%" height="auto" role="img" aria-label="Graphical Report 1: Haplotype Minimum Spanning Network and k-Core Connector Hub Topology">
+  <defs>
+    <linearGradient id="bgGrad1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.48"/>
+      <stop offset="65%" stop-color="#0ea5e9" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.0"/>
+    </radialGradient>
+    <radialGradient id="kcoreShell5" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.03"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background Card -->
+  <rect x="0" y="0" width="1080" height="540" rx="12" fill="url(#bgGrad1)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Header Bar -->
+  <rect x="16" y="14" width="1048" height="44" rx="8" fill="#111c30" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="30" y="34" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700">GRAPHICAL REPORT 1 • DATA TYPE: HAPLOTYPE MINIMUM SPANNING NETWORK (MSN) &amp; k-CORE CONNECTOR HUB TOPOLOGY</text>
+  <text x="30" y="50" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="11.5">Unifying VAL-SET-013 (Haplotype MSN), VAL-SET-014 (McDonald 2011 Repeat-Indel Decay) &amp; VAL-SET-015 (Hagmann 2008 k-Core Connector Hubs)</text>
+
+  <!-- ========================================================================= -->
+  <!-- LEFT PANEL: H1 ACCEPTED — PURE REPEAT+/INDEL- CENTRAL k=5..6 CONNECTOR HUB -->
+  <!-- ========================================================================= -->
+  <rect x="16" y="68" width="516" height="418" rx="10" fill="#0b1322" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="32" y="92" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700">A. Pure Tandem Repeat Network (H1 Accepted • 5🧪, Z = +4.84 SD)</text>
+  <text x="32" y="110" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="11">Ancestral Repeat+/Indel− allele forms the central k = 5–6 Connector Hub (C_B = 0.494)</text>
+
+  <!-- Concentric k-Core Peeling Shells -->
+  <circle cx="274" cy="276" r="142" fill="none" stroke="#334155" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="145" y="148" fill="#64748b" font-family="ui-monospace, monospace" font-size="10">k = 1 Peripheral Indel+ Tips (C_B = 0.082)</text>
+
+  <circle cx="274" cy="276" r="92" fill="url(#kcoreShell5)" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="188" y="196" fill="#34d399" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">k = 5–6 Reticulate Core Shell</text>
+
+  <!-- Reticulate k-Core Inner Loop Edges (Homoplasy loops in W1 flanking DNA) -->
+  <g stroke="#0ea5e9" stroke-width="2.2" stroke-opacity="0.72">
+    <line x1="274" y1="276" x2="224" y2="238"/>
+    <line x1="274" y1="276" x2="324" y2="238"/>
+    <line x1="274" y1="276" x2="224" y2="314"/>
+    <line x1="274" y1="276" x2="324" y2="314"/>
+    <line x1="274" y1="276" x2="274" y2="214"/>
+    <line x1="274" y1="276" x2="274" y2="338"/>
+    <!-- Inner k-core cycle chords -->
+    <line x1="224" y1="238" x2="274" y2="214" stroke="#34d399" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <line x1="324" y1="238" x2="274" y2="214" stroke="#34d399" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <line x1="224" y1="314" x2="274" y2="338" stroke="#34d399" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <line x1="324" y1="314" x2="274" y2="338" stroke="#34d399" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <line x1="224" y1="238" x2="224" y2="314" stroke="#34d399" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <line x1="324" y1="238" x2="324" y2="314" stroke="#34d399" stroke-width="1.6" stroke-dasharray="3 2"/>
+  </g>
+
+  <!-- Radiating Branches to Derived Repeat+/Indel+ Clades -->
+  <g stroke="#f59e0b" stroke-width="2">
+    <!-- Clade A: Copy N+1 Insertion -->
+    <line x1="224" y1="238" x2="156" y2="188"/>
+    <line x1="156" y1="188" x2="112" y2="168"/>
+    <line x1="156" y1="188" x2="118" y2="214"/>
+    <!-- Clade B: Copy N+2 Insertion -->
+    <line x1="324" y1="238" x2="392" y2="188"/>
+    <line x1="392" y1="188" x2="436" y2="168"/>
+    <line x1="392" y1="188" x2="430" y2="214"/>
+    <!-- Clade C: Copy N-1 Deletion -->
+    <line x1="224" y1="314" x2="156" y2="364"/>
+    <line x1="156" y1="364" x2="112" y2="384"/>
+    <line x1="156" y1="364" x2="118" y2="340"/>
+    <!-- Clade D: Copy N-2 Deletion -->
+    <line x1="324" y1="314" x2="392" y2="364"/>
+    <line x1="392" y1="364" x2="436" y2="384"/>
+    <line x1="392" y1="364" x2="430" y2="340"/>
+  </g>
+
+  <!-- Mutational Step Tick Marks on MSN Edges -->
+  <g stroke="#f8fafc" stroke-width="1.6">
+    <line x1="186" y1="216" x2="194" y2="208"/>
+    <line x1="354" y1="208" x2="362" y2="216"/>
+    <line x1="186" y1="336" x2="194" y2="344"/>
+    <line x1="354" y1="344" x2="362" y2="336"/>
+  </g>
+
+  <!-- k-Core Shell Satellite Nodes (Repeat+/Indel- W1 SNP Variants) -->
+  <g fill="#10b981" stroke="#ecfdf5" stroke-width="1.5">
+    <circle cx="224" cy="238" r="9"/>
+    <circle cx="324" cy="238" r="9"/>
+    <circle cx="224" cy="314" r="9"/>
+    <circle cx="324" cy="314" r="9"/>
+    <circle cx="274" cy="214" r="8.5"/>
+    <circle cx="274" cy="338" r="8.5"/>
+  </g>
+
+  <!-- Peripheral Derived Repeat+/Indel+ Clade Nodes -->
+  <g fill="#f59e0b" stroke="#fffbeb" stroke-width="1.3">
+    <circle cx="156" cy="188" r="7.5"/>
+    <circle cx="112" cy="168" r="5.5"/>
+    <circle cx="118" cy="214" r="5.5"/>
+    <circle cx="392" cy="188" r="7.5"/>
+    <circle cx="436" cy="168" r="5.5"/>
+    <circle cx="430" cy="214" r="5.5"/>
+    <circle cx="156" cy="364" r="7.5"/>
+    <circle cx="112" cy="384" r="5.5"/>
+    <circle cx="118" cy="340" r="5.5"/>
+    <circle cx="392" cy="364" r="7.5"/>
+    <circle cx="436" cy="384" r="5.5"/>
+    <circle cx="430" cy="340" r="5.5"/>
+  </g>
+
+  <!-- Central Connector Hub (Ancestral Repeat+/Indel-) -->
+  <circle cx="274" cy="276" r="38" fill="url(#hubGlow)"/>
+  <circle cx="274" cy="276" r="19" fill="#0284c7" stroke="#bae6fd" stroke-width="2.6"/>
+  <text x="274" y="273" text-anchor="middle" fill="#ffffff" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700">HUB</text>
+  <text x="274" y="284" text-anchor="middle" fill="#e0f2fe" font-family="ui-monospace, monospace" font-size="8.5">Indel−</text>
+
+  <!-- Clade Labels -->
+  <text x="48" y="155" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Clade A (Copy N+1)</text>
+  <text x="380" y="155" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Clade B (Copy N+2)</text>
+  <text x="48" y="405" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Clade C (Copy N−1)</text>
+  <text x="380" y="405" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Clade D (Copy N−2)</text>
+
+  <!-- Bottom Telemetry Strip Left -->
+  <rect x="28" y="432" width="492" height="42" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="40" y="450" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">H1 Mechanism: Stalled forks cycle through the Repeat+/Indel− hub before indel fixation</text>
+  <text x="40" y="465" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="10">Hub C_B = 0.494 ± 0.018  |  Tip C_B = 0.082  |  k_max = 5–6  |  W1/W5 Enrichment = 4.22x</text>
+
+  <!-- ========================================================================= -->
+  <!-- RIGHT PANEL: H2 CAA/CAT INTERRUPTION COLLAPSE & H3 BLINDED PARALOG PRUNING -->
+  <!-- ========================================================================= -->
+  <rect x="548" y="68" width="516" height="418" rx="10" fill="#0b1322" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="564" y="92" fill="#f8fafc" font-family="system-ui, -apple-system, sans-serif" font-size="13.5" font-weight="700">B. CAA/CAT Interruption Collapse (H2 • 5🧪) &amp; Blinded Pruning (H3 • 4🧪)</text>
+  <text x="564" y="110" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="11">1–2 triplet interruptions dissolve hairpins (+4.8 kcal/mol) &amp; collapse k-core to k_max = 1</text>
+
+  <!-- Acyclic Tree Backbone (H2 Collapsed Network) -->
+  <g stroke="#34d399" stroke-width="2.4">
+    <line x1="650" y1="276" x2="735" y2="276"/>
+    <line x1="735" y1="276" x2="805" y2="216"/>
+    <line x1="735" y1="276" x2="805" y2="336"/>
+    <line x1="805" y1="216" x2="875" y2="182"/>
+    <line x1="805" y1="216" x2="875" y2="246"/>
+    <line x1="805" y1="336" x2="875" y2="306"/>
+    <line x1="805" y1="336" x2="875" y2="370"/>
+  </g>
+
+  <!-- Pruned Spurious NUMT & tRNA-HGT Bridges (H3 Blinded Filter) -->
+  <g stroke="#f43f5e" stroke-width="2" stroke-dasharray="6 4">
+    <line x1="805" y1="216" x2="965" y2="154"/>
+    <line x1="805" y1="336" x2="965" y2="396"/>
+    <line x1="965" y1="154" x2="805" y2="336" stroke-opacity="0.55"/>
+  </g>
+
+  <!-- Red X Pruning Markers on False Bridges -->
+  <g stroke="#f43f5e" stroke-width="2.6">
+    <line x1="882" y1="175" x2="896" y2="189"/>
+    <line x1="896" y1="175" x2="882" y2="189"/>
+    <line x1="882" y1="360" x2="896" y2="374"/>
+    <line x1="896" y1="360" x2="882" y2="374"/>
+  </g>
+
+  <!-- Tree Nodes (H2 Stabilized CAA/CAT-Interrupted Alleles) -->
+  <circle cx="650" cy="276" r="14" fill="#a855f7" stroke="#f3e8ff" stroke-width="2"/>
+  <text x="650" y="280" text-anchor="middle" fill="#ffffff" font-family="ui-monospace, monospace" font-size="9" font-weight="700">CAA</text>
+  <text x="650" y="308" text-anchor="middle" fill="#d8b4fe" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Stabilized Root</text>
+  <text x="650" y="321" text-anchor="middle" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="9.5">ΔG = −4.6 kcal/mol</text>
+
+  <g fill="#10b981" stroke="#ecfdf5" stroke-width="1.5">
+    <circle cx="735" cy="276" r="9.5"/>
+    <circle cx="805" cy="216" r="9"/>
+    <circle cx="805" cy="336" r="9"/>
+    <circle cx="875" cy="182" r="7"/>
+    <circle cx="875" cy="246" r="7"/>
+    <circle cx="875" cy="306" r="7"/>
+    <circle cx="875" cy="370" r="7"/>
+  </g>
+
+  <!-- Rejected Artifact Nodes (NUMT & HGT Island) -->
+  <circle cx="965" cy="154" r="12" fill="#881337" stroke="#fb7185" stroke-width="2"/>
+  <text x="965" y="158" text-anchor="middle" fill="#ffe4e6" font-family="ui-monospace, monospace" font-size="8.5" font-weight="700">NUMT</text>
+  <text x="965" y="132" text-anchor="middle" fill="#fda4af" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Pruned NUMT Paralog</text>
+  <text x="965" y="182" text-anchor="middle" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="9">(H_pos2 = 0.418b, ω = 0.88)</text>
+
+  <circle cx="965" cy="396" r="12" fill="#881337" stroke="#fb7185" stroke-width="2"/>
+  <text x="965" y="400" text-anchor="middle" fill="#ffe4e6" font-family="ui-monospace, monospace" font-size="8.5" font-weight="700">HGT</text>
+  <text x="965" y="374" text-anchor="middle" fill="#fda4af" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Pruned tRNA HGT Island</text>
+  <text x="965" y="422" text-anchor="middle" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="9">(4-mer D_KL = 0.486 bits)</text>
+
+  <!-- Annotation Callout Box for Acyclic Collapse -->
+  <rect x="572" y="134" width="210" height="58" rx="6" fill="#131c31" stroke="#a855f7" stroke-width="1.2"/>
+  <text x="582" y="152" fill="#e9d5ff" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">H2 Topological Collapse:</text>
+  <text x="582" y="167" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="10">• Zero reticulate k-core cycles</text>
+  <text x="582" y="181" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="10">• k_max: 5 → 1  |  W1/W5: 1.16x</text>
+
+  <!-- Bottom Telemetry Strip Right -->
+  <rect x="560" y="432" width="492" height="42" rx="6" fill="#0f172a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="572" y="450" fill="#c084fc" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">H2 &amp; H3 Result: CAA/CAT breaks stabilize hairpins; Blinded filter removes fake bridges</text>
+  <text x="572" y="465" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="10">Interrupted C_B = 0.114  |  k_max = 1–2  |  Blinded F_ST Error = 0.000 (vs. 0.342 raw)</text>
+
+  <!-- Legend Footer -->
+  <circle cx="34" cy="512" r="6" fill="#0284c7" stroke="#bae6fd" stroke-width="1.5"/>
+  <text x="46" y="516" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Ancestral Repeat+/Indel− Connector Hub (k=5–6)</text>
+
+  <circle cx="318" cy="512" r="6" fill="#10b981" stroke="#ecfdf5" stroke-width="1.2"/>
+  <text x="330" y="516" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Flanking W1 SNP Haplotype Nodes</text>
+
+  <circle cx="536" cy="512" r="6" fill="#f59e0b" stroke="#fffbeb" stroke-width="1.2"/>
+  <text x="548" y="516" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Derived Repeat+/Indel+ Clade Tips</text>
+
+  <circle cx="758" cy="512" r="6" fill="#a855f7" stroke="#f3e8ff" stroke-width="1.2"/>
+  <text x="770" y="516" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">CAA/CAT-Interrupted Root</text>
+
+  <circle cx="928" cy="512" r="6" fill="#881337" stroke="#fb7185" stroke-width="1.2"/>
+  <text x="940" y="516" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Pruned NUMT / HGT Decoy</text>
+</svg>

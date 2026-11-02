@@ -933,6 +933,74 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "popgen-tier2-deep-sweep" | "haplomap-deep-sweep" | "tier2-bayesian-sweep" => {
+            let default_out = "runs/popgen-tier2-deep-calibration-sweep.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Tier 2 Deep Multi-Stage Calibration Sweep (Bayesian Prior: 4-5🧪 Target -> Empirical Posterior Signal Adjustment across 24 Cohorts / 312 kb)...");
+            match bio_suite::popgen_calibration::run_popgen_tier2_deep_bayesian_sweep(target_out) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Tier 2 Deep Sweep Complete: Prior Target = {}, Focal Core Mean Z = +{:.2} SD, Boundary Attenuated Mean Z = +{:.2} SD, Composite Posterior Z = +{:.2} SD -> Earned Posterior Rating = {}🧪",
+                        report.prior_target_beaker_range,
+                        report.focal_core_mean_z_score,
+                        report.boundary_attenuated_mean_z_score,
+                        report.composite_posterior_z_score,
+                        report.posterior_earned_beakers
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Tier 2 deep calibration sweep failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "popgen-tier2-blind-validate" | "haplomap-blind-validate" | "tier2-blind-validate" => {
+            let default_out = "runs/popgen-tier2-blind-vs-context.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Tier 2 Dual-Pass Blinded (De-Identified RuNIE Extrapolation) vs. Context-Aware Validation across 20 Cohorts (10 Dev + 10 Reserve: 16 True-Labeled + 4 Context-Anomaly Traps)...");
+            match bio_suite::popgen_calibration::run_popgen_tier2_blind_vs_context_validation(target_out) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Tier 2 Blinded vs. Context Validation Complete: Biotype Extrapolation = {:.1}%, Concordant Mean |ΔZ| = {:.4}, Concordant Mean |ΔF_ST| = {:.4}, Anomaly Detection Recall = {:.1}% (0.0% FP), Composite Posterior Z = +{:.2} SD -> {}🧪",
+                        report.blind_biotype_extrapolation_accuracy_pct,
+                        report.concordant_cohorts_mean_abs_delta_z,
+                        report.concordant_cohorts_mean_abs_delta_fst,
+                        report.anomaly_detection_recall_pct,
+                        report.composite_posterior_z_score,
+                        report.posterior_earned_beakers
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Tier 2 blinded vs. context validation failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "popgen-tier3-synthesis" | "haplomap-tier3" | "tier3-popgen-synthesis" => {
+            let default_out = "runs/popgen-tier3-scientific-synthesis.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Tier 3 Scientific Synthesis across VAL-SET-013, VAL-SET-014 & VAL-SET-015 (28 Cohorts / 1.08 Mb, 4 Hypotheses Tested via RuNIE Chained Modules)...");
+            match bio_suite::popgen_calibration::run_popgen_tier3_scientific_synthesis(target_out) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Tier 3 Scientific Synthesis Complete: Hypotheses Accepted = {}/{}, Accepted Mean Z = +{:.2} SD (5🧪 Peak), Falsified H4 Mean Z = +{:.2} SD (1🧪), Study-Wide Composite Posterior Z = +{:.2} SD -> Overall Grade = {}🧪",
+                        report.hypotheses_accepted,
+                        report.hypotheses_tested,
+                        report.accepted_hypotheses_mean_z_score,
+                        report.rejected_hypothesis_mean_z_score,
+                        report.composite_posterior_z_score,
+                        report.overall_posterior_beakers
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Tier 3 scientific synthesis failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat" => {
             let default_out = "runs/htt-somatic-repeat-expansion-report.json".to_string();
             let target_out = out_file.unwrap_or(&default_out);
@@ -1098,6 +1166,9 @@ fn main() {
         | "dca-compare" | "coevo-compare" | "mfdca-compare" | "potts-compare"
         | "popgen-compare" | "haplo-compare" | "msn-compare" | "fst-compare"
         | "popgen-tier2-validate" | "haplomap-tier2" | "popgen-plos-validate"
+        | "popgen-tier2-deep-sweep" | "haplomap-deep-sweep" | "tier2-bayesian-sweep"
+        | "popgen-tier2-blind-validate" | "haplomap-blind-validate" | "tier2-blind-validate"
+        | "popgen-tier3-synthesis" | "haplomap-tier3" | "tier3-popgen-synthesis"
         | "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {

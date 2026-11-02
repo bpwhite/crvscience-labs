@@ -18,6 +18,7 @@ pub mod disease_panels;
 pub mod fetch;
 pub mod gene_caller;
 pub mod genome_target;
+pub mod graphical_reports;
 pub mod haplotype;
 pub mod htt_repeat_expansion;
 pub mod kabsch_tm_calibration;

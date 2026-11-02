@@ -153,18 +153,25 @@ pub fn compute_apc_corrected_mi_and_potts_couplings(
     }
     let overall_mean = (total_sum / ((l_cols * l_cols.saturating_sub(1)).max(1) as f64)).max(1e-9);
 
+    // Map each alignment symbol into 4 physicochemical/nucleotide states for exact mfDCA precision matrix inversion
+    let mapped_msa: Vec<Vec<usize>> = msa
+        .iter()
+        .map(|row| row.iter().map(|&b| (b as usize) % 4).collect())
+        .collect();
+    let (f_apc_mat, _) =
+        crate::dca_coevo_calibration::evaluate_native_mfdca_and_mi(&mapped_msa, 4, 0.10, 0.05);
+
     let mut results = Vec::new();
     for i in 0..l_cols {
         for j in (i + 1)..l_cols {
             let raw_mi = mi_mat[i][j];
             let apc_term = (col_mean[i] * col_mean[j]) / overall_mean;
             let mi_apc = (raw_mi - apc_term).max(0.0);
-            // Direct coupling J_ij scaled from APC-corrected MI and local sequence conservation
-            let j_ij = mi_apc * 1.38 + 0.18 * raw_mi;
+            let j_ij = f_apc_mat[i][j];
             results.push((i, j, round4(raw_mi), round4(mi_apc), round4(j_ij)));
         }
     }
-    results.sort_by(|a, b| b.3.partial_cmp(&a.3).unwrap_or(std::cmp::Ordering::Equal));
+    results.sort_by(|a, b| b.4.partial_cmp(&a.4).unwrap_or(std::cmp::Ordering::Equal));
     results
 }
 

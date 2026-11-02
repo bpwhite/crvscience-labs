@@ -819,6 +819,143 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "mk-compare" | "mk-morpho-compare" | "mk-calibration" | "morpho-compare" => {
+            eprintln!("[bio-suite] Launching Tool Validation #17 (RuNIE Step-Up): 4-Stage Native Rust Lewis (2001) Mk+ASC Discrete Character CTMC, FBD Tip-Dating & Felsenstein PIC Engine vs. Live IQ-TREE v2.4.0 (-st MORPH -m MK and -m MK+ASC) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            let report = bio_suite::mk_morpho_calibration::run_mk_morpho_calibration_benchmark();
+            eprintln!(
+                "[bio-suite] Tool #17 Mk+ASC Summary: Dev |ΔlnL_MK| = {:.4}, Dev |ΔlnL_MK+ASC| = {:.4}, Reserve |ΔlnL_MK| = {:.4}, Reserve |ΔlnL_MK+ASC| = {:.4}, Pearson r = {:.4}, Topology Match = {:.1}%, Mean PIC R² = {:.4}, Speedup = {:.1}x",
+                report.dev_mean_abs_delta_mk_lnl,
+                report.dev_mean_abs_delta_mk_asc_lnl,
+                report.reserve_mean_abs_delta_mk_lnl,
+                report.reserve_mean_abs_delta_mk_asc_lnl,
+                report.overall_pearson_r_mk_asc_lnl,
+                report.overall_topology_concordance_pct,
+                report.mean_pic_imputation_r2,
+                report.native_speedup_factor
+            );
+            emit_json_output(&report, report.total_native_runtime_ms as u128, out_file);
+        }
+        "rp16-compare" | "supermatrix-compare" | "dayhoff6-compare" | "rp16-calibration" => {
+            eprintln!("[bio-suite] Launching Tool Validation #19 (RuNIE Step-Up): Native Rust RP16 Syntenic Supermatrix, Dayhoff-6/SR4 Compositional Recoder & Candle-Core Felsenstein Pruning Engine vs. Live IQ-TREE v2.4.0 (-st AA -m POISSON+FQ and -st MORPH -m MK) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            match bio_suite::rp16_supermatrix_calibration::run_rp16_supermatrix_iqtree_calibration() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    emit_json_output(&report, report.total_native_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] RP16 supermatrix calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "codon-opt-compare" | "mrna-compare" | "codon-opt" => {
+            eprintln!("[bio-suite] Launching Individual Tool Benchmark #20: Native Synonymous Codon Usage (CAI/GC3/Uridine/CpG) & Turner-2004 MFE Optimizer vs. Live ViennaRNA v2.7.2 (RNAfold -p --noPS) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            let report = bio_suite::codon_opt_calibration::run_codon_opt_viennarna_calibration();
+            eprintln!("\n{}", report.ascii_summary_table);
+            emit_json_output(&report, report.total_native_ms as u128, out_file);
+        }
+        "repeat-motif-compare" | "spidroin-compare" | "silk-compare" | "repeat-motif" => {
+            eprintln!("[bio-suite] Launching Individual Tool Benchmark #21: Native Repetitive Protein Motif Scanner (Poly-Ala / GPGXX / GGX) & Candle-Core Ridge Regressor vs. Live SciPy v1.18.1 (scipy.linalg.solve) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            let report = bio_suite::repeat_motif_calibration::run_repeat_motif_scipy_benchmark();
+            eprintln!("\n{}", report.ascii_summary_table);
+            emit_json_output(&report, report.total_native_ms as u128, out_file);
+        }
+        "kabsch-tm-compare" | "motif-rmsd-compare" | "scaffold-rmsd-compare" | "kabsch-compare" => {
+            eprintln!("[bio-suite] Launching Individual Tool Benchmark #22: Native 3D Kabsch SO(3) Superposition, Active-Site Motif RMSD & Zhang-Skolnick TM-Score Engine vs. Live SciPy v1.18.1 (scipy.linalg.svd) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            let report = bio_suite::kabsch_tm_calibration::run_kabsch_tm_scipy_benchmark();
+            eprintln!("\n{}", report.ascii_summary_table);
+            emit_json_output(&report, report.total_native_ms as u128, out_file);
+        }
+        "dca-compare" | "coevo-compare" | "mfdca-compare" | "potts-compare" => {
+            eprintln!("[bio-suite] Launching Individual Tool Benchmark #23: Native Mean-Field Direct Coupling Analysis (mfDCA Precision Matrix Inversion & Zero-Sum Gauge APC Frobenius Norm) vs. Live SciPy v1.18.1 (scipy.linalg.inv) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            let report = bio_suite::dca_coevo_calibration::run_dca_coevo_scipy_benchmark();
+            eprintln!("\n{}", report.ascii_summary_table);
+            emit_json_output(&report, report.total_native_ms as u128, out_file);
+        }
+        "anm-compare" | "kaiabc-compare" | "allostery-compare" | "gnm-compare" => {
+            eprintln!("[bio-suite] Launching Tool Validation #18 (RuNIE Step-Up): Native Rust Candle-Core + Jacobi Spectral GNM/ANM Allostery & Delay-Coupled RK4 KaiABC Oscillator vs. Live SciPy v1.18.1 (scipy.linalg.eigh + solve_ivp RK45 rtol=1e-10) across 12 Cohorts (6 Dev + 6 Reserve)...");
+            match bio_suite::kaiabc_allostery_calibration::run_kaiabc_allostery_scipy_calibration() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    emit_json_output(&report, report.total_native_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] ANM/KaiABC calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "popgen-compare" | "haplo-compare" | "msn-compare" | "fst-compare" => {
+            let default_out = "runs/popgen-haplo-scipy-calibration.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Tool Benchmark #24: Haplotype Minimum Spanning Network (MSN), Hudson F_ST, pi, Watterson's theta_W & Tajima's D vs. Live SciPy v1.18.1 across 12 Cohorts (6 Dev + 6 Untouched Reserve)...");
+            match bio_suite::popgen_calibration::run_popgen_scipy_benchmark(target_out) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] PopGen/MSN Benchmark Complete: Dev |Δpi| = {:.4}, Res |Δpi| = {:.4}, Dev |ΔD| = {:.4}, Res |ΔD| = {:.4}, Dev |ΔF_ST| = {:.4}, Res |ΔF_ST| = {:.4}, MST Match = {:.1}%, Regime Match = {:.1}%, Speedup = {:.2}x",
+                        report.dev_mean_abs_diff_pi,
+                        report.reserve_mean_abs_diff_pi,
+                        report.dev_mean_abs_diff_tajimas_d,
+                        report.reserve_mean_abs_diff_tajimas_d,
+                        report.dev_mean_abs_diff_fst,
+                        report.reserve_mean_abs_diff_fst,
+                        report.mst_exact_match_rate_pct,
+                        report.regime_concordance_pct,
+                        report.speedup_factor
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] PopGen/MSN calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "popgen-tier2-validate" | "haplomap-tier2" | "popgen-plos-validate" => {
+            let default_out = "runs/popgen-tier2-plos-validation.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Tier 2 Validation: PopGen/HaploMap Repeat-Indel Substitution Clusters (McDonald et al. 2011 PLoS Biol 10.1371/journal.pbio.1000622) & k-Core Connector Hub Network Topology (Hagmann et al. 2008 PLoS Biol 10.1371/journal.pbio.0060159) across 12 Cohorts (6 Dev + 6 Untouched Reserve)...");
+            match bio_suite::popgen_calibration::run_popgen_tier2_plos_validation(target_out) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Tier 2 PopGen/HaploMap Validation Complete: McDonald Repeat Enrichment = {:.2}x (Non-Repeat Indel Null = {:.2}x), Hagmann k-Core Match = {:.1}%, MST Match = {:.1}%, Overall Gate = {:.1}%",
+                        report.mcdonald_repeat_proximal_enrichment_fold,
+                        report.mcdonald_nonrepeat_indel_null_ratio,
+                        report.hagmann_kcore_exact_match_pct,
+                        report.hagmann_mst_exact_match_pct,
+                        report.overall_gate_pass_pct
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Tier 2 PopGen/HaploMap validation failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat" => {
+            let default_out = "runs/htt-somatic-repeat-expansion-report.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching RuNIE-Guided Exploratory Analysis (Tier 1): Single-Cell Human Brain Huntington's Disease (HTT Exon 1 CAG) Somatic Repeat Expansion & 150-CAG Toxicity Cliff across 8 Cohorts (4 Dev + 4 Reserve)...");
+            match bio_suite::htt_repeat_expansion::run_htt_somatic_repeat_analysis(target_out) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] HTT Somatic Repeat Summary: Dev Onset MAE = {:.2} yr, Reserve Onset MAE = {:.2} yr, Pearson r = {:.4}, Cliff/Subthreshold JSD Ratio = {:.2}x, Regime Match = {:.1}%, Runtime = {:.2} ms",
+                        report.dev_mean_onset_mae_yr,
+                        report.reserve_mean_onset_mae_yr,
+                        report.overall_pearson_r_onset,
+                        report.mean_cliff_to_subthreshold_jsd_ratio,
+                        report.overall_regime_concordance_pct,
+                        report.runtime_ms
+                    );
+                    emit_json_output(&report, report.runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] HTT somatic repeat analysis failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             let ws_root = env::current_dir()
                 .ok()
@@ -952,6 +1089,16 @@ fn main() {
         | "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration"
         | "bgc-compare" | "gecco-compare" | "bgc-calibration" | "bgc-calibrate" | "bgc-round2" | "bgc-round3" | "bgc-round4" | "bgc-detect"
         | "relax-compare" | "pseudo-loss-compare" | "macse-compare" | "pseudo-loss-calibration"
+        | "mk-compare" | "mk-morpho-compare" | "mk-calibration" | "morpho-compare"
+        | "anm-compare" | "kaiabc-compare" | "allostery-compare" | "gnm-compare"
+        | "rp16-compare" | "supermatrix-compare" | "dayhoff6-compare" | "rp16-calibration"
+        | "codon-opt-compare" | "mrna-compare" | "codon-opt"
+        | "repeat-motif-compare" | "spidroin-compare" | "silk-compare" | "repeat-motif"
+        | "kabsch-tm-compare" | "motif-rmsd-compare" | "scaffold-rmsd-compare" | "kabsch-compare"
+        | "dca-compare" | "coevo-compare" | "mfdca-compare" | "potts-compare"
+        | "popgen-compare" | "haplo-compare" | "msn-compare" | "fst-compare"
+        | "popgen-tier2-validate" | "haplomap-tier2" | "popgen-plos-validate"
+        | "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);

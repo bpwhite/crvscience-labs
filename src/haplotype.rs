@@ -78,6 +78,12 @@ pub struct PopulationDiversityMetrics {
     pub nucleotide_diversity_pi: f64,
     pub watterson_theta_per_site: f64,
     pub tajimas_d: f64,
+    #[serde(default)]
+    pub mean_within_deme_pi: f64,
+    #[serde(default)]
+    pub mean_between_deme_pi: f64,
+    #[serde(default)]
+    pub hudson_fst: f64,
     pub selection_demographic_regime: String,
 }
 
@@ -493,8 +499,84 @@ pub fn analyze_haplotype_clusters(
         0.0
     };
 
-    let regime = if tajimas_d > 1.75 {
-        "Deeply subdivided clusters / balancing selection / glacial refugial admixture (Tajima's D > +1.75)".to_string()
+    // Hudson, Slatkin & Maddison (1992) subpopulation differentiation F_ST across `rec.family` demes
+    let mut deme_groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    for (idx, rec) in records.iter().enumerate() {
+        if idx < aligned.len() {
+            deme_groups.entry(rec.family.clone()).or_default().push(idx);
+        }
+    }
+    let deme_keys: Vec<String> = deme_groups.keys().cloned().collect();
+    let (mean_within_deme_pi, mean_between_deme_pi, hudson_fst) =
+        if deme_keys.len() >= 2 && align_len > 0 {
+            let mut within_pis = Vec::new();
+            for k in &deme_keys {
+                let idxs = &deme_groups[k];
+                if idxs.len() >= 2 {
+                    let mut d_sum = 0.0f64;
+                    let mut d_pairs = 0usize;
+                    for a in 0..idxs.len() {
+                        for b in (a + 1)..idxs.len() {
+                            let (diffs, _) = diff_aligned_sequences(
+                                aligned[idxs[a]].aligned_seq.as_bytes(),
+                                aligned[idxs[b]].aligned_seq.as_bytes(),
+                            );
+                            d_sum += diffs as f64 / align_len as f64;
+                            d_pairs += 1;
+                        }
+                    }
+                    if d_pairs > 0 {
+                        within_pis.push(d_sum / d_pairs as f64);
+                    }
+                }
+            }
+            let pi_w = if !within_pis.is_empty() {
+                within_pis.iter().sum::<f64>() / within_pis.len() as f64
+            } else {
+                0.0
+            };
+
+            let mut between_pis = Vec::new();
+            for d1 in 0..deme_keys.len() {
+                for d2 in (d1 + 1)..deme_keys.len() {
+                    let idxs1 = &deme_groups[&deme_keys[d1]];
+                    let idxs2 = &deme_groups[&deme_keys[d2]];
+                    let mut b_sum = 0.0f64;
+                    let mut b_pairs = 0usize;
+                    for &i1 in idxs1 {
+                        for &i2 in idxs2 {
+                            let (diffs, _) = diff_aligned_sequences(
+                                aligned[i1].aligned_seq.as_bytes(),
+                                aligned[i2].aligned_seq.as_bytes(),
+                            );
+                            b_sum += diffs as f64 / align_len as f64;
+                            b_pairs += 1;
+                        }
+                    }
+                    if b_pairs > 0 {
+                        between_pis.push(b_sum / b_pairs as f64);
+                    }
+                }
+            }
+            let pi_b = if !between_pis.is_empty() {
+                between_pis.iter().sum::<f64>() / between_pis.len() as f64
+            } else {
+                0.0
+            };
+            let fst = if pi_b > 1e-12 {
+                ((pi_b - pi_w) / pi_b).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            (round4(pi_w), round4(pi_b), round4(fst))
+        } else {
+            (pi, pi, 0.0)
+        };
+
+    let regime = if tajimas_d > 1.75 && hudson_fst >= 0.40 {
+        "Allopatric population subdivision / Wahlund refugial admixture (Tajima's D > +1.75, F_ST >= 0.40)".to_string()
+    } else if tajimas_d > 1.75 {
+        "Within-deme balancing selection / intermediate-frequency polymorphism (Tajima's D > +1.75, F_ST < 0.40)".to_string()
     } else if tajimas_d < -1.50 {
         "Recent star-like post-bottleneck expansion or selective sweep (Tajima's D < -1.50)".to_string()
     } else {
@@ -512,6 +594,9 @@ pub fn analyze_haplotype_clusters(
         nucleotide_diversity_pi: pi,
         watterson_theta_per_site: watterson_theta,
         tajimas_d,
+        mean_within_deme_pi,
+        mean_between_deme_pi,
+        hudson_fst,
         selection_demographic_regime: regime,
     };
 

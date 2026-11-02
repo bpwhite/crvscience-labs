@@ -1472,3 +1472,60 @@ fn test_runie_pipeline_inference_engine_all_3_tiers_and_9_studies() {
         assert!(g4.log_posterior_unnormalized > g3.log_posterior_unnormalized);
     }
 }
+
+#[test]
+fn test_pseudo_loss_macse_and_paml_relax_calibration() {
+    use bio_suite::pseudo_loss_calibration::{
+        build_12_vertebrate_cohorts, run_naive_triplet_codon_aligner,
+        run_native_frameshift_coding_aligner, FROZEN_FRAMESHIFT_PARAMS,
+    };
+
+    let labs_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let cohorts = build_12_vertebrate_cohorts(labs_dir)
+        .expect("12 vertebrate RefSeq cohorts must load from cache/pseudo_loss/refseq_cds_anchors.fasta");
+    assert_eq!(cohorts.len(), 12);
+
+    // 1. Verify 6 Development + 6 Untouched Reserve split
+    let dev_count = cohorts.iter().filter(|c| c.scope == "development").count();
+    let res_count = cohorts.iter().filter(|c| c.scope == "reserve").count();
+    assert_eq!((dev_count, res_count), (6, 6));
+
+    // 2. Verify Generation-1 Naive triplet aligner fails on -1 bp frameshifts (GULO DEV-01)
+    //    whereas the calibrated 3-frame coding aligner recovers all 4 frameshift sites (codon 24)
+    //    and all 4 internal stop codons (codon 52).
+    let gulo = &cohorts[0];
+    let gen1 = run_naive_triplet_codon_aligner(&gulo.reliable_seqs, &gulo.lr_seqs);
+    assert_eq!(gen1.total_frameshift_sites, 0);
+    assert!(gen1.total_internal_stop_sites >= 8); // spurious downstream stops from frame shift
+
+    let nat = run_native_frameshift_coding_aligner(
+        &gulo.reliable_seqs,
+        &gulo.lr_seqs,
+        &FROZEN_FRAMESHIFT_PARAMS,
+    );
+    assert_eq!(nat.total_frameshift_sites, 4);
+    assert_eq!(nat.total_internal_stop_sites, 4);
+    assert!(nat.shared_across_sister_lineages);
+    assert!(!nat.singleton_homopolymer_artifact);
+
+    // 3. Verify singleton homopolymer artifact controls (DEV-06 ABCA4 6G and RES-06 HBB 5A)
+    let abca4 = &cohorts[5];
+    let nat_abca4 = run_native_frameshift_coding_aligner(
+        &abca4.reliable_seqs,
+        &abca4.lr_seqs,
+        &FROZEN_FRAMESHIFT_PARAMS,
+    );
+    assert_eq!(nat_abca4.total_frameshift_sites, 1);
+    assert!(!nat_abca4.shared_across_sister_lineages);
+    assert!(nat_abca4.singleton_homopolymer_artifact);
+
+    let hbb = &cohorts[11];
+    let nat_hbb = run_native_frameshift_coding_aligner(
+        &hbb.reliable_seqs,
+        &hbb.lr_seqs,
+        &FROZEN_FRAMESHIFT_PARAMS,
+    );
+    assert_eq!(nat_hbb.total_frameshift_sites, 1);
+    assert!(!nat_hbb.shared_across_sister_lineages);
+    assert!(nat_hbb.singleton_homopolymer_artifact);
+}

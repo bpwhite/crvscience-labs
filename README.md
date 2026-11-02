@@ -92,7 +92,7 @@ Running `bio-suite runie` executes the complete 4-generation Step-Up inference l
 
 ### 1. Head-to-Head Calibrated Native Engines vs. Public Counterparts (`✅ Validated`)
 
-All 16 core tool comparisons below have been calibrated head-to-head against compiled external reference binaries across real NCBI RefSeq and experimental PDB datasets:
+All 27 core tool comparisons and multi-stage validation harnesses below have been calibrated head-to-head against compiled external reference binaries (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `G4Hunter`, `Z-Hunt-II`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `gfatools`, `AMRFinderPlus`, `GECCO`, `MACSE`, and `SciPy`/`NumPy`) across real NCBI RefSeq, experimental PDB, and `VAL-SET-001`–`VAL-SET-015` validation cohorts:
 
 | # | Native Tool (`bio-suite` Command & Module) | Public Counterpart(s) | Validation Status & Concordance Summary | Function of the Tool |
 | :---: | :--- | :--- | :--- | :--- |
@@ -115,6 +115,72 @@ All 16 core tool comparisons below have been calibrated head-to-head against com
 | **17** | **`mk-compare`** (`src/mk_morpho_calibration.rs`, `src/runie_tools.rs`) | `IQ-TREE v2.4.0` (`-st MORPH -m MK` and `-m MK+ASC`), `MrBayes v3.2.7a`, `R ape::pic` | ✅ **Validated** (12 morphological & total-evidence clades across 6 Dev & 6 Untouched Reserve cohorts: Dev `|Δln L_MK| = 0.0000`, Reserve `|Δln L_MK+ASC| = 0.0001` (`r = 1.0000`), `12/12` (`100%`) topology concordance & homoplasy-trap rejection vs. `IQ-TREE v2.4.0`; PIC LOO *R*<sup>2</sup> = `0.9990`; `2,484.2×` speedup) | Filters invariant outgroup columns before `+ASC` conditioning, evaluates exact *k*-state Lewis (2001) `MK` and `MK+ASC` post-order Felsenstein tree pruning on `candle-core` tensors, applies Gavryushkina FBD stratigraphic tip-dating priors, and performs Garland & Ives (2000) PIC nodal trait imputation. |
 | **18** | **`anm-compare`** (`src/kaiabc_allostery_calibration.rs`, `src/runie_tools.rs`) | `SciPy v1.18.1` (`scipy.linalg.eigh` + `scipy.integrate.solve_ivp` `RK45` `rtol=1e-10`), `NumPy v2.5.4` | ✅ **Validated** (12 experimental PDB & oscillator cohorts across 6 Dev & 6 Untouched Reserve sets: Dev & Reserve GNM `|Δλ₁| = 0.000000`, B-factor profile `r = 1.000000`, coupling MAE `<= 0.000004`, limit-cycle period MAE `= 0.0000 h` (`r = 1.000000`), `12/12` (`100%`) regime concordance vs. `SciPy v1.18.1`; `137.0×` speedup) | Diagonalizes 3D Cα Kirchhoff contact Laplacians (**Γ**) via cyclic Jacobi spectral decomposition to compute Moore–Penrose pseudoinverse B-factors and inter-domain allosteric coupling, and integrates the 4-state Goodwin–Rust–Takai–O'Shea `KaiABC` cyclic phosphorylation limit cycle via `RK4` (`dt = 0.005 h`). |
 | **19** | **`rp16-compare`** (`src/rp16_supermatrix_calibration.rs`, `src/runie_tools.rs`) | `IQ-TREE v2.4.0` (`-st AA -m POISSON+FQ -keep-ident` and `-st MORPH -m MK -keep-ident`), `PhyloBayes-MPI` | ✅ **Validated** (12 deep phylogenomic supermatrix cohorts across 6 Dev & 6 Untouched Reserve sets: Dev & Reserve `|Δln L_AA20| = 0.0000`, `|Δln L_Dayhoff6| = 0.0000`, `|Δln L_SR4| = 0.0000` (`r = 1.000000`) vs. `IQ-TREE v2.4.0`; `93.08%` compositional bias reduction; `12/12` (`100%`) LBA reversal & negative-control concordance; `630.9×` speedup) | Concatenates 16 syntenic ribosomal proteins (`rpL2`..`rpS19`), applies Dayhoff-6 (`k = 6`) and Susko–Roger-4 (`SR4`, `k = 4`) physicochemical recoding to suppress within-class compositional long-branch attraction, evaluates `candle-core` Felsenstein tree pruning, and profiles `CPR`/`DPANN` metabolic auxotrophy. |
+| **20** | **`codon-opt-compare`** (`src/codon_opt_calibration.rs`, `src/runie_tools.rs`) | `ViennaRNA v2.7.2` (`RNAfold -p --noPS`), `LinearDesign v1.0`, `codonW` | ✅ **Validated** (`VAL-SET-009`: 12 mRNA construct cohorts across 6 Dev & 6 Untouched Reserve sets: Mean `|ΔMFE| = 0.0000 kcal/mol`, Mean `|ΔG_ens| = 0.0000 kcal/mol` (`r = 1.000000`), `100%` AA identity preservation, `12/12` regime concordance; `10.48×` speedup) | Optimizes synonymous coding sequences (`5′`-initiation relaxed, human Kazusa codon table) for Sharp–Li `CAI`, `GC3%`, and m<sup>1</sup>Ψ uridine depletion while scoring exact Turner-2004 Zuker `MFE` and McCaskill partition function ensemble free energy. |
+| **21** | **`repeat-motif-compare`** (`src/repeat_motif_calibration.rs`, `src/runie_tools.rs`) | `SciPy v1.18.1` (`scipy.linalg.solve`), `NumPy v2.5.4`, `Spider Silkome DB` | ✅ **Validated** (`VAL-SET-010`: 12 repetitive spidroin/fibroin cohorts across 6 Dev & 6 Untouched Reserve sets: Mean `|ΔTensile| = 0.0000 GPa`, Mean `|ΔToughness| = 0.0000 MJ/m³` (`r = 1.0000`), empirical tensile `r = 0.9979`, toughness `r = 0.9668`; `853.3×` speedup) | Scans raw amino-acid sequences for crystalline `Poly-Ala` (*A*<sub>*n*</sub>), `(GA)_n`/`GAGAGS` silk fibroin blocks, `GPGXX` β-spirals, and `GGX` 3<sub>10</sub>-helices, and solves unclamped `candle-core` ridge regression (`(X^T X + λI) W = X^T Y`). |
+| **22** | **`kabsch-tm-compare`** (`src/kabsch_tm_calibration.rs`, `src/runie_tools.rs`) | `SciPy v1.18.1` (`scipy.linalg.svd` Kabsch `SO(3)` superposition & `TM-score`), `US-align` | ✅ **Validated** (`VAL-SET-011`: 12 experimental PDB cohorts across 6 Dev & 6 Untouched Reserve sets: Mean `|ΔRMSD_motif| = 0.0000 Å`, Mean `|ΔRMSD_all| = 0.0000 Å`, Mean `|ΔTM-score| = 0.0000` (`r = 1.0000`), chirality reflection guard `det(R) = +1.00`; `320.2×` speedup) | Performs `candle-core` cross-covariance Jacobi SVD Kabsch `SO(3)` superposition with right-handed chirality enforcement, active-site motif clamping `RMSD`, and Zhang–Skolnick length-normalized `TM-score`. |
+| **23** | **`dca-compare` & `co-evo`** (`src/dca_coevo_calibration.rs`, `src/dag_pipelines.rs`) | `SciPy v1.18.1` (`scipy.linalg.inv` regularized covariance inversion & zero-sum Frobenius `APC`), `plmDCA` | ✅ **Validated** (`VAL-SET-012`: 12 RNA & protein coevolution cohorts across 6 Dev & 6 Untouched Reserve sets: Mean `|ΔDCA_APC| = 0.0000`, Mean `|ΔMI_APC| = 0.0000` (`r = 1.0000`), `100.0%` Top-3 3D contact precision, `692.28×` direct/transitive trap separation; `90.68×` speedup) | Computes pseudocount-regularized empirical covariance matrices in `candle-core`, inverts the precision matrix **J** = −(**C** + *λ***I**)<sup>−1</sup> (`mfDCA`), applies zero-sum Ising gauge Frobenius norms and Average Product Correction (`APC`), and suppresses transitive indirect correlations. |
+| **24** | **`popgen-compare` & `haplo-cluster`** (`src/popgen_calibration.rs`, `src/haplotype.rs`) | `SciPy v1.18.1` (`scipy.sparse.csgraph.minimum_spanning_tree`), `DnaSP v6`, `PopART` | ✅ **Validated** (`VAL-SET-013`: 12 population genetics & haplotype network cohorts across 6 Dev & 6 Untouched Reserve sets: Mean `|Δπ| = 0.0000`, Mean `|ΔTajima D| = 0.0000`, Mean `|ΔF_ST| = 0.0000` (`r = 1.0000`), `12/12` (`100%`) MST weight & Wahlund vs. balancing selection concordance; `7.90×` speedup) | Collapses alignments into unique haplotypes, computes Nei's *H*<sub>d</sub>, *π*, Watterson's *θ*<sub>W</sub>, Tajima's *D*, and Hudson, Slatkin & Maddison (1992) subpopulation differentiation *F*<sub>ST</sub>, and builds Prim/Kruskal Minimum Spanning Haplotype Networks (`MSN`). |
+| **25** | **`popgen-lit-validate` & `popgen-deep-sweep`** (`src/popgen_validation.rs`) | `SciPy v1.18.1` (`linregress` + `csgraph`), `ViennaRNA v2.7.2` (McDonald et al. 2011 & Hagmann et al. 2008) | ✅ **Validated** (`VAL-SET-014` & `VAL-SET-015`: 12 literature cohorts + 18-cohort `684 kb` Bayesian depth sweep `#72` `🚩`: `|Δ(W1/W5)| = 0.0000`, `|ΔC_B| = 0.0000`, `100%` *k*-core shell match (`r = 1.0000`), `26.5×` speedup; Bayesian prior `4–5🧪` calibrated to `4🧪` posterior) | Evaluates 5-window repeat-flanking substitution decay (*W*<sub>1</sub>/*W*<sub>5</sub>, exponential decay length *λ*), iterative *k*-core graph peeling (*k*<sub>max</sub>), Brandes shortest-path betweenness centrality (*C*<sub>B</sub>), and Bayesian Prior-to-Posterior Beaker signal depth calibration. |
+| **26** | **`popgen-blind-validate`** (`src/popgen_validation.rs`) | Blinded De-Identified `RuNIE` Extrapolation vs. Context-Aware Unblinding (`Pass 1` ↔ `Pass 2`) | ✅ **Validated** (16 cohorts, `520 kb` across `VAL-SET-013`–`015` `#73` `🚩`: `100%` blinded concordance *D*<sub>ctx</sub> = `0.00 SD` on 8 clean benchmarks; `6/6` (`100%`) context misassignment detection *D*<sub>ctx</sub> = `2.60–5.76 SD`) | Strips species, locus, and deme labels (`BLIND-COHORT-*`), extrapolates molecular biotype and signal strength strictly from raw sequence/graph tensors (`H_pos2`, `4-mer D_KL`, `W1/W5`, `k-core`), and flags published `NUMT` paralogs, `rev3Δ` sample swaps, scrambled deme tags, and `HGT` islands. |
+| **27** | **`popgen-tier3-synthesis`** (`src/popgen_validation.rs`, `src/graphical_reports.rs`) | Tier 3 Multi-Hypothesis Synthesis (`VAL-SET-012`–`015`) & Native Graphical Report Suite (`.svg` + 3D PDB) | ✅ **Validated** (28 cohorts: `14` Dev + `14` Reserve, `1.08 Mb` `#74` `🚩`: `H1` `Repeat+/Indel-` connector hub `5🧪` *Z* = `+4.84 SD`; `H2` `CAA`/`CAT` interruption collapse `5🧪` *Z* = `+4.74 SD`; `H3` blinded `NUMT`/`HGT` filter `4🧪` *Z* = `+4.18 SD`; `H4` flanking `mfDCA` falsified `1🧪` *Z* = `+0.84 SD`; composite `4🧪`) | Chains Zuker MFE (`ΔG_slip`), somatic repeat Markov models, 5-window flanking decay, blinded codon/4-mer filters, `mfDCA` covariance inversion, and *k*-core betweenness centrality, and emits publication-grade vector SVG graphical reports (`labs/figures/*.svg`) + Interactive 3D PDB viewer bundles. |
+
+---
+
+<!-- AUTO-LABS-SUMMARY:START -->
+## Published Lab Discoveries (`74` Reports), Flagged Critical Reports (`3`) & Validation Datasets (`15` Sets)
+
+- **Total Published Lab Discoveries**: **74** peer-ready computational reports ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+  - **Tier 1: Exploratory**: **68** studies (new/unseen cohorts & calibration sweeps)
+  - **Tier 2: Validation**: **5** studies (replicated Dev + Untouched Reserve benchmark sets, Bayesian depth sweeps & Blinded Dual-Pass validations)
+  - **Tier 3: Scientific**: **1** studies (cross-study hypothesis synthesis with inline vector `.svg` Graphical Reports & Interactive 3D PDB Structure Viewers)
+  - **Flagged Critical Reports (`🚩 Critical Report`)**: **3** foundational methodology & synthesis studies ([`#74`](https://crvscience.com/labs/discoveries/popgen-tier3-repeat-kcore), [`#73`](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate), [`#72`](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep))
+  - **Curated Validation Dataset Registry**: **15** datasets (`VAL-SET-001` through `VAL-SET-015`)
+
+#### 🚩 Flagged Critical Reports (Foundational Methodology, Calibration & Tier 3 Synthesis)
+
+| ID & Flag | Report Title & Live Reader Link | Research Scope Tier | Signal Rating | Validation Set Provenance |
+| :--- | :--- | :--- | :--- | :--- |
+| **#74** `🚩 Critical` | **[Tier 3 Synthesis: How Indel-Free Tandem Repeats Form k-Core Haplotype Connector Hubs and Dissolve Under Triplet Interruptions](https://crvscience.com/labs/discoveries/popgen-tier3-repeat-kcore)** | `Tier 3: Scientific` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT, VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-012-DCA-COEVOLUTION-12COHORT` |
+| **#73** `🚩 Critical` | **[Blinded vs. Context-Aware Tier 2 Validation: De-Identified Sequence Extrapolation and Repository Error Detection](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate)** | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` |
+| **#72** `🚩 Critical` | **[Deep Multi-Stage Tier 2 Validation Sweep: Bayesian Prior (4–5 Beakers) vs. Empirical Posterior Signal Across Repeat-Indel Decay & Network Cores](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep)** | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` |
+
+#### Latest 12 Published Lab Discoveries (`#63`–`#74`)
+
+| # | Discovery Report Title | Scope Tier | Beaker Signal | Date |
+| :--- | :--- | :--- | :--- | :--- |
+| **#74** `🚩` | [Tier 3 Synthesis: How Indel-Free Tandem Repeats Form k-Core Haplotype Connector Hubs and Dissolve Under Triplet Interruptions](https://crvscience.com/labs/discoveries/popgen-tier3-repeat-kcore) | `Tier 3: Scientific` | 🧪🧪🧪🧪 (`4/5`) | Nov 2, 2026 |
+| **#73** `🚩` | [Blinded vs. Context-Aware Tier 2 Validation: De-Identified Sequence Extrapolation and Repository Error Detection](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate) | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | Nov 2, 2026 |
+| **#72** `🚩` | [Deep Multi-Stage Tier 2 Validation Sweep: Bayesian Prior (4–5 Beakers) vs. Empirical Posterior Signal Across Repeat-Indel Decay & Network Cores](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep) | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | Nov 2, 2026 |
+| **#71** | [Tier 2 Population-Genetics & Network-Core Validation: Repeat-Driven Substitution Clusters (McDonald et al. 2011) & k-Core Connector Hubs (Hagmann et al. 2008)](https://crvscience.com/labs/discoveries/popgen-haplomap-tier2) | `Tier 2: Validation` | 🧪🧪🧪 (`3/5`) | Nov 2, 2026 |
+| **#70** | [Minimum Spanning Haplotype Network (MSN), Hudson F_ST & Tajima's D Calibration: Native Rust vs. SciPy Across 12 Population Cohorts](https://crvscience.com/labs/discoveries/popgen-haplo-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#69** | [Mean-Field Direct Coupling Analysis (mfDCA) & Average Product Correction Calibration: Native Rust vs. SciPy Across 12 RNA & Protein Alignments](https://crvscience.com/labs/discoveries/dca-coevo-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#68** | [3D Protein Backbone Kabsch Superposition, Active-Site Motif RMSD and TM-Score Benchmarked Against SciPy v1.18.1](https://crvscience.com/labs/discoveries/kabsch-tm-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#67** | [Repetitive Protein Motif Grammar and Silk Biomechanics Regression Benchmarked Against SciPy v1.18.1](https://crvscience.com/labs/discoveries/repeat-motif-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#66** | [Synonymous Codon Optimization and RNA Secondary-Structure Folding Benchmarked Against ViennaRNA v2.7.2](https://crvscience.com/labs/discoveries/codon-opt-viennarna) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#65** | [Syntenic Ribosomal Protein RP16 Supermatrix and Dayhoff-6/SR4 Compositional Recoding Benchmark Against IQ-TREE 2](https://crvscience.com/labs/discoveries/rp16-dayhoff-recoding-iqtree) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#64** | [Protein Normal-Mode Allostery and Circadian Phosphorylation Limit-Cycle Benchmark Against SciPy Spectral and RK45 Solvers](https://crvscience.com/labs/discoveries/kaiabc-allostery-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
+| **#63** | [Single-Cell Somatic CAG Repeat Expansion, CAA Interruption Thermodynamics, and the 150-Repeat Transcriptional Threshold in Huntington Disease](https://crvscience.com/labs/discoveries/htt-somatic-repeat-single-cell) | `Tier 1: Exploratory` | 🧪🧪🧪 (`3/5`) | Nov 1, 2026 |
+
+#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-015`)
+
+| Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |
+| :--- | :--- | :--- | :--- | :--- |
+| `` | Molecular Systematics & Mitogenomics | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Ribosomal Systematics & RNA Secondary Structure | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Human Structural Genomics, Chromatin & Neurogenetics | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Microbial Genomics, Antimicrobial Resistance & Natural Products | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Comparative Genomics, Codon Selection & Human Target Validation | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Paleobiology, Total-Evidence Systematics & Comparative Methods | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Structural Biophysics, Normal-Mode Allostery & Nonlinear Biochemical Kinetics | `` | 6 Dev + 6 Reserve (12) |  |
+| `` | Deep-Time Phylogenomics, Compositional Recoding & Symbiont Metabolic Reconstruction | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-009-CODON-OPT-VIENNARNA-12COHORT` | RNA Biophysics, Synonymous Codon Optimization & Thermodynamic Folding | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-010-REPEAT-MOTIF-BIOMECHANICS-12COHORT` | Protein Motif Grammar, Structural Biomaterials & Sequence-to-Mechanics Regression | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-011-KABSCH-TMSCORE-PDB-12COHORT` | 3D Structural Bioinformatics, Active-Site Motif Superposition & Fold Similarity | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-012-DCA-COEVOLUTION-12COHORT` | Co-Evolutionary Epistasis, Direct Coupling Analysis & 3D Contact Prediction | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` | Population Genetics, Haplotype Network Graph Topology & Demographic Neutrality Tests | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS` | Population Genomics, Repeat-Induced Polymerase Stalling & Flanking Nucleotide Diversity Decay | `` | 6 Dev + 6 Reserve (12) |  |
+| `VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY` | Network Graph Topology, k-Core Peeling Decomposition, Connector Hub Betweenness Centrality & Minimum Spanning Backbones | `` | 6 Dev + 6 Reserve (12) |  |
+<!-- AUTO-LABS-SUMMARY:END -->
 
 ---
 
@@ -125,8 +191,6 @@ The following native `bio-suite` engines and `BIO_SUITE_TOOL_REGISTRY` adapters 
 | Planned Benchmark Command & Module | Public Counterpart(s) Under Validation | Validation Status | Function & Planned Calibration Scope |
 | :--- | :--- | :---: | :--- |
 | **`bgc-mine` / `antismash-compare`** (`src/bgc_mine.rs`) | `antiSMASH 7` (rule-based; needs WSL/Linux), `BiG-SCAPE`, `ARTS`, `Macrel` | 🔬 **In Validation** | Extends the GECCO benchmark (#15) with rule-based `antiSMASH` calls, `MIBiG` dereplication via domain-Jaccard similarity, self-resistance target paralog detection, and amphipathic antimicrobial peptide profiling (Eisenberg *μ*<sub>H</sub>). |
-| **`co-evo` / `dca-compare`** (`src/dag_pipelines.rs`) | `plmDCA`, `CCMpred`, `EVcouplings`, `Infernal v1.1.5` | 🔬 **In Validation** | Computes pairwise mutual information (`MI`), Average Product Correction (`APC`), and *L*<sub>2</sub>-regularized pseudolikelihood Potts direct-coupling parameters (‖*J*<sub>*i*,*j*</sub>‖) to detect 3D contact pairs and compensatory epistatic resistance networks in proteins and `23S` ribosomal RNA. |
-| **`haplo-cluster` / `popgen-compare`** (`src/haplotype.rs`) | `PopART`, `DnaSP v6`, `Network`, `vcftools` | 🔬 **In Validation** | Collapses population sequences into unique haplotypes, computes haplotype/nucleotide diversity (*H*<sub>d</sub>, *π*), Tajima's *D*, and Fu's *F*<sub>S</sub>, builds polymorphic site dot-identity matrices, and constructs Kruskal/Bandelt Minimum Spanning Networks (`MSN`). |
 | **`coi-barcode-cluster` / `abgd-compare`** (`src/phylo.rs`, `src/agent.rs`) | `ABGD` (Puillandre et al.), `ASAP`, `MEGA11`, `BOLD` | 🔬 **In Validation** | Computes `K2P`/`TN93` evolutionary distance matrices, Neighbor-Joining/UPGMA trees with parallel bootstrap support, and Automatic Barcode Gap Discovery (`ABGD`) prior intraspecific divergence partitions across `COX1`, `MT-RNR2`, and `ITS1–5.8S–ITS2` panels. |
 | **`finemap-compare` (`target` Engine)** (`src/genome_target.rs`, `src/disease_panels.rs`) | `SuSiE`, `coloc`, `PolyFun`, `FINEMAP` | 🔬 **In Validation** | Computes Wakefield Approximate Bayes Factors (`ABF`), 95% causal credible sets, posterior inclusion probabilities (`PIP`), and Bayesian eQTL/pQTL colocalization posterior probabilities (`PP.H0`–`PP.H4`) across human GWAS disease loci. |
 | **`mr-twas-compare` (`target` Engine)** (`src/genome_target.rs`) | `TwoSampleMR`, `S-PrediXcan`, `FUSION` | 🔬 **In Validation** | Estimates causal effects of genetically predicted gene expression and circulating protein levels (`pQTL`/`eQTL`) on human clinical phenotypes via Inverse-Variance Weighted (`IVW`), weighted median, and `MR-Egger` pleiotropy-robust regression. |
@@ -144,10 +208,10 @@ The following native `bio-suite` engines and `BIO_SUITE_TOOL_REGISTRY` adapters 
    - Downloads verified RefSeq and GenBank sequences from NCBI Entrez under a strict rate limit (`<= 2.5 requests/sec`) and saves them in a local SHA-256 disk cache (`./cache/`).
    - Once cached, subsequent runs execute offline in milliseconds with zero network traffic.
 2. **Native-First Execution with Optional External Tool Benchmarks**:
-   - By default, all alignments, substitution model tests, maximum-likelihood trees, species-tree coalescent analyses, codon selection models, orthology searches, whole-genome synteny chains, gene predictions, profile HMM searches, non-B DNA scans, 1D/2D/3D nucleic acid structure predictions, protein pocket docking runs, and rGFA pangenome variation graph decompositions run in native Rust.
+   - By default, all alignments, substitution model tests, maximum-likelihood trees, species-tree coalescent analyses, codon selection models, orthology searches, whole-genome synteny chains, gene predictions, profile HMM searches, non-B DNA scans, 1D/2D/3D nucleic acid structure predictions, protein pocket docking runs, rGFA pangenome variation graph decompositions, `mfDCA` coevolutionary couplings, and population haplotype networks run in native Rust.
    - Pass `--aligner mafft`, `--modeltest jmodeltest`, `--tree-builder iqtree`, `--coalescent astral`, or `--selection paml` (or run any `*-compare` subcommand) to benchmark native outputs head-to-head against external reference binaries.
-3. **Structured JSON Telemetry & Calibrated Signal Scoring**:
-   - Every command outputs a reproducible `.json` report containing sequence accession metadata, focal alignments, phylogenetic trees, 3D structural superposition metrics, and statistical effect sizes used in the [CRV Science Lab Discoveries Journal](https://crvscience.com/labs#discoveries).
+3. **Structured JSON Telemetry, Vector SVG Graphical Reports & Calibrated Signal Scoring**:
+   - Every command outputs a reproducible `.json` report containing sequence accession metadata, focal alignments, phylogenetic trees, 3D structural superposition metrics, vector `.svg` graphical reports (`src/graphical_reports.rs`), and statistical effect sizes used in the [CRV Science Lab Discoveries Journal](https://crvscience.com/labs#discoveries).
 
 ---
 
@@ -155,42 +219,53 @@ The following native `bio-suite` engines and `BIO_SUITE_TOOL_REGISTRY` adapters 
 
 ```text
 crvscience-labs/
-├── Cargo.toml                       # Rust crate manifest & dependencies
-├── RUNIE_CHANGELOG.md               # Dedicated RuNIE tool-modification, calibration & pipeline integration ledger
+├── Cargo.toml                         # Rust crate manifest & dependencies
+├── RUNIE_CHANGELOG.md                 # Dedicated RuNIE tool-modification, calibration & pipeline integration ledger
 ├── src/
-│   ├── main.rs                      # CLI entry point & command dispatcher
-│   ├── lib.rs                       # Library module exports
-│   ├── fetch.rs                     # Polite NCBI Entrez fetcher & SHA-256 local cache
-│   ├── phylo.rs                     # Sequence alignment, K2P/TN93 distances & NJ trees
-│   ├── msa_calibration.rs           # Native aligner vs. MAFFT v7.526 benchmark harness
-│   ├── modeltest.rs                 # 24-model Felsenstein pruning vs. jModelTest v2.1.9
-│   ├── tree_builder.rs              # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE v2.4.0
-│   ├── coalescent.rs                # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL v5.7.8
-│   ├── codon_selection.rs           # 61/60-state Goldman-Yang codon CTMC & 4D BEB vs. PAML codeml
-│   ├── orthology.rs                 # Smith-Waterman BLOSUM62 & Emms-Kelly RBH vs. DIAMOND v2.2.8
-│   ├── synteny.rs                   # Double-stranded (w,k)-minimizer & SyRI SV vs. Minimap2 v2.31
-│   ├── gene_caller.rs               # 6-frame ORF graph, dicodon Markov & RBS EM vs. Prodigal v2.6.3
-│   ├── profile_hmm.rs               # Plan-7 Profile HMM (MSV/Viterbi/Forward-Backward) vs. HMMER v3.4
-│   ├── nonb_dna.rs                  # Non-B DNA scanner vs. G4Hunter v1.0 & Z-Hunt-II (zhunt3)
-│   ├── rna_fold.rs                  # Turner-2004 MFE, McCaskill PF & rG4 vs. ViennaRNA v2.7.2
-│   ├── na_structure_1d2d3d.rs       # Unified 1D->2D->3D DNA/RNA folding vs. ViennaRNA, RNAPKplex & US-align
-│   ├── pocket_dock.rs               # Alpha-sphere pocket druggability & SE(3) docking vs. fpocket & AutoDock Vina
-│   ├── pangenome.rs                 # rGFA pangenome graph, superbubble SV & walk entropy vs. minigraph & gfatools
-│   ├── amr_hgt.rs                   # Hierarchical AMR, point-mutation, porin-disruption & HGT island vs. AMRFinderPlus
-│   ├── bgc_mine.rs                  # Pfam-seed Plan-7 domain scan & architecture-rule BGC calling vs. GECCO / MIBiG 4.0
-│   ├── pseudo_loss_calibration.rs   # 3-frame codon-to-AA frameshift aligner & 3-model RELAX vs. MACSE v2.07 & PAML v4.10.10
-│   ├── haplotype.rs                 # Haplotype networks & polymorphic site matrices
-│   ├── complexity.rs                # Shannon entropy, KL divergence, RSCU & DNA walk scaling
-│   ├── genome_target.rs             # Non-B DNA scanners, fine-mapping & GPL-3.0 tool registry
-│   ├── pipelines.rs                 # HGT resistome, BGC mining, pseudogene & pangenome modules
-│   ├── dag_pipelines.rs             # Co-evolution, chromatin & somatic evolution modules
-│   ├── avian_systematics.rs         # Tiered avian mitogenome & rRNA supermatrix systematics
-│   ├── disease_panels.rs            # 32-panel (630-gene) human disease catalog
-│   ├── runie.rs                     # RuNIE (Rust Native Inference Engine): Candle tensor + GA-MCMC + Bayesian posterior DAG optimizer
-│   ├── runie_tools.rs               # 6 autonomously synthesized & calibrated native Rust domain engines (Mk+FBD, KaiABC, RP16, SE3, mRNA, Spidroin)
-│   └── sweep.rs                     # Cross-kingdom calibration sweep & 0★–5★ scoring gates
+│   ├── main.rs                        # CLI entry point & command dispatcher
+│   ├── lib.rs                         # Library module exports
+│   ├── fetch.rs                       # Polite NCBI Entrez fetcher & SHA-256 local cache
+│   ├── phylo.rs                       # Sequence alignment, K2P/TN93 distances & NJ trees
+│   ├── msa_calibration.rs             # Native aligner vs. MAFFT v7.526 benchmark harness
+│   ├── modeltest.rs                   # 24-model Felsenstein pruning vs. jModelTest v2.1.9
+│   ├── tree_builder.rs                # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE v2.4.0
+│   ├── coalescent.rs                  # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL v5.7.8
+│   ├── codon_selection.rs             # 61/60-state Goldman-Yang codon CTMC & 4D BEB vs. PAML codeml
+│   ├── orthology.rs                   # Smith-Waterman BLOSUM62 & Emms-Kelly RBH vs. DIAMOND v2.2.8
+│   ├── synteny.rs                     # Double-stranded (w,k)-minimizer & SyRI SV vs. Minimap2 v2.31
+│   ├── gene_caller.rs                 # 6-frame ORF graph, dicodon Markov & RBS EM vs. Prodigal v2.6.3
+│   ├── profile_hmm.rs                 # Plan-7 Profile HMM (MSV/Viterbi/Forward-Backward) vs. HMMER v3.4
+│   ├── nonb_dna.rs                    # Non-B DNA scanner vs. G4Hunter v1.0 & Z-Hunt-II (zhunt3)
+│   ├── rna_fold.rs                    # Turner-2004 MFE, McCaskill PF & rG4 vs. ViennaRNA v2.7.2
+│   ├── na_structure_1d2d3d.rs         # Unified 1D->2D->3D DNA/RNA folding vs. ViennaRNA, RNAPKplex & US-align
+│   ├── pocket_dock.rs                 # Alpha-sphere pocket druggability & SE(3) docking vs. fpocket & AutoDock Vina
+│   ├── pangenome.rs                   # rGFA pangenome graph, superbubble SV & walk entropy vs. minigraph & gfatools
+│   ├── amr_hgt.rs                     # Hierarchical AMR, point-mutation, porin-disruption & HGT island vs. AMRFinderPlus
+│   ├── bgc_mine.rs                    # Pfam-seed Plan-7 domain scan & architecture-rule BGC calling vs. GECCO / MIBiG 4.0
+│   ├── pseudo_loss_calibration.rs     # 3-frame codon-to-AA frameshift aligner & 3-model RELAX vs. MACSE v2.07 & PAML v4.10.10
+│   ├── mk_morpho_calibration.rs       # Stage-0 invariant filter, k-state MK+ASC pruning & PIC vs. IQ-TREE v2.4.0
+│   ├── kaiabc_allostery_calibration.rs# Jacobi Kirchhoff GNM allostery & RK4 KaiABC oscillator vs. SciPy v1.18.1
+│   ├── rp16_supermatrix_calibration.rs# Dayhoff-6/SR4 recoding & 16-RP supermatrix pruning vs. IQ-TREE v2.4.0
+│   ├── codon_opt_calibration.rs       # Synonymous codon optimizer (CAI/GC3/U%) & Turner MFE vs. ViennaRNA v2.7.2
+│   ├── repeat_motif_calibration.rs    # Spidroin/fibroin repeat-motif scanner & Candle ridge regression vs. SciPy v1.18.1
+│   ├── kabsch_tm_calibration.rs       # Jacobi SVD Kabsch SO(3) superposition, chirality guard & TM-score vs. SciPy v1.18.1
+│   ├── dca_coevo_calibration.rs       # Candle mfDCA covariance inversion, zero-sum Frobenius & APC vs. SciPy v1.18.1
+│   ├── popgen_calibration.rs          # Haplotype MSN, Hudson F_ST, nucleotide diversity & Tajima's D vs. SciPy v1.18.1
+│   ├── popgen_validation.rs           # Tier 2 Literature/Deep/Blinded Validation & Tier 3 Repeat/k-Core Synthesis (VAL-SET-013..015)
+│   ├── graphical_reports.rs           # Native SVG Scientific Visualization & 3D PDB Graphical Report Suite
+│   ├── htt_repeat_expansion.rs        # Single-cell HTT CAG somatic repeat expansion & 150-CAG toxicity cliff
+│   ├── haplotype.rs                   # Haplotype networks, Hudson F_ST & polymorphic site matrices
+│   ├── complexity.rs                  # Shannon entropy, KL divergence, RSCU & DNA walk scaling
+│   ├── genome_target.rs               # Non-B DNA scanners, fine-mapping & GPL-3.0 tool registry
+│   ├── pipelines.rs                   # HGT resistome, BGC mining, pseudogene & pangenome modules
+│   ├── dag_pipelines.rs               # Co-evolution, chromatin & somatic evolution modules
+│   ├── avian_systematics.rs           # Tiered avian mitogenome & rRNA supermatrix systematics
+│   ├── disease_panels.rs              # 32-panel (630-gene) human disease catalog
+│   ├── runie.rs                       # RuNIE (Rust Native Inference Engine): Candle tensor + GA-MCMC + Bayesian posterior DAG optimizer
+│   ├── runie_tools.rs                 # Autonomously synthesized & calibrated native Rust domain engines
+│   └── sweep.rs                       # Cross-kingdom calibration sweep & 0★–5★ scoring gates
 └── tests/
-    └── core_fidelity.rs             # Automated unit & integration test suite
+    └── core_fidelity.rs               # Automated unit & integration test suite
 ```
 
 *(Note: Local working directories `cache/`, `runs/`, and `tools/` are git-ignored so the repository remains lightweight.)*

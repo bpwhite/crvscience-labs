@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" width="100%" height="auto" role="img" aria-label="Graphical Report 2: Colored Multiple Sequence Alignment, Hairpin Arcs, and Codon Entropy Track">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1080" height="560" rx="12" fill="url(#bgGrad2)" stroke="#1e293b" stroke-width="2"/>
+
+  <!-- Header Bar -->
+  <rect x="16" y="14" width="1048" height="44" rx="8" fill="#111c30" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="30" y="34" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700">GRAPHICAL REPORT 2 • DATA TYPE: COLORED MULTIPLE SEQUENCE ALIGNMENT (MSA), HAIRPIN ARCS &amp; SHANNON ENTROPY</text>
+  <text x="30" y="50" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="11.5">Focal Nucleotide &amp; Codon Comparison Across Pure Repeat Hubs (H1), CAA/CAT Triplet Interruptions (H2) &amp; Blinded NUMT Paralog Filtering (H3)</text>
+
+  <!-- Secondary-Structure Base-Pairing Arcs Box (Top Track) -->
+  <rect x="16" y="66" width="1048" height="92" rx="8" fill="#0b1322" stroke="#1e293b" stroke-width="1.2"/>
+  <text x="28" y="84" fill="#7dd3fc" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">Turner-2004 Slip-Out Hairpin Base-Pairing Arcs (Left: Pure Repeat Tract 1..36 bp) vs. Proximal Flanking Window W1 (Right: 37..66 bp)</text>
+
+  <!-- Base-pairing arcs over Repeat Region (x = 240 to 636) -->
+  <g fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-opacity="0.82">
+    <path d="M 255 146 C 255 76, 615 76, 615 146"/>
+    <path d="M 277 146 C 277 84, 593 84, 593 146"/>
+    <path d="M 299 146 C 299 92, 571 92, 571 146"/>
+    <path d="M 321 146 C 321 100, 549 100, 549 146"/>
+    <path d="M 343 146 C 343 108, 527 108, 527 146"/>
+    <path d="M 365 146 C 365 116, 505 116, 505 146"/>
+    <path d="M 387 146 C 387 124, 483 124, 483 146"/>
+  </g>
+  <!-- Bulge disruption indicators at CAA/CAT positions -->
+  <path d="M 365 146 C 365 104, 505 104, 505 146" fill="none" stroke="#c084fc" stroke-width="2.2" stroke-dasharray="4 3"/>
+  <text x="435" y="102" text-anchor="middle" fill="#38bdf8" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Pure Hairpin: ΔG_slip = −9.60 kcal/mol</text>
+  <text x="435" y="142" text-anchor="middle" fill="#e9d5ff" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700">2× CAA/CAT Bulge: ΔG_slip = −4.60 kcal/mol (+5.0 kcal)</text>
+
+  <!-- Right Top Annotation: W1 Flanking Pol-zeta Zone -->
+  <rect x="662" y="92" width="388" height="54" rx="6" fill="#131c31" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="674" y="110" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">Proximal Flanking Window W1 (Pol-zeta TLS Patch Zone)</text>
+  <text x="674" y="125" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="9.8">• Pure Repeat (H1): 4.12x–4.36x SNP density (Red/Amber boxes)</text>
+  <text x="674" y="139" fill="#cbd5e1" font-family="ui-monospace, monospace" font-size="9.8">• Pairwise mfDCA_APC = 0.044 (H4 Falsified: No 3D Epistasis)</text>
+
+  <!-- ========================================================================= -->
+  <!-- ALIGNMENT MATRIX BLOCK (ROWS 1..7) -->
+  <!-- ========================================================================= -->
+  <rect x="16" y="166" width="1048" height="264" rx="8" fill="#0b1322" stroke="#1e293b" stroke-width="1.2"/>
+
+  <!-- Column Coordinate Ruler -->
+  <text x="28" y="186" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="10" font-weight="700">Haplotype / Cohort Row</text>
+  <text x="246" y="186" fill="#38bdf8" font-family="ui-monospace, monospace" font-size="10" font-weight="700">|&lt;--- Tandem Repeat Tract (Codons 1..12 / nt 1..36) ---&gt;|</text>
+  <text x="668" y="186" fill="#fbbf24" font-family="ui-monospace, monospace" font-size="10" font-weight="700">|&lt;--- Proximal W1 Flanking DNA (nt 37..66) ---&gt;|</text>
+
+  <!-- Row Labels -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="700">
+    <text x="28" y="213" fill="#38bdf8">1. H1_Pure_IndelMinus (Hub)</text>
+    <text x="28" y="241" fill="#fbbf24">2. H1_Derived_Indel+1 (Tip A)</text>
+    <text x="28" y="269" fill="#fbbf24">3. H1_Derived_Indel−1 (Tip B)</text>
+    <text x="28" y="297" fill="#c084fc">4. H2_Double_CAA_Break</text>
+    <text x="28" y="325" fill="#c084fc">5. H2_Double_CAT_Break</text>
+    <text x="28" y="353" fill="#34d399">6. H3_Authentic_COX1_Exon</text>
+    <text x="28" y="381" fill="#fb7185">7. H3_Rejected_NUMT_Paralog</text>
+  </g>
+
+  <!-- Row 1: H1 Pure Indel- Hub (CAG x 11 + --- indel pad + W1 Flanking) -->
+  <g transform="translate(244, 198)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="356" height="20" rx="3" fill="#0c4a6e" stroke="#0284c7" stroke-width="1"/>
+    <text x="8" y="14" fill="#e0f2fe" letter-spacing="2.1">CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAG</text>
+    <rect x="360" y="0" width="38" height="20" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="368" y="14" fill="#94a3b8" letter-spacing="2.5">---</text>
+    <!-- Flanking W1 with 3 recurrent hub SNPs highlighted -->
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="428" y="14" fill="#cbd5e1" letter-spacing="2.2">GCTGCCGCAGCCGCCGCCGCAGCCGCCGCC</text>
+    <rect x="461" y="1" width="13" height="18" rx="2" fill="#0284c7"/>
+    <text x="464" y="14" fill="#ffffff">A</text>
+    <rect x="556" y="1" width="13" height="18" rx="2" fill="#0284c7"/>
+    <text x="559" y="14" fill="#ffffff">T</text>
+    <rect x="664" y="1" width="13" height="18" rx="2" fill="#0284c7"/>
+    <text x="667" y="14" fill="#ffffff">A</text>
+  </g>
+
+  <!-- Row 2: H1 Derived Indel+1 (CAG x 12 Insertion + W1 Flanking SNPs) -->
+  <g transform="translate(244, 226)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="356" height="20" rx="3" fill="#0c4a6e" stroke="#0284c7" stroke-width="1"/>
+    <text x="8" y="14" fill="#e0f2fe" letter-spacing="2.1">CAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAG</text>
+    <rect x="360" y="0" width="38" height="20" rx="3" fill="#78350f" stroke="#f59e0b" stroke-width="1.4"/>
+    <text x="366" y="14" fill="#fef3c7" letter-spacing="1.8">CAG</text>
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="428" y="14" fill="#cbd5e1" letter-spacing="2.2">GCTGCCGCAGCCGCCGCCGCAGCCGCCGCC</text>
+    <rect x="461" y="1" width="13" height="18" rx="2" fill="#d97706"/>
+    <text x="464" y="14" fill="#ffffff">A</text>
+    <rect x="502" y="1" width="13" height="18" rx="2" fill="#e11d48"/>
+    <text x="505" y="14" fill="#ffffff">T</text>
+    <rect x="596" y="1" width="13" height="18" rx="2" fill="#e11d48"/>
+    <text x="599" y="14" fill="#ffffff">T</text>
+    <rect x="704" y="1" width="13" height="18" rx="2" fill="#d97706"/>
+    <text x="707" y="14" fill="#ffffff">A</text>
+  </g>
+
+  <!-- Row 3: H1 Derived Indel-1 (CAG x 10 Deletion + W1 Flanking SNPs) -->
+  <g transform="translate(244, 254)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="320" height="20" rx="3" fill="#0c4a6e" stroke="#0284c7" stroke-width="1"/>
+    <text x="8" y="14" fill="#e0f2fe" letter-spacing="2.1">CAGCAGCAGCAGCAGCAGCAGCAGCAGCAG</text>
+    <rect x="324" y="0" width="74" height="20" rx="3" fill="#334155" stroke="#64748b" stroke-width="1.2"/>
+    <text x="336" y="14" fill="#cbd5e1" letter-spacing="2.5">------</text>
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="428" y="14" fill="#cbd5e1" letter-spacing="2.2">GCTGCCGCAGCCGCCGCCGCAGCCGCCGCC</text>
+    <rect x="448" y="1" width="13" height="18" rx="2" fill="#e11d48"/>
+    <text x="451" y="14" fill="#ffffff">T</text>
+    <rect x="556" y="1" width="13" height="18" rx="2" fill="#d97706"/>
+    <text x="559" y="14" fill="#ffffff">T</text>
+    <rect x="650" y="1" width="13" height="18" rx="2" fill="#e11d48"/>
+    <text x="653" y="14" fill="#ffffff">G</text>
+  </g>
+
+  <!-- Row 4: H2 Double CAA Interruption (Stabilized Hairpin + Flat W1 Flanking) -->
+  <g transform="translate(244, 282)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="356" height="20" rx="3" fill="#0c4a6e" stroke="#0284c7" stroke-width="1"/>
+    <text x="8" y="14" fill="#e0f2fe" letter-spacing="2.1">CAGCAGCAGCAGCAACAGCAGCAGCAACAGCAG</text>
+    <!-- Highlight CAA Interruption 1 & 2 -->
+    <rect x="132" y="1" width="34" height="18" rx="3" fill="#9333ea" stroke="#f3e8ff" stroke-width="1.2"/>
+    <text x="136" y="14" fill="#ffffff" letter-spacing="1.8">CAA</text>
+    <rect x="258" y="1" width="34" height="18" rx="3" fill="#9333ea" stroke="#f3e8ff" stroke-width="1.2"/>
+    <text x="262" y="14" fill="#ffffff" letter-spacing="1.8">CAA</text>
+    <rect x="360" y="0" width="38" height="20" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="368" y="14" fill="#94a3b8" letter-spacing="2.5">---</text>
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+    <text x="428" y="14" fill="#a7f3d0" letter-spacing="2.2">GCTGCCGCAGCCGCCGCCGCAGCCGCCGCC</text>
+  </g>
+
+  <!-- Row 5: H2 Double CAT Interruption (ATXN1 Stabilized + Flat W1 Flanking) -->
+  <g transform="translate(244, 310)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="356" height="20" rx="3" fill="#0c4a6e" stroke="#0284c7" stroke-width="1"/>
+    <text x="8" y="14" fill="#e0f2fe" letter-spacing="2.1">CAGCAGCAGCAGCATCAGCAGCAGCATCAGCAG</text>
+    <rect x="132" y="1" width="34" height="18" rx="3" fill="#7e22ce" stroke="#f3e8ff" stroke-width="1.2"/>
+    <text x="136" y="14" fill="#ffffff" letter-spacing="1.8">CAT</text>
+    <rect x="258" y="1" width="34" height="18" rx="3" fill="#7e22ce" stroke="#f3e8ff" stroke-width="1.2"/>
+    <text x="262" y="14" fill="#ffffff" letter-spacing="1.8">CAT</text>
+    <rect x="360" y="0" width="38" height="20" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+    <text x="368" y="14" fill="#94a3b8" letter-spacing="2.5">---</text>
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+    <text x="428" y="14" fill="#a7f3d0" letter-spacing="2.2">GCTGCCGCAGCCGCCGCCGCAGCCGCCGCC</text>
+  </g>
+
+  <!-- Row 6: H3 Authentic Mitochondrial COX1 Exon (H_pos2 = 0.000 bits, omega = 0.031) -->
+  <g transform="translate(244, 338)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="398" height="20" rx="3" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+    <text x="8" y="14" fill="#d1fae5" letter-spacing="2.1">ATGTTCATCAACCGATGACTATTCTCAACCAATCAC</text>
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+    <text x="428" y="14" fill="#d1fae5" letter-spacing="2.2">AAAGACATTGGAACACTATACCTATTATTC</text>
+  </g>
+
+  <!-- Row 7: H3 Rejected Nuclear NUMT Paralog (2nd-Codon Nonsynonymous + Stop * Highlighted) -->
+  <g transform="translate(244, 366)" font-family="ui-monospace, monospace" font-size="10" font-weight="700">
+    <rect x="0" y="0" width="398" height="20" rx="3" fill="#3f1d2e" stroke="#f43f5e" stroke-width="1.2"/>
+    <text x="8" y="14" fill="#fecdd3" letter-spacing="2.1">ATGTTAATCAAGTGAT*ACTATTCCCAAGCAATTAC</text>
+    <!-- Red 2nd-codon & premature stop highlights -->
+    <rect x="172" y="1" width="24" height="18" rx="2" fill="#e11d48"/>
+    <text x="175" y="14" fill="#ffffff">T*</text>
+    <rect x="268" y="1" width="13" height="18" rx="2" fill="#e11d48"/>
+    <text x="271" y="14" fill="#ffffff">C</text>
+    <rect x="302" y="1" width="13" height="18" rx="2" fill="#e11d48"/>
+    <text x="305" y="14" fill="#ffffff">G</text>
+    <rect x="420" y="0" width="368" height="20" rx="3" fill="#3f1d2e" stroke="#f43f5e" stroke-width="1.2"/>
+    <text x="428" y="14" fill="#fecdd3" letter-spacing="2.2">GAAGAC5ATTGGAACACTATACCTATTATTC</text>
+    <rect x="492" y="1" width="16" height="18" rx="2" fill="#e11d48"/>
+    <text x="495" y="14" fill="#ffffff">!5</text>
+  </g>
+
+  <!-- Bottom Track: Per-Column Shannon Entropy Bar Plot (H_site in bits) -->
+  <rect x="16" y="438" width="1048" height="74" rx="8" fill="#0b1322" stroke="#1e293b" stroke-width="1.2"/>
+  <text x="28" y="458" fill="#94a3b8" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700">Per-Column Information Entropy Track H(x) &amp; Structural Regime Summary</text>
+  <text x="28" y="476" fill="#64748b" font-family="ui-monospace, monospace" font-size="9.5">Repeat Core: Low internal point diversity,</text>
+  <text x="28" y="490" fill="#64748b" font-family="ui-monospace, monospace" font-size="9.5">high copy-number indel boundary</text>
+
+  <!-- Entropy Bars Under Repeat Region -->
+  <g fill="#38bdf8">
+    <rect x="252" y="486" width="10" height="12" rx="1"/>
+    <rect x="276" y="486" width="10" height="12" rx="1"/>
+    <rect x="300" y="486" width="10" height="12" rx="1"/>
+    <rect x="324" y="486" width="10" height="12" rx="1"/>
+    <rect x="348" y="486" width="10" height="12" rx="1"/>
+    <rect x="376" y="462" width="32" height="36" rx="2" fill="#c084fc"/>
+    <rect x="424" y="486" width="10" height="12" rx="1"/>
+    <rect x="448" y="486" width="10" height="12" rx="1"/>
+    <rect x="472" y="486" width="10" height="12" rx="1"/>
+    <rect x="502" y="462" width="32" height="36" rx="2" fill="#c084fc"/>
+    <rect x="548" y="486" width="10" height="12" rx="1"/>
+    <rect x="572" y="486" width="10" height="12" rx="1"/>
+    <rect x="604" y="452" width="38" height="46" rx="2" fill="#f59e0b"/>
+  </g>
+  <!-- Entropy Bars Under Proximal W1 Region (Elevated Pol-zeta Hotspot Peaks) -->
+  <g fill="#f43f5e">
+    <rect x="672" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="692" y="454" width="12" height="44" rx="1"/>
+    <rect x="706" y="448" width="12" height="50" rx="1" fill="#fbbf24"/>
+    <rect x="724" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="746" y="452" width="12" height="46" rx="1"/>
+    <rect x="768" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="788" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="802" y="450" width="12" height="48" rx="1" fill="#fbbf24"/>
+    <rect x="822" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="840" y="456" width="12" height="42" rx="1"/>
+    <rect x="862" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="894" y="454" width="12" height="44" rx="1"/>
+    <rect x="908" y="450" width="12" height="48" rx="1" fill="#fbbf24"/>
+    <rect x="928" y="484" width="10" height="14" rx="1" fill="#475569"/>
+    <rect x="948" y="456" width="12" height="42" rx="1"/>
+    <rect x="970" y="484" width="10" height="14" rx="1" fill="#475569"/>
+  </g>
+
+  <!-- Color Key Legend Footer -->
+  <rect x="28" y="524" width="14" height="14" rx="3" fill="#0c4a6e" stroke="#0284c7"/>
+  <text x="48" y="535" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Pure Repeat Stem (−9.6 kcal/mol)</text>
+
+  <rect x="248" y="524" width="14" height="14" rx="3" fill="#9333ea" stroke="#f3e8ff"/>
+  <text x="268" y="535" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">CAA / CAT Triplet Interruption Bulge</text>
+
+  <rect x="492" y="524" width="14" height="14" rx="3" fill="#d97706"/>
+  <text x="512" y="535" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Pol-zeta W1 Substitution Hotspot</text>
+
+  <rect x="726" y="524" width="14" height="14" rx="3" fill="#064e3b" stroke="#10b981"/>
+  <text x="746" y="535" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Purifying Coding / Stabilized Flank</text>
+
+  <rect x="952" y="524" width="14" height="14" rx="3" fill="#e11d48"/>
+  <text x="972" y="535" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">NUMT Stop / Frameshift</text>
+</svg>

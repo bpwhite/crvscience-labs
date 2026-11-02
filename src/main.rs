@@ -37,6 +37,7 @@ use bio_suite::pipelines::{
 };
 use bio_suite::pocket_dock::run_pocket_dock_calibration_benchmark;
 use bio_suite::profile_hmm::run_profile_hmm_vs_hmmer3_calibration;
+use bio_suite::pseudo_loss_calibration::run_pseudo_loss_calibration;
 use bio_suite::rna_fold::run_rna_fold_vs_viennarna_benchmark;
 use bio_suite::runie::run_runie_master_pipeline_inference;
 use bio_suite::sweep::{
@@ -786,6 +787,38 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "relax-compare" | "pseudo-loss-compare" | "macse-compare" | "pseudo-loss-calibration" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching Tool Validation #16 (RuNIE Step-Up): Native Frameshift & Stop-Codon Coding Aligner + 3-Model Branch Relaxation Engine vs. MACSE v2.07 & PAML v4.10.10 (6 Dev + 6 Untouched Reserve Cohorts)...");
+            match run_pseudo_loss_calibration(&ws_root) {
+                Ok(report) => {
+                    eprintln!(
+                        "[bio-suite] Completed Tool Validation #16 in {} ms | Dev FS Recall={:.1}%, Reserve FS Recall={:.1}%, Combined AA Identity={:.2}%, M2 lnL r={:.4}, RELAX k MAE={:.4}, Concordance={:.1}%",
+                        report.total_duration_ms,
+                        report.development_summary.frameshift_site_recall * 100.0,
+                        report.reserve_summary.frameshift_site_recall * 100.0,
+                        report.combined_12_cohort_summary.mean_aa_column_identity_vs_macse * 100.0,
+                        report.combined_12_cohort_summary.m2_lnl_pearson_r,
+                        report.combined_12_cohort_summary.relax_k_mae,
+                        report.combined_12_cohort_summary.classification_concordance_pct
+                    );
+                    emit_json_output(&report, report.total_duration_ms, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Pseudo-loss calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             let ws_root = env::current_dir()
                 .ok()
@@ -918,6 +951,7 @@ fn main() {
         | "pangenome-compare" | "minigraph-compare" | "gfatools-compare" | "pangenome-calibration"
         | "amr-compare" | "amrfinder-compare" | "amr-hgt-compare" | "amr-calibration"
         | "bgc-compare" | "gecco-compare" | "bgc-calibration" | "bgc-calibrate" | "bgc-round2" | "bgc-round3" | "bgc-round4" | "bgc-detect"
+        | "relax-compare" | "pseudo-loss-compare" | "macse-compare" | "pseudo-loss-calibration"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);

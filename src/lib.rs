@@ -27,6 +27,7 @@ pub mod phylo;
 pub mod pipelines;
 pub mod pocket_dock;
 pub mod profile_hmm;
+pub mod pseudo_loss_calibration;
 pub mod rna_fold;
 pub mod runie;
 pub mod runie_tools;

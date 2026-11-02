@@ -27,9 +27,11 @@ The standalone executable is built at `target/release/bio-suite` (`target/releas
 
 ---
 
-## `RuNIE`: Rust Native Inference Engine (`src/runie.rs`, `src/runie_tools.rs`)
+## `RuNIE`: Rust Native Inference Engine (`src/runie.rs`, `src/runie_tools.rs`, [`RUNIE_CHANGELOG.md`](RUNIE_CHANGELOG.md))
 
-**`RuNIE` (Rust Native Inference Engine)** is a pure-Rust autonomous scientific workflow discovery engine built on **`candle-core` + `candle-nn` tensors** and **`rayon` multi-threading**. Instead of hardcoding a fixed sequence of bioinformatics tools beforehand, `RuNIE` models a Principal Scientist ("Worker") and their research team iteratively constructing, testing, calibrating, and refining multi-stage analytical pipelines over an open-ended directed acyclic graph (`DAG`) state space of 22 tool operators.
+**`RuNIE` (Rust Native Inference Engine)** is a pure-Rust autonomous scientific workflow discovery engine built on **`candle-core` + `candle-nn` tensors** and **`rayon` multi-threading**. Instead of hardcoding a fixed sequence of bioinformatics tools beforehand, `RuNIE` models a Principal Scientist ("Worker") and their research team iteratively constructing, testing, calibrating, and refining multi-stage analytical pipelines over an open-ended directed acyclic graph (`DAG`) state space of 23 tool operators.
+
+> 📋 **Dedicated `RuNIE` Changelog & Tool-Modification Ledger**: Every capability gap detected, native tool synthesized or modified, Dev-vs-Reserve parameter freeze, and multi-stage pipeline integrated by `RuNIE` is tracked in **[`RUNIE_CHANGELOG.md`](RUNIE_CHANGELOG.md)** and on the live **[CRV Science Labs `RuNIE` Engine Portal (`crvscience.com/labs/runie`)](https://crvscience.com/labs/runie)**.
 
 ### 1. Mathematical Formulation: `candle-core` Tensor Markov Policy + Parallel-Tempering `GA-MCMC`
 
@@ -150,40 +152,42 @@ The following native `bio-suite` engines and `BIO_SUITE_TOOL_REGISTRY` adapters 
 
 ```text
 crvscience-labs/
-├── Cargo.toml                   # Rust crate manifest & dependencies
+├── Cargo.toml                       # Rust crate manifest & dependencies
+├── RUNIE_CHANGELOG.md               # Dedicated RuNIE tool-modification, calibration & pipeline integration ledger
 ├── src/
-│   ├── main.rs                  # CLI entry point & command dispatcher
-│   ├── lib.rs                   # Library module exports
-│   ├── fetch.rs                 # Polite NCBI Entrez fetcher & SHA-256 local cache
-│   ├── phylo.rs                 # Sequence alignment, K2P/TN93 distances & NJ trees
-│   ├── msa_calibration.rs       # Native aligner vs. MAFFT v7.526 benchmark harness
-│   ├── modeltest.rs             # 24-model Felsenstein pruning vs. jModelTest v2.1.9
-│   ├── tree_builder.rs          # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE v2.4.0
-│   ├── coalescent.rs            # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL v5.7.8
-│   ├── codon_selection.rs       # 61/60-state Goldman-Yang codon CTMC & 4D BEB vs. PAML codeml
-│   ├── orthology.rs             # Smith-Waterman BLOSUM62 & Emms-Kelly RBH vs. DIAMOND v2.2.8
-│   ├── synteny.rs               # Double-stranded (w,k)-minimizer & SyRI SV vs. Minimap2 v2.31
-│   ├── gene_caller.rs           # 6-frame ORF graph, dicodon Markov & RBS EM vs. Prodigal v2.6.3
-│   ├── profile_hmm.rs           # Plan-7 Profile HMM (MSV/Viterbi/Forward-Backward) vs. HMMER v3.4
-│   ├── nonb_dna.rs              # Non-B DNA scanner vs. G4Hunter v1.0 & Z-Hunt-II (zhunt3)
-│   ├── rna_fold.rs              # Turner-2004 MFE, McCaskill PF & rG4 vs. ViennaRNA v2.7.2
-│   ├── na_structure_1d2d3d.rs   # Unified 1D->2D->3D DNA/RNA folding vs. ViennaRNA, RNAPKplex & US-align
-│   ├── pocket_dock.rs           # Alpha-sphere pocket druggability & SE(3) docking vs. fpocket & AutoDock Vina
-│   ├── pangenome.rs             # rGFA pangenome graph, superbubble SV & walk entropy vs. minigraph & gfatools
-│   ├── amr_hgt.rs               # Hierarchical AMR, point-mutation, porin-disruption & HGT island vs. AMRFinderPlus
-│   ├── bgc_mine.rs              # Pfam-seed Plan-7 domain scan & architecture-rule BGC calling vs. GECCO / MIBiG 4.0
-│   ├── haplotype.rs             # Haplotype networks & polymorphic site matrices
-│   ├── complexity.rs            # Shannon entropy, KL divergence, RSCU & DNA walk scaling
-│   ├── genome_target.rs         # Non-B DNA scanners, fine-mapping & GPL-3.0 tool registry
-│   ├── pipelines.rs             # HGT resistome, BGC mining, pseudogene & pangenome modules
-│   ├── dag_pipelines.rs         # Co-evolution, chromatin & somatic evolution modules
-│   ├── avian_systematics.rs     # Tiered avian mitogenome & rRNA supermatrix systematics
-│   ├── disease_panels.rs        # 32-panel (630-gene) human disease catalog
-│   ├── runie.rs                 # RuNIE (Rust Native Inference Engine): Candle tensor + GA-MCMC + Bayesian posterior DAG optimizer
-│   ├── runie_tools.rs           # 6 autonomously synthesized & calibrated native Rust domain engines (Mk+FBD, KaiABC, RP16, SE3, mRNA, Spidroin)
-│   └── sweep.rs                 # Cross-kingdom calibration sweep & 0★–5★ scoring gates
+│   ├── main.rs                      # CLI entry point & command dispatcher
+│   ├── lib.rs                       # Library module exports
+│   ├── fetch.rs                     # Polite NCBI Entrez fetcher & SHA-256 local cache
+│   ├── phylo.rs                     # Sequence alignment, K2P/TN93 distances & NJ trees
+│   ├── msa_calibration.rs           # Native aligner vs. MAFFT v7.526 benchmark harness
+│   ├── modeltest.rs                 # 24-model Felsenstein pruning vs. jModelTest v2.1.9
+│   ├── tree_builder.rs              # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE v2.4.0
+│   ├── coalescent.rs                # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL v5.7.8
+│   ├── codon_selection.rs           # 61/60-state Goldman-Yang codon CTMC & 4D BEB vs. PAML codeml
+│   ├── orthology.rs                 # Smith-Waterman BLOSUM62 & Emms-Kelly RBH vs. DIAMOND v2.2.8
+│   ├── synteny.rs                   # Double-stranded (w,k)-minimizer & SyRI SV vs. Minimap2 v2.31
+│   ├── gene_caller.rs               # 6-frame ORF graph, dicodon Markov & RBS EM vs. Prodigal v2.6.3
+│   ├── profile_hmm.rs               # Plan-7 Profile HMM (MSV/Viterbi/Forward-Backward) vs. HMMER v3.4
+│   ├── nonb_dna.rs                  # Non-B DNA scanner vs. G4Hunter v1.0 & Z-Hunt-II (zhunt3)
+│   ├── rna_fold.rs                  # Turner-2004 MFE, McCaskill PF & rG4 vs. ViennaRNA v2.7.2
+│   ├── na_structure_1d2d3d.rs       # Unified 1D->2D->3D DNA/RNA folding vs. ViennaRNA, RNAPKplex & US-align
+│   ├── pocket_dock.rs               # Alpha-sphere pocket druggability & SE(3) docking vs. fpocket & AutoDock Vina
+│   ├── pangenome.rs                 # rGFA pangenome graph, superbubble SV & walk entropy vs. minigraph & gfatools
+│   ├── amr_hgt.rs                   # Hierarchical AMR, point-mutation, porin-disruption & HGT island vs. AMRFinderPlus
+│   ├── bgc_mine.rs                  # Pfam-seed Plan-7 domain scan & architecture-rule BGC calling vs. GECCO / MIBiG 4.0
+│   ├── pseudo_loss_calibration.rs   # 3-frame codon-to-AA frameshift aligner & 3-model RELAX vs. MACSE v2.07 & PAML v4.10.10
+│   ├── haplotype.rs                 # Haplotype networks & polymorphic site matrices
+│   ├── complexity.rs                # Shannon entropy, KL divergence, RSCU & DNA walk scaling
+│   ├── genome_target.rs             # Non-B DNA scanners, fine-mapping & GPL-3.0 tool registry
+│   ├── pipelines.rs                 # HGT resistome, BGC mining, pseudogene & pangenome modules
+│   ├── dag_pipelines.rs             # Co-evolution, chromatin & somatic evolution modules
+│   ├── avian_systematics.rs         # Tiered avian mitogenome & rRNA supermatrix systematics
+│   ├── disease_panels.rs            # 32-panel (630-gene) human disease catalog
+│   ├── runie.rs                     # RuNIE (Rust Native Inference Engine): Candle tensor + GA-MCMC + Bayesian posterior DAG optimizer
+│   ├── runie_tools.rs               # 6 autonomously synthesized & calibrated native Rust domain engines (Mk+FBD, KaiABC, RP16, SE3, mRNA, Spidroin)
+│   └── sweep.rs                     # Cross-kingdom calibration sweep & 0★–5★ scoring gates
 └── tests/
-    └── core_fidelity.rs         # Automated unit & integration test suite
+    └── core_fidelity.rs             # Automated unit & integration test suite
 ```
 
 *(Note: Local working directories `cache/`, `runs/`, and `tools/` are git-ignored so the repository remains lightweight.)*

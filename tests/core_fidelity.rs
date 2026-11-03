@@ -378,8 +378,8 @@ fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping()
         pip_sum
     );
 
-    // Verify all 30 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
-    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 30);
+    // Verify all 31 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
+    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 31);
     for tool in BIO_SUITE_TOOL_REGISTRY {
         assert!(
             tool.gpl3_compatible,
@@ -1397,15 +1397,15 @@ fn test_runie_pipeline_inference_engine_all_3_tiers_and_9_studies() {
     let cache = PoliteCacheManager::default_workspace_cache();
     let ws_root = Path::new(env!("CARGO_MANIFEST_DIR"));
 
-    // 1. Verify open-ended tool vocabulary (16 core + 6 synthesized domain tools = 22 states)
-    assert_eq!(RUNIE_TOOL_VOCABULARY.len(), 22);
+    // 1. Verify open-ended tool vocabulary (17 core + 6 synthesized domain tools = 23 states)
+    assert_eq!(RUNIE_TOOL_VOCABULARY.len(), 23);
 
     // 2. Execute full RuNIE GA-MCMC Step-Up Pipeline Synthesis & 9-Study Validation
     let report = run_runie_master_pipeline_inference(&cache, ws_root)
         .expect("RuNIE master pipeline inference must succeed");
 
     assert_eq!(report.engine_acronym, "RuNIE");
-    assert_eq!(report.total_tool_vocabulary_size, 22);
+    assert_eq!(report.total_tool_vocabulary_size, 23);
     assert_eq!(report.autonomous_tools_synthesized_and_calibrated, 6);
     assert_eq!(report.total_scientific_studies_solved, 9);
     assert_eq!(report.tier_validation_summaries.len(), 3);
@@ -1568,3 +1568,143 @@ fn test_clonal_synth_scipy_calibration() {
     assert!(report.overall_mae_welch_t <= 1e-4);
     assert_eq!(report.overall_regime_concordance_pct, 100.0);
 }
+
+#[test]
+fn test_finemap_coloc_scipy_calibration() {
+    use bio_suite::finemap_coloc_calibration::run_finemap_coloc_scipy_calibration;
+
+    let report = run_finemap_coloc_scipy_calibration();
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.dev_cohorts, 6);
+    assert_eq!(report.reserve_cohorts, 6);
+    assert_eq!(report.total_variants_evaluated, 240);
+    assert!(report.mae_lead_ln_abf <= 1e-4);
+    assert!(report.mae_lead_pip_gwas <= 1e-4);
+    assert!(report.mae_credible_entropy_bits <= 1e-4);
+    assert!(report.mae_coloc_pp_h3 <= 1e-4);
+    assert!(report.mae_coloc_pp_h4 <= 1e-4);
+    assert_eq!(report.credible_set_concordance_rate, 1.0);
+    assert_eq!(report.regime_concordance_rate, 1.0);
+    // Verify negative controls DEV-06 (H0 null) and RES-06 (H3 linkage decoy)
+    assert_eq!(report.cohorts[5].native_regime, "UnderpoweredNullH0Control");
+    assert!(report.cohorts[5].native_pp_h0 >= 0.90);
+    assert_eq!(report.cohorts[11].native_regime, "DistinctLinkageH3Regime");
+    assert!(report.cohorts[11].native_pp_h3 >= 0.99);
+}
+
+#[test]
+fn test_mr_twas_scipy_calibration() {
+    use bio_suite::mr_twas_calibration::run_mr_twas_scipy_calibration;
+
+    let report = run_mr_twas_scipy_calibration();
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.dev_cohorts, 6);
+    assert_eq!(report.reserve_cohorts, 6);
+    assert_eq!(report.total_instruments_evaluated, 120);
+    assert!(report.mae_ivw_beta <= 1e-4);
+    assert!(report.mae_ivw_se <= 1e-4);
+    assert!(report.mae_cochran_q <= 1e-4);
+    assert!(report.mae_egger_slope <= 1e-4);
+    assert!(report.mae_egger_intercept <= 1e-4);
+    assert!(report.mae_weighted_median_beta <= 1e-4);
+    assert_eq!(report.regime_concordance_rate, 1.0);
+    // Verify negative controls DEV-06 (CRP null) and RES-06 (HDL horizontal pleiotropy)
+    assert_eq!(report.cohorts[5].native_regime, "NullNonCausalInstrumentSet");
+    assert_eq!(
+        report.cohorts[11].native_regime,
+        "HorizontalPleiotropyConfoundedReject"
+    );
+}
+
+#[test]
+fn test_splicing_crispr_scipy_calibration() {
+    use bio_suite::splicing_crispr_calibration::run_splicing_crispr_scipy_calibration;
+
+    let report = run_splicing_crispr_scipy_calibration()
+        .expect("Alternative Splicing & BAGEL2 CRISPR Essentiality calibration vs. SciPy v1.18.1 must succeed");
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.development_cohorts, 6);
+    assert_eq!(report.untouched_reserve_cohorts, 6);
+    assert_eq!(report.total_replicates_evaluated, 36);
+    assert_eq!(report.total_guides_evaluated, 72);
+    assert!(report.mean_abs_delta_psi_error <= 1e-4);
+    assert!(report.mean_abs_delta_psi_z_error <= 1e-4);
+    assert!(report.mean_abs_isoform_jsd_error <= 1e-4);
+    assert!(report.mean_abs_bagel_ln_bf_error <= 1e-4);
+    assert!(report.mean_abs_posterior_ess_error <= 1e-4);
+    assert_eq!(report.regime_concordance_percent, 100.0);
+    // Verify negative controls DEV-06 (GAPDH/AAVS1 null) and RES-06 (PVT1 8q24 CN=18 amplicon DSB decoy)
+    assert_eq!(
+        report.cohorts[5].native_regime,
+        "NullHousekeepingIsoformNoiseControl"
+    );
+    assert_eq!(
+        report.cohorts[11].native_regime,
+        "OffTargetCopyNumberAmplificationArtifactReject"
+    );
+}
+
+#[test]
+fn test_kmer_complexity_scipy_calibration() {
+    use bio_suite::kmer_complexity_calibration::run_kmer_complexity_scipy_calibration;
+
+    let report = run_kmer_complexity_scipy_calibration()
+        .expect("k-mer Shannon Entropy, LZ76 NCD & Fractal DNA Walk DFA calibration vs. SciPy v1.18.1 must succeed");
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.development_cohorts, 6);
+    assert_eq!(report.untouched_reserve_cohorts, 6);
+    assert_eq!(report.total_base_pairs_evaluated, 18432);
+    assert!(report.mean_abs_shannon_h3_error <= 1e-4);
+    assert!(report.mean_abs_shannon_h6_error <= 1e-4);
+    assert!(report.mean_abs_lz76_norm_error <= 1e-4);
+    assert!(report.mean_abs_lz76_ncd_error <= 1e-4);
+    assert!(report.mean_abs_dfa_alpha_error <= 1e-4);
+    assert!(report.mean_abs_hurst_h_error <= 1e-4);
+    assert_eq!(report.regime_concordance_percent, 100.0);
+    // Verify negative controls DEV-06 (homopolymer artifact) and RES-06 (I.I.D. white noise)
+    assert_eq!(
+        report.cohorts[5].native_regime,
+        "HomopolymerOrDinucleotideLowComplexityArtifactReject"
+    );
+    assert_eq!(
+        report.cohorts[11].native_regime,
+        "MemorylessIIDBernoulliWhiteNoiseControlReject"
+    );
+}
+
+#[test]
+fn test_super_blast_calibration() {
+    use bio_suite::super_blast_calibration::run_super_blast_calibration;
+
+    let report = run_super_blast_calibration()
+        .expect("Super-BLAST Tier 1 calibration sweep vs. Biopython v1.88 & SciPy v1.18.1 must succeed");
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.development_cohorts, 6);
+    assert_eq!(report.untouched_reserve_cohorts, 6);
+    assert_eq!(report.biotype_classification_accuracy_pct, 100.0);
+    assert!(report.mean_abs_raw_score_error <= 1e-4);
+    assert!(report.mean_abs_bit_score_error <= 1e-4);
+    assert!(report.mean_abs_pct_identity_error <= 1e-4);
+    assert!(report.mean_abs_k2p_distance_error <= 1e-4);
+    assert_eq!(report.regime_concordance_percent, 100.0);
+    // Verify MSA pre-validation rescue & rejections
+    assert_eq!(report.msa_pre_validation_audit[0].status, "AcceptedDirect");
+    assert_eq!(report.msa_pre_validation_audit[1].status, "AcceptedAutoRevComp");
+    assert!(report.msa_pre_validation_audit[1].reverse_complement_rescued);
+    assert!(!report.msa_pre_validation_audit[2].incorporate_into_msa);
+    assert!(!report.msa_pre_validation_audit[3].incorporate_into_msa);
+    // Verify 16S vs 10-gene tip concordance audit
+    assert_eq!(report.phylogeny_16s_10gene_tip_audit.num_secondary_genes_tested, 10);
+    assert_eq!(report.phylogeny_16s_10gene_tip_audit.concordant_genes_count, 8);
+    assert_eq!(report.phylogeny_16s_10gene_tip_audit.discordant_genes_count, 2);
+    // Verify negative controls DEV-06 (random shuffle) and RES-06 (low-complexity ATn repeat)
+    assert_eq!(
+        report.cohorts[5].native_regime,
+        "NonHomologousRandomShuffleControlReject"
+    );
+    assert_eq!(
+        report.cohorts[11].native_regime,
+        "LowComplexityCompositionBiasedArtifactReject"
+    );
+}
+

@@ -356,6 +356,16 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
         native_rust_fallback: "bio-suite 4-Stage Candle-Core Spidroin Repeat Grammar (Poly-Ala / GPGXX / MaSp3 / SpiCE) & Multi-Output Biomechanics Regressor",
         description: "Predicts dragline silk toughness (MJ/m^3), tensile strength (GPa), Young's modulus, and supercontraction from spidroin repeat architectures across 1,098 Araneae species (Arakawa et al. 2022).",
     },
+    ToolAdapterEntry {
+        engine: "phylo",
+        category: "Adaptive Multi-Biotype Super-BLAST (DNA/RNA/Protein/Other), Sensitivity Analyzer, Pre-MSA Validator, 16S Tip Concordance & JIT Genome/Barcode Search (RuNIE Tool G)",
+        tool_name: "Biopython v1.88 PairwiseAligner / NCBI BLAST+ (blastn / blastp / makeblastdb) / SciPy v1.18.1",
+        binary_cmd: "super-blast",
+        spdx_license: "GPL-3.0-or-later / BSD-3-Clause",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite 5-Stage Adaptive Multi-Biotype (DNA/RNA/Protein/Other) Super-BLAST Engine with On-the-Fly Direct vs. JIT Ephemeral Index Sensitivity Analyzer, Pre-MSA Validator, 16S + 10-Gene Tip Auditor & Symmetric K2P Matrix",
+        description: "Automatically detects DNA, RNA, Protein (BLOSUM62), or Standard Language strings, performs sensitivity crossover analysis to avoid unnecessary DB compilation, validates MSA inputs, audits multi-gene tip concordance, and executes JIT genome/barcode searches.",
+    },
 ];
 
 /// Intersect high-complexity sliding windows with genomic annotations (genes, CDS, repeats)

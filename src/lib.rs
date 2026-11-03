@@ -8,6 +8,8 @@ pub mod agent;
 pub mod amr_hgt;
 pub mod avian_systematics;
 pub mod bgc_mine;
+pub mod chrom_condensate_calibration;
+pub mod clonal_synth_calibration;
 pub mod coalescent;
 pub mod codon_opt_calibration;
 pub mod codon_selection;

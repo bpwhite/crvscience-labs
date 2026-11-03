@@ -10,20 +10,46 @@ Because we are building a self-contained Rust toolkit from the ground up, this l
 
 ---
 
-## Summary Telemetry (`v1.13.0` — November 2026)
+## Summary Telemetry (`v1.15.0` — November 2026)
 
 | Metric | Count / Value |
 | :--- | :--- |
-| **Total Tool Vocabulary in `RuNIE` Markov State Space** | **27 Native Rust Operators** (`27` Live External Reserve-Validated & Multi-Stage Chained Operators) |
-| **Tools Synthesized or Modified Due to `RuNIE`** | **20 Major Tool & Pipeline Interventions** (`RN-2026-001` through `RN-2026-020`) |
-| **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **20 End-to-End 4–6 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-015`) |
+| **Total Tool Vocabulary in `RuNIE` Markov State Space** | **29 Native Rust Operators** (`29` Live External Reserve-Validated & Multi-Stage Chained Operators) |
+| **Tools Synthesized or Modified Due to `RuNIE`** | **22 Major Tool & Pipeline Interventions** (`RN-2026-001` through `RN-2026-022`) |
+| **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **22 End-to-End 4–6 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-017`) |
 | **Flagged Critical Reports (`🚩 Critical Report`)** | **3 Foundational Reports**: `#72` (Bayesian Depth Sweep), `#73` (Blinded Dual-Pass Validation), `#74` (Tier 3 Repeat/`k`-Core Synthesis) |
-| **Negative Control / Uncalibrated Trajectories Rejected (`0🧪`)** | **31 Logged `0🧪` Rejects** in `runs/zero-star-calibration-dump.json` |
+| **Negative Control / Uncalibrated Trajectories Rejected (`0🧪`)** | **35 Logged `0🧪` Rejects** in `runs/zero-star-calibration-dump.json` |
 | **Runtime Architecture** | Pure-Rust `candle-core` + `candle-nn` CPU Tensors + `rayon` Parallel Tempering (`GA-MCMC`) + Native SVG & 3D PDB Graphical Report Suite |
 
 ---
 
 ## Chronological Log of `RuNIE` Changes, Solutions, Tool Modifications & Integrated Pipelines
+
+### [`v1.15.0`] — 2026-11-02 — Tool 29 Calibration (`#76` — `Tier 1: Exploratory`, `2🧪`): Somatic Clonal 96-Channel Mutational JSD, Lawson–Hanson `NNLS` COSMIC Signature Deconvolution & CRISPR Synthetic Lethality (`ΔChronos`, Welch's `t`) vs. `SciPy v1.18.1` (`VAL-SET-017`)
+
+- **Entry ID**: `RN-2026-022`
+- **Affected Tool(s) & Module(s)**:
+  - **Calibrated Native Module**: `clonal-compare` & `clonal-synth` (`src/clonal_synth_calibration.rs`, `src/dag_pipelines.rs`)
+  - **Public Reference Benchmark**: `SciPy v1.18.1` (`scipy.stats.entropy`, `scipy.spatial.distance.jensenshannon`, `scipy.optimize.nnls`, `scipy.stats.ttest_ind`) across **12 cohorts (`6` Dev + `6` Untouched Reserve, `12,930` single cells / `133,890` SNVs, `VAL-SET-017-CLONAL-96SBS-SYNTH-12COHORT`)**
+- **Engineering & Calibration Summary**:
+  1. **Stage 1 (96-Channel Trinucleotide Shannon Entropy $H_{96}$, Base-2 Jensen–Shannon Divergence $JSD$, and Kolmogorov–Smirnov $D_{\text{KS}}$)**: Evaluates somatic subclone 96-channel spectra against the endogenous 5mC CpG deamination clock (`SBS1`/`SBS5`), achieving `0.0000` MAE vs. `scipy.stats.entropy(p, base=2)` and `scipy.spatial.distance.jensenshannon(p, q, base=2)**2` (`r = 1.0000`).
+  2. **Stage 2 (`candle-core` Lawson–Hanson Non-Negative Least Squares `NNLS` COSMIC Signature Deconvolution)**: Solves $\min_{\mathbf{x} \ge 0} \|\mathbf{S}\mathbf{x} - \mathbf{p}\|_2^2$ over the 6-signature COSMIC v3.4 basis (`SBS1/5`, `SBS2/13 APOBEC`, `SBS6/15 MMR`, `SBS10a/b POLE`, `SBS3 HRD`, `SBS4/7 Exogenous`) via `candle-core` normal-equation matrices $\mathbf{S}^T\mathbf{S}$ and active-set KKT projection (`0.0000` MAE vs. `scipy.optimize.nnls`, cosine similarity `1.0000`).
+  3. **Stage 3–4 (DepMap CRISPR Synthetic Lethality $\Delta\text{Chronos}$, Welch Two-Sample $t$-Test & `0🧪` Clock/Passenger Controls)**: Evaluates paralog and metabolic synthetic lethality (`ARID1A`$\rightarrow$`ARID1B`, `MTAP`$\rightarrow$`PRMT5`, `MLH1/MSH2`$\rightarrow$`WRN`, `SMARCA4`$\rightarrow$`SMARCA2`, `BRCA1/2`$\rightarrow$`PARP1/POLQ`, `STAG2`$\rightarrow$`STAG1`, `ENO1`$\rightarrow$`ENO2`, `VPS4B`$\rightarrow$`VPS4A`) with `0.0000` MAE on $\Delta\text{Chronos}$ and Welch's $t$ (`15.71×` speedup) while rejecting polyclonal normal HSC clock drift (`DEV-06`, $JSD = 0.0003\text{ bits}$) and synonymous passenger subclones (`RES-06`, $JSD = 0.0004\text{ bits}$) at `0🧪`.
+
+---
+
+### [`v1.14.0`] — 2026-11-02 — Tool 28 Calibration (`#75` — `Tier 1: Exploratory`, `2🧪`): 3D Chromatin Graph Laplacian Connectivity (`λ₂`, `λ̃₂`), Von Neumann Entropy (`S_VN`), Sliding-Diamond TAD Insulation (`IS_i`) & A/B Compartment Eigenvector (`E₁`) vs. `SciPy v1.18.1` (`VAL-SET-016`)
+
+- **Entry ID**: `RN-2026-021`
+- **Affected Tool(s) & Module(s)**:
+  - **Calibrated Native Module**: `chrom-compare` & `chrom-condensate` (`src/chrom_condensate_calibration.rs`, `src/dag_pipelines.rs`)
+  - **Public Reference Benchmark**: `SciPy v1.18.1` (`scipy.sparse.csgraph.laplacian`, `scipy.linalg.eigh`) & `NumPy v2.5.4` (`numpy.corrcoef`) across **12 cohorts (`6` Dev + `6` Untouched Reserve, `119.36 Mb`, `VAL-SET-016-CHROM-LAPLACIAN-TAD-12COHORT`)**
+- **Engineering & Calibration Summary**:
+  1. **Stage 1–2 (`candle-core` Combinatorial & Symmetric Normalized Graph Laplacians + Cyclic Jacobi Eigensolver)**: Constructs $\mathbf{L} = \mathbf{D} - \mathbf{W}$ and $\mathcal{L}_{\text{sym}} = \mathbf{I} - \mathbf{D}^{-1/2}\mathbf{W}\mathbf{D}^{-1/2}$ on `candle-core` tensors and diagonalizes both via cyclic Jacobi orthogonal rotations (`0.0000` MAE vs. `scipy.sparse.csgraph.laplacian` + `scipy.linalg.eigh` on $\lambda_2$, $\tilde{\lambda}_2$, and $S_{\text{VN}}$, `r = 1.0000`).
+  2. **Stage 3 (Crane Sliding-Diamond TAD Insulation Score $IS_i$ & Lieberman-Aiden O/E Compartment Eigenvector $E_1$)**: Evaluates off-diagonal sliding-diamond log2 insulation profiles (`0.0000` MAE on $IS_{\min}$, `12/12` exact boundary bin match) and distance-normalized O/E Pearson correlation principal eigenvectors (`r = 1.0000` across all 10 positive cohorts) plus Newman-Girvan compartment modularity $Q$.
+  3. **Stage 4 (IDR Sticker-Spacer Saturation Concentration $c_{\text{sat}}$ & `0🧪` Polymer/Cohesin-Depletion Controls)**: Couples 3D chromatin topology with partner IDR aromatic/arginine sticker-spacer grammar to achieve `12/12` (`100.0%`) regime concordance (`10.94×` speedup) while rejecting isotropic $s^{-1}$ polymer (`DEV-06`) and acute `RAD21-mAID` cohesin-depleted loop-free chromatin (`RES-06`) at `0🧪`.
+
+---
 
 ### [`v1.13.0`] — 2026-11-02 — Tier 3 Scientific Synthesis (`#74` `🚩 Critical Report`): Indel-Free Tandem Repeat Connector Hubs (`H1`), Triplet Interruption Collapse (`H2`), Blinded `NUMT`/`HGT` Pruning (`H3`), Flanking `mfDCA` Falsification (`H4`) & Native Graphical Report Suite
 

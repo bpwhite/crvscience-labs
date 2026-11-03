@@ -1529,3 +1529,42 @@ fn test_pseudo_loss_macse_and_paml_relax_calibration() {
     assert!(!nat_hbb.shared_across_sister_lineages);
     assert!(nat_hbb.singleton_homopolymer_artifact);
 }
+
+#[test]
+fn test_chrom_condensate_scipy_calibration() {
+    use bio_suite::chrom_condensate_calibration::run_chrom_condensate_scipy_calibration;
+
+    let report = run_chrom_condensate_scipy_calibration(None)
+        .expect("3D Chromatin Laplacian & TAD Insulation calibration vs SciPy v1.18.1 must succeed");
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.dev_cohorts, 6);
+    assert_eq!(report.reserve_cohorts, 6);
+    assert!(report.dev_mean_abs_err_lambda2 <= 1e-4);
+    assert!(report.reserve_mean_abs_err_lambda2 <= 1e-4);
+    assert!(report.dev_mean_abs_err_norm_lambda2 <= 1e-4);
+    assert!(report.reserve_mean_abs_err_norm_lambda2 <= 1e-4);
+    assert!(report.dev_mean_abs_err_vn_entropy <= 1e-4);
+    assert!(report.reserve_mean_abs_err_vn_entropy <= 1e-4);
+    assert!(report.dev_mean_abs_err_insulation <= 1e-4);
+    assert!(report.reserve_mean_abs_err_insulation <= 1e-4);
+    assert_eq!(report.tad_boundary_exact_match_rate_pct, 100.0);
+    assert_eq!(report.regime_concordance_rate_pct, 100.0);
+}
+
+#[test]
+fn test_clonal_synth_scipy_calibration() {
+    use bio_suite::clonal_synth_calibration::run_clonal_synth_vs_scipy_calibration;
+    use std::path::Path;
+
+    let report = run_clonal_synth_vs_scipy_calibration(Path::new("."))
+        .expect("Somatic Clonal 96-SBS JSD, NNLS & CRISPR Synthetic Lethality calibration vs SciPy v1.18.1 must succeed");
+    assert_eq!(report.total_cohorts, 12);
+    assert_eq!(report.dev_cohorts, 6);
+    assert_eq!(report.reserve_cohorts, 6);
+    assert!(report.overall_mae_h96_bits <= 1e-4);
+    assert!(report.overall_mae_jsd_bits <= 1e-4);
+    assert!(report.overall_mae_nnls_weight <= 1e-4);
+    assert!(report.overall_mae_delta_chronos <= 1e-4);
+    assert!(report.overall_mae_welch_t <= 1e-4);
+    assert_eq!(report.overall_regime_concordance_pct, 100.0);
+}

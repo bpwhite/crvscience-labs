@@ -10,6 +10,7 @@ use bio_suite::agent::{
 use bio_suite::amr_hgt::run_amr_hgt_calibration_benchmark;
 use bio_suite::avian_systematics::run_avian_tiered_systematics_sweep;
 use bio_suite::bgc_mine::run_bgc_calibration_benchmark;
+use bio_suite::clonal_synth_calibration::run_clonal_synth_vs_scipy_calibration;
 use bio_suite::coalescent::run_coalescent_native_vs_astral_calibration;
 use bio_suite::codon_selection::run_codon_selection_native_vs_paml_calibration;
 use bio_suite::dag_pipelines::{
@@ -1001,6 +1002,42 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "chrom-compare" | "chrom-laplacian-compare" | "tad-compare" | "condensate-compare" => {
+            let out_p = out_file.map(PathBuf::from).unwrap_or_else(|| {
+                if Path::new("../labs/releases").exists() {
+                    PathBuf::from("../labs/releases/chrom-condensate-native-vs-scipy-calibration.json")
+                } else {
+                    PathBuf::from("labs/releases/chrom-condensate-native-vs-scipy-calibration.json")
+                }
+            });
+            eprintln!("[bio-suite] Launching Tool 28 Calibration: Native Rust + candle-core 3D Chromatin Contact Graph Laplacian, TAD Insulation & A/B Compartment Eigenvector Engine vs. SciPy v1.18.1 across 12 Cohorts (VAL-SET-016: 6 Dev + 6 Reserve)...");
+            match bio_suite::chrom_condensate_calibration::run_chrom_condensate_scipy_calibration(Some(&out_p)) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    eprintln!("\n{}", report.ascii_focal_contact_and_insulation_view);
+                    eprintln!(
+                        "[bio-suite] 3D Chromatin Laplacian & TAD Calibration Summary: Dev |dLambda2| = {:.4}, Reserve |dLambda2| = {:.4}, Dev |dNormL2| = {:.4}, Reserve |dNormL2| = {:.4}, Dev |dS_VN| = {:.4}, Reserve |dS_VN| = {:.4}, Dev |dMinIS| = {:.4}, Reserve |dMinIS| = {:.4}, E1 r = {:.4}, TAD Boundary Match = {:.1}%, Regime Match = {:.1}%, Speedup = {:.2}x",
+                        report.dev_mean_abs_err_lambda2,
+                        report.reserve_mean_abs_err_lambda2,
+                        report.dev_mean_abs_err_norm_lambda2,
+                        report.reserve_mean_abs_err_norm_lambda2,
+                        report.dev_mean_abs_err_vn_entropy,
+                        report.reserve_mean_abs_err_vn_entropy,
+                        report.dev_mean_abs_err_insulation,
+                        report.reserve_mean_abs_err_insulation,
+                        report.dev_mean_e1_pearson_r,
+                        report.tad_boundary_exact_match_rate_pct,
+                        report.regime_concordance_rate_pct,
+                        report.mean_speedup_factor
+                    );
+                    emit_json_output(&report, report.total_native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] 3D Chromatin Laplacian calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat" => {
             let default_out = "runs/htt-somatic-repeat-expansion-report.json".to_string();
             let target_out = out_file.unwrap_or(&default_out);
@@ -1045,6 +1082,31 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] RuNIE pipeline inference failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "clonal-compare" | "somatic-compare" | "nnls-compare" | "chronos-compare" => {
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            eprintln!("[bio-suite] Launching 12-Cohort Somatic Clonal 96-Channel Mutational JSD, NNLS COSMIC Deconvolution & CRISPR Synthetic Lethality Calibration vs. SciPy v1.18.1 (VAL-SET-017)...");
+            match run_clonal_synth_vs_scipy_calibration(&ws_root) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    eprintln!("\n{}", report.ascii_focal_96sbs_track);
+                    eprintln!("\n{}", report.ascii_cladogram);
+                    emit_json_output(&report, report.dev_summary.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Clonal-synth SciPy calibration failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -1169,6 +1231,8 @@ fn main() {
         | "popgen-tier2-deep-sweep" | "haplomap-deep-sweep" | "tier2-bayesian-sweep"
         | "popgen-tier2-blind-validate" | "haplomap-blind-validate" | "tier2-blind-validate"
         | "popgen-tier3-synthesis" | "haplomap-tier3" | "tier3-popgen-synthesis"
+        | "chrom-compare" | "chrom-laplacian-compare" | "tad-compare" | "condensate-compare"
+        | "clonal-compare" | "somatic-compare" | "nnls-compare" | "chronos-compare"
         | "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {

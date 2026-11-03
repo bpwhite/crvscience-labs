@@ -5,19 +5,20 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Published Lab Discoveries (`86` Reports), Flagged Critical Reports (`7`) & Validation Datasets (`25` Sets)
+## Published Lab Discoveries (`87` Reports), Flagged Critical Reports (`8`) & Validation Datasets (`26` Sets)
 
-- **Total Published Lab Discoveries**: **86** peer-ready computational reports ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Published Lab Discoveries**: **87** peer-ready computational reports ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **Tier 1: Exploratory**: **76** studies (new/unseen cohorts & calibration sweeps)
   - **Tier 2: Validation**: **6** studies (replicated Dev + Untouched Reserve benchmark sets, Bayesian depth sweeps & Blinded Dual-Pass validations)
-  - **Tier 3: Scientific**: **4** studies (cross-study hypothesis synthesis with inline vector `.svg` Graphical Reports & Interactive 3D PDB Structure Viewers)
-  - **Flagged Critical Reports (`🚩 Critical Report`)**: **7** foundational methodology & synthesis studies ([`#86`](https://crvscience.com/labs/discoveries/mito-endosymbiosis-tier3), [`#85`](https://crvscience.com/labs/discoveries/ncldv-histone-chromatin-tier3), [`#84`](https://crvscience.com/labs/discoveries/heimdall-eukaryogenesis-tier3), [`#83`](https://crvscience.com/labs/discoveries/heimdall-tier2-blind-validate), [`#74`](https://crvscience.com/labs/discoveries/popgen-tier3-repeat-kcore), [`#73`](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate), [`#72`](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep))
-  - **Curated Validation Dataset Registry**: **25** datasets (`VAL-SET-001` through `VAL-SET-025`)
+  - **Tier 3: Scientific**: **5** studies (cross-study hypothesis synthesis with inline vector `.svg` Graphical Reports & Interactive 3D PDB Structure Viewers)
+  - **Flagged Critical Reports (`🚩 Critical Report`)**: **8** foundational methodology & synthesis studies ([`#87`](https://crvscience.com/labs/discoveries/ctenophora-basal-metazoan-tier3), [`#86`](https://crvscience.com/labs/discoveries/mito-endosymbiosis-tier3), [`#85`](https://crvscience.com/labs/discoveries/ncldv-histone-chromatin-tier3), [`#84`](https://crvscience.com/labs/discoveries/heimdall-eukaryogenesis-tier3), [`#83`](https://crvscience.com/labs/discoveries/heimdall-tier2-blind-validate), [`#74`](https://crvscience.com/labs/discoveries/popgen-tier3-repeat-kcore), [`#73`](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate), [`#72`](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep))
+  - **Curated Validation Dataset Registry**: **26** datasets (`VAL-SET-001` through `VAL-SET-026`)
 
 #### 🚩 Flagged Critical Reports (Foundational Methodology, Calibration & Tier 3 Synthesis)
 
 | ID & Flag | Report Title & Live Reader Link | Research Scope Tier | Signal Rating | Validation Set Provenance |
 | :--- | :--- | :--- | :--- | :--- |
+| **#87** `🚩 Critical` | **[How Chromosome-Scale Synteny, Compositional Recoding, and Ion Channel Co-Evolution Resolve Ctenophora at the Base of Animal Evolution](https://crvscience.com/labs/discoveries/ctenophora-basal-metazoan-tier3)** | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-026-CTENOPHORA-METAZOA-SYNTENY-24COHORT` |
 | **#86** `🚩 Critical` | **[How Outer-Membrane Beta-Barrels, Cristae Junctions, and Mitoribosome Remodeling Drove Mitochondrial Origin](https://crvscience.com/labs/discoveries/mito-endosymbiosis-tier3)** | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-025-MITO-ENDOSYMBIOSIS-24COHORT` |
 | **#85** `🚩 Critical` | **[How Giant Virus Histone Doublets, DNA Polymerases, and Captured tRNA Synthetases Inform Eukaryotic Chromatin Evolution](https://crvscience.com/labs/discoveries/ncldv-histone-chromatin-tier3)** | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-024-NCLDV-CHROMATIN-POLB-24COHORT` |
 | **#84** `🚩 Critical` | **[How Heimdallarchaeia Cellular Machinery, RNA Polymerase Markers, and Ribosome Evolution Bridge the Archaeal-to-Eukaryotic Transition](https://crvscience.com/labs/discoveries/heimdall-eukaryogenesis-tier3)** | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-023-ASGARD-HEIMDALL-EUKARYOGENESIS-24COHORT, VAL-SET-008-RP16-DEEP-PHYLOGENOMICS-12COHORT, VAL-SET-002-RRNA-16S-18S-23S-ITS, VAL-SET-011-KABSCH-TMSCORE-PDB-12COHORT, VAL-SET-012-DCA-COEVOLUTION-12COHORT` |
@@ -26,10 +27,11 @@
 | **#73** `🚩 Critical` | **[Detecting Database Annotation Errors by Comparing Blinded Sequence Analysis Against Repository Metadata](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate)** | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` |
 | **#72** `🚩 Critical` | **[Testing How Repeat-Driven Substitution Rates Decay Across Flanking Genomic Windows and Polymerase Mutants](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep)** | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` |
 
-#### Latest 12 Published Lab Discoveries (`#75`–`#86`)
+#### Latest 12 Published Lab Discoveries (`#76`–`#87`)
 
 | # | Discovery Report Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#87** `🚩` | [How Chromosome-Scale Synteny, Compositional Recoding, and Ion Channel Co-Evolution Resolve Ctenophora at the Base of Animal Evolution](https://crvscience.com/labs/discoveries/ctenophora-basal-metazoan-tier3) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 2, 2026 |
 | **#86** `🚩` | [How Outer-Membrane Beta-Barrels, Cristae Junctions, and Mitoribosome Remodeling Drove Mitochondrial Origin](https://crvscience.com/labs/discoveries/mito-endosymbiosis-tier3) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 2, 2026 |
 | **#85** `🚩` | [How Giant Virus Histone Doublets, DNA Polymerases, and Captured tRNA Synthetases Inform Eukaryotic Chromatin Evolution](https://crvscience.com/labs/discoveries/ncldv-histone-chromatin-tier3) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 2, 2026 |
 | **#84** `🚩` | [How Heimdallarchaeia Cellular Machinery, RNA Polymerase Markers, and Ribosome Evolution Bridge the Archaeal-to-Eukaryotic Transition](https://crvscience.com/labs/discoveries/heimdall-eukaryogenesis-tier3) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 2, 2026 |
@@ -41,9 +43,8 @@
 | **#78** | [Evaluating Genetic Instrument Strength and Horizontal Pleiotropy in Two-Sample Mendelian Randomization](https://crvscience.com/labs/discoveries/mr-twas-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
 | **#77** | [Statistical Fine-Mapping and Bayesian eQTL/pQTL Colocalization Across Twelve Human Disease Loci](https://crvscience.com/labs/discoveries/finemap-coloc-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
 | **#76** | [Deconvolving Mutational Signatures and Identifying Synthetic-Lethal Gene Dependencies Across Cancer Clones](https://crvscience.com/labs/discoveries/clonal-synth-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
-| **#75** | [Mapping 3D Chromatin Domain Insulation and A/B Compartment Switching Across Hi-C and Micro-C Contact Maps](https://crvscience.com/labs/discoveries/chrom-condensate-scipy) | `Tier 1: Exploratory` | 🧪🧪 (`2/5`) | Nov 2, 2026 |
 
-#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-025`)
+#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-026`)
 
 | Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |
 | :--- | :--- | :--- | :--- | :--- |
@@ -72,4 +73,5 @@
 | `VAL-SET-023-ASGARD-HEIMDALL-EUKARYOGENESIS-24COHORT` | Deep-Time Eukaryogenesis, Archaeal-Eukaryotic Comparative Genomics, RNA Polymerase Systematics & Ribosomal Accretion | `asgard-tier1` | 12 Development Cohorts (DEV-01..DEV-12) + 12 Untouched Reserve Cohorts (RES-01..RES-12) in Tier 2; expanded to 16 Development + 16 Untouched Reserve Cohorts (1.44 Mb) in Tier 3 | [`asgard-esp-machinery-tier1`](https://crvscience.com/labs/discoveries/asgard-esp-machinery-tier1), [`heimdall-tier2-blind-validate`](https://crvscience.com/labs/discoveries/heimdall-tier2-blind-validate), [`heimdall-eukaryogenesis-tier3`](https://crvscience.com/labs/discoveries/heimdall-eukaryogenesis-tier3) |
 | `VAL-SET-024-NCLDV-CHROMATIN-POLB-24COHORT` | Giant DNA Virus Comparative Genomics, Nucleosome Structural Biophysics, Pre-LECA Informational Phylogenomics & Translational Host Capture | `ncldv-tier1` | 12 Development Cohorts (DEV-01..DEV-12) + 12 Untouched Reserve Cohorts (RES-01..RES-12) in Tier 2; expanded to 16 Development + 16 Untouched Reserve Cohorts (1.50 Mb) in Tier 3 | [`ncldv-histone-chromatin-tier3`](https://crvscience.com/labs/discoveries/ncldv-histone-chromatin-tier3) |
 | `VAL-SET-025-MITO-ENDOSYMBIOSIS-24COHORT` | Proto-Mitochondrial Endosymbiosis, Outer-Membrane Beta-Barrel & Cristae Biogenesis, Compositional Phylogenomics & Mitoribosome Structural Inversion | `mito-tier1` | 12 Development Cohorts (DEV-01..DEV-12) + 12 Untouched Reserve Cohorts (RES-01..RES-12) in Tier 2; expanded to 16 Development + 16 Untouched Reserve Cohorts (1.52 Mb) in Tier 3 | [`mito-endosymbiosis-tier3`](https://crvscience.com/labs/discoveries/mito-endosymbiosis-tier3) |
+| `VAL-SET-026-CTENOPHORA-METAZOA-SYNTENY-24COHORT` | Basal Metazoan Phylogenomics, Chromosome-Scale Macrosynteny (BCnS Fusion-with-Mixing), Voltage-Gated Ion Channels & Parallel Nervous System Evolution | `cteno-tier1` | 12 Development Cohorts (DEV-01..DEV-12) + 12 Untouched Reserve Cohorts (RES-01..RES-12) in Tier 2; expanded to 16 Development + 16 Untouched Reserve Cohorts (1.56 Mb) in Tier 3 | [`ctenophora-basal-metazoan-tier3`](https://crvscience.com/labs/discoveries/ctenophora-basal-metazoan-tier3) |
 <!-- AUTO-LABS-SUMMARY:END -->

@@ -1215,6 +1215,128 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "asgard-tier1" | "heimdall-tier1" | "asgard-explore" => {
+            let default_out = "runs/asgard-tier1-exploratory.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Asgard Archaea (Heimdallarchaeia) Tier 1 Exploratory Sweep (16 Cohorts / 384 kb across Cellular Machinery ESPs, Regulatory Markers & Ribosome Evolution)...");
+            match bio_suite::asgard_tier_synthesis::run_asgard_tier1_exploratory_sweep(target_out) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    emit_json_output(&report, report.native_runtime_ms as u128, Some(target_out));
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Asgard Tier 1 sweep failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "asgard-tier2" | "heimdall-tier2" | "asgard-blind-validate" => {
+            let default_out = "runs/asgard-tier2-blind-validation.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Asgard Archaea (Heimdallarchaeia) Tier 2 Dual-Pass Blinded & Dayhoff-6 Validation (24 Cohorts: 12 Dev + 12 Reserve / 768 kb)...");
+            match bio_suite::asgard_tier_synthesis::run_asgard_tier2_blind_validation(target_out) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_table);
+                    emit_json_output(&report, report.native_runtime_ms as u128, Some(target_out));
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Asgard Tier 2 validation failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "asgard-tier3" | "heimdall-tier3" | "asgard-synthesis" => {
+            let default_out = "runs/asgard-tier3-eukaryogenesis-synthesis.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            let figures_dir = ws_root.join("labs/figures");
+            eprintln!("[bio-suite] Launching Asgard Archaea (Heimdallarchaeia) Tier 3 Full Scientific Synthesis (32 Cohorts / 1.44 Mb / 64 Taxa -> 5🧪 Posterior)...");
+            match bio_suite::asgard_tier_synthesis::run_asgard_tier3_scientific_synthesis(target_out, &figures_dir) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_synthesis_table);
+                    emit_json_output(&report, report.native_runtime_ms as u128, Some(target_out));
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Asgard Tier 3 synthesis failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "ncldv-tier1" | "giant-virus-tier1" | "ncldv-explore" => {
+            let default_out = "runs/ncldv-tier1-exploratory.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Dry-Lab Nucleocytoviricota (Marseilleviridae / Medusaviridae / Imitervirales) Tier 1 Exploratory Sweep...");
+            let report = bio_suite::ncldv_tier_synthesis::run_ncldv_tier1_exploratory_sweep();
+            emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
+        }
+        "ncldv-tier2" | "giant-virus-tier2" | "ncldv-blind-validate" => {
+            let default_out = "runs/ncldv-tier2-blind-validation.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Dry-Lab Nucleocytoviricota Tier 2 Dual-Pass Blinded SHA-256 & Dayhoff-6 Validation...");
+            let report = bio_suite::ncldv_tier_synthesis::run_ncldv_tier2_blind_validation();
+            emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
+        }
+        "ncldv-tier3" | "giant-virus-tier3" | "ncldv-synthesis" => {
+            let default_out = "runs/ncldv-tier3-chromatin-synthesis.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            let figures_dir = ws_root.join("labs/figures");
+            eprintln!("[bio-suite] Launching Dry-Lab Nucleocytoviricota Tier 3 Full Scientific Synthesis (32 Cohorts / 1.50 Mb / 64 Taxa -> 5🧪 Posterior)...");
+            let _ = bio_suite::graphical_reports::generate_tier3_ncldv_graphical_reports(&figures_dir);
+            let report = bio_suite::ncldv_tier_synthesis::run_ncldv_tier3_scientific_synthesis();
+            emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
+        }
+        "mito-tier1" | "alphaproteo-tier1" | "mito-explore" => {
+            let default_out = "runs/mito-tier1-exploratory.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Dry-Lab Alphaproteobacterial Endosymbiosis & Proto-Mitochondrial Tier 1 Exploratory Sweep...");
+            let report = bio_suite::mito_tier_synthesis::run_mito_tier1_exploratory_sweep();
+            emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
+        }
+        "mito-tier2" | "alphaproteo-tier2" | "mito-blind-validate" => {
+            let default_out = "runs/mito-tier2-blind-validation.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            eprintln!("[bio-suite] Launching Dry-Lab Alphaproteobacterial Endosymbiosis Tier 2 Dual-Pass Blinded SHA-256 & Dayhoff-6 Validation...");
+            let report = bio_suite::mito_tier_synthesis::run_mito_tier2_blind_validation();
+            emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
+        }
+        "mito-tier3" | "alphaproteo-tier3" | "mito-synthesis" => {
+            let default_out = "runs/mito-tier3-endosymbiosis-synthesis.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            let figures_dir = ws_root.join("labs/figures");
+            eprintln!("[bio-suite] Launching Dry-Lab Alphaproteobacterial Endosymbiosis & Proto-Mitochondrial Tier 3 Full Scientific Synthesis (32 Cohorts / 1.52 Mb / 64 Taxa -> 5🧪 Posterior)...");
+            let _ = bio_suite::graphical_reports::generate_tier3_mito_graphical_reports(&figures_dir);
+            let report = bio_suite::mito_tier_synthesis::run_mito_tier3_scientific_synthesis();
+            emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1342,6 +1464,15 @@ fn main() {
         | "splicing-crispr-compare" | "splicing-compare" | "crispr-compare" | "bagel-compare" | "splicing-calibration"
         | "complexity-compare" | "kmer-complexity-compare" | "dfa-compare" | "lz76-compare" | "complexity-calibration"
         | "super-blast" | "super-blast-compare" | "super-blast-calibration" | "barcode-blast" | "jit-blast"
+        | "asgard-tier1" | "heimdall-tier1" | "asgard-explore"
+        | "asgard-tier2" | "heimdall-tier2" | "asgard-blind-validate"
+        | "asgard-tier3" | "heimdall-tier3" | "asgard-synthesis"
+        | "ncldv-tier1" | "giant-virus-tier1" | "ncldv-explore"
+        | "ncldv-tier2" | "giant-virus-tier2" | "ncldv-blind-validate"
+        | "ncldv-tier3" | "giant-virus-tier3" | "ncldv-synthesis"
+        | "mito-tier1" | "alphaproteo-tier1" | "mito-explore"
+        | "mito-tier2" | "alphaproteo-tier2" | "mito-blind-validate"
+        | "mito-tier3" | "alphaproteo-tier3" | "mito-synthesis"
         | "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {

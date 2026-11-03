@@ -6,6 +6,7 @@
 
 pub mod agent;
 pub mod amr_hgt;
+pub mod asgard_tier_synthesis;
 pub mod avian_systematics;
 pub mod bgc_mine;
 pub mod chrom_condensate_calibration;
@@ -27,11 +28,13 @@ pub mod htt_repeat_expansion;
 pub mod kabsch_tm_calibration;
 pub mod kaiabc_allostery_calibration;
 pub mod kmer_complexity_calibration;
+pub mod mito_tier_synthesis;
 pub mod mk_morpho_calibration;
 pub mod modeltest;
 pub mod mr_twas_calibration;
 pub mod msa_calibration;
 pub mod na_structure_1d2d3d;
+pub mod ncldv_tier_synthesis;
 pub mod nonb_dna;
 pub mod orthology;
 pub mod pangenome;

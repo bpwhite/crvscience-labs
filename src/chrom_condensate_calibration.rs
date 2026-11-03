@@ -203,7 +203,6 @@ pub fn jacobi_symmetric_eigen(mat: &[Vec<f64>]) -> (Vec<f64>, Vec<Vec<f64>>) {
     }
 
     let mut indices: Vec<usize> = (0..n).collect();
-    indices.sort_by(|&i, &j| a[i][i].partial_cmp(&a[j][i.min(j - i + i)]).unwrap_or(std::cmp::Ordering::Equal));
     indices.sort_by(|&i, &j| a[i][i].partial_cmp(&a[j][j]).unwrap_or(std::cmp::Ordering::Equal));
 
     let eigvals: Vec<f64> = indices.iter().map(|&idx| a[idx][idx]).collect();

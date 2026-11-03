@@ -59,6 +59,7 @@ pub const RUNIE_TOOL_VOCABULARY: &[(&str, &str)] = &[
     ("se3-rfdiffusion-scaffolder", "Candle-Core SE(3) Frame Denoising Diffusion, Motif Clamping & scTM Validator"),
     ("mrna-construct-optimizer", "Synonymous Codon-Lattice x Turner-2004 MFE Co-Optimizer & m1Psi Engine"),
     ("spidroin-biomechanics-regressor", "Candle-Core Spidroin Repeat Grammar (Poly-Ala/GPGXX/SpiCE) & Silk Regressor"),
+    ("super-blast-adaptive", "Adaptive Multi-Biotype (DNA/RNA/Protein/Other) On-the-Fly & JIT Super-BLAST Engine"),
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

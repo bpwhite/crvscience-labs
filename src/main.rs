@@ -1111,6 +1111,110 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "finemap-compare" | "coloc-compare" | "abf-compare" | "finemap-calibration" => {
+            eprintln!("[bio-suite] Launching Tool 30 Calibration: Native 4-Stage Wakefield ABF Fine-Mapping, 95% Credible Set Entropy & Giambartolomei Colocalization (H0..H4) vs. SciPy v1.18.1 across 12 Cohorts (VAL-SET-018)...");
+            let report = bio_suite::finemap_coloc_calibration::run_finemap_coloc_scipy_calibration();
+            eprintln!("\n{}", report.ascii_locus_profile);
+            eprintln!(
+                "[bio-suite] Fine-Mapping & Coloc Summary: |ΔlnABF| = {:.4}, |ΔPIP| = {:.4}, |ΔH_CS| = {:.4} bits, |ΔPP.H3| = {:.4}, |ΔPP.H4| = {:.4}, CS95 Match = {:.1}%, Regime Match = {:.1}%, Speedup = {:.2}x",
+                report.mae_lead_ln_abf,
+                report.mae_lead_pip_gwas,
+                report.mae_credible_entropy_bits,
+                report.mae_coloc_pp_h3,
+                report.mae_coloc_pp_h4,
+                report.credible_set_concordance_rate * 100.0,
+                report.regime_concordance_rate * 100.0,
+                report.speedup_factor
+            );
+            emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+        }
+        "mr-compare" | "mr-twas-compare" | "egger-compare" | "mr-calibration" => {
+            eprintln!("[bio-suite] Launching Tool 31 Calibration: Native 4-Stage Two-Sample Mendelian Randomization (IVW, MR-Egger & Weighted Median) vs. SciPy v1.18.1 across 12 Cohorts (VAL-SET-019)...");
+            let report = bio_suite::mr_twas_calibration::run_mr_twas_scipy_calibration();
+            eprintln!("\n{}", report.ascii_mr_forest_and_egger_plot);
+            eprintln!(
+                "[bio-suite] MR Calibration Summary: |Δbeta_IVW| = {:.4}, |ΔSE_IVW| = {:.4}, |ΔQ_IVW| = {:.4}, |Δbeta_Egger| = {:.4}, |Δalpha_Egger| = {:.4}, |Δbeta_WM| = {:.4}, Regime Match = {:.1}%, Speedup = {:.2}x",
+                report.mae_ivw_beta,
+                report.mae_ivw_se,
+                report.mae_cochran_q,
+                report.mae_egger_slope,
+                report.mae_egger_intercept,
+                report.mae_weighted_median_beta,
+                report.regime_concordance_rate * 100.0,
+                report.speedup_factor
+            );
+            emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+        }
+        "splicing-crispr-compare" | "splicing-compare" | "crispr-compare" | "bagel-compare" | "splicing-calibration" => {
+            eprintln!("[bio-suite] Launching Tool 32 Calibration: Native 4-Stage Alternative Splicing (PSI, dPSI, H_iso, JSD) & BAGEL2/CERES CRISPR Essentiality vs. SciPy v1.18.1 across 12 Cohorts (VAL-SET-020)...");
+            match bio_suite::splicing_crispr_calibration::run_splicing_crispr_scipy_calibration() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_chart);
+                    eprintln!(
+                        "[bio-suite] Splicing & CRISPR Calibration Summary: |ΔdPSI| = {:.4}, |ΔZ_dPSI| = {:.4}, |ΔJSD_iso| = {:.4} bits, |ΔlnBF| = {:.4}, |ΔPP_ess| = {:.4}, Regime Match = {:.1}%, Speedup = {:.2}x",
+                        report.mean_abs_delta_psi_error,
+                        report.mean_abs_delta_psi_z_error,
+                        report.mean_abs_isoform_jsd_error,
+                        report.mean_abs_bagel_ln_bf_error,
+                        report.mean_abs_posterior_ess_error,
+                        report.regime_concordance_percent,
+                        report.speedup_factor
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Splicing & CRISPR SciPy calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "complexity-compare" | "kmer-complexity-compare" | "dfa-compare" | "lz76-compare" | "complexity-calibration" => {
+            eprintln!("[bio-suite] Launching Tool 33 Calibration: Native 4-Stage k-mer Shannon Entropy (H1..H6), LZ76 NCD & Purine-Pyrimidine Fractal DNA Walk DFA vs. SciPy v1.18.1 across 12 Cohorts (VAL-SET-021)...");
+            match bio_suite::kmer_complexity_calibration::run_kmer_complexity_scipy_calibration() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_chart);
+                    eprintln!(
+                        "[bio-suite] Complexity Calibration Summary: |ΔH3| = {:.4} bits, |ΔH6| = {:.4} bits, |Δc_LZ| = {:.4}, |ΔNCD| = {:.4}, |ΔDFA_alpha| = {:.4}, |ΔHurst| = {:.4}, Regime Match = {:.1}%, Speedup = {:.2}x",
+                        report.mean_abs_shannon_h3_error,
+                        report.mean_abs_shannon_h6_error,
+                        report.mean_abs_lz76_norm_error,
+                        report.mean_abs_lz76_ncd_error,
+                        report.mean_abs_dfa_alpha_error,
+                        report.mean_abs_hurst_h_error,
+                        report.regime_concordance_percent,
+                        report.speedup_factor
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Complexity SciPy calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "super-blast" | "super-blast-compare" | "super-blast-calibration" | "barcode-blast" | "jit-blast" => {
+            eprintln!("[bio-suite] Launching Tool 34 Tier 1 Calibration Sweep with RuNIE: Native 5-Stage Adaptive Super-BLAST (DNA/RNA/Protein/Other, Sensitivity Crossover, MSA Validator, 16S + 10-Gene Tip Auditor, Symmetric K2P & JIT Genome/Barcode Search) vs. Biopython v1.88 & SciPy v1.18.1 (VAL-SET-022)...");
+            match bio_suite::super_blast_calibration::run_super_blast_calibration() {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_chart);
+                    eprintln!(
+                        "[bio-suite] Super-BLAST Calibration Summary: Biotype Acc = {:.1}%, |ΔRaw| = {:.4}, |ΔBit| = {:.4}, |Δ%Id| = {:.4}%, |ΔK2P| = {:.4}, Regime Match = {:.1}%, Speedup = {:.2}x",
+                        report.biotype_classification_accuracy_pct,
+                        report.mean_abs_raw_score_error,
+                        report.mean_abs_bit_score_error,
+                        report.mean_abs_pct_identity_error,
+                        report.mean_abs_k2p_distance_error,
+                        report.regime_concordance_percent,
+                        report.speedup_factor
+                    );
+                    emit_json_output(&report, report.native_runtime_ms as u128, out_file);
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Super-BLAST calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1233,6 +1337,11 @@ fn main() {
         | "popgen-tier3-synthesis" | "haplomap-tier3" | "tier3-popgen-synthesis"
         | "chrom-compare" | "chrom-laplacian-compare" | "tad-compare" | "condensate-compare"
         | "clonal-compare" | "somatic-compare" | "nnls-compare" | "chronos-compare"
+        | "finemap-compare" | "coloc-compare" | "abf-compare" | "finemap-calibration"
+        | "mr-compare" | "mr-twas-compare" | "egger-compare" | "mr-calibration"
+        | "splicing-crispr-compare" | "splicing-compare" | "crispr-compare" | "bagel-compare" | "splicing-calibration"
+        | "complexity-compare" | "kmer-complexity-compare" | "dfa-compare" | "lz76-compare" | "complexity-calibration"
+        | "super-blast" | "super-blast-compare" | "super-blast-calibration" | "barcode-blast" | "jit-blast"
         | "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {

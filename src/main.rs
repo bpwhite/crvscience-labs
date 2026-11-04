@@ -1337,6 +1337,32 @@ fn dispatch_pipeline(
             let report = bio_suite::mito_tier_synthesis::run_mito_tier3_scientific_synthesis();
             emit_json_output(&report, report.runtime_ms as u128, Some(target_out));
         }
+        "timetree-compare" | "timetree-calibration" | "lsd2-compare" | "chronogram-compare" => {
+            let default_out = "runs/timetree-lsd2-relaxed-clock-calibration.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let ws_root = env::current_dir()
+                .ok()
+                .and_then(|p| {
+                    if p.ends_with("crvscience-labs") {
+                        p.parent().map(|pp| pp.to_path_buf())
+                    } else {
+                        Some(p)
+                    }
+                })
+                .unwrap_or_else(|| PathBuf::from("."));
+            let figures_dir = ws_root.join("labs/figures");
+            eprintln!("[bio-suite] Launching Tool #35 Tier 1 Calibration Sweep: Native Rust Constrained Least-Squares Dating (LSD2), Relaxed Molecular Clock & X-Axis Time-Tree SVG Engine vs. SciPy v1.18.1 across 12 Cohorts (VAL-SET-040)...");
+            match bio_suite::timetree_calibration::run_timetree_lsd2_calibration_benchmark(Some(&figures_dir)) {
+                Ok(report) => {
+                    eprintln!("\n{}", report.ascii_summary_chart);
+                    emit_json_output(&report, report.native_runtime_ms as u128, Some(target_out));
+                }
+                Err(e) => {
+                    eprintln!("[bio-suite] Time-tree calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1474,6 +1500,7 @@ fn main() {
         | "mito-tier2" | "alphaproteo-tier2" | "mito-blind-validate"
         | "mito-tier3" | "alphaproteo-tier3" | "mito-synthesis"
         | "htt-somatic-repeat" | "htt-expansion" | "huntington-repeat"
+        | "timetree-compare" | "timetree-calibration" | "lsd2-compare" | "chronogram-compare"
         | "runie" | "pipeline-inference" | "runie-sweep" | "infer-pipelines" => {
             if cmd == "sweep" && args.iter().any(|a| a == "--burn-in") {
                 dispatch_pipeline("burn-in", &cache, out_file, aligner_mode);

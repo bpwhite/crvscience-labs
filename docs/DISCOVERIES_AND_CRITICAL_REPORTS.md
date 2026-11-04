@@ -5,12 +5,12 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Published Lab Discoveries (`109` Reports), Flagged Critical Reports (`26`) & Validation Datasets (`40` Sets)
+## Published Lab Discoveries (`110` Reports), Flagged Critical Reports (`26`) & Validation Datasets (`40` Sets)
 
-- **Total Published Lab Discoveries**: **109** peer-ready computational reports ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Published Lab Discoveries**: **110** peer-ready computational reports ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **Tier 1: Exploratory**: **80** studies (new/unseen cohorts & calibration sweeps)
   - **Tier 2: Validation**: **9** studies (replicated Dev + Untouched Reserve benchmark sets, Bayesian depth sweeps & Blinded Dual-Pass validations)
-  - **Tier 3: Scientific**: **20** studies (cross-study hypothesis synthesis with inline vector `.svg` Graphical Reports & Interactive 3D PDB Structure Viewers)
+  - **Tier 3: Scientific**: **21** studies (cross-study hypothesis synthesis with inline vector `.svg` Graphical Reports & Interactive 3D PDB Structure Viewers)
   - **Flagged Critical Reports (`🚩 Critical Report`)**: **26** foundational methodology & synthesis studies ([`#109`](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg), [`#108`](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram), [`#106`](https://crvscience.com/labs/discoveries/deep-node-model-misspecification-bootstrap), [`#105`](https://crvscience.com/labs/discoveries/basal-metazoa-runie-bootstrap), [`#104`](https://crvscience.com/labs/discoveries/metazoan-venom-disulfide-scaffold), [`#103`](https://crvscience.com/labs/discoveries/bioluminescence-luciferase-photoprotein), [`#102`](https://crvscience.com/labs/discoveries/dual-track-partitioning-information), [`#101`](https://crvscience.com/labs/discoveries/titin-obscurin-sarcomere-megaproteins), [`#100`](https://crvscience.com/labs/discoveries/vertebrate-adaptive-immunity-rag-vlr), [`#99`](https://crvscience.com/labs/discoveries/plastid-endosymbiosis-archaeplastida-tier3), [`#98`](https://crvscience.com/labs/discoveries/plastid-toctic-blind-tier2), [`#96`](https://crvscience.com/labs/discoveries/placozoa-porifera-epithelial-subdomain), [`#95`](https://crvscience.com/labs/discoveries/ecdysozoa-nematode-subdomain-lba-tier3), [`#94`](https://crvscience.com/labs/discoveries/microsporidia-fungi-subdomain-lba-tier3), [`#93`](https://crvscience.com/labs/discoveries/microsporidia-lba-blind-tier2), [`#91`](https://crvscience.com/labs/discoveries/ctenophora-hox-wnt-chromatin-tier3), [`#90`](https://crvscience.com/labs/discoveries/ctenophora-first-muscle-epithelia-tier3), [`#89`](https://crvscience.com/labs/discoveries/cteno-myosin-blind-tier2), [`#87`](https://crvscience.com/labs/discoveries/ctenophora-basal-metazoan-tier3), [`#86`](https://crvscience.com/labs/discoveries/mito-endosymbiosis-tier3), [`#85`](https://crvscience.com/labs/discoveries/ncldv-histone-chromatin-tier3), [`#84`](https://crvscience.com/labs/discoveries/heimdall-eukaryogenesis-tier3), [`#83`](https://crvscience.com/labs/discoveries/heimdall-tier2-blind-validate), [`#74`](https://crvscience.com/labs/discoveries/popgen-tier3-repeat-kcore), [`#73`](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate), [`#72`](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep))
   - **Curated Validation Dataset Registry**: **40** datasets (`VAL-SET-001` through `VAL-SET-040`)
 
@@ -45,10 +45,11 @@
 | **#73** `🚩 Critical` | **[Detecting Database Annotation Errors by Comparing Blinded Sequence Analysis Against Repository Metadata](https://crvscience.com/labs/discoveries/popgen-tier2-blind-validate)** | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` |
 | **#72** `🚩 Critical` | **[Testing How Repeat-Driven Substitution Rates Decay Across Flanking Genomic Windows and Polymerase Mutants](https://crvscience.com/labs/discoveries/popgen-tier2-deep-sweep)** | `Tier 2: Validation` | 🧪🧪🧪🧪 (`4/5`) | `VAL-SET-014-MCDONALD-2011-REPEAT-INDEL-SNP-CLUSTERS, VAL-SET-015-HAGMANN-2008-NETWORK-CORE-TOPOLOGY, VAL-SET-013-POPGEN-HAPLO-MSN-12COHORT` |
 
-#### Latest 12 Published Lab Discoveries (`#98`–`#109`)
+#### Latest 12 Published Lab Discoveries (`#99`–`#110`)
 
 | # | Discovery Report Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#110** | [RUNIE (Rust Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing](https://crvscience.com/labs/discoveries/runie-automated-bioinformatics-preprint) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 4, 2026 |
 | **#109** `🚩` | [From Jurassic Paravian Theropods to the K–Pg Neoaves Radiation: Time-Tree Chronograms (246.5 to 0.0 Ma) Across 62 Dinosaurian and Avian Taxa](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 4, 2026 |
 | **#108** `🚩` | [Reconstructing the Primate Evolutionary Time-Tree (73.4 to 0.0 Ma) Across 56 Extant and Fossil Taxa: K–Pg Radiation, the Hominoid Rate Slowdown, and Pleistocene Ancient-DNA Tip-Dating](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 4, 2026 |
 | **#107** | [Calibrating Divergence Time-Trees (Chronograms) and Relaxed Molecular Clocks Across 12 Multi-Kingdom Cohorts: Constrained Least-Squares Dating (LSD2) and X-Axis Stratigraphic Visualization](https://crvscience.com/labs/discoveries/timetree-lsd2-relaxed-clock-scipy) | `Tier 1: Exploratory` | 🧪🧪🧪🧪 (`4/5`) | Nov 4, 2026 |
@@ -60,7 +61,6 @@
 | **#101** `🚩` | [Anchor-Segmented Sub-Domain Partitioning of 35,000-Residue Titin, Obscurin, and Nebulin Megaproteins Resolves Bilaterian Sarcomere Evolution and Cardiomyopathy Truncation Hotspots](https://crvscience.com/labs/discoveries/titin-obscurin-sarcomere-megaproteins) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 3, 2026 |
 | **#100** `🚩` | [Sub-Domain Partitioning of Proto-RAG Recombinases, Lamprey VLR Solenoids, and MHC/TCR Beta-Sandwiches Resolves the Dual Origin of Vertebrate Adaptive Immunity](https://crvscience.com/labs/discoveries/vertebrate-adaptive-immunity-rag-vlr) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 3, 2026 |
 | **#99** `🚩` | [Sub-Domain Partitioning of TOC75/Omp85 Channels, FtsZ Division Rings, and RuBisCO Unites Archaeplastida Sister to Gloeomargarita and Contrasts Paulinella Chromatophore Import](https://crvscience.com/labs/discoveries/plastid-endosymbiosis-archaeplastida-tier3) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 3, 2026 |
-| **#98** `🚩` | [Blinded Sub-Domain Validation of Plastid TOC/TIC Translocons and FtsZ Division Rings Isolates Extremophile Linker Drift, Paulinella ER-Golgi Trafficking, and NUPT Pseudogenes](https://crvscience.com/labs/discoveries/plastid-toctic-blind-tier2) | `Tier 2: Validation` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 3, 2026 |
 
 #### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-040`)
 

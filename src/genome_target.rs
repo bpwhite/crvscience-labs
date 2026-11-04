@@ -366,6 +366,16 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
         native_rust_fallback: "bio-suite 5-Stage Adaptive Multi-Biotype (DNA/RNA/Protein/Other) Super-BLAST Engine with On-the-Fly Direct vs. JIT Ephemeral Index Sensitivity Analyzer, Pre-MSA Validator, 16S + 10-Gene Tip Auditor & Symmetric K2P Matrix",
         description: "Automatically detects DNA, RNA, Protein (BLOSUM62), or Standard Language strings, performs sensitivity crossover analysis to avoid unnecessary DB compilation, validates MSA inputs, audits multi-gene tip concordance, and executes JIT genome/barcode searches.",
     },
+    ToolAdapterEntry {
+        engine: "phylo",
+        category: "Divergence Time-Tree (Chronogram), Constrained Least-Squares Dating (LSD2), Relaxed Molecular Clock & X-Axis Time-Tree SVG Generator (RuNIE Tool H)",
+        tool_name: "IQ-TREE v2.4.0 (--date LSD2, To et al. 2016) / SciPy v1.18.1 (Constrained Least-Squares) / Sanderson (2002) r8s",
+        binary_cmd: "timetree-compare",
+        spdx_license: "GPL-3.0-or-later / BSD-3-Clause",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite 4-Stage Active-Set LSD2 Chronogram Solver, Autocorrelated Log-Normal Relaxed Clock, Parametric Bootstrap 95% CI & Clean X-Axis Time-Tree SVG Engine",
+        description: "Estimates divergence time-trees (chronograms) under strict and autocorrelated log-normal relaxed molecular clocks with fossil node intervals [t_min, t_max], heterochronous tip dates, 95% CIs, and automatic X-axis geological time-tree SVG rendering.",
+    },
 ];
 
 /// Intersect high-complexity sliding windows with genomic annotations (genes, CDS, repeats)

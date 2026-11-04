@@ -11,11 +11,11 @@
 Its primary engineering goal is to chain calibrated native Rust bioinformatics modules across biological scales—connecting **Tier 1 (Exploratory)** scans, **Tier 2 (Validation)** benchmarks, and **Tier 3 (Scientific)** multi-stage syntheses over a directed acyclic graph (`DAG`) of **34 native Rust operators** using shared in-memory data structures rather than fragile shell scripts or intermediate disk files.
 
 <!-- AUTO-RUNIE-SUMMARY:START -->
-- **Engine Version**: `RuNIE v1.26.0` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`)
-- **Tool Operator Vocabulary**: **`34` Core Validated Native Rust Tools** (`18` synthesized/upgraded in-memory DAG operators across `32` logged interventions in [`RUNIE_CHANGELOG.md`](../RUNIE_CHANGELOG.md))
+- **Engine Version**: `RuNIE v1.27.0` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`)
+- **Tool Operator Vocabulary**: **`35` Core Validated Native Rust Tools** (`19` synthesized/upgraded in-memory DAG operators across `33` logged interventions in [`RUNIE_CHANGELOG.md`](../RUNIE_CHANGELOG.md))
 - **Canonical Multi-Tier Studies Solved**: **`17` Canonical Studies** (`1088` GA-MCMC trajectories evaluated across `4` parallel-tempering chains $\beta \in \{0.25, 0.50, 1.00, 2.00\}$)
 - **Mean MAP Posterior Probability**: **$P(\mathcal{G}_{\text{MAP}} \mid D) = 0.8938$** (mean $\ln \text{BF}_{10} = +163.54$ vs. single-tool baselines; mean posterior $Z = +5.38\text{ SD}$)
-- **Falsification & Negative-Control Rejects**: **`52` `0🧪` Negative Controls** rejected at Generation 2 and logged to `runs/zero-star-calibration-dump.json`
+- **Falsification & Negative-Control Rejects**: **`54` `0🧪` Negative Controls** rejected at Generation 2 and logged to `runs/zero-star-calibration-dump.json`
 <!-- AUTO-RUNIE-SUMMARY:END -->
 
 ---

@@ -54,4 +54,5 @@ pub mod super_blast;
 pub mod super_blast_calibration;
 pub mod sweep;
 pub mod synteny;
+pub mod timetree_calibration;
 pub mod tree_builder;

@@ -2720,7 +2720,7 @@ P\tP2\tS1+,S3+,S5+,S6+\t*
         primary_metric_name: "Cross-Domain Diagnostic & Selectivity Convergence Z-Score".to_string(),
         primary_metric_value: cross_5star_z,
         secondary_metric_summary:
-            "Synthesizes 1.34 Mb across 68 bacterial, mitochondrial, fungal, plant, and vertebrate loci: maps anchor-vs-variable entropy laws across 7 marker classes, 28S G4 accretion (109.66 G4s/kb), and decoding-center steric selectivity (DeltaDeltaG = +4.92 kcal/mol vs. MT-RNR2 A1555G ototoxicity)."
+            "Synthesizes 1.34 Mb across 68 bacterial, mitochondrial, fungal, plant, and vertebrate loci: maps anchor-vs-variable entropy gradients across 7 marker classes, 28S G4 accretion (109.66 G4s/kb), and decoding-center steric selectivity (DeltaDeltaG = +4.92 kcal/mol vs. MT-RNR2 A1555G ototoxicity)."
                 .to_string(),
         scientific_verdict:
             "5★ SIGNIFICANT BIOLOGICAL SIGNAL: Passes all 5★ calibration gates (1.34 Mb >= 1.0 Mb, 68 >= 50 taxa/loci spanning Prokaryota, Organellar, and Eukaryota, Z = +5.64 SD >= 4.50 SD gate)."

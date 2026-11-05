@@ -2,7 +2,9 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Language: Rust](https://img.shields.io/badge/Language-Rust%202021-orange.svg)](https://www.rust-lang.org/)
-[![Engine: RuNIE v1.23.0 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v1.23.0%20GA--MCMC%20%2B%20Candle-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
+[![Engine: RuNIE v1.27.0 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v1.27.0%20GA--MCMC%20%2B%20Candle-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
+[![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23969276.svg)](https://doi.org/10.5281/zenodo.23969276)
+[![Figshare DOI](https://img.shields.io/badge/Figshare%20DOI-10.6084%2Fm9.figshare.34919469-f472b6.svg)](https://doi.org/10.6084/m9.figshare.34919469)
 [![Portal: crvscience.com/labs](https://img.shields.io/badge/Portal-crvscience.com%2Flabs-00bcd4.svg)](https://crvscience.com/labs)
 
 **`bio-suite`** is the free, open-source (**`GNU GPL-3.0`**) Rust command-line toolkit powering [CRV Science Labs](https://crvscience.com/labs). It provides fast, zero-dependency native Rust pipelines for comparative genomics, molecular systematics, 1D/2D/3D nucleic acid & protein structural biophysics, pangenome variation graphs, antimicrobial resistance (`AMR`) & biosynthetic gene cluster (`BGC`) mining, statistical genetics (`coloc.abf`, `MR-Egger`), and multi-stage Bayesian pipeline synthesis via **`RuNIE` (`Rust Native Inference Engine`)**.
@@ -170,6 +172,34 @@ crvscience-labs/
 ```
 
 *(Note: Local working directories `cache/`, `runs/`, and `tools/` are git-ignored so the repository remains lightweight.)*
+
+---
+
+## How to Cite
+
+If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-043`) in your research, software, or teaching, please cite our architecture preprint:
+
+> **White, B. P.** (2026). *RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing*. CRV Science Labs Preprint Monograph (`PREPRINT-01`, 26 pp.).  
+> - **Zenodo DOI**: [`10.5281/zenodo.23969276`](https://doi.org/10.5281/zenodo.23969276)  
+> - **Figshare DOI**: [`10.6084/m9.figshare.34919469`](https://doi.org/10.6084/m9.figshare.34919469)  
+> - **Canonical Web Edition**: [`https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint`](https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint)  
+> - **Single-Column PDF**: [`https://crvscience.com/labs/pdfs/runie-automated-bioinformatics-preprint.pdf`](https://crvscience.com/labs/pdfs/runie-automated-bioinformatics-preprint.pdf)
+
+### BibTeX
+
+```bibtex
+@article{white2026runie,
+  author       = {White, Bryan P.},
+  title        = {{RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing}},
+  year         = {2026},
+  month        = nov,
+  publisher    = {CRV Science Labs / Zenodo},
+  version      = {1.27.0},
+  doi          = {10.5281/zenodo.23969276},
+  url          = {https://doi.org/10.5281/zenodo.23969276},
+  note         = {Preprint Monograph PREPRINT-01; Figshare DOI: 10.6084/m9.figshare.34919469; Web Edition: https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint}
+}
+```
 
 ---
 

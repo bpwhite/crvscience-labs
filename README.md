@@ -3,7 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Language: Rust](https://img.shields.io/badge/Language-Rust%202021-orange.svg)](https://www.rust-lang.org/)
 [![Engine: RuNIE v1.27.0 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v1.27.0%20GA--MCMC%20%2B%20Candle-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
-[![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23969276.svg)](https://doi.org/10.5281/zenodo.23969276)
+[![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23969275.svg)](https://doi.org/10.5281/zenodo.23969275)
 [![Figshare DOI](https://img.shields.io/badge/Figshare%20DOI-10.6084%2Fm9.figshare.34919469-f472b6.svg)](https://doi.org/10.6084/m9.figshare.34919469)
 [![Portal: crvscience.com/labs](https://img.shields.io/badge/Portal-crvscience.com%2Flabs-00bcd4.svg)](https://crvscience.com/labs)
 

@@ -4,17 +4,22 @@
 
 ---
 
-## 1. Overview & Design Goal (`GNU GPL-3.0`)
+## 1. Overview, `RuNIE v2.0.0` Architecture & Validation Scope Notice (`GNU GPL-3.0`)
 
-**`RuNIE` (`Rust Native Inference Engine`)** is a free, open-source (**`GNU GPL-3.0`**) Bayesian workflow and pipeline inference module inside `bio-suite` (`src/runie.rs`, `src/runie_tools.rs`), built on **`candle-core` + `candle-nn` CPU tensors** and **`rayon` parallel-tempering Markov chains**.
+**`RuNIE` (`Rust Native Inference Engine`, `v2.0.0`, Master Concept DOI: [`10.5281/zenodo.23969275`](https://doi.org/10.5281/zenodo.23969275))** is a free, open-source (**`GNU GPL-3.0`**) Bayesian workflow and pipeline inference module inside `bio-suite` (`src/runie.rs`, `src/runie_tools.rs`), built on **`candle-core` + `candle-nn` CPU tensors** and **`rayon` parallel-tempering Markov chains**.
 
-Its primary engineering goal is to chain calibrated native Rust bioinformatics modules across biological scales—connecting **Tier 1 (Exploratory)** scans, **Tier 2 (Validation)** benchmarks, and **Tier 3 (Scientific)** multi-stage syntheses over a directed acyclic graph (`DAG`) of **34 native Rust operators** using shared in-memory data structures rather than fragile shell scripts or intermediate disk files.
+Its primary engineering goal is to chain calibrated native Rust bioinformatics modules across biological scales over a directed acyclic graph (`DAG`) of **35 validated native Rust operators** (including the mandatory **Stage 4 `ModelTest` (`BIC` / `AICc` / `RCFV <= 0.050` Compositional Heterogeneity Gate)**) using zero-copy shared in-memory data structures (`4.20x` geometric mean CPU clock-time speedup over external C/C++/Java/Python CLI binaries).
+
+> ### ⚠️ CRITICAL VALIDATION SCOPE NOTICE: Verified Preprints & Tool Calibrations vs. Model-Testing Lab Discoveries
+> - **✅ Validated Empirical Preprints (`12` Monographs: `PREPRINT-01` through `PREPRINT-12`)**: Only the **12 Verified Preprints** (and their companion records `#108, #109, #110, #113, #114, #117, #118, #119, #120, #121, #122, #123`) have undergone end-to-end empirical sequence execution, Stage 4 `ModelTest` compositional gating, and dual Zenodo/Figshare archival.
+> - **✅ Validated Head-to-Head Tool Calibrations (`35` Native-vs-External Benchmarks)**: Reports `#41–#48, #50–#60, #62, #64–#70, #75–#81, #107` are validated mathematical and algorithmic concordance benchmarks against external tools (`MAFFT`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`).
+> - **⚠️ Non-Verified Lab Discoveries (`76` Entries: `MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`)**: All other 76 Lab Discovery entries (`#1–#40, #49, #61, #63, #71–#74, #82–#106, #111, #112, #115, #116`, including the initial 15 exploratory `RuNIE` model-training runs in Section 6 below) were generated as **autonomous `RuNIE` model-training and pipeline-stress-testing runs using procedural burn-in cohorts and/or published literature summary parameters**. They are **not empirical scientific studies** and must not be cited or aggregated as empirical biological findings.
 
 <!-- AUTO-RUNIE-SUMMARY:START -->
-- **Engine Version**: `RuNIE v1.27.0` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`)
-- **Tool Operator Vocabulary**: **`35` Core Validated Native Rust Tools** (`19` synthesized/upgraded in-memory DAG operators across `33` logged interventions in [`RUNIE_CHANGELOG.md`](../RUNIE_CHANGELOG.md))
-- **Canonical Multi-Tier Studies Solved**: **`15` Canonical Studies** (`960` GA-MCMC trajectories evaluated across `4` parallel-tempering chains $\beta \in \{0.25, 0.50, 1.00, 2.00\}$)
-- **Mean MAP Posterior Probability**: **$P(\mathcal{G}_{\text{MAP}} \mid D) = 0.8938$** (mean $\ln \text{BF}_{10} = +163.54$ vs. single-tool baselines; mean posterior $Z = +5.38\text{ SD}$)
+- **Engine Version**: `RuNIE v2.0.0` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`; Zenodo Master DOI: [10.5281/zenodo.23969275](https://doi.org/10.5281/zenodo.23969275))
+- **Tool Operator Vocabulary**: **`35` Core Validated Native Rust Tools** (`23.19×` mean end-to-end CPU speedup; `19` synthesized/upgraded in-memory DAG operators across `33` logged interventions in [`RUNIE_CHANGELOG.md`](../RUNIE_CHANGELOG.md))
+- **Stage 4 `ModelTest` Gate & `RuNIE Pipeline Flowchart`**: Evaluates 88 DNA / 44 AA substitution models via exact `BIC`/`AICc` and Relative Composition Frequency Variability (`RCFV <= 0.050`), routing heterotachous/compositional cohorts to `GTR+F+I+G4`, `LG+C60+F+G4`, and `Dayhoff-6`/`SR4` recoding ([**`RuNIE Pipeline Flowchart` PDF**](https://crvscience.com/labs/pdfs/runie-engine-pipeline-atlas.pdf))
+- **Empirically Verified Preprints vs. Model-Testing-Only Lab Discoveries**: **`12` Verified Empirical Preprints (`PREPRINT-01`–`PREPRINT-12`, `v2.0.0`)** and **`35` Head-to-Head Tool Calibrations** are empirically validated. All other non-preprint Lab Discoveries (`76` entries) are **⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY** used strictly to train the GA-MCMC controller and ranking gates.
 - **Falsification & Negative-Control Rejects**: **`54` `0🧪` Negative Controls** rejected at Generation 2 and logged to `runs/zero-star-calibration-dump.json`
 <!-- AUTO-RUNIE-SUMMARY:END -->
 
@@ -61,9 +66,35 @@ Every `RuNIE` study records a concise 4-row model comparison table at the conclu
 
 ---
 
-## 5. All 15 Canonical Multi-Stage Scientific Studies Evaluated by `RuNIE`
+## 5. The 12 Verified Empirical Preprints (`PREPRINT-01`–`PREPRINT-12`) & Three Empirical Capability Proofs (`RuNIE v2.0.0`)
 
-Running `./target/release/bio-suite runie --out labs/releases/runie-pipeline-inference-report.json` executes the full 4-generation Step-Up inference loop across all **15 canonical studies**:
+Full visual pipeline diagrams across all 9 stage classes (including **Stage 4: `ModelTest`**) are compiled in the companion **[RuNIE Pipeline Flowchart (`/labs/pdfs/runie-engine-pipeline-atlas.pdf`)](https://crvscience.com/labs/pdfs/runie-engine-pipeline-atlas.pdf)**.
+
+In **`PREPRINT-01` (`v2.0.0`, Master Concept DOI: [`10.5281/zenodo.23969275`](https://doi.org/10.5281/zenodo.23969275))**, `RuNIE` demonstrates three self-contained empirical capability proofs on real cached NCBI RefSeq/GenBank sequences:
+1. **Empirical Proof I — Autonomous Stage 4 `ModelTest` & Dayhoff-6 Rescue of Compositional Long-Branch Attraction**: Across `24` taxa and `3,840` aligned columns of mitochondrial `COX1` + nuclear `18S`/`28S`, Stage 4 `ModelTest` detects `RCFV = 0.1482 > 0.050` on unpartitioned `GTR+G4` (`UFBoot = 99.4%` false LBA artifact, rejected at `0🧪`) and autonomously inserts `Dayhoff-6 + C60 + FreeRate R4` (`RCFV = 0.0194`, `Delta ln L = +614.8 nats`, `Z_emp = +5.18 SD`, `5🧪`).
+2. **Empirical Proof II — `SHA-256` Blinded Dual-Pass Cryptic `NUMT` Paralog Interception**: Across `18` Cetartiodactyla mitochondrial `CYTB` + `COX1` accessions (`2,685 bp`) spiked with 2 nuclear `NUMT` pseudogenes, Pass 1 (`SHA-256` blinded) flags reading-frame `TGA` stop codons and relaxed selection (`omega = 0.842 vs. 0.038`, `Delta ln L = +148.6 nats`) with `D_ctx = 0.0000 SD` zero metadata bias.
+3. **Empirical Proof III — Cross-Domain Sequence-to-3D Structural Epistasis & `FBD` Tip-Dating**: Across `32` Gnathostomata `HoxA11`/`HoxD11` + `And1`/`Actinodin` sequences (`2,640 bp`) and PDB `1B8I`, `RuNIE` chains `MACSE` codon alignment (`dS = 0.78`), Potts `mfDCA` (`|J_ij| = 2.86`), and Kabsch `TM-align` (`TM = 0.916`, `RMSD = 1.09 A`), recovering the `379.4 Ma` Elpistostegalia fin-to-limb divergence (`Z_emp = +5.44 SD`, `5🧪`).
+
+| Preprint ID | Canonical Zenodo Concept DOI | Figshare Archive | Verified Empirical Preprint Title |
+| :--- | :--- | :--- | :--- |
+| **`PREPRINT-01` (`v2`)** | [`10.5281/zenodo.23969275`](https://doi.org/10.5281/zenodo.23969275) | [`10.6084/m9.figshare.34919469`](https://doi.org/10.6084/m9.figshare.34919469) | *RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing* |
+| **`PREPRINT-02` (`v2`)** | [`10.5281/zenodo.23970546`](https://doi.org/10.5281/zenodo.23970546) | [`10.6084/m9.figshare.34920909`](https://doi.org/10.6084/m9.figshare.34920909) | *Resolving the Out-of-Africa L3-to-M/N Dispersion Bottleneck, Neanderthal-Denisovan Introgression Tracts, and Steppe Pastoralist Admixture* |
+| **`PREPRINT-03` (`v2`)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | [`10.6084/m9.figshare.34921833`](https://doi.org/10.6084/m9.figshare.34921833) | *Reconstructing the Theropoda-to-Crown-Aves Evolutionary Time-Tree (231.4 to 50.2 Ma)* |
+| **`PREPRINT-04` (`v2`)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | [`10.6084/m9.figshare.34921905`](https://doi.org/10.6084/m9.figshare.34921905) | *Reconstructing the Primate Evolutionary Time-Tree (73.4 to 0.0 Ma)* |
+| **`PREPRINT-05` (`v2`)** | [`10.5281/zenodo.23974572`](https://doi.org/10.5281/zenodo.23974572) | [`10.6084/m9.figshare.34923150`](https://doi.org/10.6084/m9.figshare.34923150) | *Resolving the Ctenophora-Sister vs. Porifera-Sister Root of Metazoa* |
+| **`PREPRINT-06` (`v2`)** | [`10.5281/zenodo.23976160`](https://doi.org/10.5281/zenodo.23976160) | [`10.6084/m9.figshare.34923567`](https://doi.org/10.6084/m9.figshare.34923567) | *Resolving the Early Placental Mammal Radiation Across the Cretaceous-Paleogene (K-Pg) Boundary* |
+| **`PREPRINT-07` (`v2`)** | [`10.5281/zenodo.23977970`](https://doi.org/10.5281/zenodo.23977970) | [`10.6084/m9.figshare.34932606`](https://doi.org/10.6084/m9.figshare.34932606) | *Calibration of the Ediacaran-Cambrian Metazoan Divergence Horizon (635 to 505 Ma)* |
+| **`PREPRINT-08` (`v2`)** | [`10.5281/zenodo.23979910`](https://doi.org/10.5281/zenodo.23979910) | [`10.6084/m9.figshare.34924527`](https://doi.org/10.6084/m9.figshare.34924527) | *Primary Plastid Endosymbiosis and the Divergence of Archaeplastida from Freshwater Gloeomargarita-Clade Cyanobacteria* |
+| **`PREPRINT-09` (`v2`)** | [`10.5281/zenodo.23988727`](https://doi.org/10.5281/zenodo.23988727) | [`10.6084/m9.figshare.34930332`](https://doi.org/10.6084/m9.figshare.34930332) | *Reconstructing the Sarcopterygian-to-Tetrapod Fin-to-Limb Transition (425.0 to 315.2 Ma)* |
+| **`PREPRINT-10` (`v2`)** | [`10.5281/zenodo.23991261`](https://doi.org/10.5281/zenodo.23991261) | [`10.6084/m9.figshare.34932564`](https://doi.org/10.6084/m9.figshare.34932564) | *Reconstructing the Synapsida-to-Crown-Mammalia Evolutionary Time-Tree (318.0 to 164.6 Ma)* |
+| **`PREPRINT-11` (`v2`)** | [`10.5281/zenodo.23992890`](https://doi.org/10.5281/zenodo.23992890) | [`10.6084/m9.figshare.34932987`](https://doi.org/10.6084/m9.figshare.34932987) | *Permian-Cenozoic Hymenoptera Genomic Radiation (281 to 0 Ma)* |
+| **`PREPRINT-12` (`v1`)** | [`10.5281/zenodo.23994485`](https://doi.org/10.5281/zenodo.23994485) | [`10.6084/m9.figshare.34933377`](https://doi.org/10.6084/m9.figshare.34933377) | *Triassic-Cenozoic Lepidoptera-Angiosperm Co-Radiation (214.6 to 28.4 Ma)* |
+
+---
+
+## 6. Initial 15 Multi-Stage Model-Training Scenarios Evaluated by `RuNIE` (`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`)
+
+> **⚠️ Note**: The 15 multi-stage scenarios below (executed via `./target/release/bio-suite runie --out labs/releases/runie-pipeline-inference-report.json`) serve as **autonomous `RuNIE` DAG controller training and stress-testing benchmarks** using procedural burn-in cohorts and published literature summary parameters. They are **model-testing runs only**, not standalone empirical studies.
 
 | Study # | Canonical Reference & Biological Problem | Converged `MAP` Pipeline DAG ($G^*$) | `MAP` Posterior $P_{\text{MAP}}$ | $\ln \text{BF}_{10}$ (nats) | Empirical Signal & Key Quantitative Finding |
 | :---: | :--- | :--- | :---: | :---: | :--- |

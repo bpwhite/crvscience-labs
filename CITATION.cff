@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use crvscience-labs (bio-suite) or RuNIE (Rust Native Inference Engine) in your research, please cite the following preprint."
 title: "CRV Science Labs (bio-suite) & RuNIE (Rust Native Inference Engine)"
-version: "1.27.0"
-doi: "10.5281/zenodo.23969276"
+version: "2.0.1"
+doi: "10.5281/zenodo.23969275"
 date-released: "2026-11-04"
 url: "https://crvscience.com/labs"
 repository-code: "https://github.com/bpwhite/crvscience-labs"
@@ -10,25 +10,25 @@ license: "GPL-3.0-or-later"
 authors:
   - family-names: "White"
     given-names: "Bryan P."
-    affiliation: "CRV Science Labs, CRV Science Network"
+    affiliation: "CRV Science Labs"
 preferred-citation:
   type: article
   authors:
     - family-names: "White"
       given-names: "Bryan P."
-      affiliation: "CRV Science Labs, CRV Science Network"
+      affiliation: "CRV Science Labs"
   title: "RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing"
   year: 2026
   month: 11
-  doi: "10.5281/zenodo.23969276"
+  doi: "10.5281/zenodo.23969275"
   url: "https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint"
   identifiers:
     - type: doi
-      value: "10.5281/zenodo.23969276"
-      description: "Zenodo Preprint DOI"
-    - type: doi
-      value: "10.6084/m9.figshare.34919469"
-      description: "Figshare Preprint DOI"
+      value: "10.5281/zenodo.23969275"
+      description: "Master Concept Zenodo Preprint DOI"
     - type: url
       value: "https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint"
       description: "CRV Science Labs Canonical Preprint URL"
+    - type: url
+      value: "https://figshare.com/articles/preprint/_/34919469"
+      description: "Figshare Mirror Archive"

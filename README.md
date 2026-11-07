@@ -15,15 +15,15 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 
 <!-- AUTO-FRONTPAGE-STATUS:START -->
 > **⚠️ VALIDATION SCOPE NOTICE (MODEL TESTING vs. VALIDATED BENCHMARKS & PREPRINTS):**
-> Only the **`35` Head-to-Head Tool Calibrations** and the **`12` Empirically Verified Preprints (`PREPRINT-01` through `PREPRINT-12`, `v2.0.0`)** are considered empirically validated at this time. All other non-verified Lab Discovery entries (`76` entries) carry an explicit **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning banner and were generated strictly to train and stress-test the `RuNIE` GA-MCMC controller and ranking gates.
+> Only the **`35` Head-to-Head Tool Calibrations** and the **`14` Empirically Verified Preprints (`PREPRINT-01` through `PREPRINT-14`, `v2.0.1`)** are considered empirically validated at this time. All other non-verified Lab Discovery entries (`76` entries) carry an explicit **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning banner and were generated strictly to train and stress-test the `RuNIE` GA-MCMC controller and ranking gates.
 
 | Subsystem | Live Count & Version | Summary & Documentation |
 | :--- | :--- | :--- |
 | **Native Rust Engines (`bio-suite`)** | **`35` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
 | **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.0` (Stage 4 `ModelTest` + Flowchart)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3 Empirical Capability Proofs & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
-| **Empirically Verified Preprints** | **`12` Preprints (`PREPRINT-01`–`PREPRINT-12`, `v2.0.0`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`124` Total** (`12` Preprints · `35` Tool Cal. · `76` ⚠️ Model Testing Only) | ⚠️ **Notice**: Only the `12` Verified Preprints and `35` Tool Calibrations are validated; the remaining `76` entries are **MODEL TESTING ONLY (Procedural + Published Data Only)** $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
-| **Curated Validation Datasets** | **`50` Datasets (`VAL-SET-001`–`VAL-SET-050`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
+| **Empirically Verified Preprints** | **`14` Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
+| **Lab Discoveries Directory** | **`125` Total** (`14` Preprints · `35` Tool Cal. · `76` ⚠️ Model Testing Only) | ⚠️ **Notice**: Only the `14` Verified Preprints and `35` Tool Calibrations are validated; the remaining `76` entries are **MODEL TESTING ONLY (Procedural + Published Data Only)** $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
+| **Curated Validation Datasets** | **`51` Datasets (`VAL-SET-001`–`VAL-SET-051`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
 ---
@@ -83,6 +83,7 @@ cargo build --release
 <!-- AUTO-FRONTPAGE-HIGHLIGHTS:START -->
 | ID & Status | Verified Preprint Title & Live Reader Link | Master Concept Zenodo DOI | Signal | Primary Validation Set |
 | :--- | :--- | :--- | :--- | :--- |
+| **#125** `✅ Verified Preprint` | **[Mosquito Tree of Life: Jurassic–Cenozoic Culicidae Phylogenomics (194.8 to 0.0 Ma), Single Origin of Hematophagy, Salivary D7 & Apyrase Recruitment, and Secondary Loss in Toxorhynchites](https://crvscience.com/labs/discoveries/culicidae-phylogenomics-hematophagy-d7)** | [`10.5281/zenodo.24039858`](https://doi.org/10.5281/zenodo.24039858) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-053-CULICIDAE-PHYLOGENOMICS-HEMATOPHAGY-D7-120RECS-1.64MB` |
 | **#124** `✅ Verified Preprint` | **[Permian–Cenozoic Coleoptera Phylogenomics (318.4 to 0.0 Ma): Resolving Archostemata–Myxophaga–Adephaga–Polyphaga Divergence, Strepsiptera Sisterhood, and Horizontal Gene Transfer of Microbial Plant Cell-Wall Degrading Enzymes (GH5, GH28, GH45) via RuNIE](https://crvscience.com/labs/discoveries/coleoptera-phylogenomics-pcwde-hgt)** | [`10.5281/zenodo.24031323`](https://doi.org/10.5281/zenodo.24031323) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-052-COLEOPTERA-PHYLOGENOMICS-PCWDE-HGT-101RECS-1.38MB` |
 | **#123** `✅ Verified Preprint` | **[Permo-Carboniferous–Cenozoic Lepidoptera Genomic Radiation, Angiosperm-Coupled Ditrysia & Papilionoidea Time-Tree, and COX1 DNA Barcode Resolution vs. Deep-Node Saturation Boundaries](https://crvscience.com/labs/discoveries/lepidoptera-ditrysia-timetree-cox1-gap)** | [`10.5281/zenodo.23994485`](https://doi.org/10.5281/zenodo.23994485) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-051-LEPIDOPTERA-DITRYSIA-TIMETREE-COX1-72TAXA-1.92MB` |
 | **#122** `✅ Verified Preprint` | **[Permian–Cenozoic Hymenoptera Genomic Radiation, Orussidae Ectoparasitoid Sisterhood to Apocrita, and the 284–0 Ma Total-Evidence Time-Tree of Parasitoidism and Independent Eusociality](https://crvscience.com/labs/discoveries/hymenoptera-radiation-eusociality-timetree)** | [`10.5281/zenodo.23992890`](https://doi.org/10.5281/zenodo.23992890) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-050-HYMENOPTERA-RADIATION-EUSOCIALITY-TIMETREE-68TAXA-1.86MB` |
@@ -166,11 +167,11 @@ crvscience-labs/
 
 ## How to Cite
 
-If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-043`) in your research, software, or teaching, please cite our architecture preprint:
+If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-053`) in your research, software, or teaching, please cite our architecture preprint:
 
-> **White, B. P.** (2026). *RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing*. CRV Science Labs Preprint Monograph (`PREPRINT-01`, 26 pp.).  
-> - **Zenodo DOI**: [`10.5281/zenodo.23969276`](https://doi.org/10.5281/zenodo.23969276)  
-> - **Figshare DOI**: [`10.6084/m9.figshare.34919469`](https://doi.org/10.6084/m9.figshare.34919469)  
+> **White, B. P.** (2026). *RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing*. CRV Science Labs Preprint Monograph (`PREPRINT-01`, `v2.0.1`, 26 pp.).  
+> - **Master Concept Zenodo DOI**: [`10.5281/zenodo.23969275`](https://doi.org/10.5281/zenodo.23969275)  
+> - **Figshare Archive**: [`https://figshare.com/articles/preprint/_/34919469`](https://figshare.com/articles/preprint/_/34919469)  
 > - **Canonical Web Edition**: [`https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint`](https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint)  
 > - **Single-Column PDF**: [`https://crvscience.com/labs/pdfs/runie-automated-bioinformatics-preprint.pdf`](https://crvscience.com/labs/pdfs/runie-automated-bioinformatics-preprint.pdf)
 
@@ -183,10 +184,10 @@ If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inferenc
   year         = {2026},
   month        = nov,
   publisher    = {CRV Science Labs / Zenodo},
-  version      = {1.27.0},
-  doi          = {10.5281/zenodo.23969276},
-  url          = {https://doi.org/10.5281/zenodo.23969276},
-  note         = {Preprint Monograph PREPRINT-01; Figshare DOI: 10.6084/m9.figshare.34919469; Web Edition: https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint}
+  version      = {2.0.1},
+  doi          = {10.5281/zenodo.23969275},
+  url          = {https://doi.org/10.5281/zenodo.23969275},
+  note         = {Preprint Monograph PREPRINT-01; Master Concept Zenodo DOI: 10.5281/zenodo.23969275; Web Edition: https://crvscience.com/labs/preprints/runie-automated-bioinformatics-preprint}
 }
 ```
 

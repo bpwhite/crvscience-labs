@@ -13,7 +13,7 @@ Its primary engineering goal is to chain calibrated native Rust bioinformatics m
 <!-- AUTO-RUNIE-SUMMARY:START -->
 - **Engine Version**: `RuNIE v1.27.0` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`)
 - **Tool Operator Vocabulary**: **`35` Core Validated Native Rust Tools** (`19` synthesized/upgraded in-memory DAG operators across `33` logged interventions in [`RUNIE_CHANGELOG.md`](../RUNIE_CHANGELOG.md))
-- **Canonical Multi-Tier Studies Solved**: **`17` Canonical Studies** (`1088` GA-MCMC trajectories evaluated across `4` parallel-tempering chains $\beta \in \{0.25, 0.50, 1.00, 2.00\}$)
+- **Canonical Multi-Tier Studies Solved**: **`15` Canonical Studies** (`960` GA-MCMC trajectories evaluated across `4` parallel-tempering chains $\beta \in \{0.25, 0.50, 1.00, 2.00\}$)
 - **Mean MAP Posterior Probability**: **$P(\mathcal{G}_{\text{MAP}} \mid D) = 0.8938$** (mean $\ln \text{BF}_{10} = +163.54$ vs. single-tool baselines; mean posterior $Z = +5.38\text{ SD}$)
 - **Falsification & Negative-Control Rejects**: **`54` `0🧪` Negative Controls** rejected at Generation 2 and logged to `runs/zero-star-calibration-dump.json`
 <!-- AUTO-RUNIE-SUMMARY:END -->

@@ -493,7 +493,7 @@ pub fn gotoh_anchored_pairwise_align(ref_seq: &[u8], qry_seq: &[u8]) -> (Vec<u8>
     }
 
     if anchors.is_empty() {
-        return gotoh_affine_dp_window(ref_seq, qry_seq);
+        return gotoh_affine_dp_chunked(ref_seq, qry_seq);
     }
 
     let mut out_r = Vec::with_capacity(ref_seq.len() + 64);
@@ -503,7 +503,7 @@ pub fn gotoh_anchored_pairwise_align(ref_seq: &[u8], qry_seq: &[u8]) -> (Vec<u8>
 
     for (anc_r, anc_q) in anchors {
         if anc_r > cur_r || anc_q > cur_q {
-            let (seg_r, seg_q) = gotoh_affine_dp_window(&ref_seq[cur_r..anc_r], &qry_seq[cur_q..anc_q]);
+            let (seg_r, seg_q) = gotoh_affine_dp_chunked(&ref_seq[cur_r..anc_r], &qry_seq[cur_q..anc_q]);
             out_r.extend_from_slice(&seg_r);
             out_q.extend_from_slice(&seg_q);
         }
@@ -514,12 +514,34 @@ pub fn gotoh_anchored_pairwise_align(ref_seq: &[u8], qry_seq: &[u8]) -> (Vec<u8>
     }
 
     if cur_r < ref_seq.len() || cur_q < qry_seq.len() {
-        let (seg_r, seg_q) = gotoh_affine_dp_window(&ref_seq[cur_r..], &qry_seq[cur_q..]);
+        let (seg_r, seg_q) = gotoh_affine_dp_chunked(&ref_seq[cur_r..], &qry_seq[cur_q..]);
         out_r.extend_from_slice(&seg_r);
         out_q.extend_from_slice(&seg_q);
     }
 
     (out_r, out_q)
+}
+
+/// Chunked wrapper around `gotoh_affine_dp_window` so large inter-anchor spans (e.g. 15-kb mitogenomes)
+/// never allocate an O(N^2) matrix larger than 450 x 450 per sub-window.
+fn gotoh_affine_dp_chunked(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
+    const MAX_CHUNK: usize = 420;
+    if a.len() <= MAX_CHUNK && b.len() <= MAX_CHUNK {
+        return gotoh_affine_dp_window(a, b);
+    }
+    let steps = (a.len().max(b.len()) + MAX_CHUNK - 1) / MAX_CHUNK;
+    let mut out_a = Vec::with_capacity(a.len() + 64);
+    let mut out_b = Vec::with_capacity(b.len() + 64);
+    for s in 0..steps {
+        let a0 = (s * a.len()) / steps;
+        let a1 = ((s + 1) * a.len()) / steps;
+        let b0 = (s * b.len()) / steps;
+        let b1 = ((s + 1) * b.len()) / steps;
+        let (sa, sb) = gotoh_affine_dp_window(&a[a0..a1], &b[b0..b1]);
+        out_a.extend_from_slice(&sa);
+        out_b.extend_from_slice(&sb);
+    }
+    (out_a, out_b)
 }
 
 #[inline]

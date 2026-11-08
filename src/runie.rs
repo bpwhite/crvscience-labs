@@ -72,6 +72,8 @@ pub const RUNIE_TOOL_VOCABULARY: &[(&str, &str)] = &[
     ("two-sample-mr-egger", "Two-Sample Mendelian Randomization (IVW, MR-Egger Intercept/Slope & Weighted Median)"),
     ("splicing-psi-bagel-crispr", "Effective-Length Splicing (PSI, dPSI, JSD_iso) & BAGEL2/CERES Copy-Number CRISPR Engine"),
     ("super-blast-adaptive", "5-Stage Adaptive Multi-Biotype (DNA/RNA/Protein/Other) On-the-Fly & JIT Super-BLAST Engine"),
+    ("TimeTreeLSD2", "Constrained Least-Squares Tip-Dating & Autocorrelated Relaxed Molecular Clock Smoother"),
+    ("runie-mcmc-skyline", "5-Stage Coupled Metropolis-Hastings Bayesian MCMC Sampler for 95% Credible Phylograms, Chronograms & GMRF Coalescent Skyline Ne(t)"),
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -862,7 +864,7 @@ pub fn run_runie_master_pipeline_inference(
             study_number: 14,
             study_id: "STUDY-14-NCLDV-CHROMATIN-HISTONE-POLB-TIER1-TO-TIER3-GUGLIELMINI2019-LIU2021",
             citation: "Guglielmini et al. (2019) PNAS, Liu et al. (2021) Cell, Valencia-Sanchez et al. (2021) Nat Struct Mol Biol & Irwin et al. (2022) Nat Microbiol — Nucleocytoviricota Chromatin & Pre-LECA Informational Synthesis.",
-            goal: "Execute a Safe-Prompt-Builder step-up Tier 1 -> Tier 2 -> Tier 3 dry-lab comparative genomics synthesis across environmental Nucleocytoviricota (Marseilleviridae, Medusaviridae, Imitervirales) evaluating fused histone doublets vs. octameric quartets, pre-LECA PolB and RNAP RPB1/RPB2 markers under 2D Dayhoff-6 recoding, and piecemeal eukaryotic host capture of aaRS translation suites vs. de novo Pandoravirus GC-ORFan drift.",
+            goal: "Execute a step-up Tier 1 -> Tier 2 -> Tier 3 comparative genomics synthesis across environmental Nucleocytoviricota (Marseilleviridae, Medusaviridae, Imitervirales) evaluating fused histone doublets vs. octameric quartets, pre-LECA PolB and RNAP RPB1/RPB2 markers under 2D Dayhoff-6 recoding, and piecemeal eukaryotic host capture of aaRS translation suites vs. de novo Pandoravirus GC-ORFan drift.",
             tier_numeric: 3,
             tier_label: "Tier 3: Scientific (Step-Up Tier 1 -> Tier 2 -> Tier 3 Nucleocytoviricota Chromatin & Informational Synthesis across VAL-SET-024)",
             data_features: [0.98, 0.96, 0.62, 0.95, 0.97, 0.89, 0.96, 0.98],

@@ -1363,6 +1363,36 @@ fn dispatch_pipeline(
                 }
             }
         }
+        "mcmc-skyline" | "runie-mcmc" | "mcmc-compare" | "beast-compare" => {
+            let default_out = "runs/runie-mcmc-skyline-neanderthal-calibration.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let generations = env::args()
+                .position(|a| a == "--generations" || a == "-g")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(10_000);
+            let burnin_fraction = env::args()
+                .position(|a| a == "--burnin-pct" || a == "--burnin")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .and_then(|s| s.parse::<f64>().ok())
+                .map(|v| if v > 1.0 { v / 100.0 } else { v })
+                .unwrap_or(0.20);
+            let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig {
+                generations,
+                burnin_fraction,
+                thin_interval: (generations / 200).max(1),
+                skyline_epochs: 12,
+                enable_adna_deam_and_ry3: true,
+                seed: 20261108,
+            };
+            eprintln!(
+                "[bio-suite] Launching Tool #36 Calibration: Native Rust RuNIE Long-Form Bayesian MCMC Sampler (generations={}, burnin={:.0}%) vs. *BEAST v1.10.4 & *IQ-TREE v2.4.0 --date LSD2...",
+                cfg.generations,
+                cfg.burnin_fraction * 100.0
+            );
+            let report = bio_suite::mcmc_skyline::run_runie_mcmc_skyline_sampler(&cache.cache_dir, cfg);
+            emit_json_output(&report, report.cpu_time_ms, Some(target_out));
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1507,6 +1537,36 @@ fn main() {
             } else {
                 dispatch_pipeline(cmd, &cache, out_file, aligner_mode);
             }
+        }
+        "mcmc-skyline" | "runie-mcmc" | "mcmc-compare" | "beast-compare" => {
+            let default_out = "runs/runie-mcmc-skyline-neanderthal-calibration.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let generations = env::args()
+                .position(|a| a == "--generations" || a == "-g")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(10_000);
+            let burnin_fraction = env::args()
+                .position(|a| a == "--burnin-pct" || a == "--burnin")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .and_then(|s| s.parse::<f64>().ok())
+                .map(|v| if v > 1.0 { v / 100.0 } else { v })
+                .unwrap_or(0.20);
+            let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig {
+                generations,
+                burnin_fraction,
+                thin_interval: (generations / 200).max(1),
+                skyline_epochs: 12,
+                enable_adna_deam_and_ry3: true,
+                seed: 20261108,
+            };
+            eprintln!(
+                "[bio-suite] Launching Tool #36 Calibration: Native Rust RuNIE Long-Form Bayesian MCMC Sampler (generations={}, burnin={:.0}%) vs. *BEAST v1.10.4 & *IQ-TREE v2.4.0 --date LSD2...",
+                cfg.generations,
+                cfg.burnin_fraction * 100.0
+            );
+            let report = bio_suite::mcmc_skyline::run_runie_mcmc_skyline_sampler(&cache.cache_dir, cfg);
+            emit_json_output(&report, report.cpu_time_ms, Some(target_out));
         }
         _ => {
             println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");

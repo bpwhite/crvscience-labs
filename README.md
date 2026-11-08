@@ -15,15 +15,15 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 
 <!-- AUTO-FRONTPAGE-STATUS:START -->
 > **⚠️ VALIDATION SCOPE NOTICE (MODEL TESTING vs. VALIDATED BENCHMARKS & PREPRINTS):**
-> Only the **`35` Head-to-Head Tool Calibrations** and the **`14` Empirically Verified Preprints (`PREPRINT-01` through `PREPRINT-14`, `v2.0.1`)** are considered empirically validated at this time. All other non-verified Lab Discovery entries (`77` entries) carry an explicit **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning banner and were generated strictly to train and stress-test the `RuNIE` GA-MCMC controller and ranking gates.
+> Only the **`35` Head-to-Head Tool Calibrations** and the **`14` Empirically Verified Preprints (`PREPRINT-01` through `PREPRINT-14`, `v2.0.1`)** are considered empirically validated at this time. All other non-verified Lab Discovery entries (`78` entries) carry an explicit **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning banner and were generated strictly to train and stress-test the `RuNIE` GA-MCMC controller and ranking gates.
 
 | Subsystem | Live Count & Version | Summary & Documentation |
 | :--- | :--- | :--- |
 | **Native Rust Engines (`bio-suite`)** | **`35` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
 | **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.0` (Stage 4 `ModelTest` + Flowchart)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3 Empirical Capability Proofs & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
 | **Empirically Verified Preprints** | **`14` Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`126` Total** (`14` Preprints · `35` Tool Cal. · `77` ⚠️ Model Testing Only) | ⚠️ **Notice**: Only the `14` Verified Preprints and `35` Tool Calibrations are validated; the remaining `77` entries are **MODEL TESTING ONLY (Procedural + Published Data Only)** $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
-| **Curated Validation Datasets** | **`52` Datasets (`VAL-SET-001`–`VAL-SET-052`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
+| **Lab Discoveries Directory** | **`127` Total** (`14` Preprints · `35` Tool Cal. · `78` ⚠️ Model Testing Only) | ⚠️ **Notice**: Only the `14` Verified Preprints and `35` Tool Calibrations are validated; the remaining `78` entries are **MODEL TESTING ONLY (Procedural + Published Data Only)** $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
+| **Curated Validation Datasets** | **`53` Datasets (`VAL-SET-001`–`VAL-SET-053`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
 ---

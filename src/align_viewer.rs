@@ -503,6 +503,53 @@ impl AlignmentWorkspace {
                     true,
                 ))
             }
+            "circular-mito" | "mitogenomes" | "mito-full" => {
+                let candidate_files = [
+                    ("NC_012920.1.fasta", "Homo sapiens (Starts in D-loop pos 1; COX1 @ 5,904 bp)", "Hominidae"),
+                    ("NC_001643.1.fasta", "Pan troglodytes (Starts at tRNA-Phe; COX1 @ 5,327 bp)", "Hominidae"),
+                    ("NC_001644.1.fasta", "Pan paniscus (Starts at tRNA-Phe; COX1 @ 5,327 bp)", "Hominidae"),
+                    ("NC_001645.1.fasta", "Gorilla gorilla (Starts at tRNA-Phe; COX1 @ 5,323 bp)", "Hominidae"),
+                    ("NC_001646.1.fasta", "Pongo pygmaeus (Starts at tRNA-Phe; COX1 @ 5,326 bp)", "Hominidae"),
+                    ("NC_005089.1.fasta", "Mus musculus (Starts at tRNA-Phe; COX1 @ 5,328 bp)", "Muridae"),
+                    ("NC_002078.1.fasta", "Orycteropus afer (Starts at tRNA-Phe; COX1 @ 5,330 bp)", "Orycteropodidae"),
+                    ("NC_003057.1.fasta", "Limulus polyphemus (Starts directly at COX1 pos 1)", "Limulidae"),
+                ];
+                let mut records = Vec::new();
+                let ncbi_dir = cache.cache_dir.join("ncbi");
+                for (fname, label, fam) in &candidate_files {
+                    let p = ncbi_dir.join(fname);
+                    if let Ok(raw) = fs::read_to_string(&p) {
+                        if let Ok(mut parsed) = parse_any_sequence_format(&raw, fname) {
+                            if let Some(mut rec) = parsed.pop() {
+                                rec.taxon = label.to_string();
+                                rec.common_name = label.to_string();
+                                rec.family = fam.to_string();
+                                rec.gene = "Mitogenome".to_string();
+                                records.push(rec);
+                            }
+                        }
+                    }
+                }
+                if records.is_empty() {
+                    let coi = cache.fetch_carnivora_coi_panel()?;
+                    return Ok(Self::from_fasta_records(
+                        "Carnivora COX1 Mitochondrial Barcode Alignment (16 Taxa, 1,545 bp)",
+                        "cache/carnivora_coi_panel",
+                        &coi,
+                        GeneticCodeTable::VertebrateMito2,
+                        1,
+                        true,
+                    ));
+                }
+                Ok(Self::from_fasta_records(
+                    "Circular Mitogenome Panel (COX1-Phased & 13-Locus Partitioned Gotoh MSA)",
+                    "cache/ncbi/NC_*.fasta",
+                    &records,
+                    GeneticCodeTable::VertebrateMito2,
+                    1,
+                    true,
+                ))
+            }
             _ => {
                 let records = cache.fetch_carnivora_coi_panel()?;
                 Ok(Self::from_fasta_records(
@@ -544,7 +591,7 @@ impl AlignmentWorkspace {
                     })
                     .collect();
                 ("Pre-Aligned FASTA Matrix".to_string(), pairs)
-            } else if max_len <= 6000 && records.len() <= 64 {
+            } else if max_len <= 30_000 && records.len() <= 96 {
                 let (method, aligned, _) = align_sequences_with_mode(records, AlignerMode::Native);
                 let pairs = records
                     .iter()
@@ -925,6 +972,55 @@ impl AlignmentWorkspace {
                 self.mean_gc_percent
             ),
         });
+
+        // 1b. If this is a full circular mitogenome alignment (`len >= 8_000` phased at `pos 1 = COX1`),
+        // populate the 13 partitioned mitochondrial gene loci so users/pipelines can select any gene directly.
+        if len >= 8_000 {
+            let mito_loci_defs: [(&str, &str, &str, usize, usize, char); 13] = [
+                ("LOCUS-COX1", "Partitioned_Gene", "P01: COX1 (Cytochrome c Oxidase I)", 0, 1545, '+'),
+                ("LOCUS-COX2", "Partitioned_Gene", "P02: tRNA-Ser/Asp + COX2", 1545, 2385, '+'),
+                ("LOCUS-ATP8-ATP6", "Partitioned_Gene", "P03: tRNA-Lys + ATP8 + ATP6", 2385, 3315, '+'),
+                ("LOCUS-COX3", "Partitioned_Gene", "P04: COX3 + tRNA-Gly", 3315, 4170, '+'),
+                ("LOCUS-ND3-ND4L", "Partitioned_Gene", "P05: ND3 + tRNA-Arg + ND4L", 4170, 4920, '+'),
+                ("LOCUS-ND4", "Partitioned_Gene", "P06: ND4 + tRNA-His/Ser/Leu", 4920, 6510, '+'),
+                ("LOCUS-ND5", "Partitioned_Gene", "P07: ND5 (NADH Dehydrogenase 5)", 6510, 8400, '+'),
+                ("LOCUS-ND6-CYTB", "Partitioned_Gene", "P08: ND6 + CYTB (Cytochrome b)", 8400, 10200, '+'),
+                ("LOCUS-CR-DLOOP", "Hypervariable_CR", "P09: Control Region / D-loop (Semi-Global)", 10200, 11400, '+'),
+                ("LOCUS-RRNS-12S", "Partitioned_rRNA", "P10: tRNA-Phe + 12S rRNA (rrnS)", 11400, 12450, '+'),
+                ("LOCUS-RRNL-16S", "Partitioned_rRNA", "P11: tRNA-Val + 16S rRNA (rrnL)", 12450, 14160, '+'),
+                ("LOCUS-ND1", "Partitioned_Gene", "P12: tRNA-Leu + ND1", 14160, 15300, '+'),
+                ("LOCUS-ND2", "Partitioned_Gene", "P13: tRNA-Ile/Gln/Met + ND2 + WANCY", 15300, 16800, '+'),
+            ];
+            let scale = len as f64 / 16800.0;
+            for (fid, ftype, flabel, nom_s, nom_e, strand) in mito_loci_defs {
+                let s1 = (((nom_s as f64 * scale).round() as usize) / 3 * 3 + 1).clamp(1, len);
+                let e1 = if nom_e >= 16800 {
+                    len
+                } else {
+                    (((nom_e as f64 * scale).round() as usize) / 3 * 3).clamp(s1, len)
+                };
+                features.push(AlignmentFeatureAnnotation {
+                    feature_id: fid.to_string(),
+                    feature_type: ftype.to_string(),
+                    label: format!("{} ({}..{} bp)", flabel, s1, e1),
+                    start_col_1based: s1,
+                    end_col_1based: e1,
+                    strand,
+                    score: 98.0,
+                    color_rgb: if ftype == "Hypervariable_CR" {
+                        (245, 158, 11)
+                    } else if ftype == "Partitioned_rRNA" {
+                        (56, 189, 248)
+                    } else {
+                        (16, 185, 129)
+                    },
+                    description: format!(
+                        "Partitioned mitochondrial gene locus {} ({}..{} bp, COX1-normalized circular frame)",
+                        flabel, s1, e1
+                    ),
+                });
+            }
+        }
 
         // 2. Scan 45-bp sliding windows for Ultraconserved Catalytic Anchors (>= 90% mean conservation)
         let win = 45usize.min(len);
@@ -2622,6 +2718,7 @@ pub const ACT_SAVE_FASTA: u16 = 802;
 pub const ACT_LOAD_COI: u16 = 811;
 pub const ACT_LOAD_CHR1: u16 = 812;
 pub const ACT_LOAD_HYMEN: u16 = 813;
+pub const ACT_LOAD_CIRCULAR_MITO: u16 = 814;
 pub const ACT_EXIT: u16 = 999;
 
 pub const ACT_FEAT_BASE: u16 = 2000;
@@ -4177,6 +4274,7 @@ mod win32_gui {
         AppendMenuW(file_menu, MF_STRING, ACT_OPEN_FILE as usize, to_wide("&Open FASTA / Alignment...\tCtrl+O").as_ptr());
         AppendMenuW(file_menu, MF_SEPARATOR, 0, null());
         AppendMenuW(file_menu, MF_STRING, ACT_LOAD_COI as usize, to_wide("Load Cohort: &Carnivora COX1 Barcodes (16 Taxa)").as_ptr());
+        AppendMenuW(file_menu, MF_STRING, ACT_LOAD_CIRCULAR_MITO as usize, to_wide("Load Cohort: Circular &Mitogenomes (COX1-Phased & 13-Locus Partitioned)").as_ptr());
         AppendMenuW(file_menu, MF_STRING, ACT_LOAD_CHR1 as usize, to_wide("Load Cohort: &Human GRCh38 Chr1p36.33 Panel").as_ptr());
         AppendMenuW(file_menu, MF_STRING, ACT_LOAD_HYMEN as usize, to_wide("Load Cohort: H&ymenoptera Eusociality Clade").as_ptr());
         AppendMenuW(file_menu, MF_SEPARATOR, 0, null());
@@ -4347,10 +4445,11 @@ mod win32_gui {
                             }
                         }
                     }
-                    ACT_LOAD_COI | ACT_LOAD_CHR1 | ACT_LOAD_HYMEN => {
+                    ACT_LOAD_COI | ACT_LOAD_CHR1 | ACT_LOAD_HYMEN | ACT_LOAD_CIRCULAR_MITO => {
                         let cohort = match cmd_id {
                             ACT_LOAD_CHR1 => "chr1-section-a",
                             ACT_LOAD_HYMEN => "hymenoptera",
+                            ACT_LOAD_CIRCULAR_MITO => "circular-mito",
                             _ => "coi-barcodes",
                         };
                         let cache = PoliteCacheManager::new(&ctx.cache_dir);

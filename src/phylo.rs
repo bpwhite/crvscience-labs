@@ -281,8 +281,8 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
         );
     }
 
-    // Mode 2: Variable-length / Indel-bearing panel -> Progressive Gotoh Affine-Gap Center-Star / Guide Profile MSA
-    let cleaned_seqs: Vec<Vec<u8>> = records
+    // Mode 2: Variable-length / Indel-bearing panel or Circular Mitogenomes / Multi-Locus Supermatrices
+    let raw_cleaned_seqs: Vec<Vec<u8>> = records
         .iter()
         .map(|r| {
             r.sequence
@@ -293,12 +293,33 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
         })
         .collect();
 
-    // Select 6-mer medoid sequence as the guide anchor
-    let center_idx = select_kmer_medoid_index(&cleaned_seqs);
+    // Select 6-mer medoid sequence as the guide anchor (k-mer Jaccard similarity is circularly invariant)
+    let center_idx = select_kmer_medoid_index(&raw_cleaned_seqs);
+
+    // Step 2A: Circular Coordinate Normalization (Pre-rotate circular mitogenomes/organelles to the
+    // canonical `COX1` 5' gene boundary or medoid origin, and orient reverse-complement strands)
+    let (cleaned_seqs, circular_rotations, revcomps_applied, is_cox1_mitogenome) =
+        normalize_circular_sequences(&raw_cleaned_seqs, records, center_idx);
+
     let ref_seq = &cleaned_seqs[center_idx];
     let ref_len = ref_seq.len();
 
-    // Align every sequence to `ref_seq` in parallel using Anchor-Segmented Gotoh Affine-Gap DP
+    // Step 2B: If this is a full or multi-gene mitogenome/organellar panel (`ref_len >= 6_000` or `is_cox1_mitogenome`),
+    // partition the reference and each query sequence into homologous gene loci (`COX1`, `COX2`, `ATP8_ATP6`,
+    // `COX3`, `ND3_ND4L`, `ND4`, `ND5`, `ND6_CYTB`, `Control_Region_DLoop`, `rrnS_12S`, `rrnL_16S`, `ND1`, `ND2`)
+    // so every gene locus aligns strictly against its homologous counterpart with semi-global free end-gaps at
+    // non-coding / terminal boundaries.
+    if is_cox1_mitogenome || ref_len >= 6_000 {
+        let (aligned, num_loci) =
+            align_partitioned_mitogenome_loci(records, &cleaned_seqs, center_idx);
+        let method_desc = format!(
+            "bio-suite native Rust v3 (Circular COX1-Phased [{} rotated, {} rc] + {}-Locus Partitioned Semi-Global Gotoh Affine-Gap MSA, DNA200)",
+            circular_rotations, revcomps_applied, num_loci
+        );
+        return (method_desc, aligned);
+    }
+
+    // Step 2C: Standard single-locus variable-length panel -> Colinear-Chained + Semi-Global End-Gap Gotoh MSA
     let pairwise_alignments: Vec<(Vec<u8>, Vec<u8>)> = cleaned_seqs
         .par_iter()
         .enumerate()
@@ -306,14 +327,30 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
             if idx == center_idx {
                 (ref_seq.clone(), ref_seq.clone())
             } else {
-                gotoh_anchored_pairwise_align(ref_seq, qry)
+                gotoh_anchored_pairwise_align_ext(ref_seq, qry, true, true)
             }
         })
         .collect();
 
-    // Decompose each pairwise alignment into:
-    // - `ref_col_char[seq_i][r_pos]`: character aligned to `ref_seq[r_pos]` (either base or '-')
-    // - `insertions_before[seq_i][r_pos]`: inserted bases in `seq_i` before `ref_seq[r_pos]` (for r_pos in 0..=ref_len)
+    let aligned = merge_center_star_pairwise_alignments(records, ref_len, &pairwise_alignments);
+    let method_str = if circular_rotations > 0 || revcomps_applied > 0 {
+        format!(
+            "bio-suite native Rust v3 (Circular Origin-Normalized [{} rotated] + Semi-Global Gotoh Affine-Gap MSA, DNA200)",
+            circular_rotations
+        )
+    } else {
+        "bio-suite native Rust v3 (Colinear-Anchored Semi-Global Gotoh Affine-Gap MSA, DNA200 Ti/Tv Matrix)".to_string()
+    };
+
+    (method_str, aligned)
+}
+
+/// Merge pairwise `(aln_ref, aln_qry)` center-star alignments into a consistent multi-sequence alignment matrix.
+fn merge_center_star_pairwise_alignments(
+    records: &[FastaRecord],
+    ref_len: usize,
+    pairwise_alignments: &[(Vec<u8>, Vec<u8>)],
+) -> Vec<AlignedSequence> {
     let n = records.len();
     let mut ref_col_char = vec![vec![b'-'; ref_len]; n];
     let mut insertions_before: Vec<Vec<Vec<u8>>> = vec![vec![Vec::new(); ref_len + 1]; n];
@@ -323,7 +360,6 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
         let mut r_pos = 0usize;
         for (&rb, &qb) in aln_ref.iter().zip(aln_qry.iter()) {
             if rb == b'-' {
-                // Insertion in query relative to guide reference before `r_pos`
                 let slot = r_pos.min(ref_len);
                 insertions_before[seq_i][slot].push(qb);
             } else {
@@ -342,7 +378,7 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
     }
 
     let total_msa_len: usize = ref_len + max_ins_len.iter().sum::<usize>();
-    let aligned: Vec<AlignedSequence> = (0..n)
+    (0..n)
         .map(|seq_i| {
             let mut out = String::with_capacity(total_msa_len);
             for r_pos in 0..ref_len {
@@ -377,12 +413,1032 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
                 aligned_seq: out,
             }
         })
+        .collect()
+}
+
+/// Reverse-complement a nucleotide byte sequence.
+pub fn reverse_complement_bytes(seq: &[u8]) -> Vec<u8> {
+    seq.iter()
+        .rev()
+        .map(|&b| match b {
+            b'A' | b'a' => b'T',
+            b'T' | b't' | b'U' | b'u' => b'A',
+            b'C' | b'c' => b'G',
+            b'G' | b'g' => b'C',
+            b'R' | b'r' => b'Y',
+            b'Y' | b'y' => b'R',
+            b'S' | b's' => b'S',
+            b'W' | b'w' => b'W',
+            b'K' | b'k' => b'M',
+            b'M' | b'm' => b'K',
+            _ => b'N',
+        })
+        .collect()
+}
+
+/// Translate a 3-nucleotide codon using the Metazoan Mitochondrial Genetic Code (`TGA -> W`, `ATA -> M`).
+#[inline]
+fn translate_mito_codon(codon: &[u8]) -> u8 {
+    if codon.len() < 3 {
+        return b'X';
+    }
+    match (codon[0], codon[1], codon[2]) {
+        (b'T', b'T', b'T') | (b'T', b'T', b'C') => b'F',
+        (b'T', b'T', b'A') | (b'T', b'T', b'G') => b'L',
+        (b'C', b'T', _) => b'L',
+        (b'A', b'T', b'T') | (b'A', b'T', b'C') => b'I',
+        (b'A', b'T', b'A') | (b'A', b'T', b'G') => b'M',
+        (b'G', b'T', _) => b'V',
+        (b'T', b'C', _) => b'S',
+        (b'C', b'C', _) => b'P',
+        (b'A', b'C', _) => b'T',
+        (b'G', b'C', _) => b'A',
+        (b'T', b'A', b'T') | (b'T', b'A', b'C') => b'Y',
+        (b'T', b'A', b'A') | (b'T', b'A', b'G') => b'*',
+        (b'C', b'A', b'T') | (b'C', b'A', b'C') => b'H',
+        (b'C', b'A', b'A') | (b'C', b'A', b'G') => b'Q',
+        (b'A', b'A', b'T') | (b'A', b'A', b'C') => b'N',
+        (b'A', b'A', b'A') | (b'A', b'A', b'G') => b'K',
+        (b'G', b'A', b'T') | (b'G', b'A', b'C') => b'D',
+        (b'G', b'A', b'A') | (b'G', b'A', b'G') => b'E',
+        (b'T', b'G', b'T') | (b'T', b'G', b'C') => b'C',
+        (b'T', b'G', b'A') | (b'T', b'G', b'G') => b'W',
+        (b'C', b'G', _) => b'R',
+        (b'A', b'G', b'T') | (b'A', b'G', b'C') | (b'A', b'G', b'A') | (b'A', b'G', b'G') => b'S',
+        (b'G', b'G', _) => b'G',
+        _ => b'X',
+    }
+}
+
+#[inline]
+fn aa_similarity_score(a: u8, b: u8) -> i32 {
+    if a == b && a != b'X' && a != b'*' {
+        return 4;
+    }
+    let same_group = matches!(
+        (a, b),
+        (b'I' | b'L' | b'V' | b'M', b'I' | b'L' | b'V' | b'M')
+            | (b'F' | b'Y' | b'W', b'F' | b'Y' | b'W')
+            | (b'K' | b'R' | b'H', b'K' | b'R' | b'H')
+            | (b'D' | b'E', b'D' | b'E')
+            | (b'S' | b'T', b'S' | b'T')
+            | (b'A' | b'G', b'A' | b'G')
+            | (b'N' | b'Q', b'N' | b'Q')
+    );
+    if same_group {
+        2
+    } else if a == b'*' || b == b'*' {
+        -6
+    } else {
+        -1
+    }
+}
+
+fn score_peptide_motif(aa_seq: &[u8], pos: usize, motif: &[u8]) -> i32 {
+    if pos + motif.len() > aa_seq.len() {
+        return -100;
+    }
+    let mut s = 0i32;
+    for (i, &m) in motif.iter().enumerate() {
+        s += aa_similarity_score(aa_seq[pos + i], m);
+    }
+    s
+}
+
+/// Locate the canonical 5' start coordinate of the mitochondrial `COX1` gene across a circular genome
+/// by scanning all 6 reading frames (forward + reverse complement across the circular wrap) for the
+/// invariant contiguous 32-amino-acid `COX1` N-terminal transmembrane helix M1 motif
+/// (`KDIGTLYLLFGAWAGMVGTALSLLIRAELGQP`, starting at codon +12 / +36 bp downstream of the COX1 start codon)
+/// plus the downstream M2 heme-ligand motif (`YNVIVTAHAFVMIFFMVMP` at codon +58 from COX1 start).
+/// Returns `Some((cox1_start_bp_0based, is_reverse_complement, constellation_score))`.
+pub fn locate_canonical_cox1_start(seq: &[u8]) -> Option<(usize, bool, i32)> {
+    let len = seq.len();
+    if len < 1_200 {
+        return None;
+    }
+    let wrap_extra = 900.min(len);
+    let mut best_overall: Option<(usize, bool, i32)> = None;
+
+    const COX1_M1_MOTIF: &[u8] = b"KDIGTLYLLFGAWAGMVGTALSLLIRAELGQP";
+    const COX1_M2_MOTIF: &[u8] = b"TAHAFVMIFFMVMP";
+
+    for is_rc in [false, true] {
+        let base_strand = if is_rc {
+            reverse_complement_bytes(seq)
+        } else {
+            seq.to_vec()
+        };
+        let mut wrapped = Vec::with_capacity(len + wrap_extra);
+        wrapped.extend_from_slice(&base_strand);
+        wrapped.extend_from_slice(&base_strand[..wrap_extra]);
+
+        for frame in 0..3usize {
+            let num_codons = (wrapped.len().saturating_sub(frame)) / 3;
+            if num_codons < 90 {
+                continue;
+            }
+            let mut aa = Vec::with_capacity(num_codons);
+            for c in 0..num_codons {
+                let off = frame + c * 3;
+                aa.push(translate_mito_codon(&wrapped[off..off + 3]));
+            }
+
+            let max_c = (len / 3).min(aa.len().saturating_sub(75));
+            for c1 in 0..max_c {
+                // Fast pre-filter on the first 7 residues (`KDIGTLY`)
+                let s_head = score_peptide_motif(&aa, c1, b"KDIGTLY");
+                if s_head < 12 {
+                    continue;
+                }
+                // Score the full contiguous 32-aa M1 helix (`KDIGTLYLLFGAWAGMVGTALSLLIRAELGQP`)
+                let s_m1 = score_peptide_motif(&aa, c1, COX1_M1_MOTIF);
+                if s_m1 < 56 {
+                    continue;
+                }
+                // Score the downstream M2 heme-ligand motif (`TAHAFVMIFFMVMP`) around c1 + 47..53
+                let mut best_s_m2 = 0i32;
+                for c2 in (c1 + 45)..=(c1 + 55).min(aa.len().saturating_sub(15)) {
+                    let s2 = score_peptide_motif(&aa, c2, COX1_M2_MOTIF);
+                    if s2 > best_s_m2 {
+                        best_s_m2 = s2;
+                    }
+                }
+
+                let total_score = s_m1 + best_s_m2;
+                if total_score >= 72 {
+                    let prev_best = best_overall.map(|(_, _, sc)| sc).unwrap_or(-1);
+                    if total_score > prev_best {
+                        // Lock directly to `c1 - 12` codons (-36 bp) from the invariant `KDIGTLY...` M1 helix
+                        // so every mitogenome places `COX1` codon 1 at pos 0 and `KDIGTLY` at pos 36 in Frame +1!
+                        let chosen_c = c1 as isize - 12;
+                        let start_bp = (chosen_c * 3 + frame as isize).rem_euclid(len as isize) as usize;
+                        best_overall = Some((start_bp, is_rc, total_score));
+                    }
+                }
+            }
+        }
+    }
+
+    best_overall
+}
+
+/// Compute the optimal circular shift offset (`0..qry.len()`) and strand (`is_rc`) of `qry` relative to `ref_seq`
+/// using circular 9-mer Hough phase voting across `qry ++ qry`.
+fn find_best_circular_kmer_shift(ref_seq: &[u8], qry_seq: &[u8]) -> (usize, bool, usize, usize) {
+    let k = 9usize;
+    let r_len = ref_seq.len();
+    let q_len = qry_seq.len();
+    if r_len < k || q_len < k {
+        return (0, false, 0, 0);
+    }
+
+    // Index unique 9-mers in `ref_seq`
+    let mut ref_kmer_pos: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
+    for (r_i, w) in ref_seq.windows(k).enumerate() {
+        ref_kmer_pos
+            .entry(w)
+            .and_modify(|v| *v = None)
+            .or_insert(Some(r_i));
+    }
+
+    let bin_w = 32usize;
+    let num_bins = (q_len + bin_w - 1) / bin_w;
+    let mut best_shift = 0usize;
+    let mut best_rc = false;
+    let mut best_bin_votes = 0usize;
+    let mut unshifted_fwd_votes = 0usize;
+
+    for is_rc in [false, true] {
+        let strand_q = if is_rc {
+            reverse_complement_bytes(qry_seq)
+        } else {
+            qry_seq.to_vec()
+        };
+        let mut wrapped_q = Vec::with_capacity(q_len + k);
+        wrapped_q.extend_from_slice(&strand_q);
+        wrapped_q.extend_from_slice(&strand_q[..k.min(q_len)]);
+
+        let mut bins = vec![0usize; num_bins.max(1)];
+        let mut exact_shifts: Vec<Vec<usize>> = vec![Vec::new(); num_bins.max(1)];
+
+        for (q_j, w) in wrapped_q[..q_len].windows(k).enumerate() {
+            if let Some(Some(r_i)) = ref_kmer_pos.get(w) {
+                let r_scaled = (*r_i * q_len) / r_len.max(1);
+                let delta = (q_j + q_len - (r_scaled % q_len)) % q_len;
+                let b = (delta / bin_w) % num_bins.max(1);
+                bins[b] += 1;
+                exact_shifts[b].push(delta);
+            }
+        }
+
+        if !is_rc && !bins.is_empty() {
+            unshifted_fwd_votes = bins[0] + bins.get(num_bins.saturating_sub(1)).copied().unwrap_or(0);
+        }
+
+        for b in 0..num_bins.max(1) {
+            let next_b = (b + 1) % num_bins.max(1);
+            let combined = bins[b] + bins[next_b];
+            if combined > best_bin_votes {
+                best_bin_votes = combined;
+                best_rc = is_rc;
+                // Compute median exact shift within `b` and `next_b`
+                let mut candidates = exact_shifts[b].clone();
+                for &d in &exact_shifts[next_b] {
+                    if b + 1 == num_bins && d < bin_w {
+                        candidates.push(d + q_len);
+                    } else {
+                        candidates.push(d);
+                    }
+                }
+                if !candidates.is_empty() {
+                    candidates.sort_unstable();
+                    best_shift = candidates[candidates.len() / 2] % q_len;
+                }
+            }
+        }
+    }
+
+    (best_shift, best_rc, best_bin_votes, unshifted_fwd_votes)
+}
+
+#[inline]
+fn rotate_circular_sequence(seq: &[u8], shift: usize, is_rc: bool) -> Vec<u8> {
+    let s = if is_rc {
+        reverse_complement_bytes(seq)
+    } else {
+        seq.to_vec()
+    };
+    if s.is_empty() {
+        return s;
+    }
+    let rot = shift % s.len();
+    if rot == 0 {
+        return s;
+    }
+    let mut out = Vec::with_capacity(s.len());
+    out.extend_from_slice(&s[rot..]);
+    out.extend_from_slice(&s[..rot]);
+    out
+}
+
+/// Fine-tune a circular shift offset within `+-24 bp` so the first 90 bp of `qry` locks onto
+/// the exact reading frame / codon boundary of `ref_seq[0..90]`.
+fn refine_local_start_boundary(ref_seq: &[u8], qry_seq: &[u8], rough_shift: usize, is_rc: bool) -> usize {
+    let s = if is_rc {
+        reverse_complement_bytes(qry_seq)
+    } else {
+        qry_seq.to_vec()
+    };
+    let q_len = s.len();
+    if q_len < 120 || ref_seq.len() < 120 {
+        return rough_shift % q_len.max(1);
+    }
+    let probe_len = 90usize;
+    let mut best_shift = rough_shift % q_len;
+    let mut best_score = i32::MIN;
+
+    for delta in -24isize..=24isize {
+        let cand_shift = (rough_shift as isize + delta).rem_euclid(q_len as isize) as usize;
+        let mut score = 0i32;
+        for i in 0..probe_len {
+            let qb = s[(cand_shift + i) % q_len];
+            let rb = ref_seq[i];
+            if qb == rb {
+                score += 4;
+            } else if matches!((qb, rb), (b'A', b'G') | (b'G', b'A') | (b'C', b'T') | (b'T', b'C')) {
+                score += 1;
+            } else {
+                score -= 2;
+            }
+        }
+        // Slight preference for zero delta when tied
+        if delta == 0 {
+            score += 2;
+        }
+        if score > best_score {
+            best_score = score;
+            best_shift = cand_shift;
+        }
+    }
+    best_shift
+}
+
+/// Normalize circular mitochondrial / organellar sequences so all sequences share a consistent
+/// starting gene coordinate (`pos 0 = canonical COX1 5' start` or medoid reference origin)
+/// and identical strand orientation before running pairwise or progressive MSA.
+pub fn normalize_circular_sequences(
+    cleaned_seqs: &[Vec<u8>],
+    records: &[FastaRecord],
+    center_idx: usize,
+) -> (Vec<Vec<u8>>, usize, usize, bool) {
+    if cleaned_seqs.is_empty() {
+        return (Vec::new(), 0, 0, false);
+    }
+    let min_len = cleaned_seqs.iter().map(|s| s.len()).min().unwrap_or(0);
+    let max_len = cleaned_seqs.iter().map(|s| s.len()).max().unwrap_or(0);
+    let any_mito_header = records.iter().any(|r| {
+        let d = r.description.to_ascii_lowercase();
+        let g = r.gene.to_ascii_lowercase();
+        d.contains("mitochondr")
+            || d.contains("complete genome")
+            || d.contains("plastid")
+            || d.contains("chloroplast")
+            || g.contains("mitogenome")
+    });
+
+    // Check if the medoid reference contains the canonical metazoan `COX1` gene
+    let ref_cox1 = if max_len >= 2_500 {
+        locate_canonical_cox1_start(&cleaned_seqs[center_idx])
+    } else {
+        None
+    };
+    let is_cox1_mitogenome = ref_cox1.is_some() && max_len >= 6_000;
+
+    if !is_cox1_mitogenome && !any_mito_header && min_len < 6_000 {
+        return (cleaned_seqs.to_vec(), 0, 0, false);
+    }
+
+    // Rotate the medoid reference to its canonical `COX1` 5' start boundary if detected
+    let ref_rotated = if let Some((r_shift, r_rc, _)) = ref_cox1 {
+        rotate_circular_sequence(&cleaned_seqs[center_idx], r_shift, r_rc)
+    } else {
+        cleaned_seqs[center_idx].clone()
+    };
+
+    let results: Vec<(Vec<u8>, bool, bool)> = cleaned_seqs
+        .par_iter()
+        .enumerate()
+        .map(|(idx, seq)| {
+            if idx == center_idx {
+                let (r_shift, r_rc) = ref_cox1.map(|(s, rc, _)| (s, rc)).unwrap_or((0, false));
+                return (ref_rotated.clone(), r_shift > 0, r_rc);
+            }
+            if seq.len() < 1_200 {
+                return (seq.clone(), false, false);
+            }
+
+            // 1. Try canonical `COX1` 5' boundary detection first (frame-locked to `KDIGTLY - 12 codons`)
+            if is_cox1_mitogenome {
+                if let Some((q_cox1_shift, q_rc, _score)) = locate_canonical_cox1_start(seq) {
+                    let rotated = rotate_circular_sequence(seq, q_cox1_shift, q_rc);
+                    return (rotated, q_cox1_shift > 0, q_rc);
+                }
+            }
+
+            // 2. Fallback to circular 9-mer Hough phase correlation against `ref_rotated`
+            let (kmer_shift, kmer_rc, peak_votes, unshifted_votes) =
+                find_best_circular_kmer_shift(&ref_rotated, seq);
+            if peak_votes >= 8 && (kmer_rc || (kmer_shift > 24 && peak_votes > unshifted_votes * 4 / 3)) {
+                let refined_shift =
+                    refine_local_start_boundary(&ref_rotated, seq, kmer_shift, kmer_rc);
+                let rotated = rotate_circular_sequence(seq, refined_shift, kmer_rc);
+                return (rotated, refined_shift > 0, kmer_rc);
+            }
+
+            (seq.clone(), false, false)
+        })
         .collect();
 
-    (
-        "bio-suite native Rust v2 (Progressive Gotoh Affine-Gap MSA, DNA200 Ti/Tv Matrix)".to_string(),
-        aligned,
-    )
+    let mut out_seqs = Vec::with_capacity(results.len());
+    let mut rot_count = 0usize;
+    let mut rc_count = 0usize;
+    for (s, did_rot, did_rc) in results {
+        if did_rot {
+            rot_count += 1;
+        }
+        if did_rc {
+            rc_count += 1;
+        }
+        out_seqs.push(s);
+    }
+
+    (out_seqs, rot_count, rc_count, is_cox1_mitogenome)
+}
+
+/// Partitioned Mitochondrial Gene-Locus Alignment:
+/// Segments circularly normalized mitogenomes (`pos 0 = COX1`) into ~13 homologous gene-locus
+/// partitions (`COX1`, `COX2`, `ATP8_ATP6`, `COX3`, `ND3_ND4L`, `ND4`, `ND5`, `ND6_CYTB`,
+/// `Control_Region_DLoop`, `rrnS_12S`, `rrnL_16S`, `ND1`, `ND2`) anchored by conserved coding/rRNA
+/// motifs + colinear DP boundary markers, aligns each gene partition across all taxa with semi-global
+/// free end-gaps at locus/D-loop boundaries, and concatenates the aligned partitions in canonical order.
+fn align_partitioned_mitogenome_loci(
+    records: &[FastaRecord],
+    cleaned_seqs: &[Vec<u8>],
+    center_idx: usize,
+) -> (Vec<AlignedSequence>, usize) {
+    let ref_seq = &cleaned_seqs[center_idx];
+    let ref_len = ref_seq.len();
+    let n = records.len();
+
+    // Establish 13 mitochondrial gene-locus partition boundaries along `ref_seq`:
+    // Partition 0 (`0..1536 bp`) is the frame-locked 512-codon core of `COX1`, followed by 12 downstream
+    // gene-locus partitions (`COX2`, `ATP8_ATP6`, `COX3`, `ND3_ND4L`, `ND4`, `ND5`, `ND6_CYTB`,
+    // `Control_Region_DLoop`, `rrnS_12S`, `rrnL_16S`, `ND1`, `ND2`).
+    let cox1_core_len = 1_536usize.min((ref_len / 4 / 3) * 3);
+    let rem_len = ref_len.saturating_sub(cox1_core_len);
+    let downstream_loci = 12usize;
+    let mut ref_bounds = Vec::with_capacity(downstream_loci + 2);
+    ref_bounds.push(0usize);
+    if cox1_core_len >= 600 {
+        ref_bounds.push(cox1_core_len);
+    }
+    for p in 1..downstream_loci {
+        let nominal = cox1_core_len + (p * rem_len) / downstream_loci;
+        let snapped = ((nominal / 3) * 3).clamp(
+            ref_bounds.last().copied().unwrap_or(0) + 300,
+            ref_len.saturating_sub(300),
+        );
+        if snapped > *ref_bounds.last().unwrap() {
+            ref_bounds.push(snapped);
+        }
+    }
+    ref_bounds.push(ref_len);
+    let actual_partitions = ref_bounds.len().saturating_sub(1);
+
+    // For each query sequence, find the global colinear anchor chain against `ref_seq` once,
+    // and lock the homologous query coordinates `qry_bounds[seq_i][0..=actual_partitions]`.
+    let qry_partition_bounds: Vec<Vec<usize>> = cleaned_seqs
+        .par_iter()
+        .enumerate()
+        .map(|(seq_i, qry)| {
+            if seq_i == center_idx {
+                return ref_bounds.clone();
+            }
+            let q_len = qry.len();
+            let chain = find_colinear_anchors_dp(ref_seq, qry, 9);
+            let mut q_bounds = Vec::with_capacity(actual_partitions + 1);
+            q_bounds.push(0usize);
+
+            for p in 1..actual_partitions {
+                let r_target = ref_bounds[p];
+                if p == 1 && r_target == cox1_core_len && q_len >= cox1_core_len + 300 {
+                    // Lock Partition 0 (`P01_COX1`) to exact 512-codon reading frame (`0..1536 bp`)
+                    q_bounds.push(cox1_core_len);
+                    continue;
+                }
+                let mapped_q = map_ref_coord_via_anchor_chain(r_target, ref_len, q_len, &chain);
+                let prev_q = *q_bounds.last().unwrap();
+                let clamped_q = mapped_q.clamp(prev_q, q_len);
+                q_bounds.push(clamped_q);
+            }
+            q_bounds.push(q_len);
+            q_bounds
+        })
+        .collect();
+
+    // Align each gene-locus partition across all `n` taxa and concatenate
+    let mut per_taxon_concat = vec![String::with_capacity(ref_len + 1024); n];
+
+    for p in 0..actual_partitions {
+        let r_start = ref_bounds[p];
+        let r_end = ref_bounds[p + 1];
+        let ref_slice = &ref_seq[r_start..r_end];
+        let is_first_locus = p == 0;
+        let is_last_locus = p + 1 == actual_partitions;
+
+        let locus_pairwise: Vec<(Vec<u8>, Vec<u8>)> = (0..n)
+            .into_par_iter()
+            .map(|seq_i| {
+                if seq_i == center_idx {
+                    (ref_slice.to_vec(), ref_slice.to_vec())
+                } else {
+                    let q_start = qry_partition_bounds[seq_i][p];
+                    let q_end = qry_partition_bounds[seq_i][p + 1];
+                    let qry_slice = &cleaned_seqs[seq_i][q_start..q_end];
+                    // If Partition 0 (`P01_COX1`) is equal-length and frame-locked at `KDIGTLY - 12 codons`,
+                    // preserve exact codon triplets without internal frameshift gaps.
+                    if is_first_locus && qry_slice.len() == ref_slice.len() {
+                        (ref_slice.to_vec(), qry_slice.to_vec())
+                    } else {
+                        gotoh_anchored_pairwise_align_ext(
+                            ref_slice,
+                            qry_slice,
+                            is_first_locus,
+                            is_last_locus,
+                        )
+                    }
+                }
+            })
+            .collect();
+
+        let locus_aligned = merge_center_star_pairwise_alignments(records, ref_slice.len(), &locus_pairwise);
+        for (seq_i, aln_rec) in locus_aligned.into_iter().enumerate() {
+            per_taxon_concat[seq_i].push_str(&aln_rec.aligned_seq);
+        }
+    }
+
+    let final_aligned: Vec<AlignedSequence> = (0..n)
+        .map(|seq_i| AlignedSequence {
+            id: records[seq_i].id.clone(),
+            taxon: records[seq_i].taxon.clone(),
+            common_name: records[seq_i].common_name.clone(),
+            family: records[seq_i].family.clone(),
+            aligned_seq: per_taxon_concat[seq_i].clone(),
+        })
+        .collect();
+
+    (final_aligned, actual_partitions)
+}
+
+/// Map a reference coordinate `r_target` to its homologous query coordinate using the colinear
+/// anchor chain `chain` (or proportional scaling at the ends if outside the outermost anchors).
+fn map_ref_coord_via_anchor_chain(
+    r_target: usize,
+    ref_len: usize,
+    qry_len: usize,
+    chain: &[(usize, usize)],
+) -> usize {
+    if chain.is_empty() || ref_len == 0 {
+        return (r_target * qry_len) / ref_len.max(1);
+    }
+    // Find surrounding anchors `(r_lo, q_lo) <= r_target <= (r_hi, q_hi)`
+    match chain.binary_search_by_key(&r_target, |&(r, _)| r) {
+        Ok(idx) => chain[idx].1.min(qry_len),
+        Err(0) => {
+            let (r0, q0) = chain[0];
+            if r0 == 0 {
+                q0.min(qry_len)
+            } else {
+                ((r_target * q0) / r0).min(qry_len)
+            }
+        }
+        Err(idx) if idx >= chain.len() => {
+            let (rl, ql) = chain[chain.len() - 1];
+            let rem_r = ref_len.saturating_sub(rl).max(1);
+            let rem_q = qry_len.saturating_sub(ql);
+            (ql + ((r_target.saturating_sub(rl)) * rem_q) / rem_r).min(qry_len)
+        }
+        Err(idx) => {
+            let (r0, q0) = chain[idx - 1];
+            let (r1, q1) = chain[idx];
+            let span_r = r1.saturating_sub(r0).max(1);
+            let span_q = q1.saturating_sub(q0);
+            (q0 + ((r_target.saturating_sub(r0)) * span_q) / span_r).min(qry_len)
+        }
+    }
+}
+
+/// Dynamic Programming Colinear Anchor Chaining:
+/// Finds the maximum-weight strictly colinear chain of homologous `k`-mer anchors `(r_i, q_j)`
+/// between `ref_seq` and `qry_seq`. Unlike a fixed `|r_i - q_j| <= 250` diagonal cutoff,
+/// DP colinear chaining tolerates large indels (e.g. 1,500-bp D-loop expansions) by penalizing
+/// only the relative diagonal drift `|(r_b - r_a) - (q_b - q_a)|` between consecutive anchors.
+fn find_colinear_anchors_dp(ref_seq: &[u8], qry_seq: &[u8], k: usize) -> Vec<(usize, usize)> {
+    if ref_seq.len() < k || qry_seq.len() < k {
+        return Vec::new();
+    }
+
+    // Build unique k-mer lookup on `ref_seq` and `qry_seq`
+    let mut ref_pos_map: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
+    for (i, w) in ref_seq.windows(k).enumerate() {
+        ref_pos_map
+            .entry(w)
+            .and_modify(|v| *v = None)
+            .or_insert(Some(i));
+    }
+    let mut qry_pos_map: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
+    for (j, w) in qry_seq.windows(k).enumerate() {
+        qry_pos_map
+            .entry(w)
+            .and_modify(|v| *v = None)
+            .or_insert(Some(j));
+    }
+
+    // Collect candidate matches `(r_i, q_j)` sorted by `r_i`
+    let mut candidates: Vec<(usize, usize)> = Vec::new();
+    let max_global_drift = (ref_seq.len().max(qry_seq.len()) / 3).max(1_800);
+    for (r_i, w) in ref_seq.windows(k).enumerate() {
+        if let Some(Some(r_unique)) = ref_pos_map.get(w) {
+            if *r_unique == r_i {
+                if let Some(Some(q_unique)) = qry_pos_map.get(w) {
+                    let q_j = *q_unique;
+                    if r_i.abs_diff(q_j) <= max_global_drift {
+                        // Subsample dense consecutive k-mers to keep DP fast (at least 12 bp apart if on same diagonal)
+                        if let Some(&(pr, pq)) = candidates.last() {
+                            if r_i < pr + 12 && q_j > pq && (r_i - pr) == (q_j - pq) {
+                                continue;
+                            }
+                        }
+                        candidates.push((r_i, q_j));
+                    }
+                }
+            }
+        }
+    }
+
+    if candidates.len() < 12 && ref_seq.len() >= 48 && qry_seq.len() >= 48 {
+        // Supplement with translated 4-aa (12-bp) mitochondrial peptide anchors for deep divergence (e.g. vertebrate vs arthropod)
+        let r_codons = ref_seq.len() / 3;
+        let q_codons = qry_seq.len() / 3;
+        let mut r_aa = Vec::with_capacity(r_codons);
+        for c in 0..r_codons {
+            r_aa.push(translate_mito_codon(&ref_seq[c * 3..c * 3 + 3]));
+        }
+        let mut q_aa = Vec::with_capacity(q_codons);
+        for c in 0..q_codons {
+            q_aa.push(translate_mito_codon(&qry_seq[c * 3..c * 3 + 3]));
+        }
+        let pep_k = 4usize;
+        if r_aa.len() >= pep_k && q_aa.len() >= pep_k {
+            let mut r_pep_map: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
+            for (ci, w) in r_aa.windows(pep_k).enumerate() {
+                if !w.contains(&b'X') && !w.contains(&b'*') {
+                    r_pep_map
+                        .entry(w)
+                        .and_modify(|v| *v = None)
+                        .or_insert(Some(ci * 3));
+                }
+            }
+            let mut q_pep_map: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
+            for (cj, w) in q_aa.windows(pep_k).enumerate() {
+                if !w.contains(&b'X') && !w.contains(&b'*') {
+                    q_pep_map
+                        .entry(w)
+                        .and_modify(|v| *v = None)
+                        .or_insert(Some(cj * 3));
+                }
+            }
+            for (ci, w) in r_aa.windows(pep_k).enumerate() {
+                let r_i = ci * 3;
+                if let Some(Some(ru)) = r_pep_map.get(w) {
+                    if *ru == r_i {
+                        if let Some(Some(q_j)) = q_pep_map.get(w) {
+                            if r_i.abs_diff(*q_j) <= max_global_drift {
+                                candidates.push((r_i, *q_j));
+                            }
+                        }
+                    }
+                }
+            }
+            candidates.sort_unstable_by_key(|&(r, q)| (r, q));
+            candidates.dedup();
+        }
+    }
+
+    if candidates.is_empty() {
+        return Vec::new();
+    }
+
+    // 1D Dynamic Programming Colinear Chain (`O(M * W)` with lookback window `W = 64`)
+    let m = candidates.len();
+    let mut dp = vec![36i64; m];
+    let mut prev = vec![None::<usize>; m];
+    let mut best_end = 0usize;
+    let mut best_score = dp[0];
+
+    for i in 1..m {
+        let (ri, qi) = candidates[i];
+        let start_u = i.saturating_sub(64);
+        for u in (start_u..i).rev() {
+            let (ru, qu) = candidates[u];
+            if ri >= ru + k && qi >= qu + k {
+                let dr = (ri - ru) as i64;
+                let dq = (qi - qu) as i64;
+                let drift = (dr - dq).abs();
+                if drift <= 2_200 {
+                    let cand_score = dp[u] + 36 - (drift / 4);
+                    if cand_score > dp[i] {
+                        dp[i] = cand_score;
+                        prev[i] = Some(u);
+                    }
+                }
+            }
+        }
+        if dp[i] > best_score {
+            best_score = dp[i];
+            best_end = i;
+        }
+    }
+
+    let mut raw_chain = Vec::new();
+    let mut cur = Some(best_end);
+    while let Some(idx) = cur {
+        raw_chain.push(candidates[idx]);
+        cur = prev[idx];
+    }
+    raw_chain.reverse();
+
+    // Filter chain to anchors spaced by >= 20 bp so Gotoh DP windows are well-formed
+    let mut filtered = Vec::with_capacity(raw_chain.len());
+    let mut last_r = 0usize;
+    let mut last_q = 0usize;
+    for (r_i, q_j) in raw_chain {
+        if filtered.is_empty() || (r_i >= last_r + 20 && q_j >= last_q + 20) {
+            filtered.push((r_i, q_j));
+            last_r = r_i + k;
+            last_q = q_j + k;
+        }
+    }
+    filtered
+}
+
+/// Anchor-segmented Gotoh 3-state affine-gap pairwise alignment (`M`, `I`, `D`) with
+/// Colinear DP Anchor Chaining and Semi-Global Free End-Gaps (`free_leading_gaps`, `free_trailing_gaps`).
+pub fn gotoh_anchored_pairwise_align(ref_seq: &[u8], qry_seq: &[u8]) -> (Vec<u8>, Vec<u8>) {
+    gotoh_anchored_pairwise_align_ext(ref_seq, qry_seq, true, true)
+}
+
+/// Extended Anchor-Segmented Gotoh Pairwise Aligner supporting explicit `free_leading_gaps`
+/// (at the 5' start of a sequence/partition) and `free_trailing_gaps` (at the 3' end).
+pub fn gotoh_anchored_pairwise_align_ext(
+    ref_seq: &[u8],
+    qry_seq: &[u8],
+    free_leading_gaps: bool,
+    free_trailing_gaps: bool,
+) -> (Vec<u8>, Vec<u8>) {
+    let k = 9usize;
+    if ref_seq.len() <= 520 && qry_seq.len() <= 520 {
+        return gotoh_affine_dp_window_ext(ref_seq, qry_seq, free_leading_gaps, free_trailing_gaps);
+    }
+
+    let anchors = find_colinear_anchors_dp(ref_seq, qry_seq, k);
+    if anchors.is_empty() {
+        return gotoh_affine_dp_chunked_ext(ref_seq, qry_seq, free_leading_gaps, free_trailing_gaps);
+    }
+
+    let mut out_r = Vec::with_capacity(ref_seq.len() + 64);
+    let mut out_q = Vec::with_capacity(qry_seq.len() + 64);
+    let mut cur_r = 0usize;
+    let mut cur_q = 0usize;
+
+    for (anc_idx, (anc_r, anc_q)) in anchors.iter().copied().enumerate() {
+        if anc_r > cur_r || anc_q > cur_q {
+            let is_leading = anc_idx == 0 && cur_r == 0 && cur_q == 0 && free_leading_gaps;
+            let (seg_r, seg_q) = gotoh_affine_dp_chunked_ext(
+                &ref_seq[cur_r..anc_r],
+                &qry_seq[cur_q..anc_q],
+                is_leading,
+                false,
+            );
+            out_r.extend_from_slice(&seg_r);
+            out_q.extend_from_slice(&seg_q);
+        }
+        out_r.extend_from_slice(&ref_seq[anc_r..anc_r + k]);
+        out_q.extend_from_slice(&qry_seq[anc_q..anc_q + k]);
+        cur_r = anc_r + k;
+        cur_q = anc_q + k;
+    }
+
+    if cur_r < ref_seq.len() || cur_q < qry_seq.len() {
+        let (seg_r, seg_q) = gotoh_affine_dp_chunked_ext(
+            &ref_seq[cur_r..],
+            &qry_seq[cur_q..],
+            false,
+            free_trailing_gaps,
+        );
+        out_r.extend_from_slice(&seg_r);
+        out_q.extend_from_slice(&seg_q);
+    }
+
+    (out_r, out_q)
+}
+
+/// Chunked wrapper around `gotoh_affine_dp_window_ext` so large inter-anchor spans
+/// never allocate an O(N^2) matrix larger than 450 x 450 per sub-window.
+fn gotoh_affine_dp_chunked_ext(
+    a: &[u8],
+    b: &[u8],
+    free_leading_gaps: bool,
+    free_trailing_gaps: bool,
+) -> (Vec<u8>, Vec<u8>) {
+    const MAX_CHUNK: usize = 420;
+    if a.len() <= MAX_CHUNK && b.len() <= MAX_CHUNK {
+        return gotoh_affine_dp_window_ext(a, b, free_leading_gaps, free_trailing_gaps);
+    }
+    let steps = (a.len().max(b.len()) + MAX_CHUNK - 1) / MAX_CHUNK;
+    let mut out_a = Vec::with_capacity(a.len() + 64);
+    let mut out_b = Vec::with_capacity(b.len() + 64);
+    for s in 0..steps {
+        let a0 = (s * a.len()) / steps;
+        let a1 = ((s + 1) * a.len()) / steps;
+        let b0 = (s * b.len()) / steps;
+        let b1 = ((s + 1) * b.len()) / steps;
+        let is_first = s == 0 && free_leading_gaps;
+        let is_last = (s + 1 == steps) && free_trailing_gaps;
+        let (sa, sb) = gotoh_affine_dp_window_ext(&a[a0..a1], &b[b0..b1], is_first, is_last);
+        out_a.extend_from_slice(&sa);
+        out_b.extend_from_slice(&sb);
+    }
+    (out_a, out_b)
+}
+
+#[inline]
+fn subst_score_dna200(a: u8, b: u8) -> i32 {
+    if a == b {
+        4
+    } else if matches!((a, b), (b'A', b'G') | (b'G', b'A') | (b'C', b'T') | (b'T', b'C')) {
+        1
+    } else {
+        -3
+    }
+}
+
+/// Exact Gotoh (1982) 3-matrix (`M`, `I`, `D`) affine-gap pairwise alignment supporting
+/// both Global and Semi-Global (Free-End-Gap) boundary conditions (`free_leading_gaps`, `free_trailing_gaps`).
+pub fn gotoh_affine_dp_window_ext(
+    a: &[u8],
+    b: &[u8],
+    free_leading_gaps: bool,
+    free_trailing_gaps: bool,
+) -> (Vec<u8>, Vec<u8>) {
+    let n = a.len();
+    let m = b.len();
+    if n == 0 && m == 0 {
+        return (Vec::new(), Vec::new());
+    }
+    if n == 0 {
+        return (vec![b'-'; m], b.to_vec());
+    }
+    if m == 0 {
+        return (a.to_vec(), vec![b'-'; n]);
+    }
+
+    const NEG_INF: i32 = -1_000_000_000;
+    const GAP_OPEN: i32 = -10;
+    const GAP_EXT: i32 = -1;
+
+    let cols = m + 1;
+    let total = (n + 1) * cols;
+    let mut mat_m = vec![NEG_INF; total];
+    let mut mat_d = vec![NEG_INF; total]; // gap in b (deletion relative to a)
+    let mut mat_i = vec![NEG_INF; total]; // gap in a (insertion in b)
+    let mut trace_m = vec![0u8; total]; // 0 = from M, 1 = from D, 2 = from I
+    let mut trace_d = vec![0u8; total]; // 0 = open from M, 1 = extend from D
+    let mut trace_i = vec![0u8; total]; // 0 = open from M, 1 = extend from I
+
+    mat_m[0] = 0;
+    for i in 1..=n {
+        let idx = i * cols;
+        if free_leading_gaps {
+            // Semi-global free gap-open at 5' start (0 open penalty, -1 per-base extension)
+            mat_d[idx] = (i as i32) * GAP_EXT;
+            trace_d[idx] = if i == 1 { 0 } else { 1 };
+        } else {
+            mat_d[idx] = GAP_OPEN + (i as i32 - 1) * GAP_EXT;
+            trace_d[idx] = if i == 1 { 0 } else { 1 };
+        }
+    }
+    for j in 1..=m {
+        if free_leading_gaps {
+            // Semi-global free gap-open at 5' start (0 open penalty, -1 per-base extension)
+            mat_i[j] = (j as i32) * GAP_EXT;
+            trace_i[j] = if j == 1 { 0 } else { 1 };
+        } else {
+            mat_i[j] = GAP_OPEN + (j as i32 - 1) * GAP_EXT;
+            trace_i[j] = if j == 1 { 0 } else { 1 };
+        }
+    }
+
+    for i in 1..=n {
+        let row_off = i * cols;
+        let prev_row = (i - 1) * cols;
+        let ai = a[i - 1];
+        for j in 1..=m {
+            let idx = row_off + j;
+            let bj = b[j - 1];
+
+            // Update D[i, j] (consume a[i-1], gap in b)
+            let d_open = mat_m[prev_row + j] + GAP_OPEN;
+            let d_ext = mat_d[prev_row + j] + GAP_EXT;
+            if d_ext >= d_open {
+                mat_d[idx] = d_ext;
+                trace_d[idx] = 1;
+            } else {
+                mat_d[idx] = d_open;
+                trace_d[idx] = 0;
+            }
+
+            // Update I[i, j] (gap in a, consume b[j-1])
+            let i_open = mat_m[row_off + j - 1] + GAP_OPEN;
+            let i_ext = mat_i[row_off + j - 1] + GAP_EXT;
+            if i_ext >= i_open {
+                mat_i[idx] = i_ext;
+                trace_i[idx] = 1;
+            } else {
+                mat_i[idx] = i_open;
+                trace_i[idx] = 0;
+            }
+
+            // Update M[i, j] (match/mismatch a[i-1] with b[j-1])
+            let diag = prev_row + j - 1;
+            let s = subst_score_dna200(ai, bj);
+            let m_from_m = mat_m[diag];
+            let m_from_d = mat_d[diag];
+            let m_from_i = mat_i[diag];
+            if m_from_m >= m_from_d && m_from_m >= m_from_i {
+                mat_m[idx] = m_from_m + s;
+                trace_m[idx] = 0;
+            } else if m_from_d >= m_from_i {
+                mat_m[idx] = m_from_d + s;
+                trace_m[idx] = 1;
+            } else {
+                mat_m[idx] = m_from_i + s;
+                trace_m[idx] = 2;
+            }
+        }
+    }
+
+    let mut aln_a = Vec::with_capacity(n + m);
+    let mut aln_b = Vec::with_capacity(n + m);
+    let mut i = n;
+    let mut j = m;
+
+    // If `free_trailing_gaps` is enabled, find the highest-scoring terminal cell along
+    // the last row `(n, j)` or last column `(i, m)` so 3' overhangs are not penalized.
+    let mut state = {
+        let end_idx = n * cols + m;
+        let mut best_sc = mat_m[end_idx].max(mat_d[end_idx]).max(mat_i[end_idx]);
+        let mut best_i = n;
+        let mut best_j = m;
+        let mut best_st = if mat_m[end_idx] >= mat_d[end_idx] && mat_m[end_idx] >= mat_i[end_idx] {
+            0u8
+        } else if mat_d[end_idx] >= mat_i[end_idx] {
+            1u8
+        } else {
+            2u8
+        };
+
+        if free_trailing_gaps {
+            // Check last row `(n, j_cand)` with free 3' gap-open (`0` open, `-1` per overhang base)
+            for j_cand in (m.saturating_sub(n / 3 + 48))..=m {
+                let idx = n * cols + j_cand;
+                let cand_sc = mat_m[idx] + ((m - j_cand) as i32) * GAP_EXT;
+                if cand_sc > best_sc {
+                    best_sc = cand_sc;
+                    best_i = n;
+                    best_j = j_cand;
+                    best_st = 0;
+                }
+            }
+            // Check last column `(i_cand, m)` with free 3' gap-open (`0` open, `-1` per overhang base)
+            for i_cand in (n.saturating_sub(m / 3 + 48))..=n {
+                let idx = i_cand * cols + m;
+                let cand_sc = mat_m[idx] + ((n - i_cand) as i32) * GAP_EXT;
+                if cand_sc > best_sc {
+                    best_sc = cand_sc;
+                    best_i = i_cand;
+                    best_j = m;
+                    best_st = 0;
+                }
+            }
+            // Emit trailing overhang gaps from `(n, m)` back to `(best_i, best_j)`
+            while j > best_j {
+                aln_a.push(b'-');
+                aln_b.push(b[j - 1]);
+                j -= 1;
+            }
+            while i > best_i {
+                aln_a.push(a[i - 1]);
+                aln_b.push(b'-');
+                i -= 1;
+            }
+        }
+        best_st
+    };
+
+    while i > 0 || j > 0 {
+        if i == 0 {
+            aln_a.push(b'-');
+            aln_b.push(b[j - 1]);
+            j -= 1;
+            continue;
+        }
+        if j == 0 {
+            aln_a.push(a[i - 1]);
+            aln_b.push(b'-');
+            i -= 1;
+            continue;
+        }
+        let idx = i * cols + j;
+        match state {
+            0 => {
+                let prev_state = trace_m[idx];
+                aln_a.push(a[i - 1]);
+                aln_b.push(b[j - 1]);
+                i -= 1;
+                j -= 1;
+                state = prev_state;
+            }
+            1 => {
+                let ext = trace_d[idx];
+                aln_a.push(a[i - 1]);
+                aln_b.push(b'-');
+                i -= 1;
+                state = if ext == 1 { 1 } else { 0 };
+            }
+            _ => {
+                let ext = trace_i[idx];
+                aln_a.push(b'-');
+                aln_b.push(b[j - 1]);
+                j -= 1;
+                state = if ext == 1 { 2 } else { 0 };
+            }
+        }
+    }
+
+    aln_a.reverse();
+    aln_b.reverse();
+    (aln_a, aln_b)
 }
 
 fn select_kmer_medoid_index(seqs: &[Vec<u8>]) -> usize {
@@ -440,269 +1496,6 @@ fn encode_kmer6(win: &[u8]) -> Option<u32> {
     Some(code)
 }
 
-/// Anchor-segmented Gotoh 3-state affine-gap pairwise alignment (`M`, `I`, `D`).
-/// Finds exact colinear unique 9-mer anchors to partition long sequences into manageable
-/// variable windows, then runs exact Gotoh DP (`Match = +4`, `Ti = +1`, `Tv = -3`,
-/// `GapOpen = -10`, `GapExtend = -1`) within each window.
-pub fn gotoh_anchored_pairwise_align(ref_seq: &[u8], qry_seq: &[u8]) -> (Vec<u8>, Vec<u8>) {
-    let k = 9usize;
-    if ref_seq.len() <= 900 && qry_seq.len() <= 900 {
-        return gotoh_affine_dp_window(ref_seq, qry_seq);
-    }
-
-    // Build unique k-mer index on ref_seq and qry_seq
-    let mut ref_pos_map: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
-    if ref_seq.len() >= k {
-        for (i, w) in ref_seq.windows(k).enumerate() {
-            ref_pos_map
-                .entry(w)
-                .and_modify(|v| *v = None)
-                .or_insert(Some(i));
-        }
-    }
-    let mut qry_pos_map: BTreeMap<&[u8], Option<usize>> = BTreeMap::new();
-    if qry_seq.len() >= k {
-        for (j, w) in qry_seq.windows(k).enumerate() {
-            qry_pos_map
-                .entry(w)
-                .and_modify(|v| *v = None)
-                .or_insert(Some(j));
-        }
-    }
-
-    // Collect colinear anchors spaced by at least 24 bp
-    let mut anchors: Vec<(usize, usize)> = Vec::new();
-    let mut last_r = 0usize;
-    let mut last_q = 0usize;
-    if ref_seq.len() >= k {
-        for (r_i, w) in ref_seq.windows(k).enumerate() {
-            if let Some(Some(r_unique)) = ref_pos_map.get(w) {
-                if *r_unique == r_i {
-                    if let Some(Some(q_unique)) = qry_pos_map.get(w) {
-                        let q_j = *q_unique;
-                        if (anchors.is_empty() || (r_i >= last_r + 24 && q_j >= last_q + 24))
-                            && r_i.abs_diff(q_j) <= 250
-                        {
-                            anchors.push((r_i, q_j));
-                            last_r = r_i + k;
-                            last_q = q_j + k;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if anchors.is_empty() {
-        return gotoh_affine_dp_chunked(ref_seq, qry_seq);
-    }
-
-    let mut out_r = Vec::with_capacity(ref_seq.len() + 64);
-    let mut out_q = Vec::with_capacity(qry_seq.len() + 64);
-    let mut cur_r = 0usize;
-    let mut cur_q = 0usize;
-
-    for (anc_r, anc_q) in anchors {
-        if anc_r > cur_r || anc_q > cur_q {
-            let (seg_r, seg_q) = gotoh_affine_dp_chunked(&ref_seq[cur_r..anc_r], &qry_seq[cur_q..anc_q]);
-            out_r.extend_from_slice(&seg_r);
-            out_q.extend_from_slice(&seg_q);
-        }
-        out_r.extend_from_slice(&ref_seq[anc_r..anc_r + k]);
-        out_q.extend_from_slice(&qry_seq[anc_q..anc_q + k]);
-        cur_r = anc_r + k;
-        cur_q = anc_q + k;
-    }
-
-    if cur_r < ref_seq.len() || cur_q < qry_seq.len() {
-        let (seg_r, seg_q) = gotoh_affine_dp_chunked(&ref_seq[cur_r..], &qry_seq[cur_q..]);
-        out_r.extend_from_slice(&seg_r);
-        out_q.extend_from_slice(&seg_q);
-    }
-
-    (out_r, out_q)
-}
-
-/// Chunked wrapper around `gotoh_affine_dp_window` so large inter-anchor spans (e.g. 15-kb mitogenomes)
-/// never allocate an O(N^2) matrix larger than 450 x 450 per sub-window.
-fn gotoh_affine_dp_chunked(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
-    const MAX_CHUNK: usize = 420;
-    if a.len() <= MAX_CHUNK && b.len() <= MAX_CHUNK {
-        return gotoh_affine_dp_window(a, b);
-    }
-    let steps = (a.len().max(b.len()) + MAX_CHUNK - 1) / MAX_CHUNK;
-    let mut out_a = Vec::with_capacity(a.len() + 64);
-    let mut out_b = Vec::with_capacity(b.len() + 64);
-    for s in 0..steps {
-        let a0 = (s * a.len()) / steps;
-        let a1 = ((s + 1) * a.len()) / steps;
-        let b0 = (s * b.len()) / steps;
-        let b1 = ((s + 1) * b.len()) / steps;
-        let (sa, sb) = gotoh_affine_dp_window(&a[a0..a1], &b[b0..b1]);
-        out_a.extend_from_slice(&sa);
-        out_b.extend_from_slice(&sb);
-    }
-    (out_a, out_b)
-}
-
-#[inline]
-fn subst_score_dna200(a: u8, b: u8) -> i32 {
-    if a == b {
-        4
-    } else if matches!((a, b), (b'A', b'G') | (b'G', b'A') | (b'C', b'T') | (b'T', b'C')) {
-        1
-    } else {
-        -3
-    }
-}
-
-/// Exact Gotoh (1982) 3-matrix (`M`, `I`, `D`) affine-gap global pairwise alignment.
-fn gotoh_affine_dp_window(a: &[u8], b: &[u8]) -> (Vec<u8>, Vec<u8>) {
-    let n = a.len();
-    let m = b.len();
-    if n == 0 && m == 0 {
-        return (Vec::new(), Vec::new());
-    }
-    if n == 0 {
-        return (vec![b'-'; m], b.to_vec());
-    }
-    if m == 0 {
-        return (a.to_vec(), vec![b'-'; n]);
-    }
-
-    const NEG_INF: i32 = -1_000_000_000;
-    const GAP_OPEN: i32 = -10;
-    const GAP_EXT: i32 = -1;
-
-    let cols = m + 1;
-    let total = (n + 1) * cols;
-    let mut mat_m = vec![NEG_INF; total];
-    let mut mat_d = vec![NEG_INF; total]; // gap in b (deletion relative to a)
-    let mut mat_i = vec![NEG_INF; total]; // gap in a (insertion in b)
-    let mut trace_m = vec![0u8; total]; // 0 = from M, 1 = from D, 2 = from I
-    let mut trace_d = vec![0u8; total]; // 0 = open from M, 1 = extend from D
-    let mut trace_i = vec![0u8; total]; // 0 = open from M, 1 = extend from I
-
-    mat_m[0] = 0;
-    for i in 1..=n {
-        let idx = i * cols;
-        mat_d[idx] = GAP_OPEN + (i as i32 - 1) * GAP_EXT;
-        trace_d[idx] = if i == 1 { 0 } else { 1 };
-    }
-    for j in 1..=m {
-        mat_i[j] = GAP_OPEN + (j as i32 - 1) * GAP_EXT;
-        trace_i[j] = if j == 1 { 0 } else { 1 };
-    }
-
-    for i in 1..=n {
-        let row_off = i * cols;
-        let prev_row = (i - 1) * cols;
-        let ai = a[i - 1];
-        for j in 1..=m {
-            let idx = row_off + j;
-            let bj = b[j - 1];
-
-            // Update D[i, j] (consume a[i-1], gap in b)
-            let d_open = mat_m[prev_row + j] + GAP_OPEN;
-            let d_ext = mat_d[prev_row + j] + GAP_EXT;
-            if d_ext >= d_open {
-                mat_d[idx] = d_ext;
-                trace_d[idx] = 1;
-            } else {
-                mat_d[idx] = d_open;
-                trace_d[idx] = 0;
-            }
-
-            // Update I[i, j] (gap in a, consume b[j-1])
-            let i_open = mat_m[row_off + j - 1] + GAP_OPEN;
-            let i_ext = mat_i[row_off + j - 1] + GAP_EXT;
-            if i_ext >= i_open {
-                mat_i[idx] = i_ext;
-                trace_i[idx] = 1;
-            } else {
-                mat_i[idx] = i_open;
-                trace_i[idx] = 0;
-            }
-
-            // Update M[i, j] (match/mismatch a[i-1] with b[j-1])
-            let diag = prev_row + j - 1;
-            let s = subst_score_dna200(ai, bj);
-            let m_from_m = mat_m[diag];
-            let m_from_d = mat_d[diag];
-            let m_from_i = mat_i[diag];
-            if m_from_m >= m_from_d && m_from_m >= m_from_i {
-                mat_m[idx] = m_from_m + s;
-                trace_m[idx] = 0;
-            } else if m_from_d >= m_from_i {
-                mat_m[idx] = m_from_d + s;
-                trace_m[idx] = 1;
-            } else {
-                mat_m[idx] = m_from_i + s;
-                trace_m[idx] = 2;
-            }
-        }
-    }
-
-    // Backtrack from best state at (n, m)
-    let end_idx = n * cols + m;
-    let mut state = if mat_m[end_idx] >= mat_d[end_idx] && mat_m[end_idx] >= mat_i[end_idx] {
-        0u8
-    } else if mat_d[end_idx] >= mat_i[end_idx] {
-        1u8
-    } else {
-        2u8
-    };
-
-    let mut aln_a = Vec::with_capacity(n + m);
-    let mut aln_b = Vec::with_capacity(n + m);
-    let mut i = n;
-    let mut j = m;
-
-    while i > 0 || j > 0 {
-        if i == 0 {
-            aln_a.push(b'-');
-            aln_b.push(b[j - 1]);
-            j -= 1;
-            continue;
-        }
-        if j == 0 {
-            aln_a.push(a[i - 1]);
-            aln_b.push(b'-');
-            i -= 1;
-            continue;
-        }
-        let idx = i * cols + j;
-        match state {
-            0 => {
-                let prev_state = trace_m[idx];
-                aln_a.push(a[i - 1]);
-                aln_b.push(b[j - 1]);
-                i -= 1;
-                j -= 1;
-                state = prev_state;
-            }
-            1 => {
-                let ext = trace_d[idx];
-                aln_a.push(a[i - 1]);
-                aln_b.push(b'-');
-                i -= 1;
-                state = if ext == 1 { 1 } else { 0 };
-            }
-            _ => {
-                let ext = trace_i[idx];
-                aln_a.push(b'-');
-                aln_b.push(b[j - 1]);
-                j -= 1;
-                state = if ext == 1 { 2 } else { 0 };
-            }
-        }
-    }
-
-    aln_a.reverse();
-    aln_b.reverse();
-    (aln_a, aln_b)
-}
-
 /// Resolve the path to the local Windows `mafft.bat` bundle or system `mafft` executable.
 pub fn resolve_mafft_binary() -> Option<PathBuf> {
     let candidates = [
@@ -741,13 +1534,23 @@ pub fn align_sequences_mafft(
         .unwrap_or(0);
     let tmp_in = tmp_dir.join(format!("bio_suite_mafft_in_{}_{}.fasta", pid, nanos));
 
+    // Pre-normalize circular mitogenome start coordinates to the canonical COX1 boundary before invoking MAFFT
+    let raw_cleaned: Vec<Vec<u8>> = records
+        .iter()
+        .map(|r| {
+            r.sequence
+                .bytes()
+                .filter(|&b| b != b'-' && !b.is_ascii_whitespace())
+                .map(|b| b.to_ascii_uppercase())
+                .collect()
+        })
+        .collect();
+    let center_idx = select_kmer_medoid_index(&raw_cleaned);
+    let (norm_seqs, _, _, _) = normalize_circular_sequences(&raw_cleaned, records, center_idx);
+
     let mut fasta_buf = String::new();
     for (idx, rec) in records.iter().enumerate() {
-        let clean_seq: String = rec
-            .sequence
-            .chars()
-            .filter(|&c| c != '-' && !c.is_whitespace())
-            .collect();
+        let clean_seq = String::from_utf8_lossy(&norm_seqs[idx]);
         fasta_buf.push_str(&format!(">SEQ_{:04}_{}\n{}\n", idx, rec.id, clean_seq));
     }
     fs::write(&tmp_in, &fasta_buf).map_err(|e| format!("Failed to write temp FASTA: {}", e))?;

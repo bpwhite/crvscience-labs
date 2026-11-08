@@ -213,6 +213,7 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
     // Check if uniform-length protein-coding barcode panel (e.g. 1,545 bp COX1)
     let is_uniform_coding = !has_preexisting_gaps
         && min_len >= 300
+        && max_len <= 1560
         && max_len.saturating_sub(min_len) <= 9
         && (min_len % 3 == 0);
 

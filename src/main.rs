@@ -1406,6 +1406,19 @@ fn dispatch_pipeline(
             let report = bio_suite::mcmc_skyline::run_coleoptera_function_skyline_pipeline(&work_dir, cfg);
             emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
         }
+        "primate-function-skyline" | "primate-skyline" => {
+            let default_out = "../labs/releases/primate-native-mcmc-skyline.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let work_dir = env::args()
+                .position(|a| a == "--work-dir")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\primate_work"));
+            let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
+            eprintln!("[bio-suite] Launching Primate Africa-to-Americas Radiation & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
+            let report = bio_suite::mcmc_skyline::run_primate_function_skyline_pipeline(&work_dir, cfg);
+            emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1594,12 +1607,33 @@ fn main() {
             let report = bio_suite::mcmc_skyline::run_coleoptera_function_skyline_pipeline(&work_dir, cfg);
             emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
         }
+        "primate-function-skyline" | "primate-skyline" => {
+            let default_out = "../labs/releases/primate-native-mcmc-skyline.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let work_dir = env::args()
+                .position(|a| a == "--work-dir")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\primate_work"));
+            let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
+            eprintln!("[bio-suite] Launching Primate Africa-to-Americas Radiation & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
+            let report = bio_suite::mcmc_skyline::run_primate_function_skyline_pipeline(&work_dir, cfg);
+            emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
+        }
+        "align-view" | "viewer" | "aliview" | "align-snapshot" => {
+            if let Err(e) = bio_suite::align_viewer::run_align_viewer_cli(&args, &cache) {
+                eprintln!("[bio-suite align-view] Error: {}", e);
+                std::process::exit(1);
+            }
+        }
         _ => {
             println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");
             println!("Repository: https://github.com/bpwhite/crvscience-labs.git");
             println!();
             println!("USAGE:");
             println!("  bio-suite fetch [coi-barcodes | chr1-section-a]");
+            println!("  bio-suite align-view                [--input <fasta>] [--region 120:240] [--mode dna|aa|aa-compact|dual|ry3|dayhoff6] [--snapshot-svg <svg>] [--snapshot-png <png>]");
+            println!("  bio-suite align-snapshot            [--input <fasta>] [--auto-focal] [--snapshot-svg <svg>] [--snapshot-png <png>]");
             println!("  bio-suite agent coi-barcode-cluster [--aligner native|mafft] [--out runs/coi-barcode-report.json]");
             println!("  bio-suite align-compare             [--out runs/msa-native-vs-mafft-calibration.json]");
             println!("  bio-suite agent chr1-unbiased-scan  [--out runs/chr1-complexity-report.json]");

@@ -376,6 +376,16 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
         native_rust_fallback: "bio-suite 4-Stage Active-Set LSD2 Chronogram Solver, Autocorrelated Log-Normal Relaxed Clock, Parametric Bootstrap 95% CI & Clean X-Axis Time-Tree SVG Engine",
         description: "Estimates divergence time-trees (chronograms) under strict and autocorrelated log-normal relaxed molecular clocks with fossil node intervals [t_min, t_max], heterochronous tip dates, 95% CIs, and automatic X-axis geological time-tree SVG rendering.",
     },
+    ToolAdapterEntry {
+        engine: "phylo",
+        category: "Interactive Sequence Alignment Viewer, Multi-Alphabet Translation (DNA/AA/RY3/Dayhoff-6), Feature/Annotation Selector & Publication Snapshot Engine (RuNIE Tool #37)",
+        tool_name: "AliView v1.28 (Larsson 2014) / Jalview / SeaView",
+        binary_cmd: "runie-align-view",
+        spdx_license: "GPL-3.0-or-later",
+        gpl3_compatible: true,
+        native_rust_fallback: "bio-suite align-view / runie-align-view (Native Win32 GUI + 32-bit Software Framebuffer + Pixel-Locked SVG & High-DPI PNG Snapshot Engine)",
+        description: "Provides interactive desktop MSA inspection with top File/View/Translation/Features/RuNIE menus, global minimap lens, feature/annotation jumping, DNA/AA/RY3/Dayhoff-6 color-coded views, and automated focal-region SVG/PNG snapshots for manuscripts.",
+    },
 ];
 
 /// Intersect high-complexity sliding windows with genomic annotations (genes, CDS, repeats)

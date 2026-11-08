@@ -15,6 +15,10 @@ categories = ["science", "command-line-utilities"]
 name = "bio-suite"
 path = "src/main.rs"
 
+[[bin]]
+name = "runie-align-view"
+path = "src/bin/runie_align_view.rs"
+
 [dependencies]
 candle-core = "0.11.1"
 candle-nn = "0.11.1"

@@ -5,6 +5,7 @@
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
 
 pub mod agent;
+pub mod align_viewer;
 pub mod amr_hgt;
 pub mod asgard_tier_synthesis;
 pub mod avian_systematics;

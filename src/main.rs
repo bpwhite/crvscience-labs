@@ -1393,6 +1393,19 @@ fn dispatch_pipeline(
             let report = bio_suite::mcmc_skyline::run_runie_mcmc_skyline_sampler(&cache.cache_dir, cfg);
             emit_json_output(&report, report.cpu_time_ms, Some(target_out));
         }
+        "coleoptera-function-skyline" | "coleoptera-skyline" => {
+            let default_out = "../labs/releases/coleoptera-native-mcmc-skyline.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let work_dir = env::args()
+                .position(|a| a == "--work-dir")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\coleoptera_work"));
+            let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
+            eprintln!("[bio-suite] Launching Coleoptera 6-Family Functional Phylogenomics & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
+            let report = bio_suite::mcmc_skyline::run_coleoptera_function_skyline_pipeline(&work_dir, cfg);
+            emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1567,6 +1580,19 @@ fn main() {
             );
             let report = bio_suite::mcmc_skyline::run_runie_mcmc_skyline_sampler(&cache.cache_dir, cfg);
             emit_json_output(&report, report.cpu_time_ms, Some(target_out));
+        }
+        "coleoptera-function-skyline" | "coleoptera-skyline" => {
+            let default_out = "../labs/releases/coleoptera-native-mcmc-skyline.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let work_dir = env::args()
+                .position(|a| a == "--work-dir")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\coleoptera_work"));
+            let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
+            eprintln!("[bio-suite] Launching Coleoptera 6-Family Functional Phylogenomics & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
+            let report = bio_suite::mcmc_skyline::run_coleoptera_function_skyline_pipeline(&work_dir, cfg);
+            emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
         }
         _ => {
             println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");

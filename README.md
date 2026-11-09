@@ -18,8 +18,8 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 | :--- | :--- | :--- |
 | **Native Rust Engines (`bio-suite`)** | **`36` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
 | **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.1` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
-| **Empirically Verified Preprints** | **`21` Preprints (`PREPRINT-01`–`PREPRINT-21`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`133` Total** (`21` Preprints · `35` Tool Cal. · `77` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
+| **Empirically Verified Preprints** | **`22` Preprints (`PREPRINT-01`–`PREPRINT-22`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
+| **Lab Discoveries Directory** | **`133` Total** (`22` Preprints · `35` Tool Cal. · `76` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
 | **Curated Validation Datasets** | **`61` Datasets (`VAL-SET-001`–`VAL-SET-061`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
@@ -89,6 +89,7 @@ cargo build --release
 <!-- AUTO-FRONTPAGE-HIGHLIGHTS:START -->
 | ID & Status | Verified Preprint Title & Live Reader Link | Master Concept Zenodo DOI | Signal | Primary Validation Set |
 | :--- | :--- | :--- | :--- | :--- |
+| **#133** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Anopheles Mosquitoes (Culicidae: Anophelinae), Native Rust Quartet Coalescent Species-Tree Inference, Chemosensory and Insecticide-Resistance Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/anopheles-global-radiation-native-biosuite)** | [`10.5281/zenodo.24078829`](https://doi.org/10.5281/zenodo.24078829) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS` |
 | **#132** `✅ Verified Preprint` | **[Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (*ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline)** | `Verified` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-060-RHINOLOPHIDAE-ASIA-RADIATION-212RECS` |
 | **#131** `✅ Verified Preprint` | **[Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline)** | [`10.5281/zenodo.24066498`](https://doi.org/10.5281/zenodo.24066498) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-059-RODENT-NORTH-AMERICA-RADIATION-212RECS` |
 | **#130** `✅ Verified Preprint` | **[Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline)** | [`10.5281/zenodo.24061361`](https://doi.org/10.5281/zenodo.24061361) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-058-PRIMATE-AFRICA-AMERICAS-RADIATION-212RECS` |
@@ -155,6 +156,9 @@ crvscience-labs/
 │   ├── kaiabc_allostery_calibration.rs   # Jacobi Kirchhoff GNM allostery & RK4 KaiABC oscillator vs. SciPy (VAL-SET-007)
 │   ├── mk_morpho_calibration.rs          # Lewis Mk+ASC morphological pruning & PIC vs. IQ-TREE v2.4.0 (VAL-SET-006)
 │   ├── pseudo_loss_calibration.rs        # 3-frame codon-to-AA frameshift aligner & RELAX vs. MACSE & PAML (VAL-SET-005)
+│   ├── supervisor.rs                     # Autonomous Multi-Threaded Pipeline Supervisor & Self-Healing Loop-Back Engine
+│   ├── figure_generator.rs               # Locked Preprint 18 & 21 Figure (.svg + .png + .pdf) & LaTeX (.tex) Generator
+│   ├── bio_suite_gui.rs                  # 5-Tab Native Win32 Desktop GUI (Pipeline DAG, Super-BLAST Audit, AlignView, Trees, 3D PDB)
 │   ├── mafft_native.rs                   # 6-stage Native Rust MAFFT-Mimetic aligner (FFT-NS + hat3 SW consistency + 5.8S ITS lock + 2-Tree UPGMA DP + dvtditr)
 │   ├── phylo.rs & msa_calibration.rs     # 3-way MSA calibration (MAFFT-Mimetic v4 vs. Center-Star Gotoh v3 vs. MAFFT v7.526) & K2P/TN93 distances
 │   ├── modeltest.rs                      # 24-model Felsenstein pruning vs. jModelTest v2.1.9
@@ -179,6 +183,29 @@ crvscience-labs/
 ```
 
 *(Note: Local working directories `cache/`, `runs/`, and `tools/` are git-ignored so the repository remains lightweight.)*
+
+---
+
+## Autonomous Pipeline Supervisor (`bio-suite-supervisor`) & 5-Tab Desktop GUI
+
+`bio-suite-supervisor` oversees end-to-end study execution—from NCBI Entrez / FASTA ingestion and `Super-BLAST` self-healing annotation hygiene to multi-threaded full-length alignment, 32-chain `RuNIE` factorial sweeps, 3D `.pdb` homology superposition, locked Preprint 18 & 21 figure generation (`.svg` + `.png` + `.pdf`), and LaTeX (`main.tex`) preprint compilation:
+
+```powershell
+# Execute an autonomous 3-Way Multifactorial run and export all 5 GUI tab snapshots
+cargo run --release --bin bio-suite-supervisor -- run `
+  --preset anopheles-3way `
+  --design 3way-multifactorial `
+  --gui-snapshot-png runs/runie-3way-multifactorial-anopheles-mosquitos/figures/gui-overview.png
+
+# Launch the interactive 5-Tab Win32 Desktop GUI
+cargo run --release --bin bio-suite-supervisor -- gui --run-id runie-3way-multifactorial-anopheles-mosquitos
+
+# List or inspect managed runs in crvscience-labs/runs/
+cargo run --release --bin bio-suite-supervisor -- list
+cargo run --release --bin bio-suite-supervisor -- inspect --run-id runie-3way-multifactorial-anopheles-mosquitos
+```
+
+See [**`docs/SUPERVISOR_AND_GUI_GUIDE.md`**](docs/SUPERVISOR_AND_GUI_GUIDE.md) for the complete command-line and GUI manual.
 
 ---
 

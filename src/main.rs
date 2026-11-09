@@ -1760,11 +1760,19 @@ fn main() {
                 std::process::exit(1);
             }
         }
+        "supervisor" | "bio-suite-supervisor" | "gui" | "suite-gui" => {
+            if let Err(e) = bio_suite::supervisor::run_supervisor_cli(&args, &cache) {
+                eprintln!("[bio-suite-supervisor] Error: {}", e);
+                std::process::exit(1);
+            }
+        }
         _ => {
             println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");
             println!("Repository: https://github.com/bpwhite/crvscience-labs.git");
             println!();
             println!("USAGE:");
+            println!("  bio-suite supervisor [run|list|gui] [--run-id <id>] [--preset anopheles-3way|coleoptera-function-18|rhinolophus-asia-21] [--design 3way-multifactorial|biosuite-only|external-only|tool-calibration] [--accessions <A1,A2,...>] [--fasta <file.fa>] [--gui]");
+            println!("  bio-suite gui                       [--run-id <id>] [--preset anopheles-3way]");
             println!("  bio-suite fetch [coi-barcodes | chr1-section-a]");
             println!("  bio-suite align-view                [--input <fasta>] [--region 120:240] [--mode dna|aa|aa-compact|dual|ry3|dayhoff6] [--snapshot-svg <svg>] [--snapshot-png <png>]");
             println!("  bio-suite align-snapshot            [--input <fasta>] [--auto-focal] [--snapshot-svg <svg>] [--snapshot-png <png>]");

@@ -2444,6 +2444,108 @@ impl SoftwareFrameBuffer {
         self.fill_rect(x + w - 1, y, 1, h, rgb);
     }
 
+    /// Draw an anti-clipped Bresenham line of thickness `thickness_px` between `(x0, y0)` and `(x1, y1)`.
+    pub fn draw_line(
+        &mut self,
+        x0: i32,
+        y0: i32,
+        x1: i32,
+        y1: i32,
+        thickness_px: i32,
+        rgb: (u8, u8, u8),
+    ) {
+        let mut cx = x0;
+        let mut cy = y0;
+        let dx = (x1 - x0).abs();
+        let sx = if x0 < x1 { 1 } else { -1 };
+        let dy = -(y1 - y0).abs();
+        let sy = if y0 < y1 { 1 } else { -1 };
+        let mut err = dx + dy;
+        let r = (thickness_px.max(1) - 1) / 2;
+        let c = Self::pack_rgb(rgb.0, rgb.1, rgb.2);
+        let w = self.width as i32;
+        let h = self.height as i32;
+        loop {
+            for oy in -r..=r {
+                let py = cy + oy;
+                if py < 0 || py >= h {
+                    continue;
+                }
+                for ox in -r..=r {
+                    let px = cx + ox;
+                    if px >= 0 && px < w {
+                        self.pixels[(py as usize) * self.width + (px as usize)] = c;
+                    }
+                }
+            }
+            if cx == x1 && cy == y1 {
+                break;
+            }
+            let e2 = 2 * err;
+            if e2 >= dy {
+                err += dy;
+                cx += sx;
+            }
+            if e2 <= dx {
+                err += dx;
+                cy += sy;
+            }
+        }
+    }
+
+    /// Draw a filled disk centered at `(cx, cy)` with radius `radius`.
+    pub fn fill_circle(&mut self, cx: i32, cy: i32, radius: i32, rgb: (u8, u8, u8)) {
+        if radius <= 0 {
+            return;
+        }
+        let r2 = radius * radius;
+        let c = Self::pack_rgb(rgb.0, rgb.1, rgb.2);
+        let w = self.width as i32;
+        let h = self.height as i32;
+        for dy in -radius..=radius {
+            let py = cy + dy;
+            if py < 0 || py >= h {
+                continue;
+            }
+            for dx in -radius..=radius {
+                if dx * dx + dy * dy <= r2 {
+                    let px = cx + dx;
+                    if px >= 0 && px < w {
+                        self.pixels[(py as usize) * self.width + (px as usize)] = c;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Draw a circle outline centered at `(cx, cy)` with radius `radius`.
+    pub fn stroke_circle(&mut self, cx: i32, cy: i32, radius: i32, rgb: (u8, u8, u8)) {
+        if radius <= 0 {
+            return;
+        }
+        let r_outer2 = radius * radius;
+        let r_inner = (radius - 2).max(0);
+        let r_inner2 = r_inner * r_inner;
+        let c = Self::pack_rgb(rgb.0, rgb.1, rgb.2);
+        let w = self.width as i32;
+        let h = self.height as i32;
+        for dy in -radius..=radius {
+            let py = cy + dy;
+            if py < 0 || py >= h {
+                continue;
+            }
+            for dx in -radius..=radius {
+                let d2 = dx * dx + dy * dy;
+                if d2 <= r_outer2 && d2 >= r_inner2 {
+                    let px = cx + dx;
+                    if px >= 0 && px < w {
+                        self.pixels[(py as usize) * self.width + (px as usize)] = c;
+                    }
+                }
+            }
+        }
+    }
+
     /// Draw a single ASCII character at `(x, y)` using our crisp built-in 5x7 bitmap font scaled by `scale` (1 or 2).
     pub fn draw_char(&mut self, x: i32, y: i32, ch: char, rgb: (u8, u8, u8), scale: i32) {
         let glyph = glyph_5x7(ch);
@@ -2560,6 +2662,147 @@ impl SoftwareFrameBuffer {
         // IEND Chunk
         write_png_chunk(&mut png, b"IEND", &[]);
         png
+    }
+
+    /// Encode this framebuffer plus vector header/caption text as a standards-compliant
+    /// single-page PDF 1.4 byte vector in pure Rust (zero external tools required).
+    pub fn encode_pdf(&self, title: &str, subtitle: &str) -> Vec<u8> {
+        let w = self.width;
+        let h = self.height;
+        // Pack raw RGB bytes (3 bytes per pixel, no PNG filter byte)
+        let mut raw_rgb = Vec::with_capacity(w * h * 3);
+        for &p in &self.pixels {
+            raw_rgb.push(((p >> 16) & 0xFF) as u8);
+            raw_rgb.push(((p >> 8) & 0xFF) as u8);
+            raw_rgb.push((p & 0xFF) as u8);
+        }
+
+        // Wrap raw_rgb in Zlib stream (FlateDecode)
+        let mut zlib_stream =
+            Vec::with_capacity(raw_rgb.len() + (raw_rgb.len() / 65535 + 2) * 6 + 6);
+        zlib_stream.push(0x78);
+        zlib_stream.push(0x01);
+        let chunks: Vec<&[u8]> = raw_rgb.chunks(65_535).collect();
+        for (i, chunk) in chunks.iter().enumerate() {
+            let is_last = i + 1 == chunks.len();
+            zlib_stream.push(if is_last { 0x01 } else { 0x00 });
+            let len = chunk.len() as u16;
+            let nlen = !len;
+            zlib_stream.extend_from_slice(&len.to_le_bytes());
+            zlib_stream.extend_from_slice(&nlen.to_le_bytes());
+            zlib_stream.extend_from_slice(chunk);
+        }
+        let mut s1: u32 = 1;
+        let mut s2: u32 = 0;
+        for &b in &raw_rgb {
+            s1 = (s1 + b as u32) % 65_521;
+            s2 = (s2 + s1) % 65_521;
+        }
+        let adler = (s2 << 16) | s1;
+        zlib_stream.extend_from_slice(&adler.to_be_bytes());
+
+        // PDF page dimensions in points (landscape 792 x 612 or proportional)
+        let page_w = 792.0_f64;
+        let page_h = 612.0_f64;
+        let margin = 28.0_f64;
+        let header_h = 46.0_f64;
+        let avail_w = page_w - 2.0 * margin;
+        let avail_h = page_h - 2.0 * margin - header_h;
+        let scale = (avail_w / w as f64).min(avail_h / h as f64);
+        let draw_w = w as f64 * scale;
+        let draw_h = h as f64 * scale;
+        let draw_x = margin + (avail_w - draw_w) * 0.5;
+        let draw_y = margin;
+
+        let clean_title: String = title
+            .chars()
+            .filter(|c| c.is_ascii() && *c != '(' && *c != ')' && *c != '\\')
+            .take(105)
+            .collect();
+        let clean_sub: String = subtitle
+            .chars()
+            .filter(|c| c.is_ascii() && *c != '(' && *c != ')' && *c != '\\')
+            .take(125)
+            .collect();
+
+        let content_stream = format!(
+            "q\n0.06 0.09 0.16 rg\nBT /F1 11 Tf {:.1} {:.1} Td ({}) Tj ET\n0.28 0.33 0.41 rg\nBT /F1 8.5 Tf {:.1} {:.1} Td ({}) Tj ET\n{:.2} 0 0 {:.2} {:.2} {:.2} cm\n/Im0 Do\nQ\n",
+            margin,
+            page_h - margin - 12.0,
+            clean_title,
+            margin,
+            page_h - margin - 26.0,
+            clean_sub,
+            draw_w,
+            draw_h,
+            draw_x,
+            draw_y
+        );
+
+        let mut pdf = Vec::with_capacity(zlib_stream.len() + 2048);
+        pdf.extend_from_slice(b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+
+        let mut offsets = Vec::with_capacity(6);
+        // Obj 1: Catalog
+        offsets.push(pdf.len());
+        pdf.extend_from_slice(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+
+        // Obj 2: Pages
+        offsets.push(pdf.len());
+        pdf.extend_from_slice(b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+
+        // Obj 3: Page
+        offsets.push(pdf.len());
+        let page_obj = format!(
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {:.0} {:.0}] /Resources << /Font << /F1 4 0 R >> /XObject << /Im0 5 0 R >> >> /Contents 6 0 R >>\nendobj\n",
+            page_w, page_h
+        );
+        pdf.extend_from_slice(page_obj.as_bytes());
+
+        // Obj 4: Font
+        offsets.push(pdf.len());
+        pdf.extend_from_slice(
+            b"4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n",
+        );
+
+        // Obj 5: Image XObject
+        offsets.push(pdf.len());
+        let img_hdr = format!(
+            "5 0 obj\n<< /Type /XObject /Subtype /Image /Width {} /Height {} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /Length {} >>\nstream\n",
+            w,
+            h,
+            zlib_stream.len()
+        );
+        pdf.extend_from_slice(img_hdr.as_bytes());
+        pdf.extend_from_slice(&zlib_stream);
+        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+
+        // Obj 6: Content stream
+        offsets.push(pdf.len());
+        let cnt_hdr = format!(
+            "6 0 obj\n<< /Length {} >>\nstream\n{}\nendstream\nendobj\n",
+            content_stream.len(),
+            content_stream
+        );
+        pdf.extend_from_slice(cnt_hdr.as_bytes());
+
+        // xref
+        let xref_offset = pdf.len();
+        pdf.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", offsets.len() + 1).as_bytes(),
+        );
+        for off in &offsets {
+            pdf.extend_from_slice(format!("{:010} 00000 n \n", off).as_bytes());
+        }
+        pdf.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{}\n%%EOF\n",
+                offsets.len() + 1,
+                xref_offset
+            )
+            .as_bytes(),
+        );
+        pdf
     }
 }
 

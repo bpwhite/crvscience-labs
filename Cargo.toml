@@ -19,6 +19,10 @@ path = "src/main.rs"
 name = "runie-align-view"
 path = "src/bin/runie_align_view.rs"
 
+[[bin]]
+name = "bio-suite-supervisor"
+path = "src/bin/bio_suite_supervisor.rs"
+
 [dependencies]
 candle-core = "0.11.1"
 candle-nn = "0.11.1"

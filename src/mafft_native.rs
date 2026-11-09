@@ -353,12 +353,22 @@ pub fn align_sequences_mafft_native_with_config(
     let anchor_58s_count = its_bounds.iter().filter(|b| b.has_58s_core).count();
     let is_its_cistron = anchor_58s_count * 2 >= n && anchor_58s_count >= 2;
 
+    // Scan for Eukaryotic 18S SSU rRNA Universal Core (U3/U5/U6/U7) expansion-segment boundaries,
+    // Gnathostome Homeobox + (GCN)_n repeat + 5'/3' UTR boundaries, or Endosymbiotic RbcS cTP + mature core boundaries
+    let euk18s_zones = detect_cohort_euk18s_zones(&norm_seqs);
+    let homeobox_zones = detect_cohort_homeobox_zones(&norm_seqs);
+    let rbcs_zones = detect_cohort_rbcs_zones(&norm_seqs);
+    let has_multi_island_zones =
+        euk18s_zones.is_some() || homeobox_zones.is_some() || rbcs_zones.is_some();
+
     let max_len = norm_seqs.iter().map(|s| s.len()).max().unwrap_or(0);
     let min_len = norm_seqs.iter().map(|s| s.len()).min().unwrap_or(0);
     let resolved_strategy = match config.strategy {
         MafftNativeStrategy::Auto => {
-            if is_its_cistron {
+            if is_its_cistron || homeobox_zones.is_some() || rbcs_zones.is_some() {
                 MafftNativeStrategy::EInsI
+            } else if euk18s_zones.is_some() {
+                MafftNativeStrategy::QInsI
             } else if n <= 200 && max_len <= 6_000 {
                 MafftNativeStrategy::LInsI
             } else {
@@ -369,16 +379,12 @@ pub fn align_sequences_mafft_native_with_config(
     };
 
     // -------------------------------------------------------------------------
-    // STAGE 2 & 3: If `is_its_cistron` is true (and all sequences carry the `5.8S`
-    // anchor), partition into homologous cistron zones:
-    //   Zone 0 (`18S` 3' flank, free 5' overhang)
-    //   Zone 1 (`ITS1` spacer, free 5' overhang if `18S` flank is absent)
-    //   Zone 2 (`5.8S` invariant ~158-bp core, high stem-gap penalty)
-    //   Zone 3 (`ITS2` spacer with Helix II/III CBC stem weighting)
-    //   Zone 4 (`28S` 5' flank, free 3' overhang)
-    // Each zone is aligned by the full MAFFT `L-INS-i` / `E-INS-i` engine (FFT +
-    // `hat3` local Smith-Waterman transitive consistency + 2-stage UPGMA profile DP
-    // + iterative tree-bipartition refinement) and concatenated seamlessly.
+    // STAGE 2 & 3: Multi-Island / Subunit Boundary Partitioning (`E-INS-i` / `Q-INS-i`)
+    //   - `18S–ITS1–5.8S–ITS2–28S` cistrons: 5-zone `5.8S` core & overhang locking
+    //   - Eukaryotic `18S SSU rRNA`: 5-zone `U3–U5–U6–U7` universal core locking across
+    //     hypervariable `V4` (`ES6`) and `V7` (`ES9`) expansion segments
+    //   - Gnathostome `HOXD13`: 3-zone `5' UTR + (GCN)_n Poly-Ala | 240-bp Homeobox | 3' UTR`
+    //   - Embryophyta `RbcS`: 3-zone `5' UTR + Disordered cTP | 279-bp Mature Core | 3' UTR`
     // -------------------------------------------------------------------------
     let all_have_58s = anchor_58s_count == n;
     let (
@@ -396,6 +402,36 @@ pub fn align_sequences_mafft_native_with_config(
         align_partitioned_its_cistron_mafft(
             &norm_seqs,
             &its_bounds,
+            resolved_strategy,
+            config.max_iterations,
+            config.use_transitive_consistency,
+            config.use_secondary_structure_weights,
+            t_s1,
+        )
+    } else if let Some(ref zones) = euk18s_zones {
+        align_partitioned_multi_zone_mafft(
+            &norm_seqs,
+            zones,
+            resolved_strategy,
+            config.max_iterations,
+            config.use_transitive_consistency,
+            true,
+            t_s1,
+        )
+    } else if let Some(ref zones) = homeobox_zones {
+        align_partitioned_multi_zone_mafft(
+            &norm_seqs,
+            zones,
+            resolved_strategy,
+            config.max_iterations,
+            config.use_transitive_consistency,
+            config.use_secondary_structure_weights,
+            t_s1,
+        )
+    } else if let Some(ref zones) = rbcs_zones {
+        align_partitioned_multi_zone_mafft(
+            &norm_seqs,
+            zones,
             resolved_strategy,
             config.max_iterations,
             config.use_transitive_consistency,
@@ -428,9 +464,21 @@ pub fn align_sequences_mafft_native_with_config(
 
     let total_ms = t_start.elapsed().as_secs_f64() * 1000.0;
     let aln_len = final_matrix.first().map(|r| r.len()).unwrap_or(0);
+    let anchor_domain_count = if all_have_58s {
+        anchor_58s_count
+    } else if has_multi_island_zones {
+        n
+    } else {
+        anchor_58s_count
+    };
     let method_str = if is_its_cistron && all_have_58s {
         format!(
             "bio-suite native Rust MAFFT-mimetic v4 ({} / E-INS-i 5.8S-Anchored + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, DNA200)",
+            resolved_strategy.code_label()
+        )
+    } else if has_multi_island_zones {
+        format!(
+            "bio-suite native Rust MAFFT-mimetic v4 ({} Multi-Island Domain-Locked + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, DNA200)",
             resolved_strategy.code_label()
         )
     } else {
@@ -441,13 +489,13 @@ pub fn align_sequences_mafft_native_with_config(
     };
 
     let trace_log = format!(
-        "runie-mafft-linsi (native Rust v4) | strategy={} | N={} ({}..{} bp -> L={} aligned cols) | 5.8S_anchors={}/{} | revcomp={} | fft_anchors={} | hat3_pairs={} | guide_trees=2 | dvtditr_steps={}/{} accepted | WSP {:.1} -> {:.1} | total={:.2} ms",
+        "runie-mafft-linsi (native Rust v4) | strategy={} | N={} ({}..{} bp -> L={} aligned cols) | domain_anchors={}/{} | revcomp={} | fft_anchors={} | hat3_pairs={} | guide_trees=2 | dvtditr_steps={}/{} accepted | WSP {:.1} -> {:.1} | total={:.2} ms",
         resolved_strategy.code_label(),
         n,
         min_len,
         max_len,
         aln_len,
-        anchor_58s_count,
+        anchor_domain_count,
         n,
         revcomp_count,
         fft_anchors_total,
@@ -461,8 +509,8 @@ pub fn align_sequences_mafft_native_with_config(
 
     let tel = MafftNativeStageTelemetry {
         resolved_strategy: resolved_strategy.code_label().to_string(),
-        is_its_cistron_detected: is_its_cistron,
-        conserved_58s_anchor_count: anchor_58s_count,
+        is_its_cistron_detected: is_its_cistron || has_multi_island_zones,
+        conserved_58s_anchor_count: anchor_domain_count,
         reverse_complemented_count: revcomp_count,
         fft_phase_anchors_detected: fft_anchors_total,
         local_hat3_residue_pairs: hat3_links_total,
@@ -736,6 +784,264 @@ pub fn detect_rdna_its_domain_boundaries(seq: &[u8]) -> RdnaItsDomainBounds {
         core_58s_end,
         its2_end,
     }
+}
+
+/// Specification for a homologous structural zone across all $N$ sequences in a multi-island alignment.
+#[derive(Debug, Clone)]
+pub struct MultiZoneSliceSpec {
+    pub ranges: Vec<(usize, usize)>,
+    pub free_leading_gaps: bool,
+    pub free_trailing_gaps: bool,
+    pub is_conserved_core_zone: bool,
+    pub terminal_overhang_cap: Option<usize>,
+}
+
+/// Detect Eukaryotic `18S SSU rRNA` universal core boundaries (`U3`, `U5`, `U6`, `U7`)
+/// to partition hypervariable expansion segments `V1–V3`, `V4` (`ES6`), `V5–V7` (`ES9`),
+/// `V8` (Helix 44), and `V9`.
+pub fn detect_cohort_euk18s_zones(seqs: &[Vec<u8>]) -> Option<Vec<MultiZoneSliceSpec>> {
+    let n = seqs.len();
+    if n < 2 {
+        return None;
+    }
+    const U3_MOTIF: &[u8] = b"CAGCCGCGGTAATTCCAGCTCC";
+    const U5_MOTIF: &[u8] = b"AAACTTAAAGGAATTGACGGAAGGGCACCACCAG";
+    const U6_MOTIF: &[u8] = b"AGGTCTGTGATGCCCTTAGA";
+    const U7_MOTIF: &[u8] = b"ACACACCGCCCGTCG";
+
+    let mut u3_pos = Vec::with_capacity(n);
+    let mut u5_pos = Vec::with_capacity(n);
+    let mut u6_pos = Vec::with_capacity(n);
+    let mut u7_pos = Vec::with_capacity(n);
+
+    for s in seqs {
+        let len = s.len();
+        if len < 1400 {
+            return None;
+        }
+        let (p3, sc3) = find_best_ungapped_motif_hit(s, U3_MOTIF, 300, 900.min(len))?;
+        if sc3 < 64 {
+            return None;
+        }
+        let (p5, sc5) =
+            find_best_ungapped_motif_hit(s, U5_MOTIF, (p3 + 350).min(len), 1450.min(len))?;
+        if sc5 < 104 {
+            return None;
+        }
+        let (p6, sc6) =
+            find_best_ungapped_motif_hit(s, U6_MOTIF, (p5 + 180).min(len), 1800.min(len))?;
+        if sc6 < 60 {
+            return None;
+        }
+        let (p7, sc7) = find_best_ungapped_motif_hit(s, U7_MOTIF, (p6 + 120).min(len), len)?;
+        if sc7 < 44 {
+            return None;
+        }
+        u3_pos.push(p3);
+        u5_pos.push(p5);
+        u6_pos.push(p6);
+        u7_pos.push(p7);
+    }
+
+    Some(vec![
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (0, u3_pos[i])).collect(),
+            free_leading_gaps: true,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (u3_pos[i], u5_pos[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (u5_pos[i], u6_pos[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (u6_pos[i], u7_pos[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: true,
+            terminal_overhang_cap: None,
+        },
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (u7_pos[i], seqs[i].len())).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: true,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+    ])
+}
+
+/// Detect Gnathostome `Homeobox` (`HOXD13` / `Hox`) DNA-binding domain boundaries flanked by
+/// N-terminal disordered homopolymer repeat tracts (`(GCN)_n` Poly-Alanine / Poly-Serine)
+/// and asymmetric `5'/3' UTR` overhangs (`E-INS-i` multi-island locking).
+pub fn detect_cohort_homeobox_zones(seqs: &[Vec<u8>]) -> Option<Vec<MultiZoneSliceSpec>> {
+    let n = seqs.len();
+    if n < 2 {
+        return None;
+    }
+    // N-terminal anchor upstream of Poly-Ala repeat: `YHFGNGY` (`TATCACTTTGGCAACGGATAC`)
+    // Post-repeat conserved anchor: `YQGYTNP` (`TACCAGGGCTATACAAACCCC`)
+    // Recognition Helix-3 motif `WFQNRR` (`TGGTTCCAGAACCGG`) & Helix-1 `KRVPYTK` (`AAGCGCGTGCCCTACACCAAG`)
+    const NTERM_YHFGNGY: &[u8] = b"TATCACTTTGGCAACGGATAC";
+    const MID_YQGYTNP: &[u8] = b"TACCAGGGCTATACAAACCCC";
+    const HELIX3_WFQNRR: &[u8] = b"TGGTTCCAGAACCGG";
+    const HELIX1_KRVPYT: &[u8] = b"AAGCGCGTGCCCTACACCAAG";
+
+    let mut yhfg_starts = Vec::with_capacity(n);
+    let mut yqgy_starts = Vec::with_capacity(n);
+    let mut core_starts = Vec::with_capacity(n);
+    let mut core_ends = Vec::with_capacity(n);
+
+    for s in seqs {
+        let len = s.len();
+        if len < 600 {
+            return None;
+        }
+        let (wfq_pos, wfq_sc) =
+            find_best_ungapped_motif_hit(s, HELIX3_WFQNRR, 180, len.saturating_sub(30))?;
+        if wfq_sc < 40 || wfq_pos < 210 {
+            return None;
+        }
+        let exp_h1 = wfq_pos - 132;
+        let (_, h1_sc) = find_best_ungapped_motif_hit(
+            s,
+            HELIX1_KRVPYT,
+            exp_h1.saturating_sub(6),
+            (exp_h1 + HELIX1_KRVPYT.len() + 6).min(len),
+        )?;
+        if h1_sc < 32 {
+            return None;
+        }
+        let hbox_5p = wfq_pos - 141;
+        let c_start = hbox_5p.saturating_sub(60);
+        let c_end = (hbox_5p + 180).min(len);
+        if c_end - c_start != 240 {
+            return None;
+        }
+        let (yq_pos, yq_sc) = find_best_ungapped_motif_hit(s, MID_YQGYTNP, 120, c_start)?;
+        if yq_sc < 44 || yq_pos < 80 {
+            return None;
+        }
+        let (yh_pos, yh_sc) = find_best_ungapped_motif_hit(s, NTERM_YHFGNGY, 40, yq_pos)?;
+        if yh_sc < 40 {
+            return None;
+        }
+        yhfg_starts.push(yh_pos);
+        yqgy_starts.push(yq_pos);
+        core_starts.push(c_start);
+        core_ends.push(c_end);
+    }
+
+    Some(vec![
+        // Zone 0: 5' UTR + N-terminal leader upstream of `YHFGNGY`
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (0, yhfg_starts[i])).collect(),
+            free_leading_gaps: true,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        // Zone 1: `(GCN)_n` Poly-Alanine / Poly-Serine trinucleotide repeat expansion cassette (`YHFGNGY..YQGYTNP`)
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (yhfg_starts[i], yqgy_starts[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        // Zone 2: Conserved post-repeat transactivation region (`YQGYTNP..core_start`, 189–192 bp)
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (yqgy_starts[i], core_starts[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        // Zone 3: 240-bp invariant `Linker + 60-Codon Homeobox DNA-Binding Core`
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (core_starts[i], core_ends[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: true,
+            terminal_overhang_cap: None,
+        },
+        // Zone 4: Asymmetric 3' UTR overhang (aligns full 1,520-bp tetrapod/mammalian 3' UTR homology,
+        // losslessly right-padding only the distal >1,520-bp lungfish/caecilian 3' UTR tails)
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (core_ends[i], seqs[i].len())).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: true,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: Some(1520),
+        },
+    ])
+}
+
+/// Detect Embryophyta endosymbiotic `RbcS` (`Rubisco Small Subunit`) precursor boundaries:
+/// `Zone 0`: `5' UTR + Disordered Chloroplast Transit Peptide (cTP)`
+/// `Zone 1`: `279-bp Conserved Mature RbcS Catalytic Beta-Barrel Core` (`MQVWP...WTMWKLP...GFVYREN`)
+/// `Zone 2`: `Asymmetric 3' UTR Overhang`
+pub fn detect_cohort_rbcs_zones(seqs: &[Vec<u8>]) -> Option<Vec<MultiZoneSliceSpec>> {
+    let n = seqs.len();
+    if n < 2 {
+        return None;
+    }
+    // 20-bp `W-T-M-W-K-L-P` mature catalytic core landmark (`TGG AC[AC] ATG TGG AAG [CT]T[ACGT] CC`)
+    const RBCS_WTMWKLP: &[u8] = b"TGGACAATGTGGAAGCTGCC";
+
+    let mut core_starts = Vec::with_capacity(n);
+    let mut core_ends = Vec::with_capacity(n);
+
+    for s in seqs {
+        let len = s.len();
+        if len < 550 {
+            return None;
+        }
+        let (wtm_pos, wtm_sc) =
+            find_best_ungapped_motif_hit(s, RBCS_WTMWKLP, 120, len.saturating_sub(240))?;
+        if wtm_sc < 56 || wtm_pos < 60 || wtm_pos + 240 > len {
+            return None;
+        }
+        let c_start = wtm_pos - 39;
+        let c_end = wtm_pos + 240;
+        core_starts.push(c_start);
+        core_ends.push(c_end);
+    }
+
+    Some(vec![
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (0, core_starts[i])).collect(),
+            free_leading_gaps: true,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (core_starts[i], core_ends[i])).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: false,
+            is_conserved_core_zone: true,
+            terminal_overhang_cap: None,
+        },
+        MultiZoneSliceSpec {
+            ranges: (0..n).map(|i| (core_ends[i], seqs[i].len())).collect(),
+            free_leading_gaps: false,
+            free_trailing_gaps: true,
+            is_conserved_core_zone: false,
+            terminal_overhang_cap: None,
+        },
+    ])
 }
 
 // ============================================================================
@@ -2715,6 +3021,188 @@ fn align_partitioned_its_cistron_mafft(
             false,
             true,
             false,
+            Instant::now(),
+        );
+        for i in 0..n {
+            concat_rows[i].extend_from_slice(&rows[i]);
+        }
+        total_fft += fft;
+        total_hat3 += h3;
+        total_eval += ev;
+        total_acc += ac;
+        sum_init_wsp += iw;
+        sum_final_wsp += fw;
+        sum_s12 += ms12;
+        sum_s34 += ms34;
+        sum_s5 += ms5;
+    }
+
+    (
+        concat_rows,
+        total_fft,
+        total_hat3,
+        total_eval,
+        total_acc,
+        sum_init_wsp,
+        sum_final_wsp,
+        sum_s12,
+        sum_s34,
+        sum_s5,
+    )
+}
+
+/// Align a multi-zone partitioned cohort (`18S SSU rRNA`, `HOXD13` Homeobox + repeat + UTR,
+/// or `RbcS` transit peptide + mature core + UTR) seamlessly across all zones while preserving
+/// 100% of every sequence's full nucleotide length.
+#[allow(clippy::too_many_arguments)]
+fn align_partitioned_multi_zone_mafft(
+    seqs: &[Vec<u8>],
+    zones: &[MultiZoneSliceSpec],
+    strategy: MafftNativeStrategy,
+    max_iterations: usize,
+    use_transitive_consistency: bool,
+    use_secondary_structure_weights: bool,
+    t_stage_start: Instant,
+) -> (
+    Vec<Vec<u8>>,
+    usize,
+    usize,
+    usize,
+    usize,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+) {
+    let n = seqs.len();
+    let mut concat_rows = vec![Vec::new(); n];
+    let mut total_fft = 0usize;
+    let mut total_hat3 = 0usize;
+    let mut total_eval = 0usize;
+    let mut total_acc = 0usize;
+    let mut sum_init_wsp = 0.0f64;
+    let mut sum_final_wsp = 0.0f64;
+    let mut sum_s12 = t_stage_start.elapsed().as_secs_f64() * 1000.0;
+    let mut sum_s34 = 0.0f64;
+    let mut sum_s5 = 0.0f64;
+
+    for z in zones {
+        let full_slices: Vec<&[u8]> = (0..n)
+            .map(|i| {
+                let (s, e) = z.ranges[i];
+                &seqs[i][s..e]
+            })
+            .collect();
+        if full_slices.iter().all(|sl| sl.is_empty()) {
+            continue;
+        }
+
+        // Check for extreme 5' or 3' terminal UTR overhangs when `terminal_overhang_cap` is set
+        if let Some(cap) = z.terminal_overhang_cap {
+            if z.free_leading_gaps && !z.free_trailing_gaps {
+                // 5' leader zone: left-pad any distal 5' leader beyond `cap`, align proximal `cap` bp
+                let max_distal = full_slices
+                    .iter()
+                    .map(|sl| sl.len().saturating_sub(cap))
+                    .max()
+                    .unwrap_or(0);
+                if max_distal > 0 {
+                    for i in 0..n {
+                        let distal_len = full_slices[i].len().saturating_sub(cap);
+                        let pad = max_distal - distal_len;
+                        concat_rows[i].extend(std::iter::repeat(b'-').take(pad));
+                        concat_rows[i].extend_from_slice(&full_slices[i][..distal_len]);
+                    }
+                }
+                let prox_slices: Vec<Vec<u8>> = full_slices
+                    .iter()
+                    .map(|sl| sl[sl.len().saturating_sub(cap)..].to_vec())
+                    .collect();
+                let (rows, fft, h3, ev, ac, iw, fw, ms12, ms34, ms5) = align_single_domain_mafft(
+                    &prox_slices,
+                    strategy,
+                    max_iterations,
+                    use_transitive_consistency,
+                    use_secondary_structure_weights,
+                    true,
+                    false,
+                    false,
+                    Instant::now(),
+                );
+                for i in 0..n {
+                    concat_rows[i].extend_from_slice(&rows[i]);
+                }
+                total_fft += fft;
+                total_hat3 += h3;
+                total_eval += ev;
+                total_acc += ac;
+                sum_init_wsp += iw;
+                sum_final_wsp += fw;
+                sum_s12 += ms12;
+                sum_s34 += ms34;
+                sum_s5 += ms5;
+                continue;
+            } else if !z.free_leading_gaps && z.free_trailing_gaps {
+                // 3' trailer zone: align proximal `cap` bp immediately downstream of core, right-pad distal 3' tail
+                let prox_slices: Vec<Vec<u8>> = full_slices
+                    .iter()
+                    .map(|sl| sl[..sl.len().min(cap)].to_vec())
+                    .collect();
+                let (rows, fft, h3, ev, ac, iw, fw, ms12, ms34, ms5) = align_single_domain_mafft(
+                    &prox_slices,
+                    strategy,
+                    max_iterations,
+                    use_transitive_consistency,
+                    use_secondary_structure_weights,
+                    false,
+                    true,
+                    false,
+                    Instant::now(),
+                );
+                for i in 0..n {
+                    concat_rows[i].extend_from_slice(&rows[i]);
+                }
+                let max_distal = full_slices
+                    .iter()
+                    .map(|sl| sl.len().saturating_sub(cap))
+                    .max()
+                    .unwrap_or(0);
+                if max_distal > 0 {
+                    for i in 0..n {
+                        let tail = &full_slices[i][full_slices[i].len().min(cap)..];
+                        concat_rows[i].extend_from_slice(tail);
+                        let pad = max_distal - tail.len();
+                        concat_rows[i].extend(std::iter::repeat(b'-').take(pad));
+                    }
+                }
+                total_fft += fft;
+                total_hat3 += h3;
+                total_eval += ev;
+                total_acc += ac;
+                sum_init_wsp += iw;
+                sum_final_wsp += fw;
+                sum_s12 += ms12;
+                sum_s34 += ms34;
+                sum_s5 += ms5;
+                continue;
+            }
+        }
+
+        let z_slices: Vec<Vec<u8>> = full_slices.iter().map(|sl| sl.to_vec()).collect();
+        let (rows, fft, h3, ev, ac, iw, fw, ms12, ms34, ms5) = align_single_domain_mafft(
+            &z_slices,
+            strategy,
+            if z.is_conserved_core_zone {
+                max_iterations / 2
+            } else {
+                max_iterations
+            },
+            use_transitive_consistency,
+            use_secondary_structure_weights,
+            z.free_leading_gaps,
+            z.free_trailing_gaps,
+            z.is_conserved_core_zone,
             Instant::now(),
         );
         for i in 0..n {

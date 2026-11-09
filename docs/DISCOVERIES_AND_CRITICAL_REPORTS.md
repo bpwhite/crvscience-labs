@@ -5,18 +5,19 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`20`), Validated Tool Calibrations (`36`) & Pipeline Benchmarks (`132` Total Reports)
+## Validated Preprints (`21`), Validated Tool Calibrations (`36`) & Pipeline Benchmarks (`132` Total Reports)
 
 - **Total Lab Discovery Entries**: **132** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
-  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`, `v2.0.1`)**: **20** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
+  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-21`, `v2.0.1`)**: **21** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **36** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **77** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **76** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
   - **Curated Validation Dataset Registry**: **60** datasets (`VAL-SET-001` through `VAL-SET-060`)
 
-#### ✅ 20 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`, `v2.0.1`)
+#### ✅ 21 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-21`, `v2.0.1`)
 
 | ID & Status | Preprint Monograph Title & Live Link | Master Concept Zenodo DOI | Signal Rating | Validation Set Provenance |
 | :--- | :--- | :--- | :--- | :--- |
+| **#132** `✅ Verified Preprint` | **[Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (*ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline)** | `Verified` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-060-RHINOLOPHIDAE-ASIA-RADIATION-212RECS` |
 | **#131** `✅ Verified Preprint` | **[Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline)** | [`10.5281/zenodo.24066498`](https://doi.org/10.5281/zenodo.24066498) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-059-RODENT-NORTH-AMERICA-RADIATION-212RECS` |
 | **#130** `✅ Verified Preprint` | **[Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline)** | [`10.5281/zenodo.24061361`](https://doi.org/10.5281/zenodo.24061361) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-058-PRIMATE-AFRICA-AMERICAS-RADIATION-212RECS` |
 | **#129** `✅ Verified Preprint` | **[Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline)** | [`10.5281/zenodo.24058170`](https://doi.org/10.5281/zenodo.24058170) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-057-COLEOPTERA-FUNCTION-SKYLINE-212RECS` |
@@ -42,7 +43,7 @@
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
-| **#132** `🔬 Pipeline Benchmark` | [Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (*ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
+| **#132** `✅ Verified Preprint` | [Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (*ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#131** `✅ Verified Preprint` | [Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#130** `✅ Verified Preprint` | [Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#129** `✅ Verified Preprint` | [Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |

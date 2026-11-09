@@ -704,7 +704,7 @@ fn main() {
     let rcfv_regimes = vec![
         RcfvRegimeMetric {
             regime_id: "REG-1".to_string(),
-            regime_label: "Full-Length 54-Taxon Metazoan Mitogenome 4-State (A,C,G,T)"
+            regime_label: "Full-Length 56-Taxon Metazoan & Choanoflagellata Mitogenome 4-State (A,C,G,T)"
                 .to_string(),
             aligned_cols: mito_full_cols,
             mean_at3_pct: at3_mito_full,
@@ -1067,8 +1067,8 @@ fn main() {
         ),
         (
             "TIER-5",
-            "Root Metazoan Split (Porifera & Ctenophora vs. Eumetazoa)",
-            "650.0–685.0 Ma",
+            "Holozoa & Root Metazoan Split (Choanoflagellata Outgroup, Porifera & Ctenophora vs. Eumetazoa)",
+            "650.0–820.0 Ma",
             "0🧪 Complete 3rd-Codon Saturation (Requires Full-Length RY3 + Dayhoff-6 Supermatrix)",
         ),
     ];
@@ -1305,7 +1305,7 @@ fn main() {
     }
 
     let mut cox1_all_sectors_rows = Vec::new();
-    let rep_indices = [0usize, 14, 15, 25, 30, 42, 44, 50]; // Drosophila (A), Priapulus (A), Octopus (B), Lingula (C), Danio (D), Xenoturbella (E), Nematostella (F), Amphimedon (G)
+    let rep_indices = [0usize, 14, 15, 25, 30, 42, 44, 50, 54]; // Drosophila (A), Priapulus (A), Octopus (B), Lingula (C), Danio (D), Xenoturbella (E), Nematostella (F), Amphimedon (G), Monosiga (G Outgroup)
     for &idx in &rep_indices {
         let sp = &mito_specimens[idx];
         let aa = translate_standard_orf(&cox1_raw_seqs[idx], 0);

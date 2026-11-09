@@ -2,28 +2,25 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Language: Rust](https://img.shields.io/badge/Language-Rust%202021-orange.svg)](https://www.rust-lang.org/)
-[![Engine: RuNIE v2.0.0 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v2.0.0%20GA--MCMC%20%2B%20ModelTest-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
+[![Engine: RuNIE v2.0.1 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v2.0.1%20GA--MCMC%20%2B%20ModelTest-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
 [![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23969275.svg)](https://doi.org/10.5281/zenodo.23969275)
 [![Figshare DOI](https://img.shields.io/badge/Figshare%20DOI-10.6084%2Fm9.figshare.34919469-f472b6.svg)](https://doi.org/10.6084/m9.figshare.34919469)
 [![Portal: crvscience.com/labs](https://img.shields.io/badge/Portal-crvscience.com%2Flabs-00bcd4.svg)](https://crvscience.com/labs)
 
 **`bio-suite`** is the free, open-source (**`GNU GPL-3.0`**) Rust command-line toolkit powering [CRV Science Labs](https://crvscience.com/labs). It provides fast, zero-dependency native Rust pipelines for comparative genomics, molecular systematics, 1D/2D/3D nucleic acid & protein structural biophysics, pangenome variation graphs, antimicrobial resistance (`AMR`) & biosynthetic gene cluster (`BGC`) mining, statistical genetics (`coloc.abf`, `MR-Egger`), and multi-stage Bayesian pipeline synthesis via **`RuNIE` (`Rust Native Inference Engine`)**.
 
-Every module runs in native multi-threaded Rust out of the box while offering head-to-head calibration harnesses (`*-compare`) against established public bioinformatics tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, and `SciPy`).
+Every module runs in native multi-threaded Rust out of the box while offering head-to-head calibration harnesses (`*-compare`) against established public bioinformatics tools (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, and `SciPy`).
 
 ---
 
 <!-- AUTO-FRONTPAGE-STATUS:START -->
-> **⚠️ VALIDATION SCOPE NOTICE (MODEL TESTING vs. VALIDATED BENCHMARKS & PREPRINTS):**
-> Only the **`35` Head-to-Head Tool Calibrations** and the **`14` Empirically Verified Preprints (`PREPRINT-01` through `PREPRINT-14`, `v2.0.1`)** are considered empirically validated at this time. All other non-verified Lab Discovery entries (`82` entries) carry an explicit **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning banner and were generated strictly to train and stress-test the `RuNIE` GA-MCMC controller and ranking gates.
-
 | Subsystem | Live Count & Version | Summary & Documentation |
 | :--- | :--- | :--- |
-| **Native Rust Engines (`bio-suite`)** | **`35` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
-| **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.0` (Stage 4 `ModelTest` + Flowchart)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3 Empirical Capability Proofs & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
-| **Empirically Verified Preprints** | **`14` Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`131` Total** (`14` Preprints · `35` Tool Cal. · `82` ⚠️ Model Testing Only) | ⚠️ **Notice**: Only the `14` Verified Preprints and `35` Tool Calibrations are validated; the remaining `82` entries are **MODEL TESTING ONLY (Procedural + Published Data Only)** $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
-| **Curated Validation Datasets** | **`57` Datasets (`VAL-SET-001`–`VAL-SET-057`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
+| **Native Rust Engines (`bio-suite`)** | **`36` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
+| **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.1` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
+| **Empirically Verified Preprints** | **`20` Preprints (`PREPRINT-01`–`PREPRINT-20`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
+| **Lab Discoveries Directory** | **`131` Total** (`20` Preprints · `35` Tool Cal. · `76` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
+| **Curated Validation Datasets** | **`59` Datasets (`VAL-SET-001`–`VAL-SET-059`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
 ---
@@ -32,11 +29,11 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 
 To keep this front page concise, detailed mathematical formulations, validation protocols, and full benchmark tables are organized into dedicated documentation pages:
 
-1. **[`docs/RUNIE_ARCHITECTURE_AND_STUDIES.md`](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), and all **15 Canonical Multi-Stage Studies**.
-2. **[`docs/VALIDATION_AND_CALIBRATION_PROCESS.md`](docs/VALIDATION_AND_CALIBRATION_PROCESS.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **25 Validation Datasets (`VAL-SET-001`–`VAL-SET-025`)**.
-3. **[`docs/TOOL_BENCHMARK_MATRIX.md`](docs/TOOL_BENCHMARK_MATRIX.md)** — Complete **34-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`) and the active validation queue.
-4. **[`docs/DISCOVERIES_AND_CRITICAL_REPORTS.md`](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md)** — Auto-synced index of all **Flagged Critical Reports (`🚩`)**, recent Lab Discoveries, and dataset provenance mappings.
-5. **[`RUNIE_CHANGELOG.md`](RUNIE_CHANGELOG.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-030`).
+1. **[`docs/RUNIE_ARCHITECTURE_AND_STUDIES.md`](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **20 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)**, and all **15 Canonical Multi-Stage Studies**.
+2. **[`docs/VALIDATION_AND_CALIBRATION_PROCESS.md`](docs/VALIDATION_AND_CALIBRATION_PROCESS.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **59 Validation Datasets (`VAL-SET-001`–`VAL-SET-059`)**.
+3. **[`docs/TOOL_BENCHMARK_MATRIX.md`](docs/TOOL_BENCHMARK_MATRIX.md)** — Complete **36-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`) and the active validation queue.
+4. **[`docs/DISCOVERIES_AND_CRITICAL_REPORTS.md`](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md)** — Auto-synced index of all **20 Empirically Verified Preprints**, recent Lab Discoveries, and dataset provenance mappings.
+5. **[`RUNIE_CHANGELOG.md`](RUNIE_CHANGELOG.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-036`).
 
 ---
 
@@ -68,28 +65,39 @@ cargo build --release
 
 ### 3. Run Head-to-Head Native vs. External Tool Benchmarks (`Dev + Untouched Reserve`)
 ```bash
+# Tool #36: Coalescent Bayesian Skyline MCMC Sampler vs. BEAST v1.10.4
+./target/release/bio-suite mcmc-skyline --out runs/mcmc-skyline-beast-calibration.json
+
+# Tool #35: Relaxed-Clock Constrained Least-Squares Time-Tree (LSD2) vs. IQ-TREE v2.4.0 & SciPy
+./target/release/bio-suite timetree-compare --out runs/timetree-lsd2-scipy-calibration.json
+
 # Tool #34: 5-Stage Adaptive Multi-Biotype Super-BLAST vs. Biopython v1.88 & SciPy v1.18.1
 ./target/release/bio-suite super-blast --out runs/super-blast-biopython-scipy-calibration.json
 
 # Tool #19: 16-RP Supermatrix & Dayhoff-6 / SR4 Compositional Recoding vs. IQ-TREE v2.4.0
 ./target/release/bio-suite rp16-compare --out runs/rp16-supermatrix-iqtree-calibration.json
-
-# Tool #16: 3-Frame Codon-to-AA Frameshift Aligner & Branch RELAX vs. MACSE v2.07 & PAML v4.10.10
-./target/release/bio-suite relax-compare --out runs/pseudo-loss-macse-relax-calibration.json
 ```
 
 ---
 
+## Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)
+
 <!-- AUTO-FRONTPAGE-HIGHLIGHTS:START -->
 | ID & Status | Verified Preprint Title & Live Reader Link | Master Concept Zenodo DOI | Signal | Primary Validation Set |
 | :--- | :--- | :--- | :--- | :--- |
+| **#131** `✅ Verified Preprint` | **[Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline)** | [`10.5281/zenodo.24066498`](https://doi.org/10.5281/zenodo.24066498) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-059-RODENT-NORTH-AMERICA-RADIATION-212RECS` |
+| **#130** `✅ Verified Preprint` | **[Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline)** | [`10.5281/zenodo.24061361`](https://doi.org/10.5281/zenodo.24061361) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-058-PRIMATE-AFRICA-AMERICAS-RADIATION-212RECS` |
+| **#129** `✅ Verified Preprint` | **[Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline)** | [`10.5281/zenodo.24058170`](https://doi.org/10.5281/zenodo.24058170) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-057-COLEOPTERA-FUNCTION-SKYLINE-212RECS` |
+| **#128** `✅ Verified Preprint` | **[RuNIE Long-Form Bayesian MCMC Skyline & the 5-Stage Neanderthal Population Crash (650 to 39.2 ka BP): Coupled 95% Credible Chronogram, Pristine Phylogram, and Effective Population Size Trajectory Benchmarked Against *BEAST across an 87,227-bp Alignment](https://crvscience.com/labs/discoveries/neanderthal-mcmc-skyline-crash)** | [`10.5281/zenodo.24055713`](https://doi.org/10.5281/zenodo.24055713) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-056-NEANDERTHAL-MCMC-SKYLINE-64TAXA-1.08MB` |
+| **#127** `✅ Verified Preprint` | **[Multifactorial N×L Phylogenomic Sensitivity & Clock-Time Curve: 3-Way RuNIE Comparison (100% Native Rust vs. 100% External Binaries vs. Unconstrained Hybrid) Mapping Minimum Alignment-Length Horizons, the 90% MAFFT Alignment Bottleneck, and Saturation Plateaus Across 100 Species](https://crvscience.com/labs/discoveries/multifactorial-nxl-clock-curve-3way)** | [`10.5281/zenodo.24049859`](https://doi.org/10.5281/zenodo.24049859) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-055-MULTIFACTORIAL-NXL-SENSITIVITY-3WAY-100TAXA-1.53MB` |
+| **#126** `✅ Verified Preprint` | **[Pancrustacea-to-Hexapoda Tree of Life (538.4 to 0.0 Ma): A 3-Way RuNIE Pipeline Comparison (100% Native Rust vs. 100% External Binaries vs. Unconstrained Hybrid Optimal ln L) Resolving Remipedia Sisterhood, Epipodite-to-Wing Homology, and Terrestrialization Across 100 Species](https://crvscience.com/labs/discoveries/pancrustacea-hexapoda-3way-runie)** | [`10.5281/zenodo.24045575`](https://doi.org/10.5281/zenodo.24045575) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-054-PANCRUSTACEA-HEXAPODA-ORIGIN-3WAY-122RECS-1.53MB` |
 | **#125** `✅ Verified Preprint` | **[Mosquito Tree of Life: Triassic–Cenozoic Culicidae Phylogenomics (242.0 to 0.0 Ma; Crown Culicidae 145.0 Ma), Single Origin of Hematophagy, Salivary D7 & Apyrase Recruitment, and Secondary Loss in Toxorhynchites](https://crvscience.com/labs/discoveries/culicidae-phylogenomics-hematophagy-d7)** | [`10.5281/zenodo.24039858`](https://doi.org/10.5281/zenodo.24039858) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-053-CULICIDAE-PHYLOGENOMICS-HEMATOPHAGY-D7-120RECS-1.64MB` |
 | **#124** `✅ Verified Preprint` | **[Beetle Tree of Life: Permian–Cenozoic Coleoptera Phylogenomics (308.0 to 0.0 Ma; Crown Coleoptera 292.0 Ma), Suborder Divergence, and Microbial PCWDE Horizontal Gene Transfer (GH28, GH45, GH5)](https://crvscience.com/labs/discoveries/coleoptera-phylogenomics-pcwde-hgt)** | [`10.5281/zenodo.24031323`](https://doi.org/10.5281/zenodo.24031323) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-052-COLEOPTERA-PHYLOGENOMICS-PCWDE-HGT-101RECS-1.38MB` |
-| **#123** `✅ Verified Preprint` | **[Lepidoptera Phylogenomics: Devonian–Cenozoic Time-Tree (363.76 Ma), Angiosperm-Coupled Ditrysian Radiation, and COX1 Barcode Saturation Horizon](https://crvscience.com/labs/discoveries/lepidoptera-ditrysia-timetree-cox1-gap)** | [`10.5281/zenodo.23994485`](https://doi.org/10.5281/zenodo.23994485) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-LEPID-DITRYSIA-COX1-001` |
+| **#123** `✅ Verified Preprint` | **[Lepidoptera Phylogenomics: Devonian–Cenozoic Time-Tree (363.76 Ma), Angiosperm-Coupled Ditrysian Radiation, and COX1 Barcode Saturation Horizon](https://crvscience.com/labs/discoveries/lepidoptera-ditrysia-timetree-cox1-gap)** | [`10.5281/zenodo.23994485`](https://doi.org/10.5281/zenodo.23994485) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-051-LEPIDOPTERA-DITRYSIA-TIMETREE-COX1-72TAXA-1.92MB` |
 | **#122** `✅ Verified Preprint` | **[Hymenoptera Phylogenomics: Permian–Cenozoic Time-Tree (281.23 Ma), Single Parasitoid Origin, Eusocial Caste Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/hymenoptera-radiation-eusociality-timetree)** | [`10.5281/zenodo.23992890`](https://doi.org/10.5281/zenodo.23992890) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-050-HYMENOPTERA-RADIATION-EUSOCIALITY-TIMETREE-105TAXA-1.53MB` |
 | **#121** `✅ Verified Preprint` | **[Synapsida and Mammaliaformes Phylogenomics: Carboniferous–Cenozoic Time-Tree, Dual Middle-Ear Detachment, Lactation Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/synapsida-mammaliaformes-timetree)** | [`10.5281/zenodo.23991261`](https://doi.org/10.5281/zenodo.23991261) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-049-SYNAPSIDA-MAMMALIAFORMES-CROWN-MAMMALIA-TIMETREE-66TAXA-1.82MB` |
 | **#120** `✅ Verified Preprint` | **[Sarcopterygii and Tetrapoda Phylogenomics: Devonian–Carboniferous Time-Tree, Dipnoi Sisterhood, Autopod Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/tetrapod-fin-limb-timetree)** | [`10.5281/zenodo.23988727`](https://doi.org/10.5281/zenodo.23988727) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-048-SARCOPTERYGII-TETRAPODA-FIN-TO-LIMB-TIMETREE-64TAXA-1.20MB` |
-| **#119** `✅ Verified Preprint` | **[Paleoproterozoic Primary Plastid Endosymbiosis, Basal Gloeomargarita Sisterhood, and the 1,648–0 Ma Archaeplastida vs. Paulinella Time-Tree Chronogram](https://crvscience.com/labs/discoveries/plastid-cyanobacteria-timetree)** | [`10.5281/zenodo.23979910`](https://doi.org/10.5281/zenodo.23979910) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-047-ARCHAEPLASTIDA-PLASTID-CYANOBACTERIA-TIMETREE-64TAXA-1.76MB` |
+| **#119** `✅ Verified Preprint` | **[Paleoproterozoic Primary Plastid Endosymbiosis, Basal Gloeomargarita Sisterhood, and the 2536.2–0 Ma Archaeplastida vs. Paulinella Time-Tree Chronogram](https://crvscience.com/labs/discoveries/plastid-cyanobacteria-timetree)** | [`10.5281/zenodo.23979910`](https://doi.org/10.5281/zenodo.23979910) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-047-ARCHAEPLASTIDA-PLASTID-CYANOBACTERIA-TIMETREE-64TAXA-1.76MB` |
 | **#118** `✅ Verified Preprint` | **[The Metazoan Cambrian Explosion Tree: Total-Evidence Phylogenomics, Hox/miRNA Macrosynteny, and Ediacaran–Cambrian Fossil Tip-Dating Across 68 Taxa (1.84 Mb)](https://crvscience.com/labs/discoveries/cambrian-explosion-bilaterian-tree)** | [`10.5281/zenodo.23977970`](https://doi.org/10.5281/zenodo.23977970) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-046-METAZOA-CAMBRIAN-EXPLOSION-TOTAL-EVIDENCE-68TAXA-1.84MB` |
 | **#117** `✅ Verified Preprint` | **[The Mammalian Radiation Supertree: Resolving the Jurassic–Cretaceous Stem and Post-K–Pg Placentalia Crown Chronogram Across 66 Taxa (1.72 Mb)](https://crvscience.com/labs/discoveries/mammalia-kpg-supertree-chronogram)** | [`10.5281/zenodo.23976160`](https://doi.org/10.5281/zenodo.23976160) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-045-MAMMALIA-PLACENTALIA-KPG-SUPERTREE-66TAXA-1.72MB` |
 | **#114** `✅ Verified Preprint` | **[The Basal Metazoan Time-Tree: Resolving Ctenophora Sister-Group Topology, Poriferan Paraphyly vs. Monophyly, and Cnidarian–Bilaterian Divergence Across 64 Holozoan and Metazoan Genomes (1.64 Mb)](https://crvscience.com/labs/discoveries/cteno-porifera-cnidaria-timetree)** | [`10.5281/zenodo.23974572`](https://doi.org/10.5281/zenodo.23974572) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-044-BASAL-METAZOA-CTENO-PORIFERA-CNIDARIA-TIMETREE-64TAXA-1.64MB` |
@@ -107,17 +115,20 @@ cargo build --release
 crvscience-labs/
 ├── Cargo.toml                            # Rust crate manifest (candle-core, candle-nn, rayon, serde)
 ├── README.md                             # High-level overview, quick-start examples & repo layout
-├── RUNIE_CHANGELOG.md                    # Chronological RuNIE tool-modification & pipeline ledger (RN-2026-001..030)
+├── RUNIE_CHANGELOG.md                    # Chronological RuNIE tool-modification & pipeline ledger (RN-2026-001..036)
 ├── docs/                                 # Detailed technical & validation documentation
-│   ├── RUNIE_ARCHITECTURE_AND_STUDIES.md # Candle tensor GA-MCMC math, Step-Up loop & all 15 canonical studies
-│   ├── VALIDATION_AND_CALIBRATION_PROCESS.md # 3-Tier system, 0🧪–5🧪 gate, Blinded SHA-256 audit & VAL-SET-001..025
-│   ├── TOOL_BENCHMARK_MATRIX.md          # Full 34-tool Native Rust vs. External Counterpart benchmark table
-│   └── DISCOVERIES_AND_CRITICAL_REPORTS.md # Auto-synced Critical Reports (🚩) & Lab Discoveries index
+│   ├── RUNIE_ARCHITECTURE_AND_STUDIES.md # Candle tensor GA-MCMC math, Step-Up loop & 20 Verified Preprints
+│   ├── VALIDATION_AND_CALIBRATION_PROCESS.md # 3-Tier system, 0🧪–5🧪 gate, Blinded SHA-256 audit & VAL-SET-001..059
+│   ├── TOOL_BENCHMARK_MATRIX.md          # Full 36-tool Native Rust vs. External Counterpart benchmark table
+│   └── DISCOVERIES_AND_CRITICAL_REPORTS.md # Auto-synced Verified Preprints & Lab Discoveries index
 ├── src/
 │   ├── main.rs                           # CLI entry point & subcommand dispatcher
 │   ├── lib.rs                            # Library module exports
-│   ├── runie.rs                          # RuNIE v1.23.0: Candle tensor Markov policy + GA-MCMC + 15-study optimizer
+│   ├── runie.rs                          # RuNIE v2.0.1: Candle tensor Markov policy + GA-MCMC + Stage 4 ModelTest
 │   ├── runie_tools.rs                    # Synthesized & calibrated native Rust domain operators
+│   ├── mcmc_skyline.rs                   # Tool #36: De novo Bayesian coalescent skyline MCMC & relaxed clock vs. BEAST
+│   ├── timetree_calibration.rs           # Tool #35: Constrained least-squares molecular clock (LSD2) vs. IQ-TREE & SciPy
+│   ├── align_viewer.rs                   # Native multi-track sequence alignment & structural motif viewer
 │   ├── graphical_reports.rs              # Native vector SVG graphical reports & 3D PDB structure generator
 │   ├── asgard_tier_synthesis.rs          # Study #13 (Tier 1–3): Asgard Archaea (Heimdallarchaeia) eukaryogenesis
 │   ├── ncldv_tier_synthesis.rs           # Study #14 (Tier 1–3): Giant DNA Viruses (Nucleocytoviricota) chromatin & PolB
@@ -130,7 +141,6 @@ crvscience-labs/
 │   ├── finemap_coloc_calibration.rs      # Log-space Wakefield ABF credible sets & coloc.abf vs. SciPy (VAL-SET-018)
 │   ├── clonal_synth_calibration.rs       # 96-channel mutational JSD, NNLS COSMIC & synthetic lethality (VAL-SET-017)
 │   ├── chrom_condensate_calibration.rs   # 3D chromatin Laplacian, TAD insulation & A/B eigenvector (VAL-SET-016)
-│   ├── popgen_validation.rs              # Tier 2 Blinded SHA-256 validation & Tier 3 repeat/k-core synthesis (VAL-SET-014..015)
 │   ├── popgen_calibration.rs             # Haplotype MSN, Hudson F_ST & Tajima's D vs. SciPy (VAL-SET-013)
 │   ├── dca_coevo_calibration.rs          # Candle mfDCA precision matrix inversion & APC vs. SciPy (VAL-SET-012)
 │   ├── kabsch_tm_calibration.rs          # Jacobi SVD Kabsch SO(3) superposition & TM-score vs. SciPy (VAL-SET-011)
@@ -156,7 +166,8 @@ crvscience-labs/
 │   ├── amr_hgt.rs & bgc_mine.rs          # Hierarchical AMR/HGT & Pfam BGC caller vs. AMRFinderPlus & GECCO
 │   ├── fetch.rs                          # Polite NCBI Entrez fetcher & SHA-256 local cache
 │   ├── disease_panels.rs                 # 32-panel (630-gene) human disease & pharmacogenomic catalog
-│   └── sweep.rs                          # Cross-kingdom calibration sweep & 0🧪–5🧪 scoring gates
+│   ├── sweep.rs                          # Cross-kingdom calibration sweep & 0🧪–5🧪 scoring gates
+│   └── bin/                              # Dedicated 3-way RuNIE & clade phylogenomic audit binaries
 └── tests/
     └── core_fidelity.rs                  # Automated unit & integration test suite
 ```
@@ -167,7 +178,7 @@ crvscience-labs/
 
 ## How to Cite
 
-If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-053`) in your research, software, or teaching, please cite our architecture preprint:
+If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-059`) in your research, software, or teaching, please cite our architecture preprint:
 
 > **White, B. P.** (2026). *RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing*. CRV Science Labs Preprint Monograph (`PREPRINT-01`, `v2.0.1`, 26 pp.).  
 > - **Master Concept Zenodo DOI**: [`10.5281/zenodo.23969275`](https://doi.org/10.5281/zenodo.23969275)  

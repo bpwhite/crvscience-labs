@@ -2615,31 +2615,13 @@ impl SoftwareFrameBuffer {
             }
         }
 
-        // Wrap raw_data in a valid Zlib stream using uncompressed DEFLATE stored blocks (BTYPE=00)
-        let mut zlib_stream = Vec::with_capacity(raw_data.len() + (raw_data.len() / 65535 + 2) * 6 + 6);
-        zlib_stream.push(0x78); // CMF: CM=8 (Deflate), CINFO=7 (32K window)
-        zlib_stream.push(0x01); // FLG: FCHECK so 0x7801 % 31 == 0
-
-        let chunks: Vec<&[u8]> = raw_data.chunks(65_535).collect();
-        for (i, chunk) in chunks.iter().enumerate() {
-            let is_last = i + 1 == chunks.len();
-            zlib_stream.push(if is_last { 0x01 } else { 0x00 });
-            let len = chunk.len() as u16;
-            let nlen = !len;
-            zlib_stream.extend_from_slice(&len.to_le_bytes());
-            zlib_stream.extend_from_slice(&nlen.to_le_bytes());
-            zlib_stream.extend_from_slice(chunk);
-        }
-
-        // Adler-32 checksum of raw_data
-        let mut s1: u32 = 1;
-        let mut s2: u32 = 0;
-        for &b in &raw_data {
-            s1 = (s1 + b as u32) % 65_521;
-            s2 = (s2 + s1) % 65_521;
-        }
-        let adler = (s2 << 16) | s1;
-        zlib_stream.extend_from_slice(&adler.to_be_bytes());
+        // Compress raw_data into a genuine Zlib stream using flate2 DEFLATE + Adler-32
+        let zlib_stream = {
+            use std::io::Write;
+            let mut enc = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+            let _ = enc.write_all(&raw_data);
+            enc.finish().unwrap_or_default()
+        };
 
         let mut png = Vec::with_capacity(zlib_stream.len() + 128);
         // PNG Signature
@@ -2677,29 +2659,13 @@ impl SoftwareFrameBuffer {
             raw_rgb.push((p & 0xFF) as u8);
         }
 
-        // Wrap raw_rgb in Zlib stream (FlateDecode)
-        let mut zlib_stream =
-            Vec::with_capacity(raw_rgb.len() + (raw_rgb.len() / 65535 + 2) * 6 + 6);
-        zlib_stream.push(0x78);
-        zlib_stream.push(0x01);
-        let chunks: Vec<&[u8]> = raw_rgb.chunks(65_535).collect();
-        for (i, chunk) in chunks.iter().enumerate() {
-            let is_last = i + 1 == chunks.len();
-            zlib_stream.push(if is_last { 0x01 } else { 0x00 });
-            let len = chunk.len() as u16;
-            let nlen = !len;
-            zlib_stream.extend_from_slice(&len.to_le_bytes());
-            zlib_stream.extend_from_slice(&nlen.to_le_bytes());
-            zlib_stream.extend_from_slice(chunk);
-        }
-        let mut s1: u32 = 1;
-        let mut s2: u32 = 0;
-        for &b in &raw_rgb {
-            s1 = (s1 + b as u32) % 65_521;
-            s2 = (s2 + s1) % 65_521;
-        }
-        let adler = (s2 << 16) | s1;
-        zlib_stream.extend_from_slice(&adler.to_be_bytes());
+        // Compress raw_rgb in Zlib stream (FlateDecode)
+        let zlib_stream = {
+            use std::io::Write;
+            let mut enc = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+            let _ = enc.write_all(&raw_rgb);
+            enc.finish().unwrap_or_default()
+        };
 
         // PDF page dimensions in points (landscape 792 x 612 or proportional)
         let page_w = 792.0_f64;

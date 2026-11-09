@@ -69,6 +69,7 @@ pub const GUI_ACT_DESIGN_CALIB: u16 = 3104;
 pub const GUI_ACT_PRESET_ANOPHELES: u16 = 3111;
 pub const GUI_ACT_PRESET_COLEOPTERA18: u16 = 3112;
 pub const GUI_ACT_PRESET_RHINOLOPHUS21: u16 = 3113;
+pub const GUI_ACT_PRESET_BEMISIA23: u16 = 3114;
 
 pub const GUI_ACT_TOGGLE_LOOPBACK: u16 = 3121;
 pub const GUI_ACT_TOGGLE_RY3: u16 = 3122;
@@ -266,6 +267,15 @@ impl BioSuiteGuiState {
                     "Selected Preset: Preprint 21 Gold Standard (Asian Rhinolophidae Quartet MSC & Prestin/ACE2)"
                         .to_string();
             }
+            GUI_ACT_PRESET_BEMISIA23 => {
+                self.spec.preset_name = Some("bemisia-whiteflies-23".to_string());
+                self.spec.run_id = "runie-native-bemisia-whiteflies-23".to_string();
+                self.spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                self.spec.mcmc_generations = 25_000;
+                self.status_banner =
+                    "Selected Preset: Preprint 23 Multi-Compartment (Bemisia / Aleyrodidae 544 Verified Records, Native Bio-Suite)"
+                        .to_string();
+            }
             GUI_ACT_TOGGLE_LOOPBACK => {
                 self.spec.enable_autonomous_loopback = !self.spec.enable_autonomous_loopback;
                 self.status_banner = format!(
@@ -307,9 +317,46 @@ impl BioSuiteGuiState {
             }
             GUI_ACT_REGEN_FIGURES_TEX => {
                 let run_dir = self.runs_root_dir.join(&self.active_manifest.run_id);
-                if generate_all_locked_figures_and_preprint(&mut self.active_manifest, &run_dir)
-                    .is_ok()
-                {
+                let rep_path = run_dir.join("multi-compartment-report.json");
+                let regen_ok = if rep_path.is_file() {
+                    if let Ok(rep_txt) = fs::read_to_string(&rep_path) {
+                        if let Ok(rep) = serde_json::from_str::<
+                            crate::supervisor_study::MultiCompartmentStudyReport,
+                        >(&rep_txt)
+                        {
+                            let ws_root = if Path::new("../labs").is_dir() {
+                                PathBuf::from("..")
+                            } else {
+                                PathBuf::from(".")
+                            };
+                            let labs_fig_dir = ws_root.join("labs").join("figures");
+                            crate::supervisor_figures::generate_bemisia_locked_figures(
+                                &mut self.active_manifest,
+                                &rep,
+                                &run_dir,
+                                Some(labs_fig_dir.as_path()),
+                            )
+                            .and_then(|_| {
+                                crate::supervisor_manuscript::export_bemisia_manuscript_and_staged_bundle(
+                                    &rep,
+                                    &self.active_manifest,
+                                    &ws_root,
+                                    &run_dir,
+                                )
+                                .map(|_| ())
+                            })
+                            .is_ok()
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                } else {
+                    generate_all_locked_figures_and_preprint(&mut self.active_manifest, &run_dir)
+                        .is_ok()
+                };
+                if regen_ok {
                     self.status_banner = format!(
                         "Regenerated all 6 locked-format figures (.svg + .png + .pdf) and manuscript/main.tex in runs/{}/",
                         self.active_manifest.run_id
@@ -618,6 +665,19 @@ impl BioSuiteGuiState {
             GUI_ACT_PRESET_RHINOLOPHUS21,
             self.spec.run_id.contains("rhinolophus"),
             (124, 58, 237),
+        );
+        ry += 32;
+        Self::draw_pill_button(
+            fb,
+            hits,
+            12,
+            ry,
+            side_w - 24,
+            26,
+            "Preset: Bemisia Preprint 23 Native (544)",
+            GUI_ACT_PRESET_BEMISIA23,
+            self.spec.run_id.contains("bemisia"),
+            (16, 185, 129),
         );
 
         // Right Workspace: Model Design Selector + Visual Pipeline DAG Canvas + 9-Col RuNIE Table

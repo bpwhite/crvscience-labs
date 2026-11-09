@@ -61,6 +61,7 @@ version = "0.3.0"
 dependencies = [
  "candle-core",
  "candle-nn",
+ "flate2",
  "rayon",
  "serde",
  "serde_json",

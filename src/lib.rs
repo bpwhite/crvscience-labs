@@ -3,6 +3,7 @@
 //!
 //! Released under GNU General Public License v3.0 (GPL-3.0-or-later).
 //! Repository: https://github.com/bpwhite/crvscience-labs.git
+#![recursion_limit = "256"]
 
 pub mod agent;
 pub mod align_viewer;
@@ -59,6 +60,9 @@ pub mod splicing_crispr_calibration;
 pub mod super_blast;
 pub mod super_blast_calibration;
 pub mod supervisor;
+pub mod supervisor_figures;
+pub mod supervisor_manuscript;
+pub mod supervisor_study;
 pub mod sweep;
 pub mod synteny;
 pub mod timetree_calibration;

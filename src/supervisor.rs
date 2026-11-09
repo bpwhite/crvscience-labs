@@ -291,6 +291,17 @@ pub struct PdbCaAtom {
     pub secondary_structure: String, // "HELIX", "STRAND", "LOOP", "POCKET_ACTIVE"
 }
 
+/// Heteroatom (`HETATM`) cofactor record (e.g., Iron-Protoporphyrin IX `HEM` macrocycle) for 3D structural pocket rendering.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PdbHetAtom {
+    pub atom_name: String,
+    pub res_name: String,
+    pub element: String,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+}
+
 /// 3D PDB structural homology & active-site pocket model associated with the Run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SupervisedPdbStructure {
@@ -308,6 +319,10 @@ pub struct SupervisedPdbStructure {
     pub catalytic_residues: Vec<String>,
     pub pdb_file_rel_path: String,
     pub atoms: Vec<PdbCaAtom>,
+    #[serde(default)]
+    pub het_atoms: Vec<PdbHetAtom>,
+    #[serde(default)]
+    pub proximal_cys_sg: Option<(f64, f64, f64, usize, f64)>,
 }
 
 /// Generated figure artifact entry (`.svg`, `.png`, `.pdf`) tracked by the Run manifest.
@@ -1646,7 +1661,29 @@ fn build_and_write_3d_pdb_structure(
         ],
         pdb_file_rel_path: format!("pdb/{}", pdb_file_name),
         atoms,
+        het_atoms: Vec::new(),
+        proximal_cys_sg: None,
     }
+}
+
+fn resolve_crv_workspace_root() -> PathBuf {
+    if Path::new("../labs").is_dir() {
+        PathBuf::from("..")
+    } else {
+        PathBuf::from(".")
+    }
+}
+
+pub fn is_bemisia_study_target(preset_name: Option<&str>, run_id: &str) -> bool {
+    let check = |s: &str| {
+        let low = s.to_ascii_lowercase();
+        low.contains("bemisia")
+            || low.contains("whitefl")
+            || low.contains("aleyrod")
+            || low.ends_with("-23")
+            || low == "23"
+    };
+    preset_name.map(check).unwrap_or(false) || check(run_id)
 }
 
 /// Master entry point for `bio-suite-supervisor`: executes the entire multi-threaded workflow
@@ -1658,6 +1695,47 @@ pub fn run_autonomous_supervisor(
     cache: &PoliteCacheManager,
     runs_root_dir: &Path,
 ) -> Result<SupervisorRunManifest, String> {
+    if is_bemisia_study_target(spec.preset_name.as_deref(), &spec.run_id) {
+        let t0_bemisia = Instant::now();
+        let run_dir = runs_root_dir.join(&spec.run_id);
+        let (mut manifest, report) =
+            crate::supervisor_study::execute_bemisia_supervisor_study(spec, cache, runs_root_dir)?;
+        let report_path = run_dir.join("multi-compartment-report.json");
+        if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
+            let _ = fs::write(&report_path, rep_json);
+        }
+        if spec.generate_figures_and_preprint {
+            let t_fig = Instant::now();
+            let ws_root = resolve_crv_workspace_root();
+            let labs_fig_dir = ws_root.join("labs").join("figures");
+            crate::supervisor_figures::generate_bemisia_locked_figures(
+                &mut manifest,
+                &report,
+                &run_dir,
+                Some(labs_fig_dir.as_path()),
+            )?;
+            crate::supervisor_manuscript::export_bemisia_manuscript_and_staged_bundle(
+                &report,
+                &manifest,
+                &ws_root,
+                &run_dir,
+            )?;
+            manifest.stage_figures_tex_ms = t_fig.elapsed().as_millis().max(1);
+        }
+        manifest.total_wall_clock_ms = t0_bemisia.elapsed().as_millis().max(1);
+        let manifest_path = run_dir.join("run-manifest.json");
+        let manifest_json =
+            serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+        fs::write(&manifest_path, manifest_json).map_err(|e| e.to_string())?;
+        eprintln!(
+            "[bio-suite-supervisor] Multi-Compartment Run '{}' completed in {} ms -> {}",
+            manifest.run_id,
+            manifest.total_wall_clock_ms,
+            manifest_path.display()
+        );
+        return Ok(manifest);
+    }
+
     let t0_total = Instant::now();
     let run_dir = runs_root_dir.join(&spec.run_id);
     let downloads_dir = run_dir.join("downloads");
@@ -2570,7 +2648,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
         let a = args[i].as_str();
         match a {
             "supervisor" | "bio-suite-supervisor" => {}
-            "run" | "list" | "inspect" | "gui" => {
+            "run" | "list" | "inspect" | "figures" | "gui" => {
                 subcmd = a.to_string();
                 if a == "gui" {
                     launch_gui = true;
@@ -2594,11 +2672,18 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             "--preset" => {
                 if let Some(v) = args.get(i + 1) {
                     spec.preset_name = Some(v.clone());
+                    let v_low = v.to_ascii_lowercase();
                     if spec.run_id == "runie-3way-multifactorial-anopheles-mosquitos" {
-                        if v.contains("coleoptera") || v.contains("18") {
+                        if v_low.contains("coleoptera") || v_low.contains("18") {
                             spec.run_id = "runie-3way-coleoptera-function-18".to_string();
-                        } else if v.contains("rhinoloph") || v.contains("21") {
+                        } else if v_low.contains("rhinoloph") || v_low.contains("21") {
                             spec.run_id = "runie-3way-rhinolophus-asia-21".to_string();
+                        } else if is_bemisia_study_target(Some(v.as_str()), "") {
+                            spec.run_id = "runie-native-bemisia-whiteflies-23".to_string();
+                            spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            if spec.mcmc_generations == 10_000 {
+                                spec.mcmc_generations = 25_000;
+                            }
                         }
                     }
                     i += 1;
@@ -2673,8 +2758,45 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
         return Ok(());
     }
 
-    // Ensure the requested Run is executed/populated before opening GUI or returning
-    let manifest = run_autonomous_supervisor(&spec, cache, &runs_root)?;
+    // Ensure the requested Run is executed or loaded from disk before opening GUI or returning
+    let existing_manifest_path = runs_root.join(&spec.run_id).join("run-manifest.json");
+    let manifest = if (subcmd == "inspect" || subcmd == "gui" || subcmd == "figures")
+        && existing_manifest_path.is_file()
+    {
+        let txt = fs::read_to_string(&existing_manifest_path).map_err(|e| e.to_string())?;
+        let mut m: SupervisorRunManifest =
+            serde_json::from_str(&txt).map_err(|e| e.to_string())?;
+        if subcmd == "figures" {
+            let run_dir = runs_root.join(&m.run_id);
+            let rep_path = run_dir.join("multi-compartment-report.json");
+            if rep_path.is_file() {
+                let rep_txt = fs::read_to_string(&rep_path).map_err(|e| e.to_string())?;
+                let rep: crate::supervisor_study::MultiCompartmentStudyReport =
+                    serde_json::from_str(&rep_txt).map_err(|e| e.to_string())?;
+                let ws_root = resolve_crv_workspace_root();
+                let labs_fig_dir = ws_root.join("labs").join("figures");
+                crate::supervisor_figures::generate_bemisia_locked_figures(
+                    &mut m,
+                    &rep,
+                    &run_dir,
+                    Some(labs_fig_dir.as_path()),
+                )?;
+                crate::supervisor_manuscript::export_bemisia_manuscript_and_staged_bundle(
+                    &rep,
+                    &m,
+                    &ws_root,
+                    &run_dir,
+                )?;
+            } else {
+                crate::figure_generator::generate_all_locked_figures_and_preprint(&mut m, &run_dir)?;
+            }
+            let updated = serde_json::to_string_pretty(&m).map_err(|e| e.to_string())?;
+            fs::write(&existing_manifest_path, updated).map_err(|e| e.to_string())?;
+        }
+        m
+    } else {
+        run_autonomous_supervisor(&spec, cache, &runs_root)?
+    };
 
     // Print concise console executive summary
     eprintln!("\n================================================================================================");

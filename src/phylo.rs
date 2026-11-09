@@ -21,8 +21,15 @@ use std::time::Instant;
 /// is explicitly requested via CLI (`--aligner mafft`) or calibration API.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AlignerMode {
-    /// Default: Self-contained Rust progressive affine-gap (Gotoh) + codon-anchor hybrid MSA
+    /// Default: Self-contained Rust hybrid engine (Codon-Anchored for uniform CDS,
+    /// Circular-Partitioned for mitogenomes, and Native MAFFT-Mimetic `L-INS-i`/`E-INS-i`
+    /// for variable-length rRNA, `ITS1–5.8S–ITS2` & non-coding spacers)
     Native,
+    /// Explicit Native Rust MAFFT-Mimetic Engine (`runie-mafft-linsi`: FFT + `hat3` Local
+    /// Smith-Waterman Consistency + `5.8S` Subunit Locking + 2-Tree UPGMA Profile DP + `dvtditr`)
+    NativeMafft,
+    /// Explicit Single-Medoid Center-Star Gotoh Affine-Gap Aligner (`gotoh-msa` baseline)
+    NativeGotoh,
     /// On-demand external tool: MAFFT v7 (`--auto` -> L-INS-i / FFT-NS-i / FFT-NS-2)
     Mafft,
 }
@@ -36,7 +43,10 @@ impl Default for AlignerMode {
 impl AlignerMode {
     pub fn from_cli_arg(arg: &str) -> Self {
         match arg.trim().to_ascii_lowercase().as_str() {
-            "mafft" | "linsi" | "l-ins-i" | "fftnsi" => AlignerMode::Mafft,
+            "mafft" | "external-mafft" => AlignerMode::Mafft,
+            "native-mafft" | "runie-mafft" | "runie-mafft-linsi" | "linsi" | "l-ins-i"
+            | "einsi" | "e-ins-i" | "qinsi" | "q-ins-i" | "fftnsi" => AlignerMode::NativeMafft,
+            "gotoh" | "gotoh-msa" | "center-star" => AlignerMode::NativeGotoh,
             _ => AlignerMode::Native,
         }
     }
@@ -185,6 +195,25 @@ pub fn align_sequences_with_mode(
                 }
             }
         }
+        AlignerMode::NativeMafft => {
+            let (method, aligned, stage_tel) =
+                crate::mafft_native::align_sequences_mafft_native(records);
+            let dur = t0.elapsed().as_secs_f64() * 1000.0;
+            let tel = compute_msa_telemetry(
+                "NativeMafft",
+                &method,
+                dur,
+                &aligned,
+                Some(stage_tel.trace_log),
+            );
+            (method, aligned, tel)
+        }
+        AlignerMode::NativeGotoh => {
+            let (method, aligned) = align_sequences_center_star_gotoh(records);
+            let dur = t0.elapsed().as_secs_f64() * 1000.0;
+            let tel = compute_msa_telemetry("NativeGotoh", &method, dur, &aligned, None);
+            (method, aligned, tel)
+        }
         AlignerMode::Native => {
             let (method, aligned) = align_sequences_native_gotoh(records);
             let dur = t0.elapsed().as_secs_f64() * 1000.0;
@@ -194,15 +223,18 @@ pub fn align_sequences_with_mode(
     }
 }
 
-/// Native Rust v2 Progressive Multiple Sequence Aligner:
+/// Native Rust v4 Hybrid Progressive & MAFFT-Mimetic Multiple Sequence Aligner:
 /// - Mode 1 (Ungapped Reading-Frame Coding Barcodes, e.g., vertebrate COI `1,545 bp`):
 ///   Preserves reading-frame codon triplets (`-15..=+15 bp` step 3) when all sequences share
 ///   uniform coding length (spread <= 9 bp) and high ungapped identity.
-/// - Mode 2 (Variable-Length / Indel-Rich rRNA, ITS1-5.8S-ITS2 & Divergent Loci):
-///   Selects the 6-mer medoid guide reference and performs parallel Anchor-Segmented Gotoh
-///   3-State Affine-Gap Dynamic Programming (`Match = +4`, `Transition = +1`, `Transversion = -3`,
-///   `GapOpen = -10`, `GapExtend = -1`), merging pairwise insertion tracts into a consistent
-///   multi-sequence profile alignment.
+/// - Mode 2A/2B (Circular Mitogenomes & Multi-Gene Organelles >= 6,000 bp):
+///   Rotates circular coordinates to the canonical `COX1` 5' boundary and aligns 13 homologous
+///   gene-locus partitions.
+/// - Mode 2C (Variable-Length / Indel-Rich rRNA, `ITS1–5.8S–ITS2` Cistrons & Non-Coding Spacers):
+///   Executes the 6-Stage Native Rust MAFFT-Mimetic Engine (`runie-mafft-linsi`: Cooley-Tukey
+///   FFT phase correlation + `hat3` local Smith-Waterman transitive consistency + conserved
+///   rDNA `5.8S` subunit boundary locking + 2-stage UPGMA profile-to-profile Gotoh affine-gap
+///   DP + `dvtditr` tree-dependent restricted partitioning iterative refinement).
 pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<AlignedSequence>) {
     let min_len = records.iter().map(|r| r.sequence.len()).min().unwrap_or(0);
     let max_len = records.iter().map(|r| r.sequence.len()).max().unwrap_or(0);
@@ -319,7 +351,38 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
         return (method_desc, aligned);
     }
 
-    // Step 2C: Standard single-locus variable-length panel -> Colinear-Chained + Semi-Global End-Gap Gotoh MSA
+    // Step 2C: Variable-length single-locus panel (rRNA, `ITS1–5.8S–ITS2`, non-coding spacers) ->
+    // Execute the 6-Stage Native Rust MAFFT-Mimetic Aligner (`runie-mafft-linsi`: FFT + `hat3`
+    // local Smith-Waterman transitive consistency + rDNA `5.8S` subunit boundary locking +
+    // 2-stage UPGMA profile-to-profile Gotoh affine-gap DP + iterative refinement).
+    let (method_str, aligned, _stage_tel) =
+        crate::mafft_native::align_sequences_mafft_native(records);
+    (method_str, aligned)
+}
+
+/// Single-Medoid Center-Star Gotoh Affine-Gap Aligner (`AlignerMode::NativeGotoh` baseline).
+pub fn align_sequences_center_star_gotoh(
+    records: &[FastaRecord],
+) -> (String, Vec<AlignedSequence>) {
+    let raw_cleaned_seqs: Vec<Vec<u8>> = records
+        .iter()
+        .map(|r| {
+            r.sequence
+                .bytes()
+                .filter(|&b| b != b'-' && !b.is_ascii_whitespace())
+                .map(|b| b.to_ascii_uppercase())
+                .collect()
+        })
+        .collect();
+    if raw_cleaned_seqs.is_empty() {
+        return ("none".to_string(), Vec::new());
+    }
+    let center_idx = select_kmer_medoid_index(&raw_cleaned_seqs);
+    let (cleaned_seqs, circular_rotations, revcomps_applied, _) =
+        normalize_circular_sequences(&raw_cleaned_seqs, records, center_idx);
+    let ref_seq = &cleaned_seqs[center_idx];
+    let ref_len = ref_seq.len();
+
     let pairwise_alignments: Vec<(Vec<u8>, Vec<u8>)> = cleaned_seqs
         .par_iter()
         .enumerate()
@@ -335,11 +398,11 @@ pub fn align_sequences_native_gotoh(records: &[FastaRecord]) -> (String, Vec<Ali
     let aligned = merge_center_star_pairwise_alignments(records, ref_len, &pairwise_alignments);
     let method_str = if circular_rotations > 0 || revcomps_applied > 0 {
         format!(
-            "bio-suite native Rust v3 (Circular Origin-Normalized [{} rotated] + Semi-Global Gotoh Affine-Gap MSA, DNA200)",
+            "bio-suite native Rust v3 (Circular Origin-Normalized [{} rotated] + Center-Star Gotoh Affine-Gap MSA, DNA200)",
             circular_rotations
         )
     } else {
-        "bio-suite native Rust v3 (Colinear-Anchored Semi-Global Gotoh Affine-Gap MSA, DNA200 Ti/Tv Matrix)".to_string()
+        "bio-suite native Rust v3 (Center-Star Colinear-Anchored Gotoh Affine-Gap MSA, DNA200 Ti/Tv Matrix)".to_string()
     };
 
     (method_str, aligned)

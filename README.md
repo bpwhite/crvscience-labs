@@ -19,8 +19,8 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 | **Native Rust Engines (`bio-suite`)** | **`36` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
 | **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.1` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
 | **Empirically Verified Preprints** | **`21` Preprints (`PREPRINT-01`–`PREPRINT-21`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`132` Total** (`21` Preprints · `35` Tool Cal. · `76` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
-| **Curated Validation Datasets** | **`60` Datasets (`VAL-SET-001`–`VAL-SET-060`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
+| **Lab Discoveries Directory** | **`133` Total** (`21` Preprints · `35` Tool Cal. · `77` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
+| **Curated Validation Datasets** | **`61` Datasets (`VAL-SET-001`–`VAL-SET-061`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
 ---
@@ -65,6 +65,10 @@ cargo build --release
 
 ### 3. Run Head-to-Head Native vs. External Tool Benchmarks (`Dev + Untouched Reserve`)
 ```bash
+# Tool #1 (v4 Upgrade): 6-Stage Native Rust MAFFT-Mimetic Aligner (L-INS-i / E-INS-i / Q-INS-i / FFT-NS-i) vs. Center-Star Gotoh & MAFFT v7.526
+./target/release/bio-suite align-compare --out runs/msa-native-vs-mafft-calibration.json
+./target/release/bio-suite mafft-native --strategy auto --out runs/dikarya-its-aligned.fasta
+
 # Tool #36: Coalescent Bayesian Skyline MCMC Sampler vs. BEAST v1.10.4
 ./target/release/bio-suite mcmc-skyline --out runs/mcmc-skyline-beast-calibration.json
 
@@ -151,7 +155,8 @@ crvscience-labs/
 │   ├── kaiabc_allostery_calibration.rs   # Jacobi Kirchhoff GNM allostery & RK4 KaiABC oscillator vs. SciPy (VAL-SET-007)
 │   ├── mk_morpho_calibration.rs          # Lewis Mk+ASC morphological pruning & PIC vs. IQ-TREE v2.4.0 (VAL-SET-006)
 │   ├── pseudo_loss_calibration.rs        # 3-frame codon-to-AA frameshift aligner & RELAX vs. MACSE & PAML (VAL-SET-005)
-│   ├── phylo.rs & msa_calibration.rs     # Gotoh affine-gap MSA & K2P/TN93 distances vs. MAFFT v7.526
+│   ├── mafft_native.rs                   # 6-stage Native Rust MAFFT-Mimetic aligner (FFT-NS + hat3 SW consistency + 5.8S ITS lock + 2-Tree UPGMA DP + dvtditr)
+│   ├── phylo.rs & msa_calibration.rs     # 3-way MSA calibration (MAFFT-Mimetic v4 vs. Center-Star Gotoh v3 vs. MAFFT v7.526) & K2P/TN93 distances
 │   ├── modeltest.rs                      # 24-model Felsenstein pruning vs. jModelTest v2.1.9
 │   ├── tree_builder.rs                   # 4-stage BIONJ+NNI ML tree builder vs. IQ-TREE v2.4.0
 │   ├── coalescent.rs                     # Quartet multispecies coalescent & ABBA-BABA vs. ASTRAL v5.7.8

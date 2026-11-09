@@ -7,6 +7,7 @@
 pub mod agent;
 pub mod align_viewer;
 pub mod amr_hgt;
+pub mod anopheles_biosuite;
 pub mod asgard_tier_synthesis;
 pub mod avian_systematics;
 pub mod bgc_mine;
@@ -29,6 +30,7 @@ pub mod htt_repeat_expansion;
 pub mod kabsch_tm_calibration;
 pub mod kaiabc_allostery_calibration;
 pub mod kmer_complexity_calibration;
+pub mod mafft_native;
 pub mod mcmc_skyline;
 pub mod mito_tier_synthesis;
 pub mod mk_morpho_calibration;

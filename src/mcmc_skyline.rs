@@ -179,19 +179,19 @@ pub struct McmcSkylineReport {
 }
 
 /// Deterministic Xorshift64* PRNG for reproducible MCMC proposals.
-struct FastRng {
+pub(crate) struct FastRng {
     state: u64,
 }
 
 impl FastRng {
-    fn new(seed: u64) -> Self {
+    pub(crate) fn new(seed: u64) -> Self {
         Self {
             state: if seed == 0 { 0x9E3779B97F4A7C15 } else { seed },
         }
     }
 
     #[inline]
-    fn next_u64(&mut self) -> u64 {
+    pub(crate) fn next_u64(&mut self) -> u64 {
         let mut x = self.state;
         x ^= x >> 12;
         x ^= x << 25;
@@ -201,12 +201,12 @@ impl FastRng {
     }
 
     #[inline]
-    fn next_f64(&mut self) -> f64 {
+    pub(crate) fn next_f64(&mut self) -> f64 {
         ((self.next_u64() >> 11) as f64) * (1.0 / ((1u64 << 53) as f64))
     }
 
     #[inline]
-    fn next_normal(&mut self) -> f64 {
+    pub(crate) fn next_normal(&mut self) -> f64 {
         let u1 = (self.next_f64()).max(1e-12);
         let u2 = self.next_f64();
         (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
@@ -215,20 +215,20 @@ impl FastRng {
 
 /// Parsed tree node from Newick / NEXUS (`hyb_clean_r4.treefile`, `hyb_clean_r4.timetree.nex`, `neanderthal_beast_10k_mcc.tree`).
 #[derive(Debug, Clone)]
-struct ParsedPhyloNode {
-    name: String,
-    branch_length: f64,
-    height_ka: f64,
-    height_mean_ka: f64,
-    height_hpd_lo_ka: f64,
-    height_hpd_hi_ka: f64,
-    posterior: f64,
-    tips: Vec<String>,
-    children: Vec<ParsedPhyloNode>,
+pub(crate) struct ParsedPhyloNode {
+    pub(crate) name: String,
+    pub(crate) branch_length: f64,
+    pub(crate) height_ka: f64,
+    pub(crate) height_mean_ka: f64,
+    pub(crate) height_hpd_lo_ka: f64,
+    pub(crate) height_hpd_hi_ka: f64,
+    pub(crate) posterior: f64,
+    pub(crate) tips: Vec<String>,
+    pub(crate) children: Vec<ParsedPhyloNode>,
 }
 
 /// Reads a FASTA file into an ordered map (`id -> uppercase sequence bytes`).
-fn read_fasta_map(path: &Path) -> (Vec<String>, HashMap<String, Vec<u8>>) {
+pub(crate) fn read_fasta_map(path: &Path) -> (Vec<String>, HashMap<String, Vec<u8>>) {
     let mut order = Vec::new();
     let mut map = HashMap::new();
     if let Ok(txt) = fs::read_to_string(path) {
@@ -259,7 +259,7 @@ fn read_fasta_map(path: &Path) -> (Vec<String>, HashMap<String, Vec<u8>>) {
 }
 
 /// Computes Relative Composition Frequency Variability (`RCFV`) in 4-state (`A,C,G,T`) and `RY3` (`R,Y`) space.
-fn compute_rcfv_4state_and_ry(seqs: &[Vec<u8>]) -> (f64, f64, [f64; 4]) {
+pub(crate) fn compute_rcfv_4state_and_ry(seqs: &[Vec<u8>]) -> (f64, f64, [f64; 4]) {
     if seqs.is_empty() {
         return (0.0, 0.0, [0.25; 4]);
     }
@@ -351,7 +351,7 @@ fn mean_cohort_pi(seq_map: &HashMap<String, Vec<u8>>, ids: &[String]) -> f64 {
 }
 
 /// Parses a Newick or NEXUS tree (supporting BEAST `[&height_median=...]` and LSD2 `[&date="..."]` annotations).
-fn parse_phylo_tree(
+pub(crate) fn parse_phylo_tree(
     raw_txt: &str,
     is_lsd2: bool,
     tip_ages_ka: &HashMap<String, f64>,
@@ -582,7 +582,7 @@ fn collect_clade_coalescent_heights(
 
 /// Computes exact heterochronous Kingman coalescent exposure $I_m(\mathbf{t}) = \sum \binom{k}{2} \Delta t$
 /// and coalescent event counts $c_m$ in epoch `[end_ka, start_ka]` directly from the solved tree.
-fn compute_epoch_coalescent_stats(
+pub(crate) fn compute_epoch_coalescent_stats(
     tip_ages_ka: &[f64],
     coal_heights_ka: &[f64],
     start_ka: f64,
@@ -644,15 +644,15 @@ fn compute_epoch_coalescent_stats(
 
 /// Compressed site pattern for exact 64-taxon Felsenstein pruning.
 #[derive(Clone)]
-struct CompressedPattern {
-    states: Vec<u8>, // 0=A, 1=C, 2=G, 3=T, 4=Gap/Ambig
-    weight: usize,
-    is_invariant: bool,
-    inv_base: usize,
+pub(crate) struct CompressedPattern {
+    pub(crate) states: Vec<u8>, // 0=A, 1=C, 2=G, 3=T, 4=Gap/Ambig
+    pub(crate) weight: usize,
+    pub(crate) is_invariant: bool,
+    pub(crate) inv_base: usize,
 }
 
 /// Compresses an aligned FASTA map into unique site patterns ordered by `tip_order`.
-fn compress_alignment_patterns(
+pub(crate) fn compress_alignment_patterns(
     tip_order: &[String],
     seq_map: &HashMap<String, Vec<u8>>,
 ) -> (usize, usize, Vec<CompressedPattern>) {
@@ -727,13 +727,13 @@ fn compress_alignment_patterns(
 
 /// Flattened post-order node for fast Felsenstein pruning over 64-taxon trees.
 #[derive(Clone)]
-struct FlatTreeNode {
-    tip_index: Option<usize>,
-    children: Vec<usize>,
-    branch_length: f64,
+pub(crate) struct FlatTreeNode {
+    pub(crate) tip_index: Option<usize>,
+    pub(crate) children: Vec<usize>,
+    pub(crate) branch_length: f64,
 }
 
-fn flatten_postorder(
+pub(crate) fn flatten_postorder(
     node: &ParsedPhyloNode,
     tip_to_idx: &HashMap<String, usize>,
     out: &mut Vec<FlatTreeNode>,
@@ -758,7 +758,7 @@ fn flatten_postorder(
 
 /// Evaluates exact 64-taxon Felsenstein log-likelihood across compressed site patterns under a
 /// reversible nucleotide substitution model with discrete rate categories `(rates, weights)` and `p_inv`.
-fn evaluate_felsenstein_ln_l(
+pub(crate) fn evaluate_felsenstein_ln_l(
     flat_tree: &[FlatTreeNode],
     patterns: &[CompressedPattern],
     pi: &[f64; 4],
@@ -876,7 +876,7 @@ fn quantile_sorted(sorted: &[f64], q: f64) -> f64 {
 
 /// Computes empirical Effective Sample Size (`ESS`) from sample autocorrelation $\hat{\rho}_k$
 /// and split-chain Gelman-Rubin $\hat{R}$ across 4 sub-chains.
-fn compute_ess_and_rhat(samples: &[f64]) -> (f64, f64) {
+pub(crate) fn compute_ess_and_rhat(samples: &[f64]) -> (f64, f64) {
     let n = samples.len();
     if n < 40 {
         return (n as f64, 1.0);
@@ -2420,7 +2420,7 @@ pub struct Coleoptera6FamilyMcmcReport {
 }
 
 /// Computes empirical Watterson's $\theta_W$, pairwise diversity $\pi$, and Tajima's $D$ directly from aligned sequences.
-fn compute_popgen_summary_stats(seqs: &[Vec<u8>]) -> (f64, f64, f64) {
+pub(crate) fn compute_popgen_summary_stats(seqs: &[Vec<u8>]) -> (f64, f64, f64) {
     let n = seqs.len();
     if n < 3 {
         return (0.0, 0.0, 0.0);

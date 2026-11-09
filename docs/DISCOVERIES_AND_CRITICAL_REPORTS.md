@@ -5,13 +5,13 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`21`), Validated Tool Calibrations (`36`) & Pipeline Benchmarks (`132` Total Reports)
+## Validated Preprints (`21`), Validated Tool Calibrations (`36`) & Pipeline Benchmarks (`133` Total Reports)
 
-- **Total Lab Discovery Entries**: **132** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **133** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-21`, `v2.0.1`)**: **21** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **36** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **76** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
-  - **Curated Validation Dataset Registry**: **60** datasets (`VAL-SET-001` through `VAL-SET-060`)
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **77** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **Curated Validation Dataset Registry**: **61** datasets (`VAL-SET-001` through `VAL-SET-061`)
 
 #### ✅ 21 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-21`, `v2.0.1`)
 
@@ -39,10 +39,11 @@
 | **#109** `✅ Verified Preprint` | **[Reconstructing the Archosauria-to-Crown-Aves Evolutionary Time-Tree (246.5 to 0.0 Ma) Across 62 Extant, Holocene Ancient-DNA, and Mesozoic Fossil Taxa: Paravian Body-Mass Miniaturization, the K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-AVES-TIMETREE-62TAXA-1.54MB` |
 | **#108** `✅ Verified Preprint` | **[Reconstructing the Primate Evolutionary Time-Tree (73.4 to 0.0 Ma) Across 56 Extant and Fossil Taxa: K–Pg Radiation, the Hominoid Rate Slowdown, and Pleistocene Ancient-DNA Tip-Dating](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-TIMETREE-56TAXA-1.42MB` |
 
-#### Latest 12 Lab Discovery Entries (`#121`–`#132`)
+#### Latest 12 Lab Discovery Entries (`#122`–`#133`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#133** `🔬 Pipeline Benchmark` | [Global Phylogenomic Radiation of Anopheles Mosquitoes (Culicidae: Anophelinae), Native Rust Quartet Coalescent Species-Tree Inference, Chemosensory and Insecticide-Resistance Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/anopheles-global-radiation-native-biosuite) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#132** `✅ Verified Preprint` | [Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (*ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#131** `✅ Verified Preprint` | [Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#130** `✅ Verified Preprint` | [Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
@@ -54,9 +55,8 @@
 | **#124** `✅ Verified Preprint` | [Beetle Tree of Life: Permian–Cenozoic Coleoptera Phylogenomics (308.0 to 0.0 Ma; Crown Coleoptera 292.0 Ma), Suborder Divergence, and Microbial PCWDE Horizontal Gene Transfer (GH28, GH45, GH5)](https://crvscience.com/labs/discoveries/coleoptera-phylogenomics-pcwde-hgt) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 6, 2026 |
 | **#123** `✅ Verified Preprint` | [Lepidoptera Phylogenomics: Devonian–Cenozoic Time-Tree (363.76 Ma), Angiosperm-Coupled Ditrysian Radiation, and COX1 Barcode Saturation Horizon](https://crvscience.com/labs/discoveries/lepidoptera-ditrysia-timetree-cox1-gap) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
 | **#122** `✅ Verified Preprint` | [Hymenoptera Phylogenomics: Permian–Cenozoic Time-Tree (281.23 Ma), Single Parasitoid Origin, Eusocial Caste Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/hymenoptera-radiation-eusociality-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
-| **#121** `✅ Verified Preprint` | [Synapsida and Mammaliaformes Phylogenomics: Carboniferous–Cenozoic Time-Tree, Dual Middle-Ear Detachment, Lactation Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/synapsida-mammaliaformes-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
 
-#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-060`)
+#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-061`)
 
 | Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |
 | :--- | :--- | :--- | :--- | :--- |
@@ -120,4 +120,5 @@
 | `VAL-SET-058-PRIMATE-AFRICA-AMERICAS-RADIATION-212RECS` | Eukaryota (Primates: Anthropoidea [Catarrhini: Cercopithecoidea & Hominoidea; Platyrrhini: Pitheciidae, Atelidae, Cebidae, Callitrichidae & Aotidae] + Strepsirrhini & Tarsiiformes Outgroups) | `primate-africa-americas-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-PRIM-001..212, D_ctx = 0.01 SD, nuclear mitochondrial pseudogene NUMT chimeras and third-codon transition saturation quarantined in Pass 1 via RY3 recoding) across 15 Stratified Development and 15 Untouched Reserve sub-cohorts | [`primate-africa-americas-radiation-skyline`](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline) |
 | `VAL-SET-059-RODENT-NORTH-AMERICA-RADIATION-212RECS` | Eukaryota (Rodentia: Sciuromorpha [Sciuridae, Aplodontiidae, Gliridae], Castorimorpha [Castoridae, Heteromyidae, Geomyidae], Myomorpha [Cricetidae: Neotominae, Sigmodontinae, Arvicolinae; Muridae; Dipodidae] & Hystricomorpha [Erethizontidae, Caviomorpha] + Lagomorpha [Ochotonidae, Leporidae] Outgroups) | `rodent-north-america-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-ROD-001..212, D_ctx = 0.01 SD, nuclear mitochondrial pseudogene NUMT chimeras and third-codon transition saturation quarantined in Pass 1 via RY3 recoding) across 15 Stratified Development and 15 Untouched Reserve sub-cohorts | [`rodent-north-america-radiation-skyline`](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline) |
 | `VAL-SET-060-RHINOLOPHIDAE-ASIA-RADIATION-212RECS` | Eukaryota (Chiroptera: Yinpterochiroptera [Rhinolophidae 34 spp., Hipposideridae 14 spp., Megadermatidae/Rhinopomatidae/Pteropodidae 8 spp.] + Yangochiroptera [Vespertilionidae, Miniopteridae 8 spp.] Outgroups) | `rhinolophidae-asia-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-RHIN-001..212, D_ctx = 0.01 SD, nuclear mitochondrial pseudogene NUMT chimeras and third-codon transition saturation quarantined in Pass 1 via RY3 recoding) across 15 Stratified Development and 15 Untouched Reserve sub-cohorts | [`rhinolophidae-asia-radiation-astral-skyline`](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline) |
+| `VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS` | Culicidae & Anophelinae Global Phylogenomics, 100% Native Rust Bio-Suite Combinatorial Optimization, Quartet Multispecies Coalescent Species Trees, Host-Seeking/Immunity/Saliva/kdr Codon Selection & 12-Cohort Regional/Multi-Locus Phylodynamics | `anopheles-global-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-ANO-001..544, D_ctx = 0.01 SD, Dipteran ~78.5% A+T third-codon saturation and autosomal NUMT chimeras quarantined in Pass 1 via RY3 recoding) across 16 Stratified Development and 16 Untouched Reserve sub-cohorts | [`anopheles-global-radiation-native-biosuite`](https://crvscience.com/labs/discoveries/anopheles-global-radiation-native-biosuite) |
 <!-- AUTO-LABS-SUMMARY:END -->

@@ -450,7 +450,7 @@ fn dispatch_pipeline(
                 }
             }
         }
-        "align-compare" | "msa-calibration" => {
+        "align-compare" | "msa-calibration" | "linsi-compare" => {
             let ws_root = env::current_dir()
                 .ok()
                 .and_then(|p| {
@@ -461,7 +461,7 @@ fn dispatch_pipeline(
                     }
                 })
                 .unwrap_or_else(|| PathBuf::from("."));
-            eprintln!("[bio-suite] Launching Head-to-Head MSA Calibration: Native Rust v2 (Gotoh Affine-Gap) vs. MAFFT v7.526 (L-INS-i)...");
+            eprintln!("[bio-suite] Launching 3-Way Head-to-Head MSA Calibration: Native Rust v4 MAFFT-Mimetic (runie-mafft-linsi: FFT-NS + hat3 Smith-Waterman + rDNA 18S-ITS1-5.8S-ITS2-28S Subunit Lock + dvtditr) vs. Center-Star Gotoh v3 vs. External *MAFFT v7.526...");
             match run_msa_native_vs_mafft_calibration(&ws_root, cache) {
                 Ok(report) => {
                     for c in &report.cohorts {
@@ -471,6 +471,37 @@ fn dispatch_pipeline(
                 }
                 Err(e) => {
                     eprintln!("[bio-suite] MSA calibration failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        "mafft-native" | "runie-mafft-linsi" | "its-align" => {
+            let args: Vec<String> = env::args().collect();
+            let input_fasta = args
+                .iter()
+                .position(|a| a == "--input" || a == "-i")
+                .and_then(|idx| args.get(idx + 1))
+                .map(|s| s.as_str());
+            let strategy_arg = args
+                .iter()
+                .position(|a| a == "--strategy" || a == "--mode")
+                .and_then(|idx| args.get(idx + 1))
+                .map(|s| s.as_str());
+            let max_iter = args
+                .iter()
+                .position(|a| a == "--maxiterate")
+                .and_then(|idx| args.get(idx + 1))
+                .and_then(|s| s.parse::<usize>().ok());
+            let out_fasta = out_file.map(|s| s.as_str());
+            match bio_suite::mafft_native::run_mafft_native_cli(
+                input_fasta,
+                strategy_arg,
+                max_iter,
+                out_fasta,
+            ) {
+                Ok(_tel) => {}
+                Err(e) => {
+                    eprintln!("[bio-suite] Native MAFFT aligner failed: {}", e);
                     std::process::exit(1);
                 }
             }
@@ -1455,6 +1486,21 @@ fn dispatch_pipeline(
             let report = bio_suite::mcmc_skyline::run_rhinolophidae_asia_astral_skyline_pipeline(&work_dir, &ws_root, cfg);
             emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
         }
+        "anopheles-global-radiation" | "anopheles-biosuite" | "anopheles-skyline" => {
+            let default_out = "../labs/releases/anopheles-global-radiation-native-biosuite.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let work_dir = env::args()
+                .position(|a| a == "--work-dir")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\anopheles_work"));
+            let mut cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
+            cfg.generations = 25_000;
+            cfg.burnin_fraction = 0.20;
+            eprintln!("[bio-suite] Launching 100% Native Rust (bio-suite Only) Global Radiation of Anopheles Mosquitoes (64 spp. 18-locus supermatrix, B=1,000 UFBoot, 11,436,768-quartet MSC, 4-family Goldman-Yang dN/dS & 12-PopSet 25,000-gen Bayesian Skyline MCMC)...");
+            let report = bio_suite::anopheles_biosuite::run_anopheles_global_radiation_biosuite_pipeline(&work_dir, &cache.cache_dir, cfg);
+            emit_json_output(&report, report.native_total_wall_clock_ms, Some(target_out));
+        }
         _ => {
             eprintln!(
                 "Unknown pipeline workflow: {}. Supported: coi-barcode-cluster, chr1-unbiased-scan, hgt-scan, bgc-mine, pseudo-loss, pan-cryptic, co-evo, chrom-condensate, clonal-synth, haplo-cluster, dag-chain, sweep, burn-in, disease-atlas, apoe-sweep, avian-sweep, runie",
@@ -1546,7 +1592,8 @@ fn main() {
         "hgt-scan" | "bgc-mine" | "pseudo-loss" | "pan-cryptic" | "co-evo"
         | "chrom-condensate" | "clonal-synth" | "dag-chain" | "haplo-cluster" | "sweep"
         | "burn-in" | "disease-atlas" | "disease-genes" | "apoe-sweep" | "avian-sweep"
-        | "align-compare" | "msa-calibration" | "modeltest" | "modeltest-compare"
+        | "align-compare" | "msa-calibration" | "linsi-compare" | "mafft-native"
+        | "runie-mafft-linsi" | "its-align" | "modeltest" | "modeltest-compare"
         | "modeltest-calibration" | "phylo-2x2-compare" | "phylo-factorial"
         | "tree-compare" | "tree-calibration" | "iqtree-compare"
         | "coalescent-compare" | "astral-compare" | "coalescent-calibration"
@@ -1692,6 +1739,21 @@ fn main() {
             let report = bio_suite::mcmc_skyline::run_rhinolophidae_asia_astral_skyline_pipeline(&work_dir, &ws_root, cfg);
             emit_json_output(&report, report.native_total_cpu_ms, Some(target_out));
         }
+        "anopheles-global-radiation" | "anopheles-biosuite" | "anopheles-skyline" => {
+            let default_out = "../labs/releases/anopheles-global-radiation-native-biosuite.json".to_string();
+            let target_out = out_file.unwrap_or(&default_out);
+            let work_dir = env::args()
+                .position(|a| a == "--work-dir")
+                .and_then(|idx| env::args().nth(idx + 1))
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\anopheles_work"));
+            let mut cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
+            cfg.generations = 25_000;
+            cfg.burnin_fraction = 0.20;
+            eprintln!("[bio-suite] Launching 100% Native Rust (bio-suite Only) Global Radiation of Anopheles Mosquitoes (64 spp. 18-locus supermatrix, B=1,000 UFBoot, 11,436,768-quartet MSC, 4-family Goldman-Yang dN/dS & 12-PopSet 25,000-gen Bayesian Skyline MCMC)...");
+            let report = bio_suite::anopheles_biosuite::run_anopheles_global_radiation_biosuite_pipeline(&work_dir, &cache.cache_dir, cfg);
+            emit_json_output(&report, report.native_total_wall_clock_ms, Some(target_out));
+        }
         "align-view" | "viewer" | "aliview" | "align-snapshot" => {
             if let Err(e) = bio_suite::align_viewer::run_align_viewer_cli(&args, &cache) {
                 eprintln!("[bio-suite align-view] Error: {}", e);
@@ -1707,6 +1769,7 @@ fn main() {
             println!("  bio-suite align-view                [--input <fasta>] [--region 120:240] [--mode dna|aa|aa-compact|dual|ry3|dayhoff6] [--snapshot-svg <svg>] [--snapshot-png <png>]");
             println!("  bio-suite align-snapshot            [--input <fasta>] [--auto-focal] [--snapshot-svg <svg>] [--snapshot-png <png>]");
             println!("  bio-suite agent coi-barcode-cluster [--aligner native|mafft] [--out runs/coi-barcode-report.json]");
+            println!("  bio-suite mafft-native              [--input <fasta>] [--strategy auto|linsi|einsi|qinsi|fftnsi] [--out <fasta>]");
             println!("  bio-suite align-compare             [--out runs/msa-native-vs-mafft-calibration.json]");
             println!("  bio-suite agent chr1-unbiased-scan  [--out runs/chr1-complexity-report.json]");
             println!("  bio-suite hgt-scan                  [--out runs/hgt-scan-report.json]");

@@ -63,13 +63,13 @@ pub const BIO_SUITE_TOOL_REGISTRY: &[ToolAdapterEntry] = &[
     },
     ToolAdapterEntry {
         engine: "phylo",
-        category: "Multiple Sequence Alignment & Trimming",
-        tool_name: "MAFFT / MUSCLE5 / trimAl",
+        category: "Multiple Sequence Alignment & Trimming (MAFFT L-INS-i / E-INS-i / Q-INS-i / FFT-NS-i)",
+        tool_name: "MAFFT v7.526 (L-INS-i / E-INS-i / Q-INS-i / FFT-NS-i --adjustdirection) / MUSCLE5 / trimAl",
         binary_cmd: "mafft",
         spdx_license: "BSD-3-Clause / GPL-3.0",
         gpl3_compatible: true,
-        native_rust_fallback: "bio-suite parallel codon-anchored progressive MSA & entropy block trimmer",
-        description: "Aligns coding or non-coding loci while preserving triplet reading frames and trimming saturated sites.",
+        native_rust_fallback: "bio-suite 6-Stage Native Rust MAFFT-Mimetic Aligner (runie-mafft-linsi: Cooley-Tukey Radix-2 FFT + hat3 Smith-Waterman Transitive Consistency + rDNA 18S-ITS1-5.8S-ITS2-28S Subunit Locking + 2-Stage UPGMA Profile Gotoh DP + dvtditr Iterative Refinement) & Center-Star Gotoh / Codon MSA",
+        description: "Aligns coding, rRNA, and hypervariable Internal Transcribed Spacer (ITS1-5.8S-ITS2) loci via FFT phase correlation, local Smith-Waterman consistency, rDNA subunit boundary locking, and tree-bipartition iterative refinement.",
     },
     ToolAdapterEntry {
         engine: "phylo",

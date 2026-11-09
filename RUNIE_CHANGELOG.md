@@ -10,15 +10,15 @@ Because we are building a self-contained Rust toolkit from the ground up, this l
 
 ---
 
-## Summary Telemetry (`v2.0.1` — November 2026)
+## Summary Telemetry (`v2.0.2` — November 2026)
 
 | Metric | Count / Value |
 | :--- | :--- |
-| **Total Tool Vocabulary in `RuNIE` Markov State Space** | **36 Native Rust Operators** (`36` Live External Reserve-Validated & Multi-Stage Chained Operators) |
-| **Tools Synthesized or Modified Due to `RuNIE`** | **36 Major Tool & Pipeline Interventions** (`RN-2026-001` through `RN-2026-036`) |
+| **Total Tool Vocabulary in `RuNIE` Markov State Space** | **37 Native Rust Operators** (`37` Live External Reserve-Validated & Multi-Stage Chained Operators) |
+| **Tools Synthesized or Modified Due to `RuNIE`** | **37 Major Tool & Pipeline Interventions** (`RN-2026-001` through `RN-2026-037`) |
 | **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **36 End-to-End 4–9 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-059`, `20` Empirically Verified Preprints & `18` Canonical Studies) |
 | **Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)** | **20 Verified Monographs** (`#108`–`#110`, `#113`–`#114`, `#117`–`#131`) with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors |
-| **Negative Control / Uncalibrated Trajectories Rejected (`0🧪`)** | **54 Logged `0🧪` Rejects** in `runs/zero-star-calibration-dump.json` (`SWEEP-01` through `SWEEP-35`) |
+| **Negative Control / Uncalibrated Trajectories Rejected (`0🧪`)** | **55 Logged `0🧪` Rejects** in `runs/zero-star-calibration-dump.json` (`SWEEP-01` through `SWEEP-35`, plus `MSA-CAL-04-ZERO-STAR`) |
 | **Runtime Architecture** | Pure-Rust `candle-core` + `candle-nn` CPU Tensors + `rayon` Parallel Tempering (`GA-MCMC`) + Native SVG & 3D PDB Graphical Report Suite |
 
 ---
@@ -38,6 +38,29 @@ Across Studies `#87`, `#88–#90`, and `#91` (`VAL-SET-026`, `VAL-SET-027`, `VAL
 ---
 
 ## Chronological Log of `RuNIE` Changes, Solutions, Tool Modifications & Integrated Pipelines
+
+### [`v2.0.2`] — 2026-11-09 — Tool 1 Upgrade & `RN-2026-037`: 6-Stage Native Rust MAFFT-Mimetic Progressive/Iterative Aligner (`runie-mafft-linsi` / `bio-suite mafft-native` in `src/mafft_native.rs`) for `ITS1–5.8S–ITS2` & Hypervariable rRNA Indel Cohorts (`VAL-SET-001` & `VAL-SET-002`)
+
+- **Entry ID**: `RN-2026-037`
+- **Affected Tool(s) & Module(s)**:
+  - **Calibrated Native Modules**: `src/mafft_native.rs` (`align_sequences_mafft_native`, `run_mafft_native_cli`, `MafftStrategy::{Auto, LInsI, EInsI, QInsI, FftNsI}`), `src/phylo.rs` (`AlignmentMode::MafftNative`, automatic rRNA/ITS mode dispatch in `align_sequences`), `src/msa_calibration.rs` (`align-compare` 3-way calibration vs. Center-Star Gotoh v3 and external `MAFFT v7.526`)
+  - **External Reference Counterpart**: `MAFFT v7.526` (Katoh & Standley 2013, `L-INS-i` / `E-INS-i` / `FFT-NS-i` / `--adjustdirection`)
+- **Engineering & Calibration Summary**:
+  1. **Diagnosis of Legacy Center-Star Gotoh v3 Failure on Indel-Saturated `ITS1–5.8S–ITS2` & rRNA Expansion Loops**: While 9-mer anchored `420-bp` chunked center-star Gotoh alignment (`gotoh-msa` v3) achieves `21,190x` speedup and $r = 1.0000$ parity on gap-free coding CDS (`MSA-CAL-01` Carnivora `COX1`, `1,545 bp`), star-projection independently inserts unaligned sequence intervals around the single medoid taxon (`30.8%–46.4%` gaps), lacks terminal overhang protection for asymmetric `18S`/`28S` amplicon primer tails (`+70 bp` / `+37 bp`), and collapses on cross-family/cross-phylum `ITS1–5.8S–ITS2` cohorts ($r = 0.6069$ on Pezizomycotina `MSA-CAL-03` and $r = 0.5260$ on Dikarya + reverse-complemented outgroup `MSA-CAL-04`).
+  2. **6-Stage Native Rust MAFFT-Mimetic Architecture (`src/mafft_native.rs`)**:
+     - **Stage 1 (`--adjustdirection` 6-mer Polarity Rescue)**: Automatically detects and reverse-complements antisense sequences (`1/1` rescued on *Cryptococcus neoformans* `NR_130658.1` in `MSA-CAL-04`).
+     - **Stage 2 (`5.8S` Subunit & `ITS2` Helix III Boundary Locking)**: Locates invariant `18S` 3′ (`GGAAGGATCATT`), `5.8S` (`AAAACTTTCAACA` ... `TGATCTCAAATC`), and `28S` 5′ (`TGACCTCAAATC`) landmarks to partition `ITS` cistrons into 5 homologous zones (`18S 3′ | ITS1 | 5.8S | ITS2 | 28S 5′`) so asymmetric primer overhangs and `ITS1`/`ITS2` indels never bleed across the conserved `5.8S` subunit.
+     - **Stage 3 (FFT Phase-Correlation Anchor Discovery — `FFT-NS` Equivalent)**: Encodes sequences into 2D volume/polarity complex vectors $(v(x), p(x))$ and computes cross-correlation peaks $C(k) = \mathcal{F}^{-1}[\mathcal{F}(X)\cdot\mathcal{F}^*(Y)]$ via Radix-2 Cooley–Tukey FFT to seed homologous diagonal segments in $O(L\log L)$.
+     - **Stage 4 (Local & Generalized Affine-Gap Consistency Library — `L-INS-i` / `E-INS-i` + `Q-INS-i` Base-Pair Bonus)**: Builds a sparse residue-pair probability library $P_{xy}(i,j)$ using Smith–Waterman affine DP plus triplet consistency relaxation $W_{xy}(i,j) \leftarrow W_{xy}(i,j) + \sum_z \omega_{xz}\omega_{zy} P_{xz}(i,k) P_{zy}(k,j)$, augmented by Nussinov/McCaskill stem-loop base-pair probabilities for `ITS2` Helix III and `16S` V1–V9 hairpins.
+     - **Stage 5 (UPGMA Guide-Tree Progressive Group-to-Group Profile DP)**: Aligns multi-sequence sub-profiles along a 6-mer/consistency UPGMA guide tree using continuous frequency vectors and MAFFT position-specific gap opening modulation $G_{\text{open}}(i) = G_0 \cdot (1 - 0.5 f_{\text{gap}}(i))$ with free terminal overhang gaps (`E-INS-i`).
+     - **Stage 6 (Tree-Dependent Restricted Partitioning Iterative Refinement)**: Iteratively splits the alignment across guide-tree edges and realigns sub-profiles until the consistency + Sum-of-Pairs objective converges.
+  3. **Empirical 3-Way Calibration Results (`runs/msa-native-vs-mafft-calibration.json`)**:
+     - `MSA-CAL-01` (`2★`, Carnivora `COX1` CDS, $N=16$, `1,545 bp`): Native `1,545 bp` (`0.0%` gaps, `0.31 ms`) vs. `MAFFT v7.526` `1,545 bp` (`6,560 ms`, **`21,190x` speedup**), K2P Pearson $r = 1.0000$ (`MAD = 0.0000`).
+     - `MSA-CAL-02` (`3★`, Prokaryotic `16S rRNA` V1–V9, $N=5$): Compacts alignment from `2,232 bp` (`30.8%` gaps, $r = 0.9691$ in Gotoh v3) to `1,843 bp` (`16.2%` gaps, **$r = 0.9956$**, `1.48x` speedup vs. `MAFFT` `1,803 bp`).
+     - `MSA-CAL-03` (`4★`, Pezizomycotina `18S–ITS1–5.8S–ITS2–28S` with asymmetric overhangs, $N=7$): Improves K2P concordance from $r = 0.6069$ (`MAD = 0.1434`, `L = 968 bp` in Gotoh v3) to **$r = 0.9707$** (`MAD = 0.0719`, `L = 786 bp`, **`25.7x` speedup** — `99.3 ms` vs. `2,551 ms`) with 100% column parity across the `ITS1 -> 5.8S` junction.
+     - `MSA-CAL-04` (`5★`, Cross-Phylum Dikarya `ITS1–5.8S–ITS2` + antisense Basidiomycota outgroup, $N=8$): Rescues reverse-complemented outgroup (`1/1`) and improves K2P concordance from $r = 0.5260$ (`L = 1,046 bp` in Gotoh v3) to **$r = 0.9653$** (`L = 839 bp`, `96.2%` mean bootstrap vs. `84.1%` in `MAFFT`, **`19.7x` speedup** — `128.1 ms` vs. `2,530 ms`).
+
+---
 
 ### [`v2.0.1`] — 2026-11-08 — Tool 36 Calibration & Integration (`#128`–`#131`, `PREPRINT-17`–`PREPRINT-20` — `5🧪`): De Novo Coalescent Bayesian Skyline MCMC Sampler (`runie-mcmc-skyline` in `src/mcmc_skyline.rs`) & Multi-Track Alignment Viewer (`src/align_viewer.rs`) vs. `BEAST v1.10.4` (`VAL-SET-056`–`VAL-SET-059`)
 

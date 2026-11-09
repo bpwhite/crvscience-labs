@@ -378,8 +378,8 @@ fn test_sliding_window_scan_annotation_intersection_and_wakefield_fine_mapping()
         pip_sum
     );
 
-    // Verify all 32 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
-    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 32);
+    // Verify all 33 entries in `BIO_SUITE_TOOL_REGISTRY` are GPL-3.0 compatible
+    assert_eq!(BIO_SUITE_TOOL_REGISTRY.len(), 33);
     for tool in BIO_SUITE_TOOL_REGISTRY {
         assert!(
             tool.gpl3_compatible,
@@ -1397,15 +1397,15 @@ fn test_runie_pipeline_inference_engine_all_3_tiers_and_9_studies() {
     let cache = PoliteCacheManager::default_workspace_cache();
     let ws_root = Path::new(env!("CARGO_MANIFEST_DIR"));
 
-    // 1. Verify open-ended tool vocabulary (35 calibrated states)
-    assert_eq!(RUNIE_TOOL_VOCABULARY.len(), 35);
+    // 1. Verify open-ended tool vocabulary (37 calibrated states including mafft-native & bio-suite-supervisor)
+    assert_eq!(RUNIE_TOOL_VOCABULARY.len(), 37);
 
     // 2. Execute full RuNIE GA-MCMC Step-Up Pipeline Synthesis & Multi-Study Validation
     let report = run_runie_master_pipeline_inference(&cache, ws_root)
         .expect("RuNIE master pipeline inference must succeed");
 
     assert_eq!(report.engine_acronym, "RuNIE");
-    assert_eq!(report.total_tool_vocabulary_size, 35);
+    assert_eq!(report.total_tool_vocabulary_size, 37);
     assert!(report.autonomous_tools_synthesized_and_calibrated >= 6);
     assert!(report.total_scientific_studies_solved >= 9);
     assert_eq!(report.tier_validation_summaries.len(), 3);

@@ -1289,7 +1289,7 @@ pub fn export_bemisia_manuscript_and_staged_bundle(
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/bemisia-global-radiation-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-23 (v1.0.0 Empirical Preprint — Staged) • 100% Native Rust bio-suite-supervisor Across 544 Verified NCBI Records (L = {} Aligned Columns)", fmt_commas_usize(report.supermatrix_aligned_cols)),
+        "subtitle": format!("PREPRINT-23 (v1.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across 544 Verified NCBI Records (L = {} Aligned Columns)", fmt_commas_usize(report.supermatrix_aligned_cols)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -1298,6 +1298,7 @@ pub fn export_bemisia_manuscript_and_staged_bundle(
         "complexity": "High (Graduate Phylogenomics & Coalescent Theory)",
         "stars": 5,
         "tier": 3,
+        "disableWikiLinks": true,
         "validationSetId": "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS",
         "datasetProvenance": "544 active verified NCBI RefSeq/GenBank sequence records + 6 autonomously quarantined GenBank UNVERIFIED anomalies",
         "pipelineId": "runie-native-bemisia-whiteflies-23",
@@ -1545,7 +1546,9 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 9, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-23 (v1.0.0 Empirical Preprint — Staged) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-23 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24093136">10.5281/zenodo.24093136</a> &nbsp;|&nbsp;
+      <strong>Companion:</strong> Lab Discovery #134 &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS</code>
     </div>
     <div class="arxiv-abstract">
@@ -1600,8 +1603,8 @@ r#"<!DOCTYPE html>
 \\usepackage{{graphicx}}
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
-\\author{{Bryan P. White \\\\ CRV Science Labs (PREPRINT-23)}}
-\\date{{November 9, 2026}}
+\\author{{Bryan P. White \\\\ CRV Science Labs}}
+\\date{{November 9, 2026 \\quad|\\quad Preprint ID: PREPRINT-23 (v1.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24093136}}{{10.5281/zenodo.24093136}}}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

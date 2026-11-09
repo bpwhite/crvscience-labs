@@ -5,16 +5,16 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`14`), Validated Tool Calibrations (`35`) & Model-Testing-Only Lab Discoveries (`81` of `130` Total)
+## Validated Preprints (`14`), Validated Tool Calibrations (`35`) & Model-Testing-Only Lab Discoveries (`82` of `131` Total)
 
 > **⚠️ IMPORTANT VALIDATION NOTICE:**
-> Only the **`14` Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)** and the **`35` Head-to-Head Tool Calibrations** are considered empirically validated at this time. The remaining **`81` non-verified Lab Discovery entries** carry a prominent **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning label and serve strictly as synthetic/published model-training data for the `RuNIE` pipeline controller.
+> Only the **`14` Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)** and the **`35` Head-to-Head Tool Calibrations** are considered empirically validated at this time. The remaining **`82` non-verified Lab Discovery entries** carry a prominent **`⚠️ MODEL TESTING ONLY — PROCEDURAL + PUBLISHED DATA ONLY`** warning label and serve strictly as synthetic/published model-training data for the `RuNIE` pipeline controller.
 
-- **Total Lab Discovery Entries**: **130** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **131** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)**: **14** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **35** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **⚠️ Model Testing Only (Procedural + Published Data Only)**: **81** unverified model-training and pipeline-calibration runs (excluded from empirical biological calculations)
-  - **Curated Validation Dataset Registry**: **56** datasets (`VAL-SET-001` through `VAL-SET-056`)
+  - **⚠️ Model Testing Only (Procedural + Published Data Only)**: **82** unverified model-training and pipeline-calibration runs (excluded from empirical biological calculations)
+  - **Curated Validation Dataset Registry**: **57** datasets (`VAL-SET-001` through `VAL-SET-057`)
 
 #### ✅ 14 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-14`, `v2.0.1`)
 
@@ -35,10 +35,11 @@
 | **#109** `✅ Verified Preprint` | **[Reconstructing the Archosauria-to-Crown-Aves Evolutionary Time-Tree (246.5 to 0.0 Ma) Across 62 Extant, Holocene Ancient-DNA, and Mesozoic Fossil Taxa: Paravian Body-Mass Miniaturization, the K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-AVES-TIMETREE-62TAXA-1.54MB` |
 | **#108** `✅ Verified Preprint` | **[Reconstructing the Primate Evolutionary Time-Tree (73.4 to 0.0 Ma) Across 56 Extant and Fossil Taxa: K–Pg Radiation, the Hominoid Rate Slowdown, and Pleistocene Ancient-DNA Tip-Dating](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-TIMETREE-56TAXA-1.42MB` |
 
-#### Latest 12 Lab Discovery Entries (`#119`–`#130`)
+#### Latest 12 Lab Discovery Entries (`#120`–`#131`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#131** `⚠️ MODEL TESTING ONLY` | [Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#130** `⚠️ MODEL TESTING ONLY` | [Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#129** `⚠️ MODEL TESTING ONLY` | [Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#128** `⚠️ MODEL TESTING ONLY` | [RuNIE Long-Form Bayesian MCMC Skyline & the 5-Stage Neanderthal Population Crash (650 to 39.2 ka BP): Coupled 95% Credible Chronogram, Pristine Phylogram, and Effective Population Size Trajectory Benchmarked Against *BEAST across an 87,227-bp Alignment](https://crvscience.com/labs/discoveries/neanderthal-mcmc-skyline-crash) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
@@ -50,9 +51,8 @@
 | **#122** `✅ Verified Preprint` | [Hymenoptera Phylogenomics: Permian–Cenozoic Time-Tree (281.23 Ma), Single Parasitoid Origin, Eusocial Caste Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/hymenoptera-radiation-eusociality-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
 | **#121** `✅ Verified Preprint` | [Synapsida and Mammaliaformes Phylogenomics: Carboniferous–Cenozoic Time-Tree, Dual Middle-Ear Detachment, Lactation Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/synapsida-mammaliaformes-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
 | **#120** `✅ Verified Preprint` | [Sarcopterygii and Tetrapoda Phylogenomics: Devonian–Carboniferous Time-Tree, Dipnoi Sisterhood, Autopod Selection, and COX1 Horizon](https://crvscience.com/labs/discoveries/tetrapod-fin-limb-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
-| **#119** `✅ Verified Preprint` | [Paleoproterozoic Primary Plastid Endosymbiosis, Basal Gloeomargarita Sisterhood, and the 1,648–0 Ma Archaeplastida vs. Paulinella Time-Tree Chronogram](https://crvscience.com/labs/discoveries/plastid-cyanobacteria-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 5, 2026 |
 
-#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-056`)
+#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-057`)
 
 | Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |
 | :--- | :--- | :--- | :--- | :--- |
@@ -112,4 +112,5 @@
 | `VAL-SET-056-NEANDERTHAL-MCMC-SKYLINE-64TAXA-1.08MB` | Eukaryota (Primates / Hominidae / Homininae: Pongo, Gorilla, Pan, Sima de los Huesos 430 ka, Siberian Denisovans, Altai-Chagyrskaya-Vindija-El Sidron-Goyet-Spy Neanderthals & Ancient/Extant Homo sapiens) | `neanderthal-mcmc-skyline-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-HOM-001..080, D_ctx = 0.02 SD, Chr 5p13.3 NT_006576.16 NUMT paralog quarantined at D_ctx = 5.62 SD and terminal 5' C->T deamination masked from RCFV = 0.0486 to 0.0118) across 15 Stratified Development (32 mitogenomes + 8 nuclear loci, 556,412 bp) and 15 Untouched Reserve (32 mitogenomes + 8 nuclear loci, 557,347 bp) sub-cohorts | [`neanderthal-mcmc-skyline-crash`](https://crvscience.com/labs/discoveries/neanderthal-mcmc-skyline-crash) |
 | `VAL-SET-057-COLEOPTERA-FUNCTION-SKYLINE-212RECS` | Eukaryota (Coleoptera: Adephaga [Carabidae] & Polyphaga [Scarabaeidae, Coccinellidae, Cerambycidae, Chrysomelidae, Curculionidae] + Neuropteroidea/Strepsiptera/Archostemata/Myxophaga Outgroups) | `coleoptera-ecosystem-function-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-COL-001..212, D_ctx = 0.01 SD, Mengea tertiaria AT-biased Strepsiptera LBA and nuclear NUMT chimeras quarantined in Pass 1, cutting supermatrix RCFV by 85.0% from 0.0447 to 0.0067 under RY3 recoding) across 15 Stratified Development and 15 Untouched Reserve sub-cohorts | [`coleoptera-ecosystem-function-skyline`](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline) |
 | `VAL-SET-058-PRIMATE-AFRICA-AMERICAS-RADIATION-212RECS` | Eukaryota (Primates: Anthropoidea [Catarrhini: Cercopithecoidea & Hominoidea; Platyrrhini: Pitheciidae, Atelidae, Cebidae, Callitrichidae & Aotidae] + Strepsirrhini & Tarsiiformes Outgroups) | `primate-africa-americas-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-PRIM-001..212, D_ctx = 0.01 SD, nuclear mitochondrial pseudogene NUMT chimeras and third-codon transition saturation quarantined in Pass 1 via RY3 recoding) across 15 Stratified Development and 15 Untouched Reserve sub-cohorts | [`primate-africa-americas-radiation-skyline`](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline) |
+| `VAL-SET-059-RODENT-NORTH-AMERICA-RADIATION-212RECS` | Eukaryota (Rodentia: Sciuromorpha [Sciuridae, Aplodontiidae, Gliridae], Castorimorpha [Castoridae, Heteromyidae, Geomyidae], Myomorpha [Cricetidae: Neotominae, Sigmodontinae, Arvicolinae; Muridae; Dipodidae] & Hystricomorpha [Erethizontidae, Caviomorpha] + Lagomorpha [Ochotonidae, Leporidae] Outgroups) | `rodent-north-america-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-ROD-001..212, D_ctx = 0.01 SD, nuclear mitochondrial pseudogene NUMT chimeras and third-codon transition saturation quarantined in Pass 1 via RY3 recoding) across 15 Stratified Development and 15 Untouched Reserve sub-cohorts | [`rodent-north-america-radiation-skyline`](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline) |
 <!-- AUTO-LABS-SUMMARY:END -->

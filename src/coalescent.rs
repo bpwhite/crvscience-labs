@@ -1821,7 +1821,7 @@ pub fn compute_abba_baba_patterson_d(
 }
 
 /// Evaluates a single multi-locus cohort head-to-head between `CoalescentMode::Native` and `ASTRAL v5.7.8`.
-fn compare_coalescent_cohort(
+pub fn compare_coalescent_cohort(
     workspace_root: &Path,
     cohort_id: &str,
     title: &str,

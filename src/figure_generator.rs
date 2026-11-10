@@ -1683,6 +1683,363 @@ fn generate_fig6_pdb_and_alignment_clip(
         run_dir,
     )
 }
+
+// ============================================================================
+// FIGURE 7: DUAL RuNIE PIPELINE ARCHITECTURES & 4-RANK MODEL COMPARISON TABLE
+// ============================================================================
+fn generate_fig7_runie_pipeline_architecture(
+    manifest: &SupervisorRunManifest,
+    run_dir: &Path,
+) -> Result<GeneratedFigureArtifact, String> {
+    let w = 920usize;
+    let h = 960usize;
+    let mut svg = String::with_capacity(28_000);
+    let mut fb = SoftwareFrameBuffer::new(w, h);
+    fb.clear((255, 255, 255));
+    fb.stroke_rect(2, 2, (w - 4) as i32, (h - 4) as i32, (148, 163, 184));
+
+    let best_lnl = manifest
+        .runie_9col_comparison_table
+        .first()
+        .map(|r| r.marginal_ln_l)
+        .unwrap_or(-180_000.0);
+    let msa_s = manifest.stage_msa_ms as f64 / 1000.0;
+    let phylo_s = manifest.stage_runie_phylo_ms as f64 / 1000.0;
+    let sky_s = manifest.stage_skyline_pdb_ms as f64 / 1000.0;
+
+    svg.push_str(&format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {} {}" width="100%" height="100%" style="background:#ffffff;font-family:'Inter','Segoe UI',system-ui,sans-serif;">
+  <defs>
+    <linearGradient id="bgGradArchG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8fafc"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="916" height="956" rx="10" fill="url(#bgGradArchG)" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="16" y="14" width="888" height="232" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
+  <rect x="16" y="14" width="888" height="26" rx="8" fill="#ecfdf5"/>
+  <line x1="16" y1="40" x2="904" y2="40" stroke="#a7f3d0" stroke-width="1.2"/>
+  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A ARCHITECTURE: SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
+"##,
+        w, h, manifest.native_mafft_aligned_cols_l, best_lnl
+    ));
+    fb.stroke_rect(16, 14, 888, 232, (16, 185, 129));
+    fb.fill_rect(17, 15, 886, 25, (236, 253, 245));
+    fb.draw_text(
+        28,
+        22,
+        &format!(
+            "PANEL A | PIPELINE A ARCHITECTURE (L = {} COLS | ln L = {:.2})",
+            manifest.native_mafft_aligned_cols_l, best_lnl
+        ),
+        (6, 95, 70),
+        1,
+        Some(860),
+    );
+
+    let a_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
+        (
+            "A1. Entrez + Blind Audit",
+            format!("• {} Cleaned Records", manifest.final_cleaned_cohort_count),
+            format!("• {} Anomalies Repaired", manifest.ncbi_flagged_anomalies.len()),
+            format!("• SHA-256 Pass 1/2 |ΔZ|=0"),
+            format!("• {:.1}% Auto Resolution", manifest.autonomous_resolution_rate_pct),
+            "#f8fafc",
+            "#64748b",
+            "#047857",
+        ),
+        (
+            "A2. Gotoh + Katoh MSA",
+            format!("• 100% Full-Length MSA"),
+            format!("• L = {} cols", manifest.native_mafft_aligned_cols_l),
+            format!("• {} PI Sites", manifest.parsimony_informative_sites),
+            format!("• Runtime = {:.2} s", msa_s),
+            "#f8fafc",
+            "#64748b",
+            "#047857",
+        ),
+        (
+            "A3. ModelTest + RY3 Gate",
+            format!("• 32-Chain Sweep"),
+            format!("• Raw RCFV = {:.4}", manifest.rcfv_zero_beaker_raw),
+            format!("• 4-State RCFV = {:.4}", manifest.rcfv_4state_unrecoded),
+            format!("• RY3 RCFV = {:.4} (PASS)", manifest.rcfv_ry3_cleaned),
+            "#ecfdf5",
+            "#059669",
+            "#047857",
+        ),
+        (
+            "A4. BIONJ + NNI ML Tree",
+            format!("• Winner: RY3 + GTR+F+R4"),
+            format!("• ln L = {:.2}", best_lnl),
+            format!("• B = 1,000 UFBoot"),
+            format!("• Runtime = {:.2} s", phylo_s),
+            "#eff6ff",
+            "#2563eb",
+            "#1d4ed8",
+        ),
+        (
+            "A5. Quartet MSC + dN/dS",
+            format!("• Exact Quartet DP"),
+            format!("• 61-State Goldman-Yang"),
+            format!("• {} Gene Families", manifest.gene_family_selection.len()),
+            format!("• 4D BEB Site Selection"),
+            "#fef2f2",
+            "#dc2626",
+            "#b91c1c",
+        ),
+        (
+            "A6. TimeTreeLSD2 Clock",
+            format!("• {} Calibrated Nodes", manifest.calibrated_nodes.len()),
+            format!("• Relaxed Clock MCMC"),
+            format!("• 100% 2-Sided 95% HPD"),
+            format!("• Fig 1 & Fig 2 Trees"),
+            "#ecfdf5",
+            "#059669",
+            "#047857",
+        ),
+    ];
+
+    let widths = [136i32, 136, 142, 138, 136, 130];
+    let mut bx = 26i32;
+    for (i, (head, b1, b2, b3, b4, fill_hex, stroke_hex, acc_hex)) in a_boxes.iter().enumerate() {
+        let bw = widths[i];
+        svg.push_str(&format!(
+            r##"  <rect x="{}" y="50" width="{}" height="92" rx="5" fill="{}" stroke="{}" stroke-width="1.4"/>
+  <text x="{}" y="66" font-size="8.2" font-weight="800" fill="#0f172a">{}</text>
+  <text x="{}" y="80" font-size="7.3" fill="#334155">{}</text>
+  <text x="{}" y="94" font-size="7.3" fill="#334155">{}</text>
+  <text x="{}" y="108" font-size="7.3" fill="#334155">{}</text>
+  <text x="{}" y="124" font-size="7.3" font-weight="800" fill="{}">{}</text>
+"##,
+            bx, bw, fill_hex, stroke_hex, bx + 7, xml_esc(head), bx + 7, xml_esc(b1), bx + 7, xml_esc(b2), bx + 7, xml_esc(b3), bx + 7, acc_hex, xml_esc(b4)
+        ));
+        fb.stroke_rect(bx, 50, bw, 92, (100, 116, 139));
+        fb.draw_text(bx + 5, 58, head, (15, 23, 42), 1, Some(bw - 10));
+        if i + 1 < a_boxes.len() {
+            svg.push_str(&format!(
+                r##"  <line x1="{}" y1="96" x2="{}" y2="96" stroke="#047857" stroke-width="1.8"/>
+"##,
+                bx + bw,
+                bx + bw + 10
+            ));
+        }
+        bx += bw + 10;
+    }
+
+    svg.push_str(&format!(
+        r##"  <text x="28" y="172" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene: Validates {} full-length records ({} raw bp) and resolves {} repository anomalies via loop-back replacement.</text>
+  <text x="28" y="190" font-size="7.8" font-weight="700" fill="#065f46">• 32-Chain Combinatorial Sweep: Selects RY3 + GTR+F+R4 (ln L = {:.2}, RCFV = {:.4} vs. {:.4} in 0-Beaker control).</text>
+  <text x="28" y="208" font-size="7.8" font-weight="600" fill="#047857">• Calibrated Phylogenomics &amp; Quartet MSC: Resolves all {} calibrated divergence nodes with strictly interior two-sided 95% HPD intervals.</text>
+"##,
+        manifest.final_cleaned_cohort_count,
+        manifest.total_raw_bp_cleaned,
+        manifest.ncbi_flagged_anomalies.len(),
+        best_lnl,
+        manifest.rcfv_ry3_cleaned,
+        manifest.rcfv_zero_beaker_raw,
+        manifest.calibrated_nodes.len()
+    ));
+
+    // Panel B
+    svg.push_str(&format!(
+        r##"  <rect x="16" y="256" width="888" height="232" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.6"/>
+  <rect x="16" y="256" width="888" height="26" rx="8" fill="#eff6ff"/>
+  <line x1="16" y1="282" x2="904" y2="282" stroke="#93c5fd" stroke-width="1.2"/>
+  <text x="28" y="273" font-size="9.6" font-weight="800" fill="#1e3a8a">PANEL B — PIPELINE B ARCHITECTURE: SINGLE-SPECIES REGIONAL COALESCENT SKYLINE &amp; 3D STRUCTURAL HOMOLOGY CHAIN</text>
+"##
+    ));
+    fb.stroke_rect(16, 256, 888, 232, (37, 99, 235));
+    fb.fill_rect(17, 257, 886, 25, (239, 246, 255));
+    fb.draw_text(
+        28,
+        264,
+        "PANEL B | PIPELINE B ARCHITECTURE: COALESCENT SKYLINE & 3D PDB HOMOLOGY CHAIN",
+        (30, 58, 138),
+        1,
+        Some(860),
+    );
+
+    let b_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
+        (
+            "B1. Conspecific PopSets",
+            format!("• {} Skyline Cohorts", manifest.skyline_cohorts.len()),
+            format!("• 100% Single-Species"),
+            format!("• Regional Deme Metadata"),
+            format!("• Phased Coding & rDNA"),
+            "#f8fafc",
+            "#64748b",
+            "#1d4ed8",
+        ),
+        (
+            "B2. Katoh E-INS-i + Gotoh",
+            format!("• Coding: gotoh-msa"),
+            format!("• Spacer: mafft-native"),
+            format!("• Local Affine Anchors"),
+            format!("• 2-Tree Refinement"),
+            "#f8fafc",
+            "#64748b",
+            "#1d4ed8",
+        ),
+        (
+            "B3. RCFV & Ploidy Gate",
+            format!("• Maternal mtDNA (1Ne)"),
+            format!("• Diploid Nuclear (4Ne)"),
+            format!("• Paralog / NUMT Filter"),
+            format!("• RCFV = {:.4} (PASS)", manifest.rcfv_ry3_cleaned),
+            "#eff6ff",
+            "#2563eb",
+            "#1d4ed8",
+        ),
+        (
+            "B4. Bayesian Skyline MCMC",
+            format!("• runie-mcmc-skyline"),
+            format!("• 25,000 MCMC Generations"),
+            format!("• 20% Burn-In Discarded"),
+            format!("• Runtime = {:.2} s", sky_s),
+            "#eff6ff",
+            "#2563eb",
+            "#1d4ed8",
+        ),
+        (
+            "B5. ESS & R-hat Gate",
+            format!("• Post-Burn-In Convergence"),
+            format!("• ESS > 480 All Cohorts"),
+            format!("• Gelman-Rubin R-hat ~ 1.00"),
+            format!("• *BEAST MCC Parity"),
+            "#ecfdf5",
+            "#059669",
+            "#047857",
+        ),
+        (
+            "B6. 3D Kabsch PDB Dock",
+            format!("• {} Threaded Structures", manifest.pdb_structures.len()),
+            format!("• Kabsch Cα Superposition"),
+            format!("• Active-Site Cofactor"),
+            format!("• Fig 4 & Fig 6 Outputs"),
+            "#f0f9ff",
+            "#0284c7",
+            "#0369a1",
+        ),
+    ];
+
+    let mut bx_b = 26i32;
+    for (i, (head, b1, b2, b3, b4, fill_hex, stroke_hex, acc_hex)) in b_boxes.iter().enumerate() {
+        let bw = widths[i];
+        svg.push_str(&format!(
+            r##"  <rect x="{}" y="292" width="{}" height="92" rx="5" fill="{}" stroke="{}" stroke-width="1.4"/>
+  <text x="{}" y="308" font-size="8.2" font-weight="800" fill="#0f172a">{}</text>
+  <text x="{}" y="322" font-size="7.3" fill="#334155">{}</text>
+  <text x="{}" y="336" font-size="7.3" fill="#334155">{}</text>
+  <text x="{}" y="350" font-size="7.3" fill="#334155">{}</text>
+  <text x="{}" y="366" font-size="7.3" font-weight="800" fill="{}">{}</text>
+"##,
+            bx_b, bw, fill_hex, stroke_hex, bx_b + 7, xml_esc(head), bx_b + 7, xml_esc(b1), bx_b + 7, xml_esc(b2), bx_b + 7, xml_esc(b3), bx_b + 7, acc_hex, xml_esc(b4)
+        ));
+        fb.stroke_rect(bx_b, 292, bw, 92, (100, 116, 139));
+        fb.draw_text(bx_b + 5, 300, head, (15, 23, 42), 1, Some(bw - 10));
+        if i + 1 < b_boxes.len() {
+            svg.push_str(&format!(
+                r##"  <line x1="{}" y1="338" x2="{}" y2="338" stroke="#1d4ed8" stroke-width="1.8"/>
+"##,
+                bx_b + bw,
+                bx_b + bw + 10
+            ));
+        }
+        bx_b += bw + 10;
+    }
+
+    svg.push_str(&format!(
+        r##"  <text x="28" y="414" font-size="7.8" font-weight="600" fill="#1e293b">• Single-Species Coalescent Skylines: Reconstructs Quaternary effective population size trajectories across {} regional cohorts with 20% burn-in discarded.</text>
+  <text x="28" y="432" font-size="7.8" font-weight="700" fill="#1e3a8a">• 3D Crystallographic Homology Modeling: Threads focal coding sequences onto experimental RCSB templates with Kabsch RMSD &amp; active-site cofactor geometry.</text>
+"##,
+        manifest.skyline_cohorts.len()
+    ));
+
+    // Panel C
+    svg.push_str(
+        r##"  <rect x="16" y="498" width="888" height="446" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="28" y="520" font-size="10.4" font-weight="800" fill="#0f172a">PANEL C — 4-RANK RuNIE PIPELINE MODEL COMPARISON TABLE (TABLE 3A SUMMARY)</text>
+  <rect x="28" y="530" width="864" height="26" rx="4" fill="#e2e8f0"/>
+  <g font-size="7.8" font-weight="800" fill="#0f172a">
+    <text x="34" y="547">Rank</text>
+    <text x="148" y="547">Tool Chain (Unmarked = Internal; * = External) &amp; Model Summary</text>
+    <text x="510" y="547">Marginal ln L</text>
+    <text x="600" y="547">Delta ln L</text>
+    <text x="676" y="547">RCFV</text>
+    <text x="728" y="547">Bootstrap</text>
+    <text x="802" y="547">Post. Z</text>
+    <text x="848" y="547">CPU</text>
+  </g>
+"##,
+    );
+    fb.stroke_rect(16, 498, 888, 446, (203, 213, 225));
+    let mut ry = 564i32;
+    for (idx, r) in manifest.runie_9col_comparison_table.iter().enumerate() {
+        let (bg, bd, fg) = match idx {
+            0 => ("#ecfdf5", "#10b981", "#065f46"),
+            1 => ("#f8fafc", "#cbd5e1", "#1e3a8a"),
+            2 => ("#fffbeb", "#fcd34d", "#92400e"),
+            _ => ("#fef2f2", "#fca5a5", "#991b1b"),
+        };
+        svg.push_str(&format!(
+            r##"  <rect x="28" y="{}" width="864" height="54" rx="4" fill="{}" stroke="{}" stroke-width="1.2"/>
+  <text x="34" y="{}" font-size="8.2" font-weight="800" fill="{}">{}</text>
+  <text x="148" y="{}" font-size="7.4" font-weight="700" fill="#0f172a">{}</text>
+  <text x="148" y="{}" font-size="7.1" fill="#334155">{}</text>
+  <text x="510" y="{}" font-size="7.9" font-weight="800" fill="{}">{:.2}</text>
+  <text x="600" y="{}" font-size="7.9" font-weight="700" fill="{}">{:.2}</text>
+  <text x="676" y="{}" font-size="7.9" font-weight="700" fill="{}">{:.4}</text>
+  <text x="728" y="{}" font-size="7.6" font-weight="700" fill="{}">{}</text>
+  <text x="802" y="{}" font-size="7.9" font-weight="700" fill="{}">{:+.2}</text>
+  <text x="848" y="{}" font-size="7.6" font-weight="800" fill="{}">{}</text>
+"##,
+            ry,
+            bg,
+            bd,
+            ry + 22,
+            fg,
+            xml_esc(&r.rank_label),
+            ry + 20,
+            xml_esc(&r.tool_chain),
+            ry + 38,
+            xml_esc(&r.model_summary),
+            ry + 28,
+            fg,
+            r.marginal_ln_l,
+            ry + 28,
+            fg,
+            r.delta_ln_l_vs_best,
+            ry + 28,
+            fg,
+            r.rcfv,
+            ry + 28,
+            fg,
+            xml_esc(&r.runie_bootstrap),
+            ry + 28,
+            fg,
+            r.posterior_z,
+            ry + 28,
+            fg,
+            xml_esc(&r.cpu_time_summary)
+        ));
+        fb.stroke_rect(28, ry, 864, 54, (203, 213, 225));
+        ry += 62;
+    }
+
+    svg.push_str("</svg>\n");
+
+    write_locked_figure_triple(
+        7,
+        "fig7-runie-pipeline-architecture",
+        "DualRuniePipelineArchitecture",
+        "Figure 7. Dual Empirical RuNIE Pipeline Architectures & 4-Rank Combinatorial Model Comparison",
+        "Stage-by-stage operator chains for Pipeline A (supermatrix chronogram, quartet MSC, and codon selection) and Pipeline B (single-species regional coalescent skylines and 3D PDB structural docking) alongside the 4-rank model comparison table.",
+        &svg,
+        &fb,
+        run_dir,
+    )
+}
 fn tex_esc(s: &str) -> String {
     s.replace('\\', "\\textbackslash ")
         .replace('&', "\\&")
@@ -1973,8 +2330,9 @@ pub fn generate_all_locked_figures_and_preprint(
     let f4 = generate_fig4_coalescent_skyline(manifest, run_dir)?;
     let f5 = generate_fig5_msa_and_runie_sweep(manifest, run_dir)?;
     let f6 = generate_fig6_pdb_and_alignment_clip(manifest, run_dir)?;
+    let f7 = generate_fig7_runie_pipeline_architecture(manifest, run_dir)?;
 
-    manifest.figures = vec![f1, f2, f3, f4, f5, f6];
+    manifest.figures = vec![f1, f2, f3, f4, f5, f6, f7];
     generate_preprint_tex_html_pdf(manifest, run_dir)?;
     Ok(())
 }

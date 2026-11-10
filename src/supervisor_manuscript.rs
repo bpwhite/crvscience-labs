@@ -1644,5 +1644,37 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places the Sternorrhyncha root
     }
     written.push(arxiv_dir.join("main.tex").to_string_lossy().to_string());
 
+    let arxiv_fig_dir = arxiv_dir.join("figures");
+    let _ = fs::create_dir_all(&arxiv_fig_dir);
+    let run_fig_dir = run_dir.join("figures");
+    if let Ok(entries) = fs::read_dir(&run_fig_dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_file() {
+                if let Some(fname) = p.file_name() {
+                    let _ = fs::copy(&p, arxiv_fig_dir.join(fname));
+                }
+            }
+        }
+    }
+    let rel_tar = labs_releases_dir.join("bemisia-global-radiation-arxiv-upload.tar.gz");
+    let _ = std::process::Command::new("tar.exe")
+        .args([
+            "-czf",
+            &rel_tar.to_string_lossy(),
+            "-C",
+            &arxiv_dir.to_string_lossy(),
+            "main.tex",
+            "main.bbl",
+            "00README.XXX",
+            "single-column-manuscript.html",
+            "figures",
+        ])
+        .status();
+    if rel_tar.exists() {
+        let _ = fs::copy(&rel_tar, arxiv_dir.join("bemisia-global-radiation-arxiv-upload.tar.gz"));
+        written.push(rel_tar.to_string_lossy().to_string());
+    }
+
     Ok(written)
 }

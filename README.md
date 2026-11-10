@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Language: Rust](https://img.shields.io/badge/Language-Rust%202021-orange.svg)](https://www.rust-lang.org/)
-[![Engine: RuNIE v2.0.1 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v2.0.1%20GA--MCMC%20%2B%20ModelTest-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
+[![Engine: RuNIE v2.0.1 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v2.0.1%20GA--MCMC%20%2B%20ModelTest-8a2be2.svg)](docs/runie_architecture_and_studies.md)
 [![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23969275.svg)](https://doi.org/10.5281/zenodo.23969275)
 [![Figshare DOI](https://img.shields.io/badge/Figshare%20DOI-10.6084%2Fm9.figshare.34919469-f472b6.svg)](https://doi.org/10.6084/m9.figshare.34919469)
 [![Portal: crvscience.com/labs](https://img.shields.io/badge/Portal-crvscience.com%2Flabs-00bcd4.svg)](https://crvscience.com/labs)
@@ -16,11 +16,11 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 <!-- AUTO-FRONTPAGE-STATUS:START -->
 | Subsystem | Live Count & Version | Summary & Documentation |
 | :--- | :--- | :--- |
-| **Native Rust Engines (`bio-suite`)** | **`36` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/TOOL_BENCHMARK_MATRIX.md) |
-| **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.1` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](RUNIE_CHANGELOG.md) |
+| **Native Rust Engines (`bio-suite`)** | **`36` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/tool_benchmark_matrix.md) |
+| **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.1` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/runie_architecture_and_studies.md) & [**Changelog**](runie_changelog.md) |
 | **Empirically Verified Preprints** | **`24` Preprints (`PREPRINT-01`–`PREPRINT-24`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`135` Total** (`24` Preprints · `35` Tool Cal. · `76` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
-| **Curated Validation Datasets** | **`63` Datasets (`VAL-SET-001`–`VAL-SET-063`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/VALIDATION_AND_CALIBRATION_PROCESS.md) |
+| **Lab Discoveries Directory** | **`136` Total** (`24` Preprints · `35` Tool Cal. · `77` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/discoveries_and_critical_reports.md) |
+| **Curated Validation Datasets** | **`63` Datasets (`VAL-SET-001`–`VAL-SET-063`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/validation_and_calibration_process.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
 ---
@@ -29,11 +29,11 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 
 To keep this front page concise, detailed mathematical formulations, validation protocols, and full benchmark tables are organized into dedicated documentation pages:
 
-1. **[`docs/RUNIE_ARCHITECTURE_AND_STUDIES.md`](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **20 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)**, and all **15 Canonical Multi-Stage Studies**.
-2. **[`docs/VALIDATION_AND_CALIBRATION_PROCESS.md`](docs/VALIDATION_AND_CALIBRATION_PROCESS.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **59 Validation Datasets (`VAL-SET-001`–`VAL-SET-059`)**.
-3. **[`docs/TOOL_BENCHMARK_MATRIX.md`](docs/TOOL_BENCHMARK_MATRIX.md)** — Complete **36-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`) and the active validation queue.
-4. **[`docs/DISCOVERIES_AND_CRITICAL_REPORTS.md`](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md)** — Auto-synced index of all **20 Empirically Verified Preprints**, recent Lab Discoveries, and dataset provenance mappings.
-5. **[`RUNIE_CHANGELOG.md`](RUNIE_CHANGELOG.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-036`).
+1. **[`docs/runie_architecture_and_studies.md`](docs/runie_architecture_and_studies.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **20 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)**, and all **15 Canonical Multi-Stage Studies**.
+2. **[`docs/validation_and_calibration_process.md`](docs/validation_and_calibration_process.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **59 Validation Datasets (`VAL-SET-001`–`VAL-SET-059`)**.
+3. **[`docs/tool_benchmark_matrix.md`](docs/tool_benchmark_matrix.md)** — Complete **36-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`) and the active validation queue.
+4. **[`docs/discoveries_and_critical_reports.md`](docs/discoveries_and_critical_reports.md)** — Auto-synced index of all **20 Empirically Verified Preprints**, recent Lab Discoveries, and dataset provenance mappings.
+5. **[`runie_changelog.md`](runie_changelog.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-036`).
 
 ---
 
@@ -123,12 +123,12 @@ cargo build --release
 crvscience-labs/
 ├── Cargo.toml                            # Rust crate manifest (candle-core, candle-nn, rayon, serde)
 ├── README.md                             # High-level overview, quick-start examples & repo layout
-├── RUNIE_CHANGELOG.md                    # Chronological RuNIE tool-modification & pipeline ledger (RN-2026-001..036)
+├── runie_changelog.md                    # Chronological RuNIE tool-modification & pipeline ledger (RN-2026-001..036)
 ├── docs/                                 # Detailed technical & validation documentation
-│   ├── RUNIE_ARCHITECTURE_AND_STUDIES.md # Candle tensor GA-MCMC math, Step-Up loop & 20 Verified Preprints
-│   ├── VALIDATION_AND_CALIBRATION_PROCESS.md # 3-Tier system, 0🧪–5🧪 gate, Blinded SHA-256 audit & VAL-SET-001..059
-│   ├── TOOL_BENCHMARK_MATRIX.md          # Full 36-tool Native Rust vs. External Counterpart benchmark table
-│   └── DISCOVERIES_AND_CRITICAL_REPORTS.md # Auto-synced Verified Preprints & Lab Discoveries index
+│   ├── runie_architecture_and_studies.md # Candle tensor GA-MCMC math, Step-Up loop & 20 Verified Preprints
+│   ├── validation_and_calibration_process.md # 3-Tier system, 0🧪–5🧪 gate, Blinded SHA-256 audit & VAL-SET-001..059
+│   ├── tool_benchmark_matrix.md          # Full 36-tool Native Rust vs. External Counterpart benchmark table
+│   └── discoveries_and_critical_reports.md # Auto-synced Verified Preprints & Lab Discoveries index
 ├── src/
 │   ├── main.rs                           # CLI entry point & subcommand dispatcher
 │   ├── lib.rs                            # Library module exports
@@ -207,7 +207,7 @@ cargo run --release --bin bio-suite-supervisor -- list
 cargo run --release --bin bio-suite-supervisor -- inspect --run-id runie-3way-multifactorial-anopheles-mosquitos
 ```
 
-See [**`docs/SUPERVISOR_AND_GUI_GUIDE.md`**](docs/SUPERVISOR_AND_GUI_GUIDE.md) for the complete command-line and GUI manual.
+See [**`docs/supervisor_and_gui_guide.md`**](docs/supervisor_and_gui_guide.md) for the complete command-line and GUI manual.
 
 ---
 

@@ -2294,7 +2294,7 @@ r#"<h2>1. Introduction: Invasion Ecology of Introduced Gastropoda Across Austral
   <li><strong>Incomplete Lineage Sorting (ILS) &amp; Hybrid Introgression Across Rapidly Radiating Invasive Complexes:</strong> Within the invasive <em>Pomacea canaliculata</em> / <em>P. maculata</em> complex and the Mediterranean Helicidae/Geomitridae radiation, rapid speciation and secondary anthropogenic contact generate pervasive gene-tree discordance requiring exact quartet multispecies coalescent reconciliation paired with four-taxon <code>ABBA-BABA</code> introgression tests [8, 9, 15].</li>
   <li><strong>Decoupled Coalescent Trajectories Across Introduction Corridors vs. Genomic Compartments:</strong> Conspecific snail populations introduced across Australasian grain belts, urban gardens, and subtropical orchards experienced sharp 19th–20th century founder bottlenecks followed by explosive no-till agricultural and horticultural demographic rebounds [5, 6, 14]. Simultaneously, within the <em>exact same invasive deme</em>, neutral maternal mitochondrial <code>COX1</code> (<code>1N<sub>e</sub></code>), neutral biparental nuclear ribosomal <code>ITS1–5.8S–ITS2</code> spacers (<code>4N<sub>e</sub></code>, featuring long tandem indels requiring local affine Katoh <code>E-INS-i</code> alignment), and nuclear metabolic/aestivation coding loci (<code>CYP3A43</code>, <code>GH9</code> cellulase, <code>Hsp70</code>) experience sharply divergent coalescent pressures under modern molluscicide baiting and summer crop desiccation [9, 10, 16].</li>
 </ol>
-<p>To resolve all four challenges reproducibly without ad-hoc scripting, we execute this entire multi-compartment investigation autonomously through <strong><code>bio-suite-supervisor</code></strong> in <strong>100% Native Rust (<code>biosuite-only</code>)</strong> mode under dual-pass SHA-256 blinded dry-lab validation [1]. Across <strong>{tot_recs} active verified NCBI sequence records</strong> ({raw_bp} raw empirical base pairs on disk, plus {quar_recs} real NCBI <code>UNVERIFIED:</code> gastropod mitogenome anomalies autonomously quarantined during Iteration 1 and replaced in Iteration 2), the supervisor coordinates polite Entrez caching, <code>super-blast</code> annotation auditing, circular <code>COX1</code> phasing, hybrid <code>gotoh-msa</code> + <code>mafft-native</code> alignment (supermatrix <strong>L = {sup_l} aligned columns</strong> across 18 loci), a 32-chain RuNIE Felsenstein pruning sweep, B = 1,000 UFBoot maximum-likelihood inference, 18-locus Quartet Multispecies Coalescent species-tree estimation across 11,436,768 quartets, 61-state Goldman–Yang codon selection across 48 nuclear CDS orthologs, and 12 × 25,000-generation Bayesian coalescent skylines across 432 conspecific invasive snail isolates in <strong>{total_sec:.2} seconds ({tot_ms} ms)</strong>.</p>
+<p>To address all four analytical challenges within a unified phylogenetic and population-genetic framework, we execute this multi-compartment investigation through <strong><code>bio-suite-supervisor</code></strong> in <strong>100% Native Rust (<code>biosuite-only</code>)</strong> mode under dual-pass SHA-256 blinded dry-lab validation [1]. Across <strong>{tot_recs} active verified NCBI sequence records</strong> ({raw_bp} raw empirical base pairs on disk, plus {quar_recs} real NCBI <code>UNVERIFIED:</code> gastropod mitogenome anomalies autonomously quarantined during Iteration 1 and replaced in Iteration 2), the supervisor coordinates polite Entrez caching, <code>super-blast</code> annotation auditing, circular <code>COX1</code> phasing, hybrid <code>gotoh-msa</code> + <code>mafft-native</code> alignment (supermatrix <strong>L = {sup_l} aligned columns</strong> across 18 loci), a 32-chain RuNIE Felsenstein pruning sweep, B = 1,000 UFBoot maximum-likelihood inference, 18-locus Quartet Multispecies Coalescent species-tree estimation across 11,436,768 quartets, 61-state Goldman–Yang codon selection across 48 nuclear CDS orthologs, and 12 × 25,000-generation Bayesian coalescent skylines across 432 conspecific invasive snail isolates in <strong>{total_sec:.2} seconds ({tot_ms} ms)</strong>.</p>
 
 <div class="labs-copy-box" data-copy-mode="code" id="ascii-supervisor-dag">
   <div class="labs-copy-box-header"><span class="labs-copy-title">Autonomous bio-suite-supervisor Dual-Pass Execution Architecture &amp; Loop-Back Telemetry</span></div>
@@ -2937,7 +2937,7 @@ r#"<!DOCTYPE html>
     .map_err(|e| format!("Failed writing {:?}: {}", run_html_path, e))?;
     written.push(run_html_path.to_string_lossy().to_string());
 
-    // 5. LaTeX (main.tex), BibTeX (main.bbl), and 00README.XXX
+    // 5. LaTeX (main.tex), BibTeX (main.bbl), and 00readme.xxx
     let mut bbl_items = String::new();
     for (idx, r) in refs.iter().enumerate() {
         bbl_items.push_str(&format!(
@@ -2993,8 +2993,8 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places Crown Gastropoda at {n1
             .map_err(|e| format!("Failed writing main.tex: {}", e))?;
         fs::write(dir.join("main.bbl"), sanitize_no_scratch_extensions(&main_bbl))
             .map_err(|e| format!("Failed writing main.bbl: {}", e))?;
-        fs::write(dir.join("00README.XXX"), "main.tex toplevel\n")
-            .map_err(|e| format!("Failed writing 00README.XXX: {}", e))?;
+        fs::write(dir.join("00readme.xxx"), "main.tex toplevel\n")
+            .map_err(|e| format!("Failed writing 00readme.xxx: {}", e))?;
     }
     written.push(arxiv_dir.join("main.tex").to_string_lossy().to_string());
 
@@ -3020,7 +3020,7 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places Crown Gastropoda at {n1
             &arxiv_dir.to_string_lossy(),
             "main.tex",
             "main.bbl",
-            "00README.XXX",
+            "00readme.xxx",
             "single-column-manuscript.html",
             "figures",
         ])

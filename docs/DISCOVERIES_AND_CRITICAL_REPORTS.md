@@ -1,16 +1,16 @@
 # Published Lab Discoveries, Flagged Critical Reports (`🚩`) & Validation Datasets
 
-[← Back to `crvscience-labs` Front Page (`README.md`)](../README.md) • [🎯 Validation Process (`VALIDATION_AND_CALIBRATION_PROCESS.md`)](VALIDATION_AND_CALIBRATION_PROCESS.md) • [📊 36-Tool Benchmark Matrix (`TOOL_BENCHMARK_MATRIX.md`)](TOOL_BENCHMARK_MATRIX.md) • [🌐 Live Reader (`crvscience.com/labs#discoveries`)](https://crvscience.com/labs#discoveries)
+[← Back to `crvscience-labs` Front Page (`README.md`)](../README.md) • [🎯 Validation Process (`validation_and_calibration_process.md`)](validation_and_calibration_process.md) • [📊 36-Tool Benchmark Matrix (`tool_benchmark_matrix.md`)](tool_benchmark_matrix.md) • [🌐 Live Reader (`crvscience.com/labs#discoveries`)](https://crvscience.com/labs#discoveries)
 
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`24`), Validated Tool Calibrations (`36`) & Pipeline Benchmarks (`135` Total Reports)
+## Validated Preprints (`24`), Validated Tool Calibrations (`36`) & Pipeline Benchmarks (`136` Total Reports)
 
-- **Total Lab Discovery Entries**: **135** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **136** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-24`, `v2.0.1`)**: **24** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **36** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **76** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **77** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
   - **Curated Validation Dataset Registry**: **63** datasets (`VAL-SET-001` through `VAL-SET-063`)
 
 #### ✅ 24 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-24`, `v2.0.1`)
@@ -42,10 +42,11 @@
 | **#109** `✅ Verified Preprint` | **[Reconstructing the Archosauria-to-Crown-Aves Evolutionary Time-Tree (246.5 to 0.0 Ma) Across 62 Extant, Holocene Ancient-DNA, and Mesozoic Fossil Taxa: Paravian Body-Mass Miniaturization, the K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-AVES-TIMETREE-62TAXA-1.54MB` |
 | **#108** `✅ Verified Preprint` | **[Reconstructing the Primate Evolutionary Time-Tree (73.4 to 0.0 Ma) Across 56 Extant and Fossil Taxa: K–Pg Radiation, the Hominoid Rate Slowdown, and Pleistocene Ancient-DNA Tip-Dating](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-TIMETREE-56TAXA-1.42MB` |
 
-#### Latest 12 Lab Discovery Entries (`#124`–`#136`)
+#### Latest 12 Lab Discovery Entries (`#125`–`#137`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#137** `🔬 Pipeline Benchmark` | [Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nudibranch-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
 | **#136** `✅ Verified Preprint` | [Phylogenomic Radiation and Invasion Genomics of Introduced Snails Across Australia and New Zealand (Gastropoda: Stylommatophora & Caenogastropoda): Native Rust Quartet Coalescent Species-Tree Inference, Aestivation and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/invasive-snails-au-nz-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
 | **#134** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Bemisia Whiteflies and Allied Aleyrodidae (Hemiptera: Sternorrhyncha), Native Rust Quartet Coalescent Species-Tree Inference, Symbiotic and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/bemisia-whitefly-global-radiation) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
 | **#133** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Anopheles Mosquitoes (Culicidae: Anophelinae), Native Rust Quartet Coalescent Species-Tree Inference, Chemosensory and Insecticide-Resistance Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/anopheles-global-radiation-native-biosuite) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
@@ -57,7 +58,6 @@
 | **#127** `✅ Verified Preprint` | [Multifactorial N×L Phylogenomic Sensitivity & Clock-Time Curve: 3-Way RuNIE Comparison (100% Native Rust vs. 100% External Binaries vs. Unconstrained Hybrid) Mapping Minimum Alignment-Length Horizons, the 90% MAFFT Alignment Bottleneck, and Saturation Plateaus Across 100 Species](https://crvscience.com/labs/discoveries/multifactorial-nxl-clock-curve-3way) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 7, 2026 |
 | **#126** `✅ Verified Preprint` | [Pancrustacea-to-Hexapoda Tree of Life (538.4 to 0.0 Ma): A 3-Way RuNIE Pipeline Comparison (100% Native Rust vs. 100% External Binaries vs. Unconstrained Hybrid Optimal ln L) Resolving Remipedia Sisterhood, Epipodite-to-Wing Homology, and Terrestrialization Across 100 Species](https://crvscience.com/labs/discoveries/pancrustacea-hexapoda-3way-runie) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 7, 2026 |
 | **#125** `✅ Verified Preprint` | [Mosquito Tree of Life: Triassic–Cenozoic Culicidae Phylogenomics (242.0 to 0.0 Ma; Crown Culicidae 145.0 Ma), Single Origin of Hematophagy, Salivary D7 & Apyrase Recruitment, and Secondary Loss in Toxorhynchites](https://crvscience.com/labs/discoveries/culicidae-phylogenomics-hematophagy-d7) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 7, 2026 |
-| **#124** `✅ Verified Preprint` | [Beetle Tree of Life: Permian–Cenozoic Coleoptera Phylogenomics (308.0 to 0.0 Ma; Crown Coleoptera 292.0 Ma), Suborder Divergence, and Microbial PCWDE Horizontal Gene Transfer (GH28, GH45, GH5)](https://crvscience.com/labs/discoveries/coleoptera-phylogenomics-pcwde-hgt) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 6, 2026 |
 
 #### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-063`)
 

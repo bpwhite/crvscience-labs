@@ -409,6 +409,98 @@ pub(crate) const SNAILS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "invasive-snails-supp-s3-cox1-ry3-alignview",
 };
 
+pub(crate) const NUDIBRANCHS_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [178.0, 128.0, 108.0, 112.4, 96.2, 68.4, 52.8],
+    backbone_node_ages: [94.8, 138.6, 164.8, 198.2, 236.4, 284.6],
+    fig1_max_ma: 300.0,
+    fig1_eras: &[
+        ("Carbonif-Perm", 300.0, 252.0, "#f1f5f9"),
+        ("Triassic", 252.0, 201.0, "#f8fafc"),
+        ("Jurassic", 201.0, 145.0, "#f1f5f9"),
+        ("Cretaceous", 145.0, 66.0, "#f8fafc"),
+        ("Cenozoic", 66.0, 0.0, "#f1f5f9"),
+    ],
+    fig1_ticks: &[300, 250, 200, 150, 100, 50, 0],
+    fig1_node_y_slots: [7.8, 14.2, 23.4, 34.0, 24.5, 42.5, 50.8, 57.5],
+    fig1_clade_cards: &[
+        ("[A]", 0, 3, "Tectipleura Outgroups (n=4)", "Aplysia californica/kurodai, Elysia viridis/chlorotica", "Euopisthobranchia sea hare & sacoglossan root anchor"),
+        ("[B]", 4, 8, "Sister Order Pleurobranchida (n=5)", "Berthellina edwardsii, Pleurobranchus, Pleurobranchaea", "Side-gilled Nudipleura stem + acidic mantle secretion"),
+        ("[C]", 9, 18, "Cladobranchia: Dendronotida (n=10)", "Tritonia tetraquetra, Melibe leonina, Dendronotus, Doto", "Octocoral/hydroid grazing + giant swimming neural CPG"),
+        ("[D]", 19, 29, "Cladobranchia: Aeolidioidea (n=11)", "Berghia stephanieae, Hermissenda, Facelina, Spurilla", "Cnidosac kleptocnidae uptake + C-type lectin shield"),
+        ("[E]", 30, 38, "Doridina: Polyceroidea & Hexabranchus (n=9)", "Hexabranchus sanguineus, Polycera, Nembrotha, Triopha", "Phanerobranch bryozoan/ascidian pyrrole alkaloid defense"),
+        ("[F]", 39, 50, "Doridina: Doridoidea & Phyllidioidea (n=12)", "Doris pseudoargus, Peltodoris, Phyllidia, Phyllidiella", "Cryptobranch & radula-less porostome sponge isocyanides"),
+        ("[G]", 51, 63, "Doridina: Chromodoridoidea Crown (n=13)", "Cadlina, Chromodoris, Goniobranchus, Hypselodoris", "Aposematic Mullerian mimicry + MDF terpene CYP3A29"),
+    ],
+    fig1_web_svg: "nudibranch-global-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of Nudipleura & Global Nudibranchia Radiation (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 3, "Tectipleura Outgroups (n=4)", ""),
+        ("[B]", 4, 8, "Pleurobranchida (n=5)", "8,4"),
+        ("[C]", 9, 18, "Dendronotida & Tritonia (n=10)", ""),
+        ("[D]", 19, 29, "Aeolidioidea Kleptocnidae (n=11)", "9,3,2,3"),
+        ("[E]", 30, 38, "Polyceroidea & Hexabranchus (n=9)", "5,3"),
+        ("[F]", 39, 50, "Doridoidea & Phyllidioidea (n=12)", ""),
+        ("[G]", 51, 63, "Chromodoridoidea Crown (n=13)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "nudibranch-global-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Nudipleura & Nudibranchia Species (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T003", 0),
+        ("Node II", "B:T007", 1),
+        ("Node III", "C:T014", 2),
+        ("Node IV", "D:T022", 3),
+        ("Node V", "D:T026", 4),
+        ("Node VI", "E:T035", 5),
+        ("Node VII", "F:T046", 6),
+        ("Node VIII", "G:T057", 7),
+    ],
+    fig3_abba_arc_tips: ("G:T056", "G:T061"),
+    fig3_web_svg: "nudibranch-global-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression.",
+    fig4a_web_svg: "nudibranch-global-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional Standardized COX1 Bayesian Coalescent Skyline Matrix Across Global Nudibranch Lineages (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six single-species/genus regional COX1 coalescent skylines (25,000 MCMC generations) across Pteraeolidia, Hermissenda, Glaucus, Phyllidiella, Hypselodoris, and Berghia/Spurilla.",
+    fig4b_web_svg: "nudibranch-global-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 16S/28S rDNA (4Ne) vs. Histone H3 / Terpenoid Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Paired multi-locus skylines across Indo-Pacific Chromodoris and amphiboreal Dendronotus separating maternal mtDNA expansion from Katoh E-INS-i rDNA and nuclear coding sweeps.",
+    fig5_short_fam_titles: [
+        "Cnidosac Kleptocnidae C-Type Lectins, Chitinases & Cathepsins (CTL / CTSL)",
+        "Marine Heatwave & Coral-Bleaching Chaperones (Hsp70 / BiP / DnaJ)",
+        "Rhinophore Chemosensory nAChR, mGluR & Kv Neural Channels",
+        "Sponge Terpenoid & Isocyanide Cytochrome P450s (CYP3A29 / CYP4F1)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Cnidosac C-Type Lectin / Cathepsin",
+        "FAM-02: Marine Heatwave Hsp70 / BiP / DnaJ",
+        "FAM-03: Rhinophore nAChR / mGluR / Kv",
+        "FAM-04: Terpenoid CYP3A29 / CYP3A24 / CYP4F",
+    ],
+    fig5_panel_d_header: "Panel D | CYP3A29 Structure & Fe³⁺–Heme Pocket (1TQN, 2.05 Å)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Clan-3 Microsomal P450 Fold (461 Cα Threaded with B. stephanieae CYP3A29)",
+    fig5_web_svg: "nudibranch-global-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP3A29 Heme-Thiolate Active Site",
+    fig5_caption: "Translated amino-acid motif alignments across 48 Nudibranchia/Heterobranchia NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Berghia stephanieae CYP3A29 structure threaded on 1TQN (2.05 A) with zoomed Fe3+-Protoporphyrin IX (HEM A 508) and Cys442-Sg axial thiolate coordination.",
+    fig6_web_svg: "nudibranch-global-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    fig6_caption: "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon, 18-locus Nudipleura & Nudibranchia supermatrix) and Pipeline B (12 single-species/genus regional and multi-locus nudibranch coalescent cohorts, N = 432).",
+    fig6_clade_label: "Nudipleura & Nudibranchia",
+    fig6_p450_label: "CYP3A29 / CTL / nAChR",
+    fig6_its_label: "Chromodoris & Dendronotus 16S/28S rDNA",
+    supp_s1_fasta_name: "supp_s1_cyp3a29_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (B. stephanieae CYP3A29 / CYP4F1 / A. californica CYP3A24)",
+    supp_s1_source: "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS (FAM-04)",
+    supp_s1_stem: "nudibranch-global-supp-s1-cyp3a29-alignview",
+    supp_s2_title: "Cohort L5 Dendronotus 16S/28S Ribosomal rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS (Cohort L5)",
+    supp_s2_stem: "nudibranch-global-supp-s2-rdna-einsi-alignview",
+    supp_s3_title: "Nudipleura & Nudibranchia Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "nudibranch-global-supp-s3-cox1-ry3-alignview",
+};
+
 fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
@@ -3832,4 +3924,15 @@ pub fn generate_snails_locked_figures(
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
     generate_locked_figures_with_theme(manifest, study, &SNAILS_THEME, run_dir, web_figures_dir)
+}
+
+/// Generates all 6 Preprint-25 (`Global Nudibranch Radiation`) locked-format figures (`.svg` + `.png` + `.pdf`)
+/// plus 3 Native Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
+pub fn generate_nudibranchs_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    generate_locked_figures_with_theme(manifest, study, &NUDIBRANCHS_THEME, run_dir, web_figures_dir)
 }

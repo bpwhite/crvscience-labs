@@ -1,6 +1,6 @@
 # Validation Process, 3-Tier Research Scope, `0🧪`–`5🧪` Beaker Gate & Dataset Registry
 
-[← Back to `crvscience-labs` Front Page (`README.md`)](../README.md) • [📊 36-Tool Benchmark Matrix (`TOOL_BENCHMARK_MATRIX.md`)](TOOL_BENCHMARK_MATRIX.md) • [🧠 `RuNIE` Architecture (`RUNIE_ARCHITECTURE_AND_STUDIES.md`)](RUNIE_ARCHITECTURE_AND_STUDIES.md)
+[← Back to `crvscience-labs` Front Page (`README.md`)](../README.md) • [📊 36-Tool Benchmark Matrix (`tool_benchmark_matrix.md`)](tool_benchmark_matrix.md) • [🧠 `RuNIE` Architecture (`runie_architecture_and_studies.md`)](runie_architecture_and_studies.md)
 
 ---
 

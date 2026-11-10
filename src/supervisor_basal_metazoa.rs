@@ -12,7 +12,7 @@
 //! 5. 18-Locus Quartet Multispecies Coalescent (`runie-quartet-coalescent`, 11,436,768 quartets) + `ABBA-BABA`
 //! 6. 61-State Goldman-Yang Codon Selection (`M0`, `M1a`, `M2a`, `4D BEB`) on 4 Nuclear Families
 //! 7. 25,000-Generation Bayesian Coalescent Skylines Across 6 Single-Species Basal Metazoan Demes
-//! 8. Crystallographic 3D Threading of Basal Metazoan Type IV Collagen NC1 (`COL4`) onto `1LI1.pdb` (1.90 Å)
+//! 8. Crystallographic 3D Threading of Basal Metazoan Type IV Collagen NC1 (`COL4`) onto `1li1.pdb` (1.90 Å)
 
 use crate::coalescent::{compute_abba_baba_patterson_d, run_native_quartet_coalescent};
 use crate::codon_selection::run_native_codon_selection;
@@ -357,7 +357,7 @@ const BASAL_SKYLINE_6_COHORTS: &[BasalSkylineCohortSpec] = &[
 
 /// Builds a real crystallographic homology-threaded 3D model of Basal Metazoan Type IV Collagen NC1
 /// (`FAM-01` *Nematostella vectensis* / *Amphimedon* `COL4` NC1 domain) onto X-ray crystal structure
-/// `1LI1.pdb` (1.90 Å Type IV Collagen NC1 hexamer subunit carrying the covalent `Met93–Hyl211`
+/// `1li1.pdb` (1.90 Å Type IV Collagen NC1 hexamer subunit carrying the covalent `Met93–Hyl211`
 /// sulfilimine `S=N` crosslink that evolved at the base of Eumetazoa/ParaHoxozoa to stabilize
 /// epithelial basement membranes).
 fn build_col4_nc1_pdb_structure(
@@ -369,10 +369,10 @@ fn build_col4_nc1_pdb_structure(
     let _ = fs::create_dir_all(pdb_dir);
     let pdb_cache_dir = cache_dir.join("pdb");
     let _ = fs::create_dir_all(&pdb_cache_dir);
-    let template_path = pdb_cache_dir.join("1LI1.pdb");
+    let template_path = pdb_cache_dir.join("1li1.pdb");
 
     if !template_path.is_file() {
-        if let Ok(resp) = ureq::get("https://files.rcsb.org/download/1LI1.pdb").call() {
+        if let Ok(resp) = ureq::get("https://files.rcsb.org/download/1li1.pdb").call() {
             if let Ok(body) = resp.into_string() {
                 if body.contains("ATOM  ") {
                     let _ = fs::write(&template_path, &body);

@@ -1699,6 +1699,19 @@ pub fn is_snails_study_target(preset_name: Option<&str>, run_id: &str) -> bool {
     preset_name.map(check).unwrap_or(false) || check(run_id)
 }
 
+pub fn is_nudibranchs_study_target(preset_name: Option<&str>, run_id: &str) -> bool {
+    let check = |s: &str| {
+        let low = s.to_ascii_lowercase();
+        low.contains("nudibranch")
+            || low.contains("nudipleura")
+            || low.contains("berghia")
+            || low.contains("chromodoris")
+            || low.ends_with("-25")
+            || low == "25"
+    };
+    preset_name.map(check).unwrap_or(false) || check(run_id)
+}
+
 pub fn is_basal_metazoa_study_target(preset_name: Option<&str>, run_id: &str) -> bool {
     let check = |s: &str| {
         let low = s.to_ascii_lowercase();
@@ -1722,6 +1735,47 @@ pub fn run_autonomous_supervisor(
     cache: &PoliteCacheManager,
     runs_root_dir: &Path,
 ) -> Result<SupervisorRunManifest, String> {
+    if is_nudibranchs_study_target(spec.preset_name.as_deref(), &spec.run_id) {
+        let t0_nudis = Instant::now();
+        let run_dir = runs_root_dir.join(&spec.run_id);
+        let (mut manifest, report) =
+            crate::supervisor_nudibranchs::execute_nudibranchs_supervisor_study(spec, cache, runs_root_dir)?;
+        let report_path = run_dir.join("multi-compartment-report.json");
+        if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
+            let _ = fs::write(&report_path, rep_json);
+        }
+        if spec.generate_figures_and_preprint {
+            let t_fig = Instant::now();
+            let ws_root = resolve_crv_workspace_root();
+            let labs_fig_dir = ws_root.join("labs").join("figures");
+            crate::supervisor_figures::generate_nudibranchs_locked_figures(
+                &mut manifest,
+                &report,
+                &run_dir,
+                Some(labs_fig_dir.as_path()),
+            )?;
+            crate::supervisor_nudibranchs::export_nudibranchs_manuscript_and_staged_bundle(
+                &report,
+                &manifest,
+                &ws_root,
+                &run_dir,
+            )?;
+            manifest.stage_figures_tex_ms = t_fig.elapsed().as_millis().max(1);
+        }
+        manifest.total_wall_clock_ms = t0_nudis.elapsed().as_millis().max(1);
+        let manifest_path = run_dir.join("run-manifest.json");
+        let manifest_json =
+            serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+        fs::write(&manifest_path, manifest_json).map_err(|e| e.to_string())?;
+        eprintln!(
+            "[bio-suite-supervisor] Multi-Compartment Run '{}' completed in {} ms -> {}",
+            manifest.run_id,
+            manifest.total_wall_clock_ms,
+            manifest_path.display()
+        );
+        return Ok(manifest);
+    }
+
     if is_snails_study_target(spec.preset_name.as_deref(), &spec.run_id) {
         let t0_snails = Instant::now();
         let run_dir = runs_root_dir.join(&spec.run_id);
@@ -2793,6 +2847,12 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                        } else if is_nudibranchs_study_target(Some(v.as_str()), "") {
+                            spec.run_id = "runie-native-nudibranch-global-25".to_string();
+                            spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            if spec.mcmc_generations == 10_000 {
+                                spec.mcmc_generations = 25_000;
+                            }
                         } else if is_snails_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-invasive-snails-au-nz-24".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -2912,6 +2972,19 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                     if let Ok(rep_json) = serde_json::to_string_pretty(&rep) {
                         let _ = fs::write(&rep_path, rep_json);
                     }
+                } else if is_nudibranchs_study_target(None, &m.run_id) {
+                    crate::supervisor_figures::generate_nudibranchs_locked_figures(
+                        &mut m,
+                        &rep,
+                        &run_dir,
+                        Some(labs_fig_dir.as_path()),
+                    )?;
+                    crate::supervisor_nudibranchs::export_nudibranchs_manuscript_and_staged_bundle(
+                        &rep,
+                        &m,
+                        &ws_root,
+                        &run_dir,
+                    )?;
                 } else if is_snails_study_target(None, &m.run_id) {
                     crate::supervisor_figures::generate_snails_locked_figures(
                         &mut m,

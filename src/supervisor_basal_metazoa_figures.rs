@@ -909,7 +909,7 @@ fn render_basal_fig2_quartet_msc_and_synteny(
 /// Figure 4 (`basal-metazoa-timetree-fig4-runie-pipeline-loglikelihood-deviations.svg`):
 /// Pixel-Locked `<text x="...">` Amino-Acid Motif Alignments Across `FAM-01..FAM-04` +
 /// 61-State Goldman-Yang Codon Selection + 32-Chain RuNIE Combinatorial Sweep +
-/// Real Crystallographic `1LI1.pdb` Type IV Collagen NC1 Fold & Covalent `Met93-Hyl211` Sulfilimine Crosslink.
+/// Real Crystallographic `1li1.pdb` Type IV Collagen NC1 Fold & Covalent `Met93-Hyl211` Sulfilimine Crosslink.
 fn render_basal_fig4_selection_sweep_and_col4_pdb(
     manifest: &SupervisorRunManifest,
     study: &MultiCompartmentStudyReport,
@@ -1127,7 +1127,7 @@ fn render_basal_fig4_selection_sweep_and_col4_pdb(
         }
     }
 
-    // Panel D (Bottom Right): Crystallographic `1LI1.pdb` Type IV Collagen NC1 Fold + Sulfilimine Crosslink
+    // Panel D (Bottom Right): Crystallographic `1li1.pdb` Type IV Collagen NC1 Fold + Sulfilimine Crosslink
     svg.push_str(r##"<rect x="1092" y="482" width="488" height="622" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>"##);
     svg.push_str(r##"<rect x="1092" y="482" width="488" height="36" rx="8" fill="#0f172a"/>"##);
     svg.push_str(r##"<text x="1108" y="505" font-size="11.1" font-weight="800" fill="#f8fafc">Panel D | Type IV Collagen NC1 &amp; Sulfilimine S=N Crosslink (1LI1, 1.90 Å)</text>"##);

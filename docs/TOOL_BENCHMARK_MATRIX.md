@@ -1,6 +1,6 @@
 # Native Rust Tools vs. External Reference Counterparts (36-Tool Benchmark Matrix)
 
-[← Back to `crvscience-labs` Front Page (`README.md`)](../README.md) • [🎯 Validation Process (`VALIDATION_AND_CALIBRATION_PROCESS.md`)](VALIDATION_AND_CALIBRATION_PROCESS.md) • [🧠 `RuNIE` Architecture (`RUNIE_ARCHITECTURE_AND_STUDIES.md`)](RUNIE_ARCHITECTURE_AND_STUDIES.md)
+[← Back to `crvscience-labs` Front Page (`README.md`)](../README.md) • [🎯 Validation Process (`validation_and_calibration_process.md`)](validation_and_calibration_process.md) • [🧠 `RuNIE` Architecture (`runie_architecture_and_studies.md`)](runie_architecture_and_studies.md)
 
 ---
 

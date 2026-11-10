@@ -839,7 +839,7 @@ r#"<h2>1. Introduction: The Root of the Animal Tree of Life, Ctenophora vs. Pori
   <li><strong>Deep Incomplete Lineage Sorting (ILS) vs. Compositional Bias Across Rapid Neoproterozoic Splits:</strong> Short Tonian–Cryogenian internodes separating Ctenophora, Porifera (Hexactinellida, Demospongiae, Homoscleromorpha, Calcarea), Placozoa (<strong>Benthozoa</strong> / <strong>ParaHoxozoa</strong>), and <strong>Planulozoa</strong> (Cnidaria + Bilateria) require exact 18-locus quartet multispecies coalescent reconciliation paired with 4-taxon <code>ABBA-BABA</code> tests to distinguish genuine genealogical discordance from compositional convergence [2, 11, 17].</li>
   <li><strong>Quaternary Paleoclimate Dynamics Across Pelagic vs. Benthic Reef Compartments:</strong> Extant non-bilaterian species experience contrasting Quaternary marine regimes—from pelagic ctenophore and scyphozoan blooms expanding across post-glacial continental shelves to benthic sponges, hydrozoans, and broadcasting scleractinian corals navigating Last Glacial Maximum (LGM) sea-level lowstands and Holocene Indo-Pacific and Caribbean reef transgression [14, 15, 18].</li>
 </ol>
-<p>To address all four challenges reproducibly without ad-hoc scripting, we execute this entire multi-compartment investigation autonomously through <strong><code>bio-suite-supervisor</code></strong> in <strong>100% Native Rust (<code>biosuite-only</code>)</strong> mode under dual-pass SHA-256 blinded dry-lab validation [1]. Across <strong>{tot_recs} active verified NCBI sequence records</strong> (plus {quar_recs} real NCBI <code>UNVERIFIED:</code>/symbiont anomalies autonomously quarantined during Iteration 1 and replaced in Iteration 2), the supervisor coordinates polite Entrez caching, <code>super-blast</code> annotation auditing, circular <code>COX1</code> phasing, hybrid <code>gotoh-msa</code> + <code>mafft-native</code> alignment (supermatrix <strong>L = {sup_l} aligned columns</strong> across 18 loci), a 32-chain RuNIE Felsenstein pruning sweep, B = 1,000 UFBoot maximum-likelihood inference, 18-locus Quartet Multispecies Coalescent species-tree estimation across 11,436,768 quartets, 61-state Goldman–Yang codon selection across 48 nuclear CDS orthologs, and 6 × 25,000-generation Bayesian coalescent skylines across 216 conspecific marine isolates in <strong>{total_sec:.2} seconds ({tot_ms} ms)</strong>.</p>
+<p>To address all four analytical challenges within a unified phylogenetic and population-genetic framework, we execute this multi-compartment investigation through <strong><code>bio-suite-supervisor</code></strong> in <strong>100% Native Rust (<code>biosuite-only</code>)</strong> mode under dual-pass SHA-256 blinded dry-lab validation [1]. Across <strong>{tot_recs} active verified NCBI sequence records</strong> (plus {quar_recs} real NCBI <code>UNVERIFIED:</code>/symbiont anomalies autonomously quarantined during Iteration 1 and replaced in Iteration 2), the supervisor coordinates polite Entrez caching, <code>super-blast</code> annotation auditing, circular <code>COX1</code> phasing, hybrid <code>gotoh-msa</code> + <code>mafft-native</code> alignment (supermatrix <strong>L = {sup_l} aligned columns</strong> across 18 loci), a 32-chain RuNIE Felsenstein pruning sweep, B = 1,000 UFBoot maximum-likelihood inference, 18-locus Quartet Multispecies Coalescent species-tree estimation across 11,436,768 quartets, 61-state Goldman–Yang codon selection across 48 nuclear CDS orthologs, and 6 × 25,000-generation Bayesian coalescent skylines across 216 conspecific marine isolates in <strong>{total_sec:.2} seconds ({tot_ms} ms)</strong>.</p>
 
 <div class="labs-copy-box" data-copy-mode="code" id="ascii-supervisor-dag">
   <div class="labs-copy-box-header"><span class="labs-copy-title">Autonomous bio-suite-supervisor Dual-Pass Execution Architecture &amp; Loop-Back Telemetry</span></div>
@@ -1462,7 +1462,7 @@ r#"<!DOCTYPE html>
     .map_err(|e| format!("Failed writing {:?}: {}", run_html_path, e))?;
     written.push(run_html_path.to_string_lossy().to_string());
 
-    // 5. LaTeX (main.tex), BibTeX (main.bbl), and 00README.XXX
+    // 5. LaTeX (main.tex), BibTeX (main.bbl), and 00readme.xxx
     let mut bbl_items = String::new();
     for (idx, r) in refs.iter().enumerate() {
         bbl_items.push_str(&format!(
@@ -1520,8 +1520,8 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places the Choanozoa root at {
             .map_err(|e| format!("Failed writing main.tex: {}", e))?;
         fs::write(dir.join("main.bbl"), sanitize_no_scratch_extensions(&main_bbl))
             .map_err(|e| format!("Failed writing main.bbl: {}", e))?;
-        fs::write(dir.join("00README.XXX"), "main.tex toplevel\n")
-            .map_err(|e| format!("Failed writing 00README.XXX: {}", e))?;
+        fs::write(dir.join("00readme.xxx"), "main.tex toplevel\n")
+            .map_err(|e| format!("Failed writing 00readme.xxx: {}", e))?;
     }
     written.push(arxiv_dir.join("main.tex").to_string_lossy().to_string());
 
@@ -1533,7 +1533,7 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places the Choanozoa root at {
     ];
     if let Some(chrome_exe) = chrome_candidates.iter().find(|p| std::path::Path::new(p).exists()) {
         let abs_arxiv = fs::canonicalize(&arxiv_dir).unwrap_or_else(|_| arxiv_dir.clone());
-        let arxiv_pdf = abs_arxiv.join("Basal_Metazoa_TimeTree_arXiv_Preprint.pdf");
+        let arxiv_pdf = abs_arxiv.join("basal-metazoa-timetree-preprint.pdf");
         let clean_pdf_str = arxiv_pdf.to_string_lossy().replace("\\\\?\\", "");
         let abs_html = fs::canonicalize(&arxiv_html_path).unwrap_or_else(|_| arxiv_html_path.clone());
         let clean_html_str = abs_html.to_string_lossy().replace("\\\\?\\", "").replace('\\', "/");
@@ -1561,9 +1561,9 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places the Choanozoa root at {
             &arxiv_dir.to_string_lossy(),
             "main.tex",
             "main.bbl",
-            "00README.XXX",
+            "00readme.xxx",
             "single-column-manuscript.html",
-            "Basal_Metazoa_TimeTree_arXiv_Preprint.pdf",
+            "basal-metazoa-timetree-preprint.pdf",
             "figures",
         ])
         .status();

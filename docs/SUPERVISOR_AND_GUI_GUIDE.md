@@ -2,7 +2,7 @@
 
 `bio-suite-supervisor` (`src/supervisor.rs`, `src/figure_generator.rs`, `src/bio_suite_gui.rs`) is an autonomous, multi-threaded Rust orchestrator for **CRV Science Labs (`bio-suite` & `RuNIE`)**. It eliminates ad-hoc JavaScript/Python scripts by managing the entire bioinformatics study lifecycle inside compiled Rust:
 
-1. **Flexible Cohort Ingestion**: Accepts NCBI Entrez accession numbers (`--accessions`), local FASTA files (`--fasta`), or built-in gold-standard study presets (`--preset anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-whiteflies-23`) combined with a factorial **Model Design** (`3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration`).
+1. **Flexible Cohort Ingestion**: Accepts NCBI Entrez accession numbers (`--accessions`), local FASTA files (`--fasta`), or built-in gold-standard study presets (`--preset anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `basal-metazoa-05`) combined with a factorial **Model Design** (`3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration`).
 2. **Autonomous `Super-BLAST` Annotation Validation & Self-Healing Loop-Back Engine (95%+ Autonomous)**:
    - Audits every fetched sequence in parallel (`rayon`) via `super_blast` homology scoring against the cohort medoid, strand orientation verification (`--adjustdirection`), full-length completeness gates, 3-frame translation internal stop-codon scans (`NUMT` nuclear pseudogene detection), and terminal `5' C->T / 3' G->A` ancient-DNA deamination checks.
    - Automatically repairs recoverable errors in Rust (reverse-complement strand rescue, terminal deamination `N`-masking) and quarantines severe repository artifacts (e.g., sample swaps such as `PQ585799.1`, nuclear `NUMT` paralogs such as `KU551299.1`, partial fragments, or withdrawn/failed Entrez IDs) into the **`0🧪` Uncleaned Negative Control** track while automatically pulling verified full-length replacement sequences from the reserve pool.
@@ -34,12 +34,11 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 .\target\release\bio-suite-supervisor.exe run --preset coleoptera-function-18 --design 3way-multifactorial
 .\target\release\bio-suite-supervisor.exe run --preset rhinolophus-asia-21 --design 3way-multifactorial
 
-# 2b. Run the Preprint 23 Multi-Compartment Bemisia / Aleyrodidae Native Bio-Suite study (550 Entrez records -> 544 verified + 6 quarantined UNVERIFIED anomalies, 18-locus Quartet MSC, 12x36 skylines, 61-state codon selection)
-.\target\release\bio-suite-supervisor.exe run `
-  --preset bemisia-whiteflies-23 `
-  --design biosuite-only `
-  --generations 25000 `
-  --gui-snapshot-png runs/runie-native-bemisia-whiteflies-23/figures/gui-overview.png
+# 2b. Run the Preprint 23–26 Multi-Compartment Native Bio-Suite studies (550 Entrez records -> 544 verified + 6 quarantined UNVERIFIED anomalies, 18-locus Quartet MSC, 12x36 skylines, 61-state codon selection)
+.\target\release\bio-suite-supervisor.exe run --preset bemisia-global-23 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset invasive-snails-24 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset nudibranchs-global-25 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset isoptera-termites-26 --design biosuite-only --generations 25000
 
 # 3. Run with custom NCBI Accession numbers and a custom Run ID + Title
 .\target\release\bio-suite-supervisor.exe run `
@@ -93,7 +92,7 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 | `run` / `list` / `inspect` / `figures` / `gui` | Primary supervisor mode | `run` |
 | `--run-id <id>` | Unique identifier for the managed run directory (`runs/<run-id>/`) | Derived from preset or `runie-3way-multifactorial-anopheles-mosquitos` |
 | `--title <title>` | Study title rendered in GUI headers, figures, and `manuscript/main.tex` | Preset title |
-| `--preset <name>` | Built-in dataset preset: `anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21` | `anopheles-3way` |
+| `--preset <name>` | Built-in dataset preset: `anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `basal-metazoa-05` | `anopheles-3way` |
 | `--design <mode>` | Model design: `3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration` | `3way-multifactorial` |
 | `--accessions <A,B,C>` | Comma-separated NCBI Entrez accession list | Empty (uses preset) |
 | `--fasta <path>` | Path to an input FASTA sequence file | `None` |

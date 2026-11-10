@@ -14,12 +14,12 @@ Because we are building a self-contained Rust toolkit from the ground up, this l
 
 | Metric | Count / Value |
 | :--- | :--- |
-| **Total Tool Vocabulary in `RuNIE` Markov State Space** | **37 Native Rust Operators** (`37` Live External Reserve-Validated & Multi-Stage Chained Operators) |
+| **Total Tool Vocabulary in `RuNIE` Markov State Space** | **38 Native Rust Operators** (`37` Live External Reserve-Validated & Multi-Stage Chained Operators + `bio-suite-supervisor`) |
 | **Tools Synthesized or Modified Due to `RuNIE`** | **37 Major Tool & Pipeline Interventions** (`RN-2026-001` through `RN-2026-037`) |
-| **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **36 End-to-End 4–9 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-059`, `20` Empirically Verified Preprints & `18` Canonical Studies) |
-| **Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)** | **20 Verified Monographs** (`#108`–`#110`, `#113`–`#114`, `#117`–`#131`) with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors |
+| **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **36 End-to-End 4–9 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-065`, `26` Empirically Verified Preprints & `18` Canonical Studies) |
+| **Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`)** | **26 Verified Monographs** (`#108`–`#110`, `#113`–`#114`, `#117`–`#134`, `#136`–`#138`) with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors |
 | **Negative Control / Uncalibrated Trajectories Rejected (`0🧪`)** | **55 Logged `0🧪` Rejects** in `runs/zero-star-calibration-dump.json` (`SWEEP-01` through `SWEEP-35`, plus `MSA-CAL-04-ZERO-STAR`) |
-| **Runtime Architecture** | Pure-Rust `candle-core` + `candle-nn` CPU Tensors + `rayon` Parallel Tempering (`GA-MCMC`) + Native SVG & 3D PDB Graphical Report Suite |
+| **Runtime Architecture** | Pure-Rust `candle-core` + `candle-nn` CPU Tensors + `rayon` Parallel Tempering (`GA-MCMC`) + 5-Tab Win32 `bio-suite-supervisor` GUI + Native SVG & 3D PDB Graphical Report Suite |
 
 ---
 
@@ -39,11 +39,11 @@ Across Studies `#87`, `#88–#90`, and `#91` (`VAL-SET-026`, `VAL-SET-027`, `VAL
 
 ## Chronological Log of `RuNIE` Changes, Solutions, Tool Modifications & Integrated Pipelines
 
-### [`v2.0.2`] — 2026-11-09 — Tool 1 Upgrade & `RN-2026-037`: 6-Stage Native Rust MAFFT-Mimetic Progressive/Iterative Aligner (`runie-mafft-linsi` / `bio-suite mafft-native` in `src/mafft_native.rs`) for `ITS1–5.8S–ITS2` & Hypervariable rRNA Indel Cohorts (`VAL-SET-001` & `VAL-SET-002`)
+### [`v2.0.2`] — 2026-11-10 — Tool 1 Upgrade, Autonomous `bio-suite-supervisor` & `RN-2026-037`: 6-Stage Native Rust MAFFT-Mimetic Progressive/Iterative Aligner (`runie-mafft-linsi` / `bio-suite mafft-native` in `src/mafft_native.rs`) & End-to-End Supervisor Orchestration (`VAL-SET-001`, `VAL-SET-002` & `VAL-SET-060`–`VAL-SET-065` / `PREPRINT-21`–`PREPRINT-26`)
 
 - **Entry ID**: `RN-2026-037`
 - **Affected Tool(s) & Module(s)**:
-  - **Calibrated Native Modules**: `src/mafft_native.rs` (`align_sequences_mafft_native`, `run_mafft_native_cli`, `MafftStrategy::{Auto, LInsI, EInsI, QInsI, FftNsI}`), `src/phylo.rs` (`AlignmentMode::MafftNative`, automatic rRNA/ITS mode dispatch in `align_sequences`), `src/msa_calibration.rs` (`align-compare` 3-way calibration vs. Center-Star Gotoh v3 and external `MAFFT v7.526`)
+  - **Calibrated Native Modules**: `src/mafft_native.rs` (`align_sequences_mafft_native`, `run_mafft_native_cli`, `MafftStrategy::{Auto, LInsI, EInsI, QInsI, FftNsI}`), `src/phylo.rs` (`AlignmentMode::MafftNative`, automatic rRNA/ITS mode dispatch in `align_sequences`), `src/msa_calibration.rs` (`align-compare` 3-way calibration vs. Center-Star Gotoh v3 and external `MAFFT v7.526`), and `src/supervisor.rs` / `src/bio_suite_gui.rs` (`bio-suite-supervisor` end-to-end 4-regime RuNIE orchestrator across `PREPRINT-21`–`PREPRINT-26`)
   - **External Reference Counterpart**: `MAFFT v7.526` (Katoh & Standley 2013, `L-INS-i` / `E-INS-i` / `FFT-NS-i` / `--adjustdirection`)
 - **Engineering & Calibration Summary**:
   1. **Diagnosis of Legacy Center-Star Gotoh v3 Failure on Indel-Saturated `ITS1–5.8S–ITS2` & rRNA Expansion Loops**: While 9-mer anchored `420-bp` chunked center-star Gotoh alignment (`gotoh-msa` v3) achieves `21,190x` speedup and $r = 1.0000$ parity on gap-free coding CDS (`MSA-CAL-01` Carnivora `COX1`, `1,545 bp`), star-projection independently inserts unaligned sequence intervals around the single medoid taxon (`30.8%–46.4%` gaps), lacks terminal overhang protection for asymmetric `18S`/`28S` amplicon primer tails (`+70 bp` / `+37 bp`), and collapses on cross-family/cross-phylum `ITS1–5.8S–ITS2` cohorts ($r = 0.6069$ on Pezizomycotina `MSA-CAL-03` and $r = 0.5260$ on Dikarya + reverse-complemented outgroup `MSA-CAL-04`).

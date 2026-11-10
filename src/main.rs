@@ -1767,18 +1767,22 @@ fn main() {
             }
         }
         _ => {
-            println!("CRV Science Labs — bio-suite v0.3.0 (GPL-3.0-or-later)");
+            println!("CRV Science Labs — bio-suite v0.4.0 (GPL-3.0-or-later)");
             println!("Repository: https://github.com/bpwhite/crvscience-labs.git");
             println!();
             println!("USAGE:");
-            println!("  bio-suite supervisor [run|list|gui] [--run-id <id>] [--preset anopheles-3way|coleoptera-function-18|rhinolophus-asia-21] [--design 3way-multifactorial|biosuite-only|external-only|tool-calibration] [--accessions <A1,A2,...>] [--fasta <file.fa>] [--gui]");
-            println!("  bio-suite gui                       [--run-id <id>] [--preset anopheles-3way]");
+            println!("  bio-suite supervisor [run|list|gui] [--run-id <id>] [--preset anopheles-3way|coleoptera-function-18|rhinolophus-asia-21|bemisia-global-23|invasive-snails-24|nudibranchs-global-25|isoptera-termites-26|basal-metazoa-05] [--design 3way-multifactorial|biosuite-only|external-only|tool-calibration] [--accessions <A1,A2,...>] [--fasta <file.fa>] [--gui]");
+            println!("  bio-suite gui                       [--run-id <id>] [--preset isoptera-termites-26]");
             println!("  bio-suite fetch [coi-barcodes | chr1-section-a]");
             println!("  bio-suite align-view                [--input <fasta>] [--region 120:240] [--mode dna|aa|aa-compact|dual|ry3|dayhoff6] [--snapshot-svg <svg>] [--snapshot-png <png>]");
             println!("  bio-suite align-snapshot            [--input <fasta>] [--auto-focal] [--snapshot-svg <svg>] [--snapshot-png <png>]");
             println!("  bio-suite agent coi-barcode-cluster [--aligner native|mafft] [--out runs/coi-barcode-report.json]");
             println!("  bio-suite mafft-native              [--input <fasta>] [--strategy auto|linsi|einsi|qinsi|fftnsi] [--out <fasta>]");
             println!("  bio-suite align-compare             [--out runs/msa-native-vs-mafft-calibration.json]");
+            println!("  bio-suite mcmc-skyline              [--generations 25000] [--burnin-pct 20] [--out runs/runie-mcmc-skyline-neanderthal-calibration.json]");
+            println!("  bio-suite timetree-compare          [--out runs/timetree-lsd2-scipy-calibration.json]");
+            println!("  bio-suite super-blast               [--out runs/super-blast-biopython-scipy-calibration.json]");
+            println!("  bio-suite runie                     [--out runs/runie-pipeline-inference-report.json]");
             println!("  bio-suite agent chr1-unbiased-scan  [--out runs/chr1-complexity-report.json]");
             println!("  bio-suite hgt-scan                  [--out runs/hgt-scan-report.json]");
             println!("  bio-suite bgc-mine                  [--out runs/bgc-mine-report.json]");

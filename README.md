@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Language: Rust](https://img.shields.io/badge/Language-Rust%202021-orange.svg)](https://www.rust-lang.org/)
-[![Engine: RuNIE v2.0.1 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v2.0.1%20GA--MCMC%20%2B%20ModelTest-8a2be2.svg)](docs/runie_architecture_and_studies.md)
+[![Engine: RuNIE v2.0.2 (candle-core + rayon)](https://img.shields.io/badge/Inference-RuNIE%20v2.0.2%20GA--MCMC%20%2B%20ModelTest-8a2be2.svg)](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)
 [![Zenodo DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23969275.svg)](https://doi.org/10.5281/zenodo.23969275)
 [![Figshare DOI](https://img.shields.io/badge/Figshare%20DOI-10.6084%2Fm9.figshare.34919469-f472b6.svg)](https://doi.org/10.6084/m9.figshare.34919469)
 [![Portal: crvscience.com/labs](https://img.shields.io/badge/Portal-crvscience.com%2Flabs-00bcd4.svg)](https://crvscience.com/labs)
@@ -16,11 +16,11 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 <!-- AUTO-FRONTPAGE-STATUS:START -->
 | Subsystem | Live Count & Version | Summary & Documentation |
 | :--- | :--- | :--- |
-| **Native Rust Engines (`bio-suite`)** | **`36` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/tool_benchmark_matrix.md) |
-| **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.1` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/runie_architecture_and_studies.md) & [**Changelog**](runie_changelog.md) |
-| **Empirically Verified Preprints** | **`24` Preprints (`PREPRINT-01`–`PREPRINT-24`, `v2.0.1`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
-| **Lab Discoveries Directory** | **`136` Total** (`24` Preprints · `35` Tool Cal. · `77` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/discoveries_and_critical_reports.md) |
-| **Curated Validation Datasets** | **`63` Datasets (`VAL-SET-001`–`VAL-SET-063`)** | Replicated Development + Untouched Reserve cohorts + `54` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/validation_and_calibration_process.md) |
+| **Native Rust Engines (`bio-suite`)** | **`37` Validated Tools (`23.19×` Speedup)** | ✅ **Validated**: Head-to-head calibrated against `MAFFT`, `jModelTest`, `IQ-TREE 2`, `PAML`, `ASTRAL`, `BEAST`, `HMMER3`, `ViennaRNA`, `AMRFinderPlus`, `GECCO`, `MACSE`, `SciPy`, and `Biopython` $\rightarrow$ [**Tool Benchmark Matrix**](docs/tool_benchmark_matrix.md) |
+| **`RuNIE` Bayesian Pipeline Synthesizer** | **`v2.0.2` (Stage 4 `ModelTest` + 3-Way Engine)** | ✅ **Validated**: 4-Chain Parallel-Tempering GA-MCMC DAG synthesizer (`candle-core` + `rayon`), Stage 4 `ModelTest` (`BIC`/`AICc`/`RCFV <= 0.050`) gate, 3-Way Native/External/Hybrid execution & `RuNIE Pipeline Flowchart` $\rightarrow$ [**RuNIE Architecture**](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md) & [**Changelog**](runie_changelog.md) |
+| **Empirically Verified Preprints** | **`26` Preprints (`PREPRINT-01`–`PREPRINT-26`, `v2.0.2`)** | ✅ **Validated**: Cached NCBI RefSeq/GenBank sequence syntheses with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors $\rightarrow$ [**Verified Preprints Portal**](https://crvscience.com/labs#preprints) |
+| **Lab Discoveries Directory** | **`137` Total** (`26` Preprints · `35` Tool Cal. · `76` Pipeline Benchmarks) | Full index of empirical preprints, head-to-head tool calibrations, and multi-stage `RuNIE` pipeline benchmarks $\rightarrow$ [**Discoveries & Validation Scope**](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md) |
+| **Curated Validation Datasets** | **`65` Datasets (`VAL-SET-001`–`VAL-SET-065`)** | Replicated Development + Untouched Reserve cohorts + `55` logged `0🧪` negative controls $\rightarrow$ [**Validation & Calibration Process**](docs/validation_and_calibration_process.md) |
 <!-- AUTO-FRONTPAGE-STATUS:END -->
 
 ---
@@ -29,11 +29,12 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 
 To keep this front page concise, detailed mathematical formulations, validation protocols, and full benchmark tables are organized into dedicated documentation pages:
 
-1. **[`docs/runie_architecture_and_studies.md`](docs/runie_architecture_and_studies.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **20 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)**, and all **15 Canonical Multi-Stage Studies**.
-2. **[`docs/validation_and_calibration_process.md`](docs/validation_and_calibration_process.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **59 Validation Datasets (`VAL-SET-001`–`VAL-SET-059`)**.
-3. **[`docs/tool_benchmark_matrix.md`](docs/tool_benchmark_matrix.md)** — Complete **36-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`) and the active validation queue.
-4. **[`docs/discoveries_and_critical_reports.md`](docs/discoveries_and_critical_reports.md)** — Auto-synced index of all **20 Empirically Verified Preprints**, recent Lab Discoveries, and dataset provenance mappings.
-5. **[`runie_changelog.md`](runie_changelog.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-036`).
+1. **[`docs/RUNIE_ARCHITECTURE_AND_STUDIES.md`](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **26 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`)**, and all **18 Canonical Multi-Stage Studies**.
+2. **[`docs/validation_and_calibration_process.md`](docs/validation_and_calibration_process.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **65 Validation Datasets (`VAL-SET-001`–`VAL-SET-065`)**.
+3. **[`docs/tool_benchmark_matrix.md`](docs/tool_benchmark_matrix.md)** — Complete **37-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`, plus `bio-suite-supervisor`) and the active validation queue.
+4. **[`docs/DISCOVERIES_AND_CRITICAL_REPORTS.md`](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md)** — Auto-synced index of all **26 Empirically Verified Preprints**, recent Lab Discoveries (`#1`–`#138`), and dataset provenance mappings.
+5. **[`docs/supervisor_and_gui_guide.md`](docs/supervisor_and_gui_guide.md)** — Guide to the autonomous **`bio-suite-supervisor`** study orchestrator, `Super-BLAST` self-healing loop-back engine, and 5-tab native Win32 desktop GUI (`bio-suite-supervisor gui` & `runie-align-view`).
+6. **[`runie_changelog.md`](runie_changelog.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-037`).
 
 ---
 
@@ -78,17 +79,23 @@ cargo build --release
 # Tool #34: 5-Stage Adaptive Multi-Biotype Super-BLAST vs. Biopython v1.88 & SciPy v1.18.1
 ./target/release/bio-suite super-blast --out runs/super-blast-biopython-scipy-calibration.json
 
+# Tool #37: Autonomous End-to-End Phylogenomic Supervisor & 5-Tab Win32 Desktop GUI
+./target/release/bio-suite-supervisor run --preset isoptera-termites-26 --design biosuite-only --generations 25000
+./target/release/bio-suite-supervisor gui --run-id runie-native-isoptera-global-26
+
 # Tool #19: 16-RP Supermatrix & Dayhoff-6 / SR4 Compositional Recoding vs. IQ-TREE v2.4.0
 ./target/release/bio-suite rp16-compare --out runs/rp16-supermatrix-iqtree-calibration.json
 ```
 
 ---
 
-## Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-20`)
+## Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`)
 
 <!-- AUTO-FRONTPAGE-HIGHLIGHTS:START -->
 | ID & Status | Verified Preprint Title & Live Reader Link | Master Concept Zenodo DOI | Signal | Primary Validation Set |
 | :--- | :--- | :--- | :--- | :--- |
+| **#138** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics)** | [`10.5281/zenodo.24116968`](https://doi.org/10.5281/zenodo.24116968) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS` |
+| **#137** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nudibranch-global-radiation-phylogenomics)** | `Verified` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS` |
 | **#136** `✅ Verified Preprint` | **[Phylogenomic Radiation and Invasion Genomics of Introduced Snails Across Australia and New Zealand (Gastropoda: Stylommatophora & Caenogastropoda): Native Rust Quartet Coalescent Species-Tree Inference, Aestivation and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/invasive-snails-au-nz-phylogenomics)** | [`10.5281/zenodo.24095711`](https://doi.org/10.5281/zenodo.24095711) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS` |
 | **#134** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Bemisia Whiteflies and Allied Aleyrodidae (Hemiptera: Sternorrhyncha), Native Rust Quartet Coalescent Species-Tree Inference, Symbiotic and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/bemisia-whitefly-global-radiation)** | [`10.5281/zenodo.24093136`](https://doi.org/10.5281/zenodo.24093136) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS` |
 | **#133** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Anopheles Mosquitoes (Culicidae: Anophelinae), Native Rust Quartet Coalescent Species-Tree Inference, Chemosensory and Insecticide-Resistance Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/anopheles-global-radiation-native-biosuite)** | [`10.5281/zenodo.24078829`](https://doi.org/10.5281/zenodo.24078829) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS` |

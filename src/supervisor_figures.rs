@@ -501,6 +501,98 @@ pub(crate) const NUDIBRANCHS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "nudibranch-global-supp-s3-cox1-ry3-alignview",
 };
 
+pub(crate) const ISOPTERA_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [174.6, 114.0, 86.0, 72.4, 38.4, 36.2, 34.6],
+    backbone_node_ages: [44.8, 54.2, 98.6, 126.4, 148.8, 238.4],
+    fig1_max_ma: 260.0,
+    fig1_eras: &[
+        ("Triassic", 260.0, 201.0, "#f1f5f9"),
+        ("Jurassic", 201.0, 145.0, "#f8fafc"),
+        ("Cretaceous", 145.0, 66.0, "#f1f5f9"),
+        ("Paleogene", 66.0, 23.0, "#f8fafc"),
+        ("Neo-Q", 23.0, 0.0, "#f1f5f9"),
+    ],
+    fig1_ticks: &[250, 200, 150, 100, 50, 25, 0],
+    fig1_node_y_slots: [7.8, 15.2, 24.4, 36.0, 26.5, 44.5, 51.8, 58.0],
+    fig1_clade_cards: &[
+        ("[A]", 0, 3, "Blattodea & Cryptocercus Outgroups (n=4)", "Periplaneta, Blattella, Cryptocercus relictus/kyebangensis", "Xylophagous wood-roach sister & Blattabacterium root"),
+        ("[B]", 4, 9, "Basal Relictual Termite Families (n=6)", "Mastotermes, Zootermopsis, Porotermes, Hodotermes", "Parabasalid/oxymonad protist symbioses + dampwood castes"),
+        ("[C]", 10, 19, "Drywood Termites: Kalotermitidae (n=10)", "Cryptotermes, Incisitermes, Neotermes, Kalotermes", "Single-piece drywood nidification + nephridial water recycling"),
+        ("[D]", 20, 31, "Subterranean Termites: Rhinotermitidae (n=12)", "Coptotermes, Reticulitermes, Heterotermes, Prorhinotermes", "Foraging gallery networks + frontal-pore fontanelle defense"),
+        ("[E]", 32, 41, "Higher Termites I: Macrotermitinae (n=10)", "Macrotermes, Odontotermes, Ancistrotermes, Hypotermes", "Obligate Termitomyces fungus-comb lignocellulose agriculture"),
+        ("[F]", 42, 52, "Higher Termites II: Apicotermitinae & Termitinae (n=11)", "Pericapritermes, Termes, Microcerotermes, Neocapritermes", "Protist-free alkaline P3 gut humivory & asymmetric mandibles"),
+        ("[G]", 53, 63, "Higher Termites III: Nasutitermitinae Crown (n=11)", "Nasutitermes, Hospitalitermes, Constrictotermes, Labiotermes", "Diterpene synthase nasute soldiers & arboreal carton nests"),
+    ],
+    fig1_web_svg: "isoptera-global-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of Blattodea & Global Isoptera Radiation (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 3, "Blattodea & Cryptocercus (n=4)", ""),
+        ("[B]", 4, 9, "Basal Relictual Families (n=6)", "8,4"),
+        ("[C]", 10, 19, "Kalotermitidae Drywood (n=10)", ""),
+        ("[D]", 20, 31, "Rhinotermitidae Subterranean (n=12)", "9,3,2,3"),
+        ("[E]", 32, 41, "Macrotermitinae Fungus-Growers (n=10)", "5,3"),
+        ("[F]", 42, 52, "Apicotermitinae & Termitinae (n=11)", ""),
+        ("[G]", 53, 63, "Nasutitermitinae & Syntermitinae (n=11)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "isoptera-global-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Blattodea & Isoptera Species (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T003", 0),
+        ("Node II", "B:T007", 1),
+        ("Node III", "C:T015", 2),
+        ("Node IV", "D:T023", 3),
+        ("Node V", "D:T028", 4),
+        ("Node VI", "E:T037", 5),
+        ("Node VII", "F:T047", 6),
+        ("Node VIII", "G:T058", 7),
+    ],
+    fig3_abba_arc_tips: ("D:T021", "D:T022"),
+    fig3_web_svg: "isoptera-global-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression.",
+    fig4a_web_svg: "isoptera-global-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional Standardized COX1/COII Bayesian Coalescent Skyline Matrix Across Global Isoptera Lineages (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six single-species/genus regional mtDNA COX1/COII coalescent skylines (25,000 MCMC generations) across Coptotermes formosanus, C. gestroi, Reticulitermes flavipes, R. speratus, Macrotermes, and Nasutitermes.",
+    fig4b_web_svg: "isoptera-global-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 16S/28S/ITS rDNA (4Ne) vs. Nuclear Endoglucanase Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Paired multi-locus skylines across fungus-growing Odontotermes and Holarctic Reticulitermes separating maternal mtDNA expansion from Katoh E-INS-i rDNA and nuclear cellulase/hexamerin coding sweeps.",
+    fig5_short_fam_titles: [
+        "Endogenous GH9 Cellulases & Laccases (Endoglucanase A / E-4 / Laccase)",
+        "Caste Differentiation & Queen Longevity (Vitellogenin / JHE / JHAMT)",
+        "Mound Hypoxia & Subterranean Immunity Chaperones (Hsc70-3 / Hsp60A / Gp93)",
+        "Cuticular Hydrocarbon & Terpenoid Cytochrome P450s (CYP4G15 / CYP6K1 / CYP4C3)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Endogenous GH9 Cellulase / Laccase",
+        "FAM-02: Caste Vitellogenin / JHE / JHAMT",
+        "FAM-03: Mound Hypoxia Hsc70-3 / Hsp60A / Gp93",
+        "FAM-04: Cuticular & Terpenoid CYP4G15 / CYP6K1",
+    ],
+    fig5_panel_d_header: "Panel D | CYP4G15 Structure & Fe³⁺–Heme Pocket (1TQN, 2.05 Å)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Microsomal P450 Fold (461 Cα Threaded with Z. nevadensis CYP4G15)",
+    fig5_web_svg: "isoptera-global-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP4G15 Heme-Thiolate Active Site",
+    fig5_caption: "Translated amino-acid motif alignments across 48 Isoptera NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Zootermopsis nevadensis CYP4G15 structure threaded on 1TQN (2.05 A) with zoomed Fe3+-Protoporphyrin IX (HEM A 508) and Cys442-Sg axial thiolate coordination.",
+    fig6_web_svg: "isoptera-global-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    fig6_caption: "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon, 18-locus Blattodea & Isoptera supermatrix) and Pipeline B (12 single-species/genus regional and multi-locus termite coalescent cohorts, N = 432).",
+    fig6_clade_label: "Blattodea & Isoptera",
+    fig6_p450_label: "CYP4G15 / GH9 / Vitellogenin",
+    fig6_its_label: "Odontotermes & Reticulitermes 16S/28S/ITS rDNA",
+    supp_s1_fasta_name: "supp_s1_cyp4g15_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (Z. nevadensis CYP4G15 / CYP6K1 / C. secundus CYP15A1)",
+    supp_s1_source: "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS (FAM-04)",
+    supp_s1_stem: "isoptera-global-supp-s1-cyp4g15-alignview",
+    supp_s2_title: "Cohort L5 Reticulitermes 16S/28S/ITS Ribosomal rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS (Cohort L5)",
+    supp_s2_stem: "isoptera-global-supp-s2-rdna-einsi-alignview",
+    supp_s3_title: "Blattodea & Isoptera Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "isoptera-global-supp-s3-cox1-ry3-alignview",
+};
+
 fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
@@ -3935,4 +4027,15 @@ pub fn generate_nudibranchs_locked_figures(
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
     generate_locked_figures_with_theme(manifest, study, &NUDIBRANCHS_THEME, run_dir, web_figures_dir)
+}
+
+/// Generates all 6 Preprint-26 (`Global Isoptera Radiation`) locked-format figures (`.svg` + `.png` + `.pdf`)
+/// plus 3 Native Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
+pub fn generate_isoptera_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    generate_locked_figures_with_theme(manifest, study, &ISOPTERA_THEME, run_dir, web_figures_dir)
 }

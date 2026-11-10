@@ -244,13 +244,17 @@ fn http_get_text_polite(url: &str) -> Result<String, String> {
                 "User-Agent",
                 "crvscience-bio-suite-supervisor/0.3.0 (+https://crvscience.com/labs; GPL-3.0)",
             )
-            .timeout(Duration::from_secs(35))
+            .timeout(Duration::from_secs(45))
             .call()
         {
-            Ok(resp) => match resp.into_string() {
-                Ok(txt) => return Ok(txt),
-                Err(e) => last_err = format!("Body read error: {}", e),
-            },
+            Ok(resp) => {
+                use std::io::Read;
+                let mut buf = Vec::with_capacity(512 * 1024);
+                match resp.into_reader().take(64 * 1024 * 1024).read_to_end(&mut buf) {
+                    Ok(_) => return Ok(String::from_utf8_lossy(&buf).into_owned()),
+                    Err(e) => last_err = format!("Body read error: {}", e),
+                }
+            }
             Err(e) => last_err = format!("HTTP error: {}", e),
         }
     }
@@ -491,7 +495,7 @@ pub fn discover_and_cache_entrez_cohort(
     Ok(out)
 }
 
-fn recode_ry3(seq: &str) -> String {
+pub(crate) fn recode_ry3(seq: &str) -> String {
     seq.bytes()
         .enumerate()
         .map(|(i, b)| {
@@ -511,7 +515,7 @@ fn recode_ry3(seq: &str) -> String {
         .collect()
 }
 
-fn recode_codon12(seq: &str) -> String {
+pub(crate) fn recode_codon12(seq: &str) -> String {
     let bytes = seq.as_bytes();
     let mut out = String::with_capacity(bytes.len());
     let mut i = 0usize;
@@ -553,7 +557,7 @@ fn recode_codon12(seq: &str) -> String {
     out
 }
 
-fn build_raw0_control(seq: &str, taxon_idx: usize) -> String {
+pub(crate) fn build_raw0_control(seq: &str, taxon_idx: usize) -> String {
     let mut bytes: Vec<u8> = seq
         .bytes()
         .map(|b| {
@@ -585,7 +589,7 @@ fn build_raw0_control(seq: &str, taxon_idx: usize) -> String {
     String::from_utf8(bytes).unwrap_or_default()
 }
 
-fn extract_longest_sense_orf(raw_seq: &str, target_nt_len: usize) -> String {
+pub(crate) fn extract_longest_sense_orf(raw_seq: &str, target_nt_len: usize) -> String {
     let clean: Vec<u8> = raw_seq
         .bytes()
         .filter(|&b| matches!(b, b'A' | b'C' | b'G' | b'T' | b'a' | b'c' | b'g' | b't'))
@@ -634,7 +638,7 @@ fn extract_longest_sense_orf(raw_seq: &str, target_nt_len: usize) -> String {
     out
 }
 
-fn translate_sense_codons(nt: &str, max_aa: usize) -> String {
+pub(crate) fn translate_sense_codons(nt: &str, max_aa: usize) -> String {
     let bytes = nt.as_bytes();
     let mut aa = String::with_capacity(max_aa);
     let mut i = 0usize;
@@ -671,7 +675,7 @@ fn translate_sense_codons(nt: &str, max_aa: usize) -> String {
 
 /// Rotates a circular mitochondrial genome so it starts in phase with a conserved 18-mer anchor
 /// from the reference mitogenome (`NC_006279.1`), rescuing reverse-complement strand if needed.
-fn phase_circular_mitogenome(seq: &str, anchor_ref: &str) -> (String, char) {
+pub(crate) fn phase_circular_mitogenome(seq: &str, anchor_ref: &str) -> (String, char) {
     let (_, _, hsp_fwd) = super_blast_pair(
         "Q",
         &seq[..seq.len().min(3200)],
@@ -707,7 +711,7 @@ fn phase_circular_mitogenome(seq: &str, anchor_ref: &str) -> (String, char) {
     (oriented, strand)
 }
 
-fn append_zero_star_dump_entry(
+pub(crate) fn append_zero_star_dump_entry(
     runs_root: &Path,
     run_id: &str,
     quarantined_count: usize,
@@ -758,7 +762,7 @@ fn append_zero_star_dump_entry(
     }
 }
 
-fn parse_locality_and_host(subname: &str, default_region: &str) -> (String, String, String) {
+pub(crate) fn parse_locality_and_host(subname: &str, default_region: &str) -> (String, String, String) {
     let parts: Vec<&str> = subname.split('|').map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
     let mut loc = default_region.to_string();
     let mut host = "Field foliage collection".to_string();
@@ -792,7 +796,7 @@ fn parse_locality_and_host(subname: &str, default_region: &str) -> (String, Stri
     (loc, host, yr)
 }
 
-fn aa3_to_aa1(res3: &str) -> char {
+pub(crate) fn aa3_to_aa1(res3: &str) -> char {
     match res3 {
         "ALA" => 'A', "CYS" => 'C', "ASP" => 'D', "GLU" => 'E', "PHE" => 'F',
         "GLY" => 'G', "HIS" => 'H', "ILE" => 'I', "LYS" => 'K', "LEU" => 'L',
@@ -802,7 +806,7 @@ fn aa3_to_aa1(res3: &str) -> char {
     }
 }
 
-fn aa1_to_aa3(aa: char) -> &'static str {
+pub(crate) fn aa1_to_aa3(aa: char) -> &'static str {
     match aa {
         'A' => "ALA", 'C' => "CYS", 'D' => "ASP", 'E' => "GLU", 'F' => "PHE",
         'G' => "GLY", 'H' => "HIS", 'I' => "ILE", 'K' => "LYS", 'L' => "LEU",
@@ -812,7 +816,7 @@ fn aa1_to_aa3(aa: char) -> &'static str {
     }
 }
 
-fn aa_volume_proxy(aa: char) -> f64 {
+pub(crate) fn aa_volume_proxy(aa: char) -> f64 {
     match aa {
         'G' => 60.1, 'A' => 88.6, 'S' => 89.0, 'C' => 108.5, 'D' => 111.1,
         'P' => 112.7, 'N' => 114.1, 'T' => 116.1, 'E' => 138.4, 'V' => 140.0,
@@ -824,7 +828,7 @@ fn aa_volume_proxy(aa: char) -> f64 {
 
 /// Translates sense codons under Invertebrate Mitochondrial Genetic Code (NCBI Table 5:
 /// `TGA = W`, `ATA = M`, `AGA/AGG = S`, stops = `TAA/TAG`).
-fn translate_mito_table5_orf(nt: &str) -> (usize, String, String) {
+pub(crate) fn translate_mito_table5_orf(nt: &str) -> (usize, String, String) {
     let bytes = nt.as_bytes();
     let mut best_frame_start = 0usize;
     let mut best_aa = String::new();
@@ -899,15 +903,19 @@ fn translate_mito_table5_orf(nt: &str) -> (usize, String, String) {
     (best_frame_start, best_nt, best_aa)
 }
 
-/// Builds a real crystallographic homology-threaded 3D model of *Bemisia tabaci* `CYP6CM1`
-/// (`EU642555.1`, Clan-3 microsomal Cytochrome P450 monooxygenase) onto X-ray crystal structure
-/// `1TQN.pdb` (2.05 Å Clan-3 microsomal P450 + 43-atom Iron-Protoporphyrin IX `HEM A 508` cofactor
-/// + proximal `Cys` axial heme-thiolate `Fe-Sγ` coordination bond).
-fn build_cyp6_pdb_structure(
+/// Builds a real crystallographic homology-threaded 3D model of a Clan-3 microsomal Cytochrome P450
+/// monooxygenase (`CYP6CM1` `EU642555.1` or *Pomacea canaliculata* `CYP3A43` `XM_025224403.1`) onto
+/// X-ray crystal structure `1TQN.pdb` (2.05 Å Clan-3 microsomal P450 + 43-atom Iron-Protoporphyrin IX
+/// `HEM A 508` cofactor + proximal `Cys` axial heme-thiolate `Fe-Sγ` coordination bond).
+pub(crate) fn build_cyp_1tqn_pdb_structure(
     run_id: &str,
     cache_dir: &Path,
     pdb_dir: &Path,
-    cyp6cm1_nt_opt: Option<&str>,
+    target_nt_opt: Option<&str>,
+    pdb_filename: &str,
+    gene_symbol: &str,
+    accession: &str,
+    organism: &str,
 ) -> SupervisedPdbStructure {
     let _ = fs::create_dir_all(pdb_dir);
     let pdb_cache_dir = cache_dir.join("pdb");
@@ -1001,8 +1009,7 @@ fn build_cyp6_pdb_structure(
         }
     }
 
-    // Translate Bemisia tabaci CYP6CM1 complete CDS (`EU642555.1`) and align to `1TQN_A` via native Katoh L-INS-i!
-    let target_aa_seq = if let Some(nt) = cyp6cm1_nt_opt {
+    let target_aa_seq = if let Some(nt) = target_nt_opt {
         let orf = extract_longest_sense_orf(nt, 1800);
         translate_sense_codons(&orf, (orf.len() / 3).max(1))
     } else {
@@ -1028,12 +1035,12 @@ fn build_cyp6_pdb_structure(
                 cached_from_disk: true,
             },
             FastaRecord {
-                id: "CYP6CM1".to_string(),
-                accession: "EU642555.1".to_string(),
-                taxon: "Bemisia tabaci".to_string(),
+                id: gene_symbol.to_string(),
+                accession: accession.to_string(),
+                taxon: organism.to_string(),
                 common_name: String::new(),
-                family: "CYP6".to_string(),
-                gene: "CYP6CM1".to_string(),
+                family: "CYP3".to_string(),
+                gene: gene_symbol.to_string(),
                 description: String::new(),
                 sequence: target_aa_seq.clone(),
                 cached_from_disk: true,
@@ -1094,8 +1101,13 @@ fn build_cyp6_pdb_structure(
 
     let mut atoms = Vec::with_capacity(template_cas.len());
     let mut pdb_txt = String::with_capacity(64_000);
-    pdb_txt.push_str("HEADER    OXIDOREDUCTASE (CYTOCHROME P450)        09-NOV-26   BT6C\n");
-    pdb_txt.push_str("TITLE     BEMISIA TABACI CYP6CM1 (EU642555.1) THREADED ON 2.05A 1TQN HEME POCKET\n");
+    pdb_txt.push_str("HEADER    OXIDOREDUCTASE (CYTOCHROME P450)        09-NOV-26   CY3A\n");
+    pdb_txt.push_str(&format!(
+        "TITLE     {} {} ({}) THREADED ON 2.05A 1TQN HEME POCKET\n",
+        organism.to_ascii_uppercase(),
+        gene_symbol.to_ascii_uppercase(),
+        accession
+    ));
     pdb_txt.push_str("REMARK   1 TEMPLATE: RCSB PDB 1TQN CHAIN A (CLAN-3 MICROSOMAL CYTOCHROME P450)\n");
     pdb_txt.push_str("REMARK   2 COFACTOR: HETATM HEM A 508 (IRON-PROTOPORPHYRIN IX, 43 ATOMS)\n");
     for (hi, &(hs, he)) in helix_ranges.iter().enumerate() {
@@ -1220,8 +1232,8 @@ fn build_cyp6_pdb_structure(
     }
     pdb_txt.push_str("END\n");
 
-    let rel_path = "pdb/bemisia_cyp6cm1_heme_pocket.pdb".to_string();
-    let _ = fs::write(pdb_dir.join("bemisia_cyp6cm1_heme_pocket.pdb"), &pdb_txt);
+    let rel_path = format!("pdb/{}", pdb_filename);
+    let _ = fs::write(pdb_dir.join(pdb_filename), &pdb_txt);
 
     let n_res = atoms.len().max(1);
     let global_rmsd = round4((rmsd_sq_sum / (n_res as f64)).sqrt());
@@ -1232,10 +1244,10 @@ fn build_cyp6_pdb_structure(
     let fe_sg_ang = proximal_cys_sg.map(|p| p.4).unwrap_or(2.354);
 
     SupervisedPdbStructure {
-        structure_id: format!("{}-CYP6CM1-1TQN", run_id.to_ascii_uppercase()),
-        target_protein: "Bemisia tabaci Cytochrome P450 CYP6CM1 (EU642555.1) + Heme IX Active Site".to_string(),
+        structure_id: format!("{}-{}-1TQN", run_id.to_ascii_uppercase(), gene_symbol.to_ascii_uppercase()),
+        target_protein: format!("{} Cytochrome P450 {} ({}) + Heme IX Active Site", organism, gene_symbol, accession),
         template_pdb_code: "1TQN_A (2.05 Å Clan-3 P450 + HEM A 508)".to_string(),
-        organism: "Bemisia tabaci".to_string(),
+        organism: organism.to_string(),
         num_residues: atoms.len(),
         kabsch_rmsd_angstrom: global_rmsd,
         tm_score,
@@ -1255,6 +1267,24 @@ fn build_cyp6_pdb_structure(
         het_atoms,
         proximal_cys_sg,
     }
+}
+
+fn build_cyp6_pdb_structure(
+    run_id: &str,
+    cache_dir: &Path,
+    pdb_dir: &Path,
+    cyp6cm1_nt_opt: Option<&str>,
+) -> SupervisedPdbStructure {
+    build_cyp_1tqn_pdb_structure(
+        run_id,
+        cache_dir,
+        pdb_dir,
+        cyp6cm1_nt_opt,
+        "bemisia_cyp6cm1_heme_pocket.pdb",
+        "CYP6CM1",
+        "EU642555.1",
+        "Bemisia tabaci",
+    )
 }
 
 /// Executes the full 544-record (+ 6 quarantined GenBank anomalies) empirical *Bemisia* & Aleyrodidae

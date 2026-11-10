@@ -1195,12 +1195,12 @@ fn compute_model_pairwise_distances(seqs: &[String], model: PhyloRunModel) -> Ve
             let q = tv / valid.max(1.0);
             let d = if matches!(model, PhyloRunModel::JcUniform) {
                 let diff = (p + q).min(0.74);
-                -0.75 * (1.0 - (4.0 / 3.0) * diff).max(1e-6).ln()
+                (-0.75 * (1.0 - (4.0 / 3.0) * diff).max(1e-6).ln()).min(2.5)
             } else {
-                // Gamma-corrected K2P/TN93 distance
-                let w1 = (1.0 - 2.0 * p - q).max(1e-5);
-                let w2 = (1.0 - 2.0 * q).max(1e-5);
-                0.5 * alpha * (w1.powf(-1.0 / alpha) + 0.5 * w2.powf(-1.0 / alpha) - 1.5).max(1e-6)
+                // Gamma-corrected K2P/TN93 distance with saturation guard
+                let w1 = (1.0 - 2.0 * p - q).max(0.08);
+                let w2 = (1.0 - 2.0 * q).max(0.08);
+                (0.5 * alpha * (w1.powf(-1.0 / alpha) + 0.5 * w2.powf(-1.0 / alpha) - 1.5).max(1e-6)).min(2.5)
             };
             dist[i][j] = d;
             dist[j][i] = d;

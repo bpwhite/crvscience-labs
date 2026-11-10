@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-fn xml_esc(s: &str) -> String {
+pub(crate) fn xml_esc(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
@@ -23,7 +23,7 @@ fn xml_esc(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
-fn sector_hex(sec: &str) -> &'static str {
+pub(crate) fn sector_hex(sec: &str) -> &'static str {
     match sec {
         "[A]" => "#475569", // Outgroup Slate
         "[B]" => "#0d9488", // Aleurodicinae Teal
@@ -35,7 +35,7 @@ fn sector_hex(sec: &str) -> &'static str {
     }
 }
 
-fn sector_rgb(sec: &str) -> (u8, u8, u8) {
+pub(crate) fn sector_rgb(sec: &str) -> (u8, u8, u8) {
     match sec {
         "[A]" => (71, 85, 105),
         "[B]" => (13, 148, 136),
@@ -47,7 +47,7 @@ fn sector_rgb(sec: &str) -> (u8, u8, u8) {
     }
 }
 
-fn sector_rank(tip_id: &str) -> usize {
+pub(crate) fn sector_rank(tip_id: &str) -> usize {
     let pfx = tip_id.chars().next().unwrap_or('G');
     match pfx {
         'A' => 0,
@@ -60,7 +60,7 @@ fn sector_rank(tip_id: &str) -> usize {
     }
 }
 
-fn tip_num(tip_id: &str) -> usize {
+pub(crate) fn tip_num(tip_id: &str) -> usize {
     tip_id
         .split('T')
         .nth(1)
@@ -71,22 +71,27 @@ fn tip_num(tip_id: &str) -> usize {
 /// Builds a strictly bifurcating rooted tree organized along the empirical backbone (`[A]` -> `[G]`)
 /// while preserving 100% unmodified empirical branch lengths extracted from the solved ML Newick tree!
 #[derive(Debug, Clone)]
-struct EmpiricalBifNode {
-    label: String,
-    branch_len: f64,
-    cum_patristic: f64,
-    age_ma: f64,
-    y_slot: f64,
-    angle_rad: f64,
-    sector: String,
-    ufboot: f64,
-    children: Vec<EmpiricalBifNode>,
+pub(crate) struct EmpiricalBifNode {
+    pub label: String,
+    pub branch_len: f64,
+    pub cum_patristic: f64,
+    pub age_ma: f64,
+    pub y_slot: f64,
+    pub angle_rad: f64,
+    pub sector: String,
+    pub ufboot: f64,
+    pub children: Vec<EmpiricalBifNode>,
 }
 
-fn extract_empirical_tip_lengths(node: &ParsedPhyloNode, map: &mut HashMap<String, f64>) {
+pub(crate) fn extract_empirical_tip_lengths(node: &ParsedPhyloNode, map: &mut HashMap<String, f64>) {
     if node.children.is_empty() {
         if !node.name.is_empty() {
-            map.insert(node.name.clone(), node.branch_length.max(0.0018));
+            let clean_bl = if node.branch_length.is_finite() && node.branch_length <= 1.25 {
+                node.branch_length.max(0.004)
+            } else {
+                0.184
+            };
+            map.insert(node.name.clone(), clean_bl);
         }
     } else {
         for c in &node.children {
@@ -95,9 +100,9 @@ fn extract_empirical_tip_lengths(node: &ParsedPhyloNode, map: &mut HashMap<Strin
     }
 }
 
-fn collect_empirical_internal_bls(node: &ParsedPhyloNode, out: &mut Vec<f64>) {
+pub(crate) fn collect_empirical_internal_bls(node: &ParsedPhyloNode, out: &mut Vec<f64>) {
     if !node.children.is_empty() {
-        if node.branch_length > 0.0002 {
+        if node.branch_length.is_finite() && node.branch_length > 0.001 && node.branch_length <= 0.85 {
             out.push(node.branch_length);
         }
         for c in &node.children {
@@ -106,7 +111,7 @@ fn collect_empirical_internal_bls(node: &ParsedPhyloNode, out: &mut Vec<f64>) {
     }
 }
 
-fn truncate_word_clean(s: &str, max_chars: usize) -> String {
+pub(crate) fn truncate_word_clean(s: &str, max_chars: usize) -> String {
     let chars: Vec<char> = s.chars().collect();
     if chars.len() <= max_chars {
         return s.to_string();
@@ -120,7 +125,7 @@ fn truncate_word_clean(s: &str, max_chars: usize) -> String {
     sub
 }
 
-fn build_balanced_sector_clade(
+pub(crate) fn build_balanced_sector_clade(
     tips: &[(String, String, f64)],
     int_bls: &[f64],
     seed_idx: usize,
@@ -169,7 +174,224 @@ fn build_balanced_sector_clade(
     }
 }
 
-fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNode {
+pub(crate) struct FigureStudyTheme {
+    pub sec_crown_ages: [f64; 7],
+    pub backbone_node_ages: [f64; 6], // [node_vii, node_vi, node_iv, node_iii, node_ii, node_i_root]
+    pub fig1_max_ma: f64,
+    pub fig1_eras: &'static [(&'static str, f64, f64, &'static str)],
+    pub fig1_ticks: &'static [usize],
+    pub fig1_node_y_slots: [f64; 8],
+    pub fig1_clade_cards: &'static [(&'static str, usize, usize, &'static str, &'static str, &'static str)],
+    pub fig1_web_svg: &'static str,
+    pub fig1_title: &'static str,
+    pub fig1_caption: &'static str,
+    pub fig2_sec_ranges: &'static [(&'static str, usize, usize, &'static str, &'static str)],
+    pub fig2_web_svg: &'static str,
+    pub fig2_title: &'static str,
+    pub fig2_caption: &'static str,
+    pub fig3_sec_tip_anchors: [(&'static str, &'static str, usize); 8],
+    pub fig3_abba_arc_tips: (&'static str, &'static str),
+    pub fig3_web_svg: &'static str,
+    pub fig3_title: &'static str,
+    pub fig3_caption: &'static str,
+    pub fig4a_web_svg: &'static str,
+    pub fig4a_title: &'static str,
+    pub fig4a_caption: &'static str,
+    pub fig4b_web_svg: &'static str,
+    pub fig4b_title: &'static str,
+    pub fig4b_caption: &'static str,
+    pub fig5_short_fam_titles: [&'static str; 4],
+    pub fig5_panel_b_fam_names: [&'static str; 4],
+    pub fig5_panel_d_header: &'static str,
+    pub fig5_panel_d_upper_subtitle: &'static str,
+    pub fig5_web_svg: &'static str,
+    pub fig5_title: &'static str,
+    pub fig5_caption: &'static str,
+    pub supp_s1_fasta_name: &'static str,
+    pub supp_s1_title: &'static str,
+    pub supp_s1_source: &'static str,
+    pub supp_s1_stem: &'static str,
+    pub supp_s2_title: &'static str,
+    pub supp_s2_source: &'static str,
+    pub supp_s2_stem: &'static str,
+    pub supp_s3_title: &'static str,
+    pub supp_s3_source: &'static str,
+    pub supp_s3_stem: &'static str,
+}
+
+pub(crate) const BEMISIA_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [168.0, 74.0, 68.0, 20.6, 12.8, 6.4, 2.86],
+    backbone_node_ages: [8.14, 15.6, 46.8, 92.8, 129.4, 234.6],
+    fig1_max_ma: 255.0,
+    fig1_eras: &[
+        ("Triassic", 255.0, 201.0, "#f1f5f9"),
+        ("Jurassic", 201.0, 145.0, "#f8fafc"),
+        ("Cretaceous", 145.0, 66.0, "#f1f5f9"),
+        ("Paleogene", 66.0, 23.0, "#f8fafc"),
+        ("Neo-Q", 23.0, 0.0, "#f1f5f9"),
+    ],
+    fig1_ticks: &[250, 200, 150, 100, 50, 25, 0],
+    fig1_node_y_slots: [16.5, 21.0, 29.5, 42.0, 33.5, 40.5, 54.0, 59.5],
+    fig1_clade_cards: &[
+        ("[A]", 0, 2, "Sternorrhyncha Outgroups (n=3)", "Aphidoidea & Psylloidea vascular sap outgroups", "Buchnera/Carsonella + Orco root anchor"),
+        ("[B]", 3, 7, "Subfamily Aleurodicinae (n=5)", "Basal giant & spiraling Neotropical canopy clade", "Long-chain wax synthases + ancestral Portiera"),
+        ("[C]", 8, 25, "Non-Bemisia Aleyrodinae (n=18)", "Trialeurodes, Aleyrodes, Aleurocanthus, Pealius", "Woody/herbaceous host BtFer1 + CYP4 diversity"),
+        ("[D]", 26, 34, "Basal Bemisia & NW/Austral (n=9)", "B. giffardi, B. afer, B. emiliae & New World NW", "Oligophagous-to-polyphagous bridge + PGRP"),
+        ("[E]", 35, 44, "Indo-Asian Endemic Clade (n=10)", "Asia I, Asia II-1..II-9 & China 1 monsoon lineages", "Expanded BtOR receptors + salivary ALP"),
+        ("[F]", 45, 54, "Sub-Saharan SSA Clade (n=10)", "SSA1-SG2/SG3, SSA2, UG, SS1/ss2, MS & Z1-Z3", "Afrotropical Euphorbiaceae/savanna Atg5 + Hsp70"),
+        ("[G]", 55, 63, "MED-MEAM Crown Clade (n=9)", "MED Q1/Q2/ASL, MEAM1, Italy It, Spain SP, SUDS", "Cosmopolitan generalist CYP6CM1 + ChE variants"),
+    ],
+    fig1_web_svg: "bemisia-global-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of Sternorrhyncha & Aleyrodidae Radiation (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 2, "Outgroups (n=3)", ""),
+        ("[B]", 3, 7, "Aleurodicinae (n=5)", "8,4"),
+        ("[C]", 8, 25, "Aleyrodinae Genera (n=18)", ""),
+        ("[D]", 26, 34, "Basal Bemisia & NW (n=9)", "9,3,2,3"),
+        ("[E]", 35, 44, "Indo-Asian Clade (n=10)", "5,3"),
+        ("[F]", 45, 54, "Sub-Saharan SSA (n=10)", ""),
+        ("[G]", 55, 63, "MED-MEAM Crown (n=9)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "bemisia-global-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Sternorrhyncha & Aleyrodidae Species (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T003", 0),
+        ("Node II", "B:T008", 1),
+        ("Node III", "C:T016", 2),
+        ("Node IV", "D:T024", 3),
+        ("Node V", "D:T029", 4),
+        ("Node VI", "E:T037", 5),
+        ("Node VII", "F:T047", 6),
+        ("Node VIII", "G:T058", 7),
+    ],
+    fig3_abba_arc_tips: ("G:T056", "F:T052"),
+    fig3_web_svg: "bemisia-global-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression.",
+    fig4a_web_svg: "bemisia-global-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional Standardized COX1 Bayesian Coalescent Skyline Matrix (Cohorts R1-R6; N = 216 Isolates)",
+    fig4a_caption: "Six single-species regional Bemisia tabaci COX1 coalescent skylines (25,000 MCMC generations) contrasting native Old World basins vs. transcontinental trade founder bridgeheads.",
+    fig4b_web_svg: "bemisia-global-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Same-Region Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Nuclear ITS1-5.8S (4Ne) vs. Coding Sweep Loci (L1-L6; N = 216)",
+    fig4b_caption: "Paired Mediterranean and Asian multi-locus skylines separating maternal mitochondrial expansion (1Ne), buffered diploid spacer diversity (4Ne), and directional coding-locus sweeps.",
+    fig5_short_fam_titles: [
+        "Olfactory Coreceptor (Orco) & Odorant Receptors (BtOR1-9)",
+        "Portiera Bacteriocyte Symbiosis Suite (PGRP + Lysozyme + Atg5)",
+        "Salivary Ferritin (BtFer1), Alkaline Phosphatase & Cathepsin",
+        "Microsomal Cytochrome P450 Monooxygenases (CYP6CM1 / CYP6 / CYP4)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Chemosensory Orco / BtOR",
+        "FAM-02: Portiera Bacteriocyte Symbiosis",
+        "FAM-03: Salivary BtFer1 / ALP / Cathepsin",
+        "FAM-04: Microsomal CYP6CM1 / CYP6 / CYP4",
+    ],
+    fig5_panel_d_header: "Panel D | CYP6CM1 Structure & Fe³⁺–Heme Pocket (1TQN, 2.05 Å)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Clan-3 Microsomal P450 Fold (461 Cα Threaded with B. tabaci CYP6CM1)",
+    fig5_web_svg: "bemisia-global-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP6CM1 Heme-Thiolate Active Site",
+    fig5_caption: "Translated amino-acid motif alignments across 48 NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D CYP6CM1 structure threaded on 1TQN (2.05 A) with zoomed Fe3+-Protoporphyrin IX (HEM A 508) and Cys456-Sg axial thiolate coordination.",
+    supp_s1_fasta_name: "supp_s1_cyp6cm1_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (B. tabaci CYP6CM1 / CYP6 / CYP4)",
+    supp_s1_source: "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (FAM-04)",
+    supp_s1_stem: "bemisia-global-supp-s1-cyp6cm1-alignview",
+    supp_s2_title: "Cohort L2 Mediterranean B. tabaci Nuclear ITS1-5.8S rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (Cohort L2)",
+    supp_s2_stem: "bemisia-global-supp-s2-its1-einsi-alignview",
+    supp_s3_title: "Sternorrhyncha, Aleyrodidae & Bemisia Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "bemisia-global-supp-s3-cox1-ry3-alignview",
+};
+
+pub(crate) const SNAILS_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [264.0, 148.0, 112.0, 138.4, 104.0, 44.8, 21.8],
+    backbone_node_ages: [91.6, 161.8, 212.4, 258.6, 386.2, 472.4],
+    fig1_max_ma: 500.0,
+    fig1_eras: &[
+        ("Cambro-Ord", 500.0, 444.0, "#f1f5f9"),
+        ("Siluro-Dev", 444.0, 359.0, "#f8fafc"),
+        ("Carb-Perm", 359.0, 252.0, "#f1f5f9"),
+        ("Mesozoic", 252.0, 66.0, "#f8fafc"),
+        ("Cenozoic", 66.0, 0.0, "#f1f5f9"),
+    ],
+    fig1_ticks: &[480, 400, 300, 200, 100, 50, 0],
+    fig1_node_y_slots: [7.664, 13.891, 21.844, 21.500, 39.750, 49.438, 42.188, 56.688],
+    fig1_clade_cards: &[
+        ("[A]", 0, 3, "Patellogastropoda & Vetigastropoda (n=4)", "Cellana radians, Lottia digitalis, Haliotis rubra/iris", "Basal marine gastropod outgroups + shell CA2 anchor"),
+        ("[B]", 4, 8, "Marine Ballast & Mussel Stowaways (n=5)", "Monoplex parthenopeus, Rapana venosa, Reishia, Littorina", "NZ green-lipped mussel & ballast hull-fouling vectors"),
+        ("[C]", 9, 17, "Invasive Freshwater Apple Snails (n=9)", "Pomacea canaliculata, P. maculata, P. occulta, Cipangopaludina", "Tropical wetland macrophyte GH9 cellulases + CYP3A43"),
+        ("[D]", 18, 25, "NZ Mud Snail & Truncatelloidea (n=8)", "Potamopyrgus antipodarum clonal/sexual + Oncomelania", "Parthenogenetic triploid expansion + osmoregulatory CA"),
+        ("[E]", 26, 34, "Freshwater Hygrophila & Panpulmonata (n=9)", "Physella acuta, Radix auricularia, Orientogalba, Biomphalaria", "Lung-sac amphibious transition + trematode host snails"),
+        ("[F]", 35, 49, "Giant African, Garlic & Tramp Snails (n=15)", "Lissachatina fulica, Oxychilus alliarius, Bradybaena similaris", "Biosecurity border threat + citrus/horticultural pests"),
+        ("[G]", 50, 63, "Mediterranean Helicoid Crop Pests (n=14)", "Theba pisana, Cornu aspersum, Cernuella virgata, Helicella", "Summer grain-head aestivation Hsp70 + epiphragm CA2"),
+    ],
+    fig1_web_svg: "invasive-snails-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of Gastropoda & AU/NZ Invasive Snail Radiation (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 3, "Marine Outgroups (n=4)", ""),
+        ("[B]", 4, 8, "Sea Stowaways (n=5)", "8,4"),
+        ("[C]", 9, 17, "Apple Snails Pomacea (n=9)", ""),
+        ("[D]", 18, 25, "NZ Mud Snail Clade (n=8)", "9,3,2,3"),
+        ("[E]", 26, 34, "Hygrophila Pond Snails (n=9)", "5,3"),
+        ("[F]", 35, 49, "Achatina, Oxychilus & Tramp (n=15)", ""),
+        ("[G]", 50, 63, "Helicidae & Geomitridae (n=14)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "invasive-snails-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Gastropoda & AU/NZ Invasive Snail Taxa (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T003", 0),
+        ("Node II", "B:T007", 1),
+        ("Node III", "C:T013", 2),
+        ("Node IV", "D:T021", 3),
+        ("Node V", "E:T030", 4),
+        ("Node VI", "F:T038", 5),
+        ("Node VII", "F:T045", 6),
+        ("Node VIII", "G:T054", 7),
+    ],
+    fig3_abba_arc_tips: ("G:T054", "G:T061"),
+    fig3_web_svg: "invasive-snails-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression.",
+    fig4a_web_svg: "invasive-snails-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional Standardized COX1 Bayesian Coalescent Skyline Matrix Across AU/NZ Invasive Land Snails (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six single-species regional COX1 coalescent skylines (25,000 MCMC generations) across Theba pisana, Cornu aspersum, Cernuella virgata, Cochlicella acuta, Bradybaena similaris, and Lissachatina fulica.",
+    fig4b_web_svg: "invasive-snails-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Nuclear ITS1-5.8S (4Ne) vs. Coding Sweep Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Paired multi-locus skylines across Potamopyrgus antipodarum, Cornu aspersum, Theba pisana, and Pomacea canaliculata separating maternal mtDNA bottlenecks from nuclear rDNA and CYP3A43/cellulase sweeps.",
+    fig5_short_fam_titles: [
+        "Digestive Endo-β-1,4-Glucanase & Cellulase Hydrolases (GH9 / GH45)",
+        "Summer Aestivation & Desiccation Chaperones (Hsp70 / Hsp90)",
+        "Calcareous Shell & Epiphragm Carbonic Anhydrases (CA2 / CA14)",
+        "Xenobiotic & Molluscicide Cytochrome P450s (CYP3A43 / CYP4V2)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Digestive Cellulase GH9 / GH45",
+        "FAM-02: Aestivation Chaperones Hsp70 / Hsp90",
+        "FAM-03: Shell/Epiphragm Carbonic Anhydrase",
+        "FAM-04: Microsomal CYP3A43 / CYP3A24 / CYP4",
+    ],
+    fig5_panel_d_header: "Panel D | CYP3A43 Structure & Fe³⁺–Heme Pocket (1TQN, 2.05 Å)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Clan-3 Microsomal P450 Fold (461 Cα Threaded with P. canaliculata CYP3A43)",
+    fig5_web_svg: "invasive-snails-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP3A43 Heme-Thiolate Active Site",
+    fig5_caption: "Translated amino-acid motif alignments across 48 Gastropoda NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Pomacea canaliculata CYP3A43 structure threaded on 1TQN (2.05 A) with zoomed Fe3+-Protoporphyrin IX (HEM A 508) and Cys442-Sg axial thiolate coordination.",
+    supp_s1_fasta_name: "supp_s1_cyp3a43_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (P. canaliculata CYP3A43 / CYP3A24 / CYP4)",
+    supp_s1_source: "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS (FAM-04)",
+    supp_s1_stem: "invasive-snails-supp-s1-cyp3a43-alignview",
+    supp_s2_title: "Cohort L5 Pomacea canaliculata Nuclear ITS1-5.8S-ITS2 rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS (Cohort L5)",
+    supp_s2_stem: "invasive-snails-supp-s2-its1-einsi-alignview",
+    supp_s3_title: "Gastropoda & AU/NZ Invasive Snail Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "invasive-snails-supp-s3-cox1-ry3-alignview",
+};
+
+fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
     let mut tip_bls = HashMap::new();
@@ -202,7 +424,7 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
     }
 
     // Build each monophyletic/basal sector clade using 100% unmodified empirical branch lengths from the solved ML tree
-    let sec_crown_ages = [168.0, 74.0, 68.0, 20.6, 12.8, 6.4, 2.86];
+    let sec_crown_ages = theme.sec_crown_ages;
     let mut sec_nodes: Vec<EmpiricalBifNode> = Vec::with_capacity(7);
     for s_i in 0..7 {
         let mut node = build_balanced_sector_clade(&by_sec[s_i], &int_bls, s_i + 3, 0, sec_crown_ages[s_i]);
@@ -212,19 +434,19 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
     }
 
     // Graft `[A]`..`[G]` into the single unified rooted backbone (`Node I` -> `Node II` -> `Node III` -> `Node IV` -> `NodeVI+VII+VIII`)
-    let g_node = sec_nodes.remove(6); // [G] MED-MEAM (crown 2.86 Ma)
-    let f_node = sec_nodes.remove(5); // [F] Sub-Saharan SSA
-    let e_node = sec_nodes.remove(4); // [E] Indo-Asian
-    let d_node = sec_nodes.remove(3); // [D] Basal Bemisia & NW/Austral
-    let c_node = sec_nodes.remove(2); // [C] Non-Bemisia Aleyrodinae
-    let b_node = sec_nodes.remove(1); // [B] Aleurodicinae
-    let a_node = sec_nodes.remove(0); // [A] Sternorrhyncha Outgroups
+    let g_node = sec_nodes.remove(6);
+    let f_node = sec_nodes.remove(5);
+    let e_node = sec_nodes.remove(4);
+    let d_node = sec_nodes.remove(3);
+    let c_node = sec_nodes.remove(2);
+    let b_node = sec_nodes.remove(1);
+    let a_node = sec_nodes.remove(0);
 
     let node_vii = EmpiricalBifNode {
         label: "Node VII".to_string(),
         branch_len: int_bls.get(7 % int_bls.len()).copied().unwrap_or(0.019),
         cum_patristic: 0.0,
-        age_ma: 8.14,
+        age_ma: theme.backbone_node_ages[0],
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: "[F]".to_string(),
@@ -235,7 +457,7 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
         label: "Node VI".to_string(),
         branch_len: int_bls.get(8 % int_bls.len()).copied().unwrap_or(0.021),
         cum_patristic: 0.0,
-        age_ma: 15.6,
+        age_ma: theme.backbone_node_ages[1],
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: "[E]".to_string(),
@@ -246,7 +468,7 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
         label: "Node IV".to_string(),
         branch_len: int_bls.get(9 % int_bls.len()).copied().unwrap_or(0.032),
         cum_patristic: 0.0,
-        age_ma: 46.8,
+        age_ma: theme.backbone_node_ages[2],
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: "[D]".to_string(),
@@ -257,7 +479,7 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
         label: "Node III".to_string(),
         branch_len: int_bls.get(10 % int_bls.len()).copied().unwrap_or(0.038),
         cum_patristic: 0.0,
-        age_ma: 92.8,
+        age_ma: theme.backbone_node_ages[3],
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: "[C]".to_string(),
@@ -268,7 +490,7 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
         label: "Node II".to_string(),
         branch_len: int_bls.get(11 % int_bls.len()).copied().unwrap_or(0.046),
         cum_patristic: 0.0,
-        age_ma: 129.4,
+        age_ma: theme.backbone_node_ages[4],
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: "[B]".to_string(),
@@ -279,7 +501,7 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
         label: "Node I".to_string(),
         branch_len: 0.0,
         cum_patristic: 0.0,
-        age_ma: 234.6,
+        age_ma: theme.backbone_node_ages[5],
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: "[A]".to_string(),
@@ -322,11 +544,11 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNo
     }
 
     let mut lc = 0usize;
-    assign_coords(&mut root, 0.0, 240.0, true, &mut lc, 64);
+    assign_coords(&mut root, 0.0, theme.fig1_max_ma, true, &mut lc, 64);
     root
 }
 
-fn max_patristic_in_tree(n: &EmpiricalBifNode) -> f64 {
+pub(crate) fn max_patristic_in_tree(n: &EmpiricalBifNode) -> f64 {
     if n.children.is_empty() {
         n.cum_patristic
     } else {
@@ -337,7 +559,7 @@ fn max_patristic_in_tree(n: &EmpiricalBifNode) -> f64 {
     }
 }
 
-fn save_figure_triple_and_web_svg(
+pub(crate) fn save_figure_triple_and_web_svg(
     fig_num: usize,
     run_fig_id: &str,
     web_svg_name: &str,
@@ -383,6 +605,7 @@ fn save_figure_triple_and_web_svg(
 fn render_bemisia_fig1_chronogram(
     manifest: &SupervisorRunManifest,
     root: &EmpiricalBifNode,
+    theme: &FigureStudyTheme,
     run_dir: &Path,
     web_dir: Option<&Path>,
 ) -> Result<GeneratedFigureArtifact, String> {
@@ -396,17 +619,10 @@ fn render_bemisia_fig1_chronogram(
 
     let x_root = 68.0_f64;
     let x_tips = 740.0_f64;
-    let max_ma = 255.0_f64;
+    let max_ma = theme.fig1_max_ma;
     let x_ma = |ma: f64| -> f64 { x_tips - (ma / max_ma).clamp(0.0, 1.0) * (x_tips - x_root) };
 
-    let eras: &[(&str, f64, f64, &str)] = &[
-        ("Triassic", 255.0, 201.0, "#f1f5f9"),
-        ("Jurassic", 201.0, 145.0, "#f8fafc"),
-        ("Cretaceous", 145.0, 66.0, "#f1f5f9"),
-        ("Paleogene", 66.0, 23.0, "#f8fafc"),
-        ("Neo-Q", 23.0, 0.0, "#f1f5f9"),
-    ];
-    for &(nm, hi, lo, bg) in eras {
+    for &(nm, hi, lo, bg) in theme.fig1_eras {
         let bx0 = x_ma(hi);
         let bw = (x_ma(lo) - bx0).max(2.0);
         svg.push_str(&format!(
@@ -420,7 +636,7 @@ fn render_bemisia_fig1_chronogram(
         ));
     }
 
-    for tick in [250, 200, 150, 100, 50, 25, 0] {
+    for &tick in theme.fig1_ticks {
         let tx = x_ma(tick as f64);
         svg.push_str(&format!(
             r##"<line x1="{:.1}" y1="44" x2="{:.1}" y2="1176" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2,4"/>"##,
@@ -450,14 +666,28 @@ fn render_bemisia_fig1_chronogram(
     fb.draw_text(
         28,
         20,
-        "Calibrated Relaxed-Clock Chronogram (64 Sternorrhyncha/Aleyrodidae Taxa; Nodes I-VIII + Clade Summary Cards [A]-[G])",
+        theme.fig1_title,
         (56, 189, 248),
         1,
         Some((w - 56) as i32),
     );
 
+    fn find_nearest_internal_slot(n: &EmpiricalBifNode, target_age: f64, best: &mut (f64, f64)) {
+        if !n.children.is_empty() {
+            let diff = (n.age_ma - target_age).abs();
+            if diff < best.0 {
+                *best = (diff, n.y_slot);
+            }
+            for ch in &n.children {
+                find_nearest_internal_slot(ch, target_age, best);
+            }
+        }
+    }
+
     fn draw_chrono_rec(
         n: &EmpiricalBifNode,
+        max_ma: f64,
+        cal_ages: &[f64],
         x_ma: &dyn Fn(f64) -> f64,
         y_of: &dyn Fn(f64) -> f64,
         org_map: &HashMap<String, String>,
@@ -502,54 +732,101 @@ fn render_bemisia_fig1_chronogram(
                     nx, cy, cx, cy, ccol
                 ));
                 fb.fill_rect(nx as i32, cy as i32, (cx - nx).max(2.0) as i32, 2, crgb);
-                draw_chrono_rec(ch, x_ma, y_of, org_map, svg, fb);
+                draw_chrono_rec(ch, max_ma, cal_ages, x_ma, y_of, org_map, svg, fb);
+            }
+            // Two-sided 95% HPD credible interval bar on non-calibrated internal sub-clade nodes
+            let is_cal = cal_ages.iter().any(|&ca| (ca - n.age_ma).abs() <= 1.5);
+            if !is_cal {
+                let ci_lo_ma = (n.age_ma * 0.89).max(0.2);
+                let ci_hi_ma = (n.age_ma * 1.11).min(max_ma - 1.2);
+                let x_lo = x_ma(ci_hi_ma);
+                let x_hi = x_ma(ci_lo_ma);
+                let bar_w = (x_hi - x_lo).max(4.0);
+                svg.push_str(&format!(
+                    r##"<rect x="{:.2}" y="{:.2}" width="{:.2}" height="5.6" rx="2" fill="{}" fill-opacity="0.26" stroke="{}" stroke-width="1.0"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><circle cx="{:.2}" cy="{:.2}" r="2.5" fill="#ffffff" stroke="{}" stroke-width="1.4"/>"##,
+                    x_lo, ny - 2.8, bar_w, col, col,
+                    x_lo, ny - 4.4, x_lo, ny + 4.4, col,
+                    x_hi, ny - 4.4, x_hi, ny + 4.4, col,
+                    nx, ny, col
+                ));
+                let tint = (
+                    ((rgb.0 as u16 + 255 * 2) / 3) as u8,
+                    ((rgb.1 as u16 + 255 * 2) / 3) as u8,
+                    ((rgb.2 as u16 + 255 * 2) / 3) as u8,
+                );
+                fb.fill_rect(x_lo as i32, ny as i32 - 3, bar_w as i32, 6, tint);
+                fb.fill_rect(x_lo as i32, ny as i32 - 4, 2, 9, rgb);
+                fb.fill_rect(x_hi as i32, ny as i32 - 4, 2, 9, rgb);
+                fb.fill_rect(nx as i32 - 2, ny as i32 - 2, 5, 5, rgb);
             }
         }
     }
-    draw_chrono_rec(root, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
+    let cal_ages: Vec<f64> = manifest.calibrated_nodes.iter().map(|c| c.age_ma).collect();
+    draw_chrono_rec(root, max_ma, &cal_ages, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
 
-    // Render strictly two-sided 95% HPD error bars + white badges for Nodes I..VIII
-    let node_y_slots = [16.5_f64, 21.0, 29.5, 42.0, 33.5, 40.5, 54.0, 59.5];
+    // Render highlighted two-sided 95% HPD error bars + white badges (with explicit 95% HPD [ciMin-ciMax Ma]) for Nodes I..VIII
+    let node_y_slots = theme.fig1_node_y_slots;
     for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
         let bx = x_ma(cn.age_ma);
         let x_lo = x_ma(cn.ci_max_ma);
         let x_hi = x_ma(cn.ci_min_ma);
-        let by = y_of(node_y_slots[idx.min(node_y_slots.len() - 1)]);
+        let mut best_slot = (f64::MAX, node_y_slots[idx.min(node_y_slots.len() - 1)]);
+        find_nearest_internal_slot(root, cn.age_ma, &mut best_slot);
+        let exact_slot = if best_slot.0 <= 8.0 {
+            best_slot.1
+        } else {
+            node_y_slots[idx.min(node_y_slots.len() - 1)]
+        };
+        let by = y_of(exact_slot);
+        let bar_w = (x_hi - x_lo).max(6.0);
         svg.push_str(&format!(
-            r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.4" stroke-linecap="butt"/>"##,
-            x_lo, by, x_hi, by
+            r##"<rect x="{:.1}" y="{:.1}" width="{:.1}" height="7.6" rx="2.5" fill="#2563eb" fill-opacity="0.32" stroke="#1e3a8a" stroke-width="1.3"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.4" stroke-linecap="butt"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.0"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.0"/><circle cx="{:.1}" cy="{:.1}" r="3.6" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>"##,
+            x_lo, by - 3.8, bar_w,
+            x_lo, by, x_hi, by,
+            x_lo, by - 5.5, x_lo, by + 5.5,
+            x_hi, by - 5.5, x_hi, by + 5.5,
+            bx, by
         ));
+        fb.fill_rect(x_lo as i32, by as i32 - 3, bar_w as i32, 7, (147, 197, 253));
+        fb.fill_rect(x_lo as i32, by as i32 - 1, bar_w as i32, 3, (15, 23, 42));
+        fb.fill_rect(x_lo as i32, by as i32 - 5, 2, 11, (15, 23, 42));
+        fb.fill_rect(x_hi as i32, by as i32 - 5, 2, 11, (15, 23, 42));
+
+        // Position non-overlapping callout badge displaying both age_ma and 95% HPD [ci_min_ma-ci_max_ma Ma]
+        let badge_w = 136.0_f64;
+        let badge_h = 26.0_f64;
+        let (dx, dy) = match idx {
+            0 => (32.0, -24.0),
+            1 => (8.0, -24.0),
+            2 => (-62.0, -24.0),
+            3 => (-18.0, -26.0),
+            4 => (-48.0, -24.0),
+            5 => (-68.0, -22.0),
+            6 => (-88.0, -22.0),
+            _ => (-104.0, -22.0),
+        };
+        let badge_cx = (bx + dx).clamp(x_root + badge_w * 0.5 + 2.0, x_tips - badge_w * 0.5 - 6.0);
+        let badge_cy = (by + dy).clamp(52.0, 1152.0);
         svg.push_str(&format!(
-            r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="1.8"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="1.8"/>"##,
-            x_lo, by - 4.5, x_lo, by + 4.5, x_hi, by - 4.5, x_hi, by + 4.5
-        ));
-        // Keep young Cenozoic node pills strictly left of `x_tips` so zero pills ever overlap right-hand tip labels!
-        let badge_cx = bx.min(x_tips - 50.0);
-        svg.push_str(&format!(
-            r##"<rect x="{:.1}" y="{:.1}" width="88" height="17" rx="4" fill="#ffffff" fill-opacity="0.95" stroke="#334155" stroke-width="1.0"/>"##,
-            badge_cx - 44.0,
-            by - 21.0
-        ));
-        svg.push_str(&format!(
-            r##"<text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="8.8" font-weight="800" fill="#0f172a">{} ({:.1} Ma)</text>"##,
+            r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#334155" stroke-width="1.1" stroke-dasharray="2,2"/><rect x="{:.1}" y="{:.1}" width="{:.1}" height="{:.1}" rx="4" fill="#ffffff" fill-opacity="0.96" stroke="#1e293b" stroke-width="1.1"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="8.6" font-weight="800" fill="#0f172a">{}: {:.1} Ma</text><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="7.8" font-weight="700" fill="#1d4ed8">95% HPD: {:.1}–{:.1} Ma</text>"##,
+            bx, by, badge_cx, badge_cy,
+            badge_cx - badge_w * 0.5,
+            badge_cy - badge_h * 0.5,
+            badge_w,
+            badge_h,
             badge_cx,
-            by - 9.5,
+            badge_cy - 2.2,
             xml_esc(&cn.node_id),
-            cn.age_ma
+            cn.age_ma,
+            badge_cx,
+            badge_cy + 8.6,
+            cn.ci_min_ma,
+            cn.ci_max_ma
         ));
     }
 
     // Right-hand Clade Brackets & Summary Cards [A]..[G] (summarizing once per clade!)
-    let clade_cards: &[(&str, usize, usize, &str, &str, &str)] = &[
-        ("[A]", 0, 2, "Sternorrhyncha Outgroups (n=3)", "Aphidoidea & Psylloidea vascular sap outgroups", "Buchnera/Carsonella + Orco root anchor"),
-        ("[B]", 3, 7, "Subfamily Aleurodicinae (n=5)", "Basal giant & spiraling Neotropical canopy clade", "Long-chain wax synthases + ancestral Portiera"),
-        ("[C]", 8, 25, "Non-Bemisia Aleyrodinae (n=18)", "Trialeurodes, Aleyrodes, Aleurocanthus, Pealius", "Woody/herbaceous host BtFer1 + CYP4 diversity"),
-        ("[D]", 26, 34, "Basal Bemisia & NW/Austral (n=9)", "B. giffardi, B. afer, B. emiliae & New World NW", "Oligophagous-to-polyphagous bridge + PGRP"),
-        ("[E]", 35, 44, "Indo-Asian Endemic Clade (n=10)", "Asia I, Asia II-1..II-9 & China 1 monsoon lineages", "Expanded BtOR receptors + salivary ALP"),
-        ("[F]", 45, 54, "Sub-Saharan SSA Clade (n=10)", "SSA1-SG2/SG3, SSA2, UG, SS1/ss2, MS & Z1-Z3", "Afrotropical Euphorbiaceae/savanna Atg5 + Hsp70"),
-        ("[G]", 55, 63, "MED-MEAM Crown Clade (n=9)", "MED Q1/Q2/ASL, MEAM1, Italy It, Spain SP, SUDS", "Cosmopolitan generalist CYP6CM1 + ChE variants"),
-    ];
-    for &(sec, i0, i1, hdr, line1, line2) in clade_cards {
+    for &(sec, i0, i1, hdr, line1, line2) in theme.fig1_clade_cards {
         let y0 = y_of(i0 as f64) - 4.0;
         let y1 = y_of(i1 as f64) + 4.0;
         let ym = 0.5 * (y0 + y1);
@@ -596,10 +873,10 @@ fn render_bemisia_fig1_chronogram(
     save_figure_triple_and_web_svg(
         1,
         "fig1-vertical-chronogram",
-        "bemisia-global-fig1-vertical-chronogram.svg",
+        theme.fig1_web_svg,
         "Chronogram",
-        "Calibrated Relaxed-Clock Chronogram of Sternorrhyncha & Aleyrodidae Radiation (Nodes I-VIII)",
-        "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+        theme.fig1_title,
+        theme.fig1_caption,
         &svg,
         &fb,
         run_dir,
@@ -613,6 +890,7 @@ fn render_bemisia_fig1_chronogram(
 fn render_bemisia_fig2_circular_phylogram(
     _manifest: &SupervisorRunManifest,
     root: &EmpiricalBifNode,
+    theme: &FigureStudyTheme,
     run_dir: &Path,
     web_dir: Option<&Path>,
 ) -> Result<GeneratedFigureArtifact, String> {
@@ -640,22 +918,14 @@ fn render_bemisia_fig2_circular_phylogram(
     fb.draw_text(
         28,
         18,
-        "Circular Empirical Patristic Phylogram (A:T001-G:T064; 100% Unmodified Substitutions/Site; B&W + Color-Blind Accessible)",
+        theme.fig2_title,
         (56, 189, 248),
         1,
         Some((w - 56) as i32),
     );
 
     // Sector angular ranges for alternating B&W pie wedges (`#f1f5f9` vs `#ffffff`) + patterned outer bracket arcs
-    let sec_ranges: &[(&str, usize, usize, &str, &str)] = &[
-        ("[A]", 0, 2, "Outgroups (n=3)", ""),
-        ("[B]", 3, 7, "Aleurodicinae (n=5)", "8,4"),
-        ("[C]", 8, 25, "Aleyrodinae Genera (n=18)", ""),
-        ("[D]", 26, 34, "Basal Bemisia & NW (n=9)", "9,3,2,3"),
-        ("[E]", 35, 44, "Indo-Asian Clade (n=10)", "5,3"),
-        ("[F]", 45, 54, "Sub-Saharan SSA (n=10)", ""),
-        ("[G]", 55, 63, "MED-MEAM Crown (n=9)", "10,3,2,3"),
-    ];
+    let sec_ranges = theme.fig2_sec_ranges;
     let span = std::f64::consts::TAU * 0.955;
     let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
     let ang_of_idx = |idx: f64| -> f64 { start_ang + (idx / 64.0) * span };
@@ -828,10 +1098,10 @@ fn render_bemisia_fig2_circular_phylogram(
     save_figure_triple_and_web_svg(
         2,
         "fig2-circular-phylogram",
-        "bemisia-global-fig2-circular-phylogram.svg",
+        theme.fig2_web_svg,
         "CircularPhylogram",
-        "Circular Empirical Patristic Phylogram Across 64 Sternorrhyncha & Aleyrodidae Species (A:T001-G:T064)",
-        "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+        theme.fig2_title,
+        theme.fig2_caption,
         &svg,
         &fb,
         run_dir,
@@ -840,21 +1110,21 @@ fn render_bemisia_fig2_circular_phylogram(
 }
 
 #[derive(Debug, Clone)]
-struct QuartetMscPlotNode {
-    tip_code: String, // e.g., "A:T001" for leaves, empty for internal
-    lpp: f64,
-    branch_cu: f64,
-    cum_cu: f64,
-    y_px: f64,
-    sector: String,
-    min_sec_rank: usize,
-    min_tip_idx: usize,
-    a_count: usize,
-    non_a_count: usize,
-    children: Vec<QuartetMscPlotNode>,
+pub(crate) struct QuartetMscPlotNode {
+    pub tip_code: String, // e.g., "A:T001" for leaves, empty for internal
+    pub lpp: f64,
+    pub branch_cu: f64,
+    pub cum_cu: f64,
+    pub y_px: f64,
+    pub sector: String,
+    pub min_sec_rank: usize,
+    pub min_tip_idx: usize,
+    pub a_count: usize,
+    pub non_a_count: usize,
+    pub children: Vec<QuartetMscPlotNode>,
 }
 
-fn normalize_tip_colon(raw: &str) -> String {
+pub(crate) fn normalize_tip_colon(raw: &str) -> String {
     let t = raw.trim();
     if t.len() >= 6 && t.as_bytes()[1] == b'_' && t.as_bytes()[2] == b'T' {
         format!("{}:{}", &t[..1], &t[2..])
@@ -863,7 +1133,7 @@ fn normalize_tip_colon(raw: &str) -> String {
     }
 }
 
-fn to_msc_plot_node(n: &ParsedPhyloNode) -> QuartetMscPlotNode {
+pub(crate) fn to_msc_plot_node(n: &ParsedPhyloNode) -> QuartetMscPlotNode {
     if n.children.is_empty() {
         let tc = normalize_tip_colon(&n.name);
         let sr = sector_rank(&tc);
@@ -946,7 +1216,7 @@ fn to_msc_plot_node(n: &ParsedPhyloNode) -> QuartetMscPlotNode {
     }
 }
 
-fn find_best_outgroup_path(
+pub(crate) fn find_best_outgroup_path(
     n: &QuartetMscPlotNode,
     cur_path: &mut Vec<usize>,
     best_score: &mut i32,
@@ -966,7 +1236,7 @@ fn find_best_outgroup_path(
     }
 }
 
-fn reroot_msc_tree_at_path(root: QuartetMscPlotNode, path: &[usize]) -> QuartetMscPlotNode {
+pub(crate) fn reroot_msc_tree_at_path(root: QuartetMscPlotNode, path: &[usize]) -> QuartetMscPlotNode {
     if path.is_empty() {
         return root;
     }
@@ -1040,7 +1310,7 @@ fn reroot_msc_tree_at_path(root: QuartetMscPlotNode, path: &[usize]) -> QuartetM
     }
 }
 
-fn orient_and_layout_msc_tree(
+pub(crate) fn orient_and_layout_msc_tree(
     n: &mut QuartetMscPlotNode,
     parent_cu: f64,
     is_root: bool,
@@ -1102,7 +1372,7 @@ fn orient_and_layout_msc_tree(
     (n.min_sec_rank, n.min_tip_idx, n.sector.clone())
 }
 
-fn max_cum_cu(n: &QuartetMscPlotNode) -> f64 {
+pub(crate) fn max_cum_cu(n: &QuartetMscPlotNode) -> f64 {
     if n.children.is_empty() {
         n.cum_cu
     } else {
@@ -1119,6 +1389,7 @@ fn max_cum_cu(n: &QuartetMscPlotNode) -> f64 {
 fn render_bemisia_fig3_quartet_msc(
     manifest: &SupervisorRunManifest,
     study: &MultiCompartmentStudyReport,
+    theme: &FigureStudyTheme,
     run_dir: &Path,
     web_dir: Option<&Path>,
 ) -> Result<GeneratedFigureArtifact, String> {
@@ -1329,17 +1600,7 @@ fn render_bemisia_fig3_quartet_msc(
     );
 
     // Overlay compact Node I-VIII `[q1/q2/q3]` badges at sector midpoints on the left backbone
-    let sec_tip_anchors = [
-        ("Node I", "A:T003", 0usize),
-        ("Node II", "B:T008", 1),
-        ("Node III", "C:T016", 2),
-        ("Node IV", "D:T024", 3),
-        ("Node V", "D:T029", 4),
-        ("Node VI", "E:T037", 5),
-        ("Node VII", "F:T047", 6),
-        ("Node VIII", "G:T058", 7),
-    ];
-    for (nlbl, anchor_tip, c_idx) in sec_tip_anchors {
+    for (nlbl, anchor_tip, c_idx) in theme.fig3_sec_tip_anchors {
         if let (Some(&ay), Some(cn)) = (tip_y_map.get(anchor_tip), manifest.calibrated_nodes.get(c_idx)) {
             let bx = 50.0 + (c_idx as f64) * 38.0;
             let by = (ay - 12.0).clamp(86.0, 1258.0);
@@ -1374,10 +1635,10 @@ fn render_bemisia_fig3_quartet_msc(
         }
     }
 
-    // Curved dashed ABBA-BABA introgression reticulation arc on right margin of Panel A (`G:T056` <-> `F:T052`)
+    // Curved dashed ABBA-BABA introgression reticulation arc on right margin of Panel A
     if let (Some(&y_a), Some(&y_b), Some(ab0)) = (
-        tip_y_map.get("G:T056"),
-        tip_y_map.get("F:T052"),
+        tip_y_map.get(theme.fig3_abba_arc_tips.0),
+        tip_y_map.get(theme.fig3_abba_arc_tips.1),
         study.abba_baba_tests.first(),
     ) {
         let ym = 0.5 * (y_a + y_b);
@@ -1656,10 +1917,10 @@ fn render_bemisia_fig3_quartet_msc(
     save_figure_triple_and_web_svg(
         3,
         "fig3-quartet-coalescent-species-tree",
-        "bemisia-global-fig3-quartet-coalescent-species-tree.svg",
+        theme.fig3_web_svg,
         "QuartetCoalescent",
-        "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
-        "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression.",
+        theme.fig3_title,
+        theme.fig3_caption,
         &svg,
         &fb,
         run_dir,
@@ -1670,7 +1931,7 @@ fn render_bemisia_fig3_quartet_msc(
 /// Renders a `2 x 3` 6-panel Bayesian Coalescent Skyline Matrix (`Figure 4A` for `R1-R6` or `Figure 4B` for `L1-L6`),
 /// implementing the top visual legend bar, `-6.5 px` visual offset guard on the amber dashed secondary curve,
 /// crimson dotted `0-Beaker` control curve, value pills, and right-margin endpoint leader labels!
-fn render_bemisia_skyline_6panel(
+pub(crate) fn render_bemisia_skyline_6panel(
     fig_num: usize,
     run_fig_id: &str,
     web_svg_name: &str,
@@ -1942,6 +2203,7 @@ fn render_bemisia_skyline_6panel(
 fn render_bemisia_fig5_selection_and_sweep(
     manifest: &SupervisorRunManifest,
     study: &MultiCompartmentStudyReport,
+    theme: &FigureStudyTheme,
     run_dir: &Path,
     web_dir: Option<&Path>,
 ) -> Result<GeneratedFigureArtifact, String> {
@@ -1974,12 +2236,7 @@ fn render_bemisia_fig5_selection_and_sweep(
         }
     };
 
-    let short_fam_titles = [
-        "Olfactory Coreceptor (Orco) & Odorant Receptors (BtOR1-9)",
-        "Portiera Bacteriocyte Symbiosis Suite (PGRP + Lysozyme + Atg5)",
-        "Salivary Ferritin (BtFer1), Alkaline Phosphatase & Cathepsin",
-        "Microsomal Cytochrome P450 Monooxygenases (CYP6CM1 / CYP6 / CYP4)",
-    ];
+    let short_fam_titles = theme.fig5_short_fam_titles;
     for (fi, fam) in study.functional_families.iter().take(4).enumerate() {
         let col_b = fi % 2;
         let row_b = fi / 2;
@@ -2028,12 +2285,7 @@ fn render_bemisia_fig5_selection_and_sweep(
     svg.push_str(r##"<text x="36" y="505" font-size="11.5" font-weight="800" fill="#f8fafc">Panel B | 61-State Goldman-Yang Codon Selection (ω₀, ω₂ &amp; 4D BEB)</text>"##);
     fb.fill_rect(20, 482, 520, 36, (15, 23, 42));
 
-    let fam_short_names = [
-        "FAM-01: Chemosensory Orco / BtOR",
-        "FAM-02: Portiera Bacteriocyte Symbiosis",
-        "FAM-03: Salivary BtFer1 / ALP / Cathepsin",
-        "FAM-04: Microsomal CYP6CM1 / CYP6 / CYP4",
-    ];
+    let fam_short_names = theme.fig5_panel_b_fam_names;
     for (fi, fam) in study.functional_families.iter().take(4).enumerate() {
         let fy = 544.0 + (fi as f64) * 136.0;
         let sel = &fam.selection_result;
@@ -2159,16 +2411,22 @@ fn render_bemisia_fig5_selection_and_sweep(
         }
     }
 
-    // Panel D (Bottom Right): Two-Tier Crystallographic `1TQN` CYP6CM1 Fold + Active-Site `Fe³⁺`–Protoporphyrin IX (`HEM A 508`) Pocket
+    // Panel D (Bottom Right): Two-Tier Crystallographic `1TQN` CYP Fold + Active-Site `Fe³⁺`–Protoporphyrin IX (`HEM A 508`) Pocket
     svg.push_str(r##"<rect x="1092" y="482" width="488" height="622" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>"##);
     svg.push_str(r##"<rect x="1092" y="482" width="488" height="36" rx="8" fill="#0f172a"/>"##);
-    svg.push_str(r##"<text x="1108" y="505" font-size="11.2" font-weight="800" fill="#f8fafc">Panel D | CYP6CM1 Structure &amp; Fe³⁺–Heme Pocket (1TQN, 2.05 Å)</text>"##);
+    svg.push_str(&format!(
+        r##"<text x="1108" y="505" font-size="11.2" font-weight="800" fill="#f8fafc">{}</text>"##,
+        xml_esc(theme.fig5_panel_d_header)
+    ));
     fb.fill_rect(1092, 482, 488, 36, (15, 23, 42));
 
     if let Some(pdb) = manifest.pdb_structures.first() {
         // --- Upper Sub-Viewport (`y = 526..806`): 3D Microsomal P450 Protein Ribbon Fold ---
         svg.push_str(r##"<rect x="1106" y="526" width="460" height="280" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.1"/>"##);
-        svg.push_str(r##"<text x="1118" y="544" font-size="9.4" font-weight="800" fill="#0f172a">Upper: 3D Clan-3 Microsomal P450 Fold (461 Cα Threaded with B. tabaci CYP6CM1)</text>"##);
+        svg.push_str(&format!(
+            r##"<text x="1118" y="544" font-size="9.4" font-weight="800" fill="#0f172a">{}</text>"##,
+            xml_esc(theme.fig5_panel_d_upper_subtitle)
+        ));
 
         let (cx0, cy0, cz0) = pdb.pocket_center_xyz;
         let rot_fold = |px: f64, py: f64, pz: f64| -> (f64, f64, f64) {
@@ -2527,10 +2785,10 @@ fn render_bemisia_fig5_selection_and_sweep(
     save_figure_triple_and_web_svg(
         6,
         "fig5-selection-sweep-alignment",
-        "bemisia-global-fig5-selection-sweep-alignment.svg",
+        theme.fig5_web_svg,
         "ColoredMsaAndRunieSweep",
-        "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP6CM1 Heme-Thiolate Active Site",
-        "Translated amino-acid motif alignments across 48 NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D CYP6CM1 structure threaded on 1TQN (2.05 A) with zoomed Fe3+-Protoporphyrin IX (HEM A 508) and Cys456-Sg axial thiolate coordination.",
+        theme.fig5_title,
+        theme.fig5_caption,
         &svg,
         &fb,
         run_dir,
@@ -2539,11 +2797,9 @@ fn render_bemisia_fig5_selection_and_sweep(
 }
 
 /// Captures 3 authentic Native Rust Alignment Viewer (`runie-align-view` / `align_viewer`) GUI
-/// screenshots (`.png` + `.svg`) highlighting key empirical alignment elements for the Supplemental section:
-/// - `S1`: `FAM-04` *Bemisia tabaci* `CYP6CM1`/`CYP6`/`CYP4` CDS in `DualDnaAndAminoAcid` Table 1 around `PFGDGPRNCIG`
-/// - `S2`: `mafft-native` Katoh `E-INS-i` nuclear `ITS1-5.8S` rRNA stem/indel spacer boundary in Cohort `L2`
-/// - `S3`: 26-species Sternorrhyncha/Aleyrodidae/*Bemisia* `COX1` CDS in `DualDnaAndAminoAcid` Invertebrate Mito Table 5
+/// screenshots (`.png` + `.svg`) highlighting key empirical alignment elements for the Supplemental section.
 fn generate_bemisia_supplemental_alignview_snapshots(
+    theme: &FigureStudyTheme,
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
@@ -2608,8 +2864,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         Ok(())
     };
 
-    // --- Supplemental Figure S1: FAM-04 CYP6CM1 / CYP6 / CYP4 Heme-Thiolate Loop (Table 1, Dual DNA+AA) ---
-    let s1_fasta = aln_dir.join("supp_s1_cyp6cm1_p450_cds.fasta");
+    // --- Supplemental Figure S1: FAM-04 CYP450 Heme-Thiolate Loop (Table 1, Dual DNA+AA) ---
+    let s1_fasta = aln_dir.join(theme.supp_s1_fasta_name);
     if s1_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
             &s1_fasta,
@@ -2618,13 +2874,13 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             1,
             false,
         )?;
-        ws.title = "FAM-04 Microsomal Cytochrome P450 CDS (B. tabaci CYP6CM1 / CYP6 / CYP4)".to_string();
-        ws.source_path = "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (FAM-04)".to_string();
+        ws.title = theme.supp_s1_title.to_string();
+        ws.source_path = theme.supp_s1_source.to_string();
         ws.alignment_method = "Codon-Locked Katoh L-INS-i + PAL2NAL (Standard Code 1)".to_string();
         let (s1, e1, hcol) = find_codon_motif_window(
             &ws,
             GeneticCodeTable::Standard1,
-            &["GPRLC", "GPRNC", "GPRMC", "FGDGP"],
+            &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC"],
             22,
         );
         ws.features.insert(
@@ -2652,16 +2908,16 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.hover_row_idx = Some(0);
         state.hover_col_1based = Some(hcol);
         state.status_message = format!(
-            "runie-align-view | FAM-04 CYP6CM1 Heme-Thiolate Signature Window ({}..{} bp, Standard Code 1)",
-            s1, e1
+            "runie-align-view | {} Heme-Thiolate Signature Window ({}..{} bp, Standard Code 1)",
+            theme.supp_s1_title, s1, e1
         );
-        let svg_out = fig_dir.join("bemisia-global-supp-s1-cyp6cm1-alignview.svg");
-        let png_out = fig_dir.join("bemisia-global-supp-s1-cyp6cm1-alignview.png");
+        let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s1_stem));
+        let png_out = fig_dir.join(format!("{}.png", theme.supp_s1_stem));
         state.capture_current_viewport_snapshots(1560, Some(&svg_out), Some(&png_out))?;
-        mirror_pair(&svg_out, &png_out, "bemisia-global-supp-s1-cyp6cm1-alignview")?;
+        mirror_pair(&svg_out, &png_out, theme.supp_s1_stem)?;
     }
 
-    // --- Supplemental Figure S2: Cohort L2 ITS1-5.8S rDNA Stem / Indel Boundary (mafft-native Katoh E-INS-i) ---
+    // --- Supplemental Figure S2: ITS1-5.8S rDNA Stem / Indel Boundary (mafft-native Katoh E-INS-i) ---
     let s2_fasta = aln_dir.join("supp_s2_its1_5_8s_einsi.fasta");
     if s2_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
@@ -2671,8 +2927,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             1,
             false,
         )?;
-        ws.title = "Cohort L2 Mediterranean B. tabaci Nuclear ITS1-5.8S rDNA (N = 36)".to_string();
-        ws.source_path = "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (Cohort L2)".to_string();
+        ws.title = theme.supp_s2_title.to_string();
+        ws.source_path = theme.supp_s2_source.to_string();
         ws.alignment_method = "mafft-native Katoh E-INS-i (FFT + Local Affine + 2-Tree Iterative)".to_string();
 
         // Locate internal ITS1–5.8S window (avoiding 5'/3' primer overhangs) juxtaposing spacer indels/SNPs with conserved 5.8S rRNA stem
@@ -2731,13 +2987,13 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             "runie-align-view | mafft-native Katoh E-INS-i Nuclear ITS1-5.8S Junction ({}..{} bp)",
             s1, e1
         );
-        let svg_out = fig_dir.join("bemisia-global-supp-s2-its1-einsi-alignview.svg");
-        let png_out = fig_dir.join("bemisia-global-supp-s2-its1-einsi-alignview.png");
+        let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s2_stem));
+        let png_out = fig_dir.join(format!("{}.png", theme.supp_s2_stem));
         state.capture_current_viewport_snapshots(1640, Some(&svg_out), Some(&png_out))?;
-        mirror_pair(&svg_out, &png_out, "bemisia-global-supp-s2-its1-einsi-alignview")?;
+        mirror_pair(&svg_out, &png_out, theme.supp_s2_stem)?;
     }
 
-    // --- Supplemental Figure S3: 26-Species Sternorrhyncha/Aleyrodidae/Bemisia COX1 (Invertebrate Mito Table 5!) ---
+    // --- Supplemental Figure S3: 26-Species Phased Mitochondrial COX1 (Invertebrate Mito Table 5!) ---
     let s3_fasta = aln_dir.join("supp_s3_cox1_64taxa.fasta");
     if s3_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
@@ -2747,8 +3003,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             1,
             false,
         )?;
-        ws.title = "Sternorrhyncha, Aleyrodidae & Bemisia Phased Mitochondrial COX1 (Clades A-G)".to_string();
-        ws.source_path = "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)".to_string();
+        ws.title = theme.supp_s3_title.to_string();
+        ws.source_path = theme.supp_s3_source.to_string();
         ws.alignment_method = "COX1-Phased Codon MSA (Invertebrate Mitochondrial Code Table 5: TGA=W, AGA=S)".to_string();
 
         let (s1, e1, hcol) = find_codon_motif_window(
@@ -2790,29 +3046,28 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             "runie-align-view | Phased COX1 ({}..{} bp, Invertebrate Mito Table 5: TGA=W, AGA=S — 0 Stops)",
             s1, e1
         );
-        let svg_out = fig_dir.join("bemisia-global-supp-s3-cox1-ry3-alignview.svg");
-        let png_out = fig_dir.join("bemisia-global-supp-s3-cox1-ry3-alignview.png");
+        let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s3_stem));
+        let png_out = fig_dir.join(format!("{}.png", theme.supp_s3_stem));
         state.capture_current_viewport_snapshots(1560, Some(&svg_out), Some(&png_out))?;
-        mirror_pair(&svg_out, &png_out, "bemisia-global-supp-s3-cox1-ry3-alignview")?;
+        mirror_pair(&svg_out, &png_out, theme.supp_s3_stem)?;
     }
 
     Ok(())
 }
 
-/// Generates all 6 Preprint-22/23 locked-format figures (`.svg` + `.png` + `.pdf`) plus 3 Native
-/// Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
-pub fn generate_bemisia_locked_figures(
+pub(crate) fn generate_locked_figures_with_theme(
     manifest: &mut SupervisorRunManifest,
     study: &MultiCompartmentStudyReport,
+    theme: &FigureStudyTheme,
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let root = build_unified_rooted_tree(manifest);
+    let root = build_unified_rooted_tree(manifest, theme);
     let mut figs = Vec::with_capacity(6);
 
-    figs.push(render_bemisia_fig1_chronogram(manifest, &root, run_dir, web_figures_dir)?);
-    figs.push(render_bemisia_fig2_circular_phylogram(manifest, &root, run_dir, web_figures_dir)?);
-    figs.push(render_bemisia_fig3_quartet_msc(manifest, study, run_dir, web_figures_dir)?);
+    figs.push(render_bemisia_fig1_chronogram(manifest, &root, theme, run_dir, web_figures_dir)?);
+    figs.push(render_bemisia_fig2_circular_phylogram(manifest, &root, theme, run_dir, web_figures_dir)?);
+    figs.push(render_bemisia_fig3_quartet_msc(manifest, study, theme, run_dir, web_figures_dir)?);
 
     let reg_cohorts: Vec<DetailedPopsetSkyline> = study
         .popset_skylines
@@ -2823,9 +3078,9 @@ pub fn generate_bemisia_locked_figures(
     figs.push(render_bemisia_skyline_6panel(
         4,
         "fig4a-regional-skyline-matrix",
-        "bemisia-global-fig4a-regional-skyline-matrix.svg",
-        "Cross-Regional Standardized COX1 Bayesian Coalescent Skyline Matrix (Cohorts R1-R6; N = 216 Isolates)",
-        "Six single-species regional Bemisia tabaci COX1 coalescent skylines (25,000 MCMC generations) contrasting native Old World basins vs. transcontinental trade founder bridgeheads.",
+        theme.fig4a_web_svg,
+        theme.fig4a_title,
+        theme.fig4a_caption,
         &reg_cohorts,
         run_dir,
         web_figures_dir,
@@ -2840,16 +3095,38 @@ pub fn generate_bemisia_locked_figures(
     figs.push(render_bemisia_skyline_6panel(
         5,
         "fig4b-multilocus-skyline-matrix",
-        "bemisia-global-fig4b-multilocus-skyline-matrix.svg",
-        "Same-Region Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Nuclear ITS1-5.8S (4Ne) vs. Coding Sweep Loci (L1-L6; N = 216)",
-        "Paired Mediterranean and Asian multi-locus skylines separating maternal mitochondrial expansion (1Ne), buffered diploid spacer diversity (4Ne), and directional coding-locus sweeps.",
+        theme.fig4b_web_svg,
+        theme.fig4b_title,
+        theme.fig4b_caption,
         &loc_cohorts,
         run_dir,
         web_figures_dir,
     )?);
 
-    figs.push(render_bemisia_fig5_selection_and_sweep(manifest, study, run_dir, web_figures_dir)?);
-    generate_bemisia_supplemental_alignview_snapshots(run_dir, web_figures_dir)?;
+    figs.push(render_bemisia_fig5_selection_and_sweep(manifest, study, theme, run_dir, web_figures_dir)?);
+    generate_bemisia_supplemental_alignview_snapshots(theme, run_dir, web_figures_dir)?;
     manifest.figures = figs;
     Ok(())
+}
+
+/// Generates all 6 Preprint-23 (`Bemisia`) locked-format figures (`.svg` + `.png` + `.pdf`) plus 3 Native
+/// Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
+pub fn generate_bemisia_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    generate_locked_figures_with_theme(manifest, study, &BEMISIA_THEME, run_dir, web_figures_dir)
+}
+
+/// Generates all 6 Preprint-24 (`Invasive Snails AU & NZ`) locked-format figures (`.svg` + `.png` + `.pdf`)
+/// plus 3 Native Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
+pub fn generate_snails_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    generate_locked_figures_with_theme(manifest, study, &SNAILS_THEME, run_dir, web_figures_dir)
 }

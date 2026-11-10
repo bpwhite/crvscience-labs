@@ -19,14 +19,14 @@ pub struct ManuscriptReference {
     pub url: String,
 }
 
-fn html_esc(s: &str) -> String {
+pub(crate) fn html_esc(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
 }
 
-fn tex_esc(s: &str) -> String {
+pub(crate) fn tex_esc(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 16);
     for ch in s.chars() {
         match ch {
@@ -58,13 +58,13 @@ fn tex_esc(s: &str) -> String {
     out
 }
 
-fn sanitize_no_scratch_extensions(s: &str) -> String {
+pub(crate) fn sanitize_no_scratch_extensions(s: &str) -> String {
     s.replace(".fasta", "_seq")
         .replace(".treefile", "_tree")
         .replace(".nex", "_nexus")
 }
 
-fn fmt_commas_usize(n: usize) -> String {
+pub(crate) fn fmt_commas_usize(n: usize) -> String {
     let s = n.to_string();
     let mut out = String::with_capacity(s.len() + s.len() / 3);
     for (i, ch) in s.chars().rev().enumerate() {
@@ -76,7 +76,7 @@ fn fmt_commas_usize(n: usize) -> String {
     out.chars().rev().collect()
 }
 
-fn fmt_lnl(v: f64) -> String {
+pub(crate) fn fmt_lnl(v: f64) -> String {
     let sign = if v < 0.0 { "-" } else { "" };
     let abs_v = v.abs();
     let whole = abs_v.trunc() as usize;
@@ -659,7 +659,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table" id="table-5">
     (table1, table2, table3a, table3b, table3c, table4a, table4b, table5)
 }
 
-fn extract_terminal_branch_map(newick: &str) -> std::collections::HashMap<String, f64> {
+pub(crate) fn extract_terminal_branch_map(newick: &str) -> std::collections::HashMap<String, f64> {
     let mut map = std::collections::HashMap::new();
     let empty_ages = std::collections::HashMap::new();
     if let Some(parsed) = crate::mcmc_skyline::parse_phylo_tree(newick, false, &empty_ages) {

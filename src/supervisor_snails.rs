@@ -2515,7 +2515,7 @@ pub fn export_snails_manuscript_and_staged_bundle(
     let labs_figures_dir = labs_dir.join("figures");
     let labs_pdb_dir = labs_dir.join("pdb");
     let staged_dir = labs_dir.join("preprints").join(".staged");
-    let arxiv_dir = workspace_root.join("arxiv-submission-invasive-snails-au-nz");
+    let arxiv_dir = workspace_root.join("preprints").join("arxiv-submission-invasive-snails-au-nz");
     let run_ms_dir = run_dir.join("manuscript");
 
     for d in [&labs_releases_dir, &labs_pdb_dir, &staged_dir, &arxiv_dir, &run_ms_dir] {
@@ -2924,7 +2924,7 @@ r#"<!DOCTYPE html>
     let arxiv_html_path = arxiv_dir.join("single-column-manuscript.html");
     fs::write(
         &arxiv_html_path,
-        sanitized_single_col.replace("src=\"/labs/figures/", "src=\"../labs/figures/"),
+        sanitized_single_col.replace("src=\"/labs/figures/", "src=\"../../labs/figures/"),
     )
     .map_err(|e| format!("Failed writing {:?}: {}", arxiv_html_path, e))?;
     written.push(arxiv_html_path.to_string_lossy().to_string());

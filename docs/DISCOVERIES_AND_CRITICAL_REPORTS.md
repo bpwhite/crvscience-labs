@@ -5,12 +5,12 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`26`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`137` Total Reports)
+## Validated Preprints (`26`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`138` Total Reports)
 
-- **Total Lab Discovery Entries**: **137** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **138** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`, `v2.0.2`)**: **26** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **76** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **52** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
   - **Curated Validation Dataset Registry**: **65** datasets (`VAL-SET-001` through `VAL-SET-065`)
 
 #### ✅ 26 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`, `v2.0.2`)
@@ -44,10 +44,11 @@
 | **#109** `✅ Verified Preprint` | **[Reconstructing the Archosauria-to-Crown-Aves Evolutionary Time-Tree (246.5 to 0.0 Ma) Across 62 Extant, Holocene Ancient-DNA, and Mesozoic Fossil Taxa: Paravian Body-Mass Miniaturization, the K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-AVES-TIMETREE-62TAXA-1.54MB` |
 | **#108** `✅ Verified Preprint` | **[Reconstructing the Primate Evolutionary Time-Tree (73.4 to 0.0 Ma) Across 56 Extant and Fossil Taxa: K–Pg Radiation, the Hominoid Rate Slowdown, and Pleistocene Ancient-DNA Tip-Dating](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-TIMETREE-56TAXA-1.42MB` |
 
-#### Latest 12 Lab Discovery Entries (`#126`–`#138`)
+#### Latest 12 Lab Discovery Entries (`#127`–`#139`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#139** `🔬 Pipeline Benchmark` | [Planetary Boundaries and Earth System Dynamics: A Comprehensive Biophysical Assessment of Holocene Stability, Anthropogenic Forcing, and Coupled Tipping Cascades](https://crvscience.com/labs/discoveries/planetary-boundaries-earth-systems-assessment) | `Tier 1: Exploratory` | 🧪🧪🧪🧪 (`0/5`) | Nov 11, 2026 |
 | **#138** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
 | **#137** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nudibranch-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
 | **#136** `✅ Verified Preprint` | [Phylogenomic Radiation and Invasion Genomics of Introduced Snails Across Australia and New Zealand (Gastropoda: Stylommatophora & Caenogastropoda): Native Rust Quartet Coalescent Species-Tree Inference, Aestivation and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/invasive-snails-au-nz-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
@@ -59,7 +60,6 @@
 | **#129** `✅ Verified Preprint` | [Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#128** `✅ Verified Preprint` | [RuNIE Long-Form Bayesian MCMC Skyline & the 5-Stage Neanderthal Population Crash (650 to 39.2 ka BP): Coupled 95% Credible Chronogram, Pristine Phylogram, and Effective Population Size Trajectory Benchmarked Against *BEAST across an 87,227-bp Alignment](https://crvscience.com/labs/discoveries/neanderthal-mcmc-skyline-crash) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#127** `✅ Verified Preprint` | [Multifactorial N×L Phylogenomic Sensitivity & Clock-Time Curve: 3-Way RuNIE Comparison (100% Native Rust vs. 100% External Binaries vs. Unconstrained Hybrid) Mapping Minimum Alignment-Length Horizons, the 90% MAFFT Alignment Bottleneck, and Saturation Plateaus Across 100 Species](https://crvscience.com/labs/discoveries/multifactorial-nxl-clock-curve-3way) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 7, 2026 |
-| **#126** `✅ Verified Preprint` | [Pancrustacea-to-Hexapoda Tree of Life (538.4 to 0.0 Ma): A 3-Way RuNIE Pipeline Comparison (100% Native Rust vs. 100% External Binaries vs. Unconstrained Hybrid Optimal ln L) Resolving Remipedia Sisterhood, Epipodite-to-Wing Homology, and Terrestrialization Across 100 Species](https://crvscience.com/labs/discoveries/pancrustacea-hexapoda-3way-runie) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 7, 2026 |
 
 #### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-065`)
 

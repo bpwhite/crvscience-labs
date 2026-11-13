@@ -1,0 +1,32 @@
+[package]
+name = "bio-suite-seqnet"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+license = "GPL-3.0-or-later"
+authors = ["Bryan White <labs@crvscience.com>"]
+description = "Pure-Rust 3-stage hybrid sequence analysis neural network with multi-DB SQLite caching, chimeric species-per-genus OTU synthesis, and partitioned NEXUS export for bio-suite / RuNIE."
+repository = "https://github.com/bpwhite/crvscience-labs"
+
+[features]
+default = ["gui"]
+gui = ["dep:eframe", "dep:egui"]
+candle-backend = ["dep:candle-core"]
+
+[dependencies]
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.5", features = ["derive", "env"] }
+crossbeam-channel = "0.5"
+rayon = "1.10"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ureq = { version = "2.12", features = ["json", "charset"] }
+
+# Optional Pure-Rust Desktop GUI Monitor (`--mode gui`)
+eframe = { version = "0.31", optional = true }
+egui = { version = "0.31", optional = true }
+
+# Optional RuNIE `candle-core` tensor bridge (`--features candle-backend`)
+candle-core = { version = "0.11", optional = true }

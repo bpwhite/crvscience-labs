@@ -1,0 +1,114 @@
+{
+  "benchmark_id": "coleoptera-backbone-v1",
+  "title": "Coleoptera higher-level backbone vs. published phylogenomics",
+  "fixed_before_first_run": "2026-11-13",
+  "purpose": "End-to-end validation of the seqnet -> RuNIE pipeline. No external tool covers the full chain, so the final trees are scored against clades reported in published beetle phylogenomic studies. Clade membership is defined by family; a clade is testable when the run samples >= 2 tips inside and >= 2 outside it. A clade counts as recovered when the unrooted tree contains the corresponding bipartition.",
+  "sources": [
+    {
+      "key": "McKenna2019",
+      "citation": "McKenna, D. D., et al. (2019). The evolution and genomic basis of beetle diversity. Proceedings of the National Academy of Sciences, 116(49), 24729-24737.",
+      "doi": "10.1073/pnas.1909655116",
+      "pmcid": "PMC6900523",
+      "data": "4,818 genes for 146 species; 89 genes for 521 species"
+    },
+    {
+      "key": "Zhang2018",
+      "citation": "Zhang, S.-Q., Che, L.-H., Li, Y., Pang, H., Slipinski, A., & Zhang, P. (2018). Evolutionary history of Coleoptera revealed by extensive sampling of genes and species. Nature Communications, 9, 205.",
+      "doi": "10.1038/s41467-017-02644-4",
+      "pmcid": "PMC5768713",
+      "data": "95 nuclear protein-coding genes for 373 species"
+    }
+  ],
+  "loci": ["SSU_18S", "LSU_28S", "COI", "rrnL_16S"],
+  "loci_rationale": "The four markers with the widest GenBank coverage across Coleoptera (the 18S/28S/rrnL/cox1 set used for large-scale beetle trees). They are far less informative than the phylogenomic datasets above, so recovery of deep nodes is expected to be partial.",
+  "sampling_families": {
+    "Adephaga": ["Carabidae", "Dytiscidae", "Gyrinidae"],
+    "Elateriformia": ["Elateridae", "Lampyridae", "Cantharidae", "Buprestidae"],
+    "Staphyliniformia_Scarabaeiformia": ["Staphylinidae", "Hydrophilidae", "Scarabaeidae", "Lucanidae", "Geotrupidae"],
+    "Bostrichiformia": ["Dermestidae", "Bostrichidae", "Ptinidae"],
+    "Cucujiformia": ["Coccinellidae", "Tenebrionidae", "Meloidae", "Cleridae", "Nitidulidae", "Chrysomelidae", "Cerambycidae", "Curculionidae", "Brentidae"]
+  },
+  "scored_clades": [
+    {
+      "id": "polyphaga",
+      "name": "Polyphaga (vs. Adephaga)",
+      "families": ["Elateridae", "Lampyridae", "Cantharidae", "Buprestidae", "Staphylinidae", "Hydrophilidae", "Scarabaeidae", "Lucanidae", "Geotrupidae", "Dermestidae", "Bostrichidae", "Ptinidae", "Coccinellidae", "Tenebrionidae", "Meloidae", "Cleridae", "Nitidulidae", "Chrysomelidae", "Cerambycidae", "Curculionidae", "Brentidae"],
+      "support": [
+        { "source": "Zhang2018", "statement": "the strongly supported suborder Polyphaga" },
+        { "source": "McKenna2019", "statement": "ML analyses separated Polyphaga from Adephaga + Myxophaga + Archostemata" }
+      ],
+      "note": "With Archostemata and Myxophaga unsampled, this bipartition is identical to Adephaga monophyly."
+    },
+    {
+      "id": "phytophaga",
+      "name": "Phytophaga (Curculionoidea + Chrysomeloidea)",
+      "families": ["Chrysomelidae", "Cerambycidae", "Curculionidae", "Brentidae"],
+      "support": [
+        { "source": "Zhang2018", "statement": "Phytophaga consists of the two highly supported superfamilies Curculionoidea and Chrysomeloidea" },
+        { "source": "McKenna2019", "statement": "Phytophaga (Chrysomeloidea + Curculionoidea) recovered, nested within Cucujoidea" }
+      ]
+    },
+    {
+      "id": "curculionoidea",
+      "name": "Curculionoidea",
+      "families": ["Curculionidae", "Brentidae"],
+      "support": [{ "source": "Zhang2018", "statement": "highly supported superfamily (with Chrysomeloidea forming Phytophaga)" }]
+    },
+    {
+      "id": "chrysomeloidea",
+      "name": "Chrysomeloidea",
+      "families": ["Chrysomelidae", "Cerambycidae"],
+      "support": [{ "source": "Zhang2018", "statement": "highly supported superfamily (with Curculionoidea forming Phytophaga)" }]
+    },
+    {
+      "id": "tenebrionoidea",
+      "name": "Tenebrionoidea",
+      "families": ["Tenebrionidae", "Meloidae"],
+      "support": [{ "source": "Zhang2018", "statement": "Lymexyloidea closely related to Tenebrionoidea with maximal support" }]
+    },
+    {
+      "id": "cucujiformia",
+      "name": "Cucujiformia",
+      "families": ["Coccinellidae", "Tenebrionidae", "Meloidae", "Cleridae", "Nitidulidae", "Chrysomelidae", "Cerambycidae", "Curculionidae", "Brentidae"],
+      "support": [{ "source": "Zhang2018", "statement": "Bostrichiformia strongly supported as the sister group of the hyperdiverse series Cucujiformia (BS = 100%)" }]
+    },
+    {
+      "id": "bostrichiformia_cucujiformia",
+      "name": "Bostrichiformia + Cucujiformia",
+      "families": ["Dermestidae", "Bostrichidae", "Ptinidae", "Coccinellidae", "Tenebrionidae", "Meloidae", "Cleridae", "Nitidulidae", "Chrysomelidae", "Cerambycidae", "Curculionidae", "Brentidae"],
+      "support": [{ "source": "Zhang2018", "statement": "BS = 100%" }]
+    },
+    {
+      "id": "elateriformia",
+      "name": "Elateriformia",
+      "families": ["Elateridae", "Lampyridae", "Cantharidae", "Buprestidae"],
+      "support": [{ "source": "Zhang2018", "statement": "Elateriformia strongly recovered as the third branching lineage of Polyphaga" }]
+    },
+    {
+      "id": "staph_hydro_scarab",
+      "name": "Staphylinoidea + Hydrophiloidea + Scarabaeoidea",
+      "families": ["Staphylinidae", "Hydrophilidae", "Scarabaeidae", "Lucanidae", "Geotrupidae"],
+      "support": [{ "source": "Zhang2018", "statement": "Scarabaeoidea, Hydrophiloidea and Staphylinoidea formed a well-supported clade (BS = 94%)" }]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "hydradephaga",
+      "name": "Hydradephaga (Dytiscidae + Gyrinidae)",
+      "families": ["Dytiscidae", "Gyrinidae"],
+      "why_not_scored": "Reported paraphyletic (Zhang2018: recovered as paraphyletic, Bayesian-only support; McKenna2019: paraphyly of aquatic Adephaga)."
+    },
+    {
+      "id": "staphyliniformia",
+      "name": "Staphyliniformia (Staphylinoidea + Hydrophiloidea)",
+      "families": ["Staphylinidae", "Hydrophilidae"],
+      "why_not_scored": "Not recovered by Zhang2018 (Staphylinoidea closer to Scarabaeoidea, BS = 78%)."
+    },
+    {
+      "id": "scarabaeoidea",
+      "name": "Scarabaeoidea",
+      "families": ["Scarabaeidae", "Lucanidae", "Geotrupidae"],
+      "why_not_scored": "Monophyly not explicitly tested in the cited texts."
+    }
+  ]
+}

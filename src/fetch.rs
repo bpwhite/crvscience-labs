@@ -1,5 +1,13 @@
 //! Tier 1: Polite Data Acquisition & Content-Addressable Local Cache (`bio-suite fetch`)
 //!
+//! **Superseded for new pipelines.** Stage-1 data acquisition for RuNIE pipelines is
+//! `bio-suite-seqnet` (workspace crate `seqnet/`, wired in by `seqnet_runie.rs` /
+//! `bio-suite seqnet-runie`): query-driven Entrez discovery, SQLite cache with `mdat` delta
+//! sync, sequence QC with a quarantine ledger, and species-OTU assembly. `PoliteCacheManager`
+//! and the hard-coded accession lists built on it stay only so existing studies and published
+//! lab reports remain reproducible; do not use them in new pipelines. `FastaRecord` remains
+//! the shared sequence record type.
+//!
 //! Enforces strict NCBI E-utilities / Datasets rate-limiting (<= 2.5 req/s without key)
 //! and SHA-256 content-addressable local disk caching so repeated pipelines never
 //! re-hit NCBI servers unnecessarily.

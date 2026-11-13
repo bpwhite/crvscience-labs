@@ -1538,6 +1538,58 @@ fn main() {
                 .expect("Failed to serialize tool registry");
             println!("{}", json);
         }
+        "seqnet-runie" => {
+            // RuNIE pipeline with bio-suite-seqnet as stage 1 (supersedes `fetch` for new pipelines)
+            let get = |flag: &str| args.iter().position(|a| a == flag).and_then(|i| args.get(i + 1)).cloned();
+            let repo = bio_suite::privacy::labs_repo_dir();
+            let benchmark = get("--benchmark")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| repo.join("benchmarks").join("coleoptera_backbone.json"));
+            let run_dir = get("--run-dir")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| repo.join("runs").join("seqnet_runie_coleoptera_backbone"));
+            let spec = bio_suite::seqnet_runie::SeqnetRunieSpec {
+                benchmark_path: benchmark,
+                sqlite_path: get("--db-path")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| repo.join("cache").join("seqnet_coleoptera_backbone.sqlite")),
+                database_id: get("--db-id").unwrap_or_else(|| "CRV-COLEOPTERA-BACKBONE-DB01".to_string()),
+                retmax_per_stratum: get("--retmax").and_then(|v| v.parse().ok()).unwrap_or(40),
+                refill_directives: get("--refill-directives").and_then(|v| v.parse().ok()).unwrap_or(60),
+                min_coverage: get("--min-coverage").and_then(|v| v.parse().ok()).unwrap_or(0.75),
+                max_epochs: get("--max-epochs").and_then(|v| v.parse().ok()).unwrap_or(8),
+                offline_cache_only: args.iter().any(|a| a == "--offline"),
+                run_dir,
+            };
+            match bio_suite::seqnet_runie::run_seqnet_runie_pipeline(&spec) {
+                Ok(report) => {
+                    for v in std::iter::once(&report.validation_supermatrix).chain(report.validation_msc.iter()) {
+                        eprintln!(
+                            "[seqnet-runie] {}: {}/{} testable published clades recovered ({} tips)",
+                            v.tree, v.scored_recovered, v.scored_testable, v.tips
+                        );
+                        for c in &v.clades {
+                            eprintln!(
+                                "    {} {:<50} in={:<3} {}",
+                                if !c.testable { "  -" } else if c.recovered { "YES" } else { " no" },
+                                format!("{}{}", c.name, if c.scored { "" } else { " [report-only]" }),
+                                c.tips_inside,
+                                if c.recovered || !c.testable {
+                                    String::new()
+                                } else {
+                                    format!("best Jaccard {:.2} (+{} intruders, -{} missing)", c.best_jaccard, c.intruders.len(), c.missing.len())
+                                }
+                            );
+                        }
+                    }
+                    eprintln!("[seqnet-runie] Report: {}", PathBuf::from(&report.run_dir).join("seqnet_runie_report.json").display());
+                }
+                Err(e) => {
+                    eprintln!("[seqnet-runie] Error: {e}");
+                    std::process::exit(1);
+                }
+            }
+        }
         "fetch" => {
             let target = args.get(2).map(|s| s.as_str()).unwrap_or("coi-barcodes");
             match target {

@@ -23,7 +23,11 @@ path = "src/bin/runie_align_view.rs"
 name = "bio-suite-supervisor"
 path = "src/bin/bio_suite_supervisor.rs"
 
+[workspace]
+members = [".", "seqnet"]
+
 [dependencies]
+bio-suite-seqnet = { path = "seqnet", default-features = false }
 candle-core = "0.11.1"
 candle-nn = "0.11.1"
 flate2 = "1.1"

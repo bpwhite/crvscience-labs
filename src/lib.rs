@@ -47,6 +47,7 @@ pub mod orthology;
 pub mod pangenome;
 pub mod phylo;
 pub mod privacy;
+pub mod seqnet_runie;
 pub mod pipelines;
 pub mod pocket_dock;
 pub mod popgen_calibration;

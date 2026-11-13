@@ -592,7 +592,9 @@ pub fn normalize_strand_polarity_mafft(seqs: &[Vec<u8>]) -> (Vec<Vec<u8>>, Vec<b
 
         let fwd_sim = shared_6mer_similarity(& extract_6mer_multiset(s), &ref_kmers);
         let rc_sim = shared_6mer_similarity(&extract_6mer_multiset(&rc), &ref_kmers);
-        if rc_sim > fwd_motif as f64 + 0.08 && rc_sim > fwd_sim * 1.35 {
+        // Compare like with like: reverse-strand vs forward-strand 6-mer similarity to the reference
+        // (this previously compared a similarity in [0, 1] against the integer motif score).
+        if rc_sim > fwd_sim + 0.08 && rc_sim > fwd_sim * 1.35 {
             out_seqs.push(rc);
             flags.push(true);
         } else {
@@ -616,7 +618,10 @@ fn score_rdna_sense_motifs(seq: &[u8]) -> i32 {
     let mut total = 0i32;
     for m in motifs {
         if let Some((_, sc)) = find_best_ungapped_motif_hit(seq, m, 0, seq.len()) {
-            if sc >= (m.len() as i32) * 3 {
+            // Near-exact hits only (perfect = 4/base; allow about one mismatch). The former 75%
+            // threshold (3/base) was reached by chance somewhere in ~2 kb of sequence, so a single
+            // spurious hit on the reverse strand flipped correctly oriented 18S records.
+            if sc >= (m.len() as i32) * 4 - 8 {
                 total += sc;
             }
         }
@@ -3487,5 +3492,51 @@ mod tests {
         assert_eq!(&seq_a[bounds.core_58s_start..bounds.core_58s_start + 8], b"AAAACTTT");
         assert_eq!(bounds.core_58s_end - bounds.core_58s_start, 159);
         assert_eq!(&seq_a[bounds.its2_end..bounds.its2_end + 8], b"TTGACCTC");
+    }
+}
+
+
+#[cfg(test)]
+mod strand_polarity_tests {
+    use super::*;
+
+    fn pseudo(len: usize, seed: u64) -> Vec<u8> {
+        let mut x = seed;
+        (0..len)
+            .map(|_| {
+                x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                b"ACGT"[(x >> 33) as usize % 4]
+            })
+            .collect()
+    }
+
+    /// Same-orientation records with no rDNA motifs must never be flipped by a chance motif hit
+    /// on the reverse strand (regression: 24 of 79 sense-strand 18S records were flipped).
+    #[test]
+    fn sense_records_without_motifs_stay_forward() {
+        for seed in 1..40u64 {
+            let template = pseudo(1800, seed);
+            let seqs: Vec<Vec<u8>> = (0..6)
+                .map(|i| {
+                    let mut s = template.clone();
+                    for p in (i * 7..s.len()).step_by(97) {
+                        s[p] = b"ACGT"[(p + i) % 4];
+                    }
+                    s
+                })
+                .collect();
+            let (_, flipped) = normalize_strand_polarity_mafft(&seqs);
+            assert!(flipped.iter().all(|f| !f), "seed {seed}: flipped {flipped:?}");
+        }
+    }
+
+    /// A genuinely reverse-complemented record is still turned around.
+    #[test]
+    fn reverse_record_is_flipped() {
+        let template = pseudo(1500, 11);
+        let mut seqs = vec![template.clone(), template.clone(), template.clone()];
+        seqs.push(reverse_complement_bytes(&template));
+        let (_, flipped) = normalize_strand_polarity_mafft(&seqs);
+        assert_eq!(flipped, vec![false, false, false, true]);
     }
 }

@@ -12,6 +12,22 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+/// Repo-relative, forward-slash path for a figure written under `labs/` (e.g. `labs/figures/x.svg`).
+/// Artifact JSON is published, so it must never carry an absolute local path.
+fn public_rel_path(path: &Path) -> String {
+    let parts: Vec<String> = path
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(s) => Some(s.to_string_lossy().into_owned()),
+            _ => None,
+        })
+        .collect();
+    match parts.iter().rposition(|p| p == "labs") {
+        Some(i) => parts[i..].join("/"),
+        None => parts.last().cloned().unwrap_or_default(),
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraphicalReportArtifact {
     pub figure_id: String,
@@ -47,7 +63,7 @@ pub fn generate_tier3_popgen_graphical_reports(
             figure_id: "GRAPHIC-FIG-1".to_string(),
             data_type: "Haplotype Minimum Spanning Network & k-Core Connector Hub Topology".to_string(),
             title: "Ancestral Repeat+/Indel- Haplotype as the k = 5–6 Connector Hub (H1) vs. CAA/CAT-Interrupted Collapse (H2) & Blinded NUMT/HGT Pruning (H3)".to_string(),
-            file_path: fig1_path.display().to_string(),
+            file_path: public_rel_path(&fig1_path),
             public_url: format!("/labs/figures/{}", fig1_name),
             width_px: 1080,
             height_px: 540,
@@ -56,7 +72,7 @@ pub fn generate_tier3_popgen_graphical_reports(
             figure_id: "GRAPHIC-FIG-2".to_string(),
             data_type: "Colored Multiple Sequence Alignment (MSA), Hairpin Arcs & Codon Entropy Track".to_string(),
             title: "Colored Nucleotide & Codon Alignment Highlighting Pure Repeat Hairpins (H1), CAA/CAT Triplet Interruption Bulges (H2), and Blinded NUMT 2nd-Codon Rejection (H3)".to_string(),
-            file_path: fig2_path.display().to_string(),
+            file_path: public_rel_path(&fig2_path),
             public_url: format!("/labs/figures/{}", fig2_name),
             width_px: 1080,
             height_px: 560,
@@ -65,7 +81,7 @@ pub fn generate_tier3_popgen_graphical_reports(
             figure_id: "GRAPHIC-FIG-3".to_string(),
             data_type: "Spatial Flanking Diversity Decay Curve, mfDCA Epistasis Falsification & Bayesian Beaker Profile".to_string(),
             title: "5-Window Pol-zeta Flanking Decay (1–500 bp), Mean-Field DCA Epistasis Falsification (H4), and Bayesian Prior (4–5🧪) to Posterior (4🧪) Signal Calibration".to_string(),
-            file_path: fig3_path.display().to_string(),
+            file_path: public_rel_path(&fig3_path),
             public_url: format!("/labs/figures/{}", fig3_name),
             width_px: 1080,
             height_px: 520,
@@ -699,7 +715,7 @@ pub fn generate_tier3_asgard_graphical_reports(
             figure_id: "GRAPHIC-ASGARD-FIG-1".to_string(),
             data_type: "Dayhoff-6 Phylogenomic 2D vs. 3D Topology, Quartet Coalescent LPP & Informational vs. Operational Discordance".to_string(),
             title: "Dayhoff-6/SR4 Recoded RNAP + RP56 Supermatrix Resolving Hodarchaeales (Heimdallarchaeia) Sister to Eukaryota (ΔlnL = +118.42 nats, LPP = 0.998) vs. Syntrophic Bacterial HGT in Operational Genes".to_string(),
-            file_path: fig1_path.display().to_string(),
+            file_path: public_rel_path(&fig1_path),
             public_url: format!("/labs/figures/{}", fig1_name),
             width_px: 1080,
             height_px: 540,
@@ -708,7 +724,7 @@ pub fn generate_tier3_asgard_graphical_reports(
             figure_id: "GRAPHIC-ASGARD-FIG-2".to_string(),
             data_type: "Colored Multiple Sequence Alignment (MSA), 3D Kabsch TM-Score Superposition & Domain Conservation Track".to_string(),
             title: "Residue-Level Alignment of Heimdallprofilin–Actin (PDB:5ZJM), ESCRT-III Snf7–Vps4 (PDB:7B9V), and RNA Polymerase RpoA1/Rpb1 Clamp-Jaw Domains".to_string(),
-            file_path: fig2_path.display().to_string(),
+            file_path: public_rel_path(&fig2_path),
             public_url: format!("/labs/figures/{}", fig2_name),
             width_px: 1080,
             height_px: 560,
@@ -717,7 +733,7 @@ pub fn generate_tier3_asgard_graphical_reports(
             figure_id: "GRAPHIC-ASGARD-FIG-3".to_string(),
             data_type: "23S/28S rRNA Expansion Segment (ES9/ES15/ES27/ES39) Accretion Curve, mfDCA Epistasis & Bayesian 5🧪 Profile".to_string(),
             title: "Step-Up Ribosomal RNA Expansion Segment Accretion, Supernumerary eL13–eL40 Co-Evolution (mfDCA = 0.618), FG-Hydrogel Falsification (H4), and 5🧪 Posterior Synthesis".to_string(),
-            file_path: fig3_path.display().to_string(),
+            file_path: public_rel_path(&fig3_path),
             public_url: format!("/labs/figures/{}", fig3_name),
             width_px: 1080,
             height_px: 540,

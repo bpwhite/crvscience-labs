@@ -1194,6 +1194,8 @@ pub fn run_jmodeltest_external(
         .take(65)
         .collect::<Vec<_>>()
         .join("\n");
+    // Telemetry is published; strip absolute local paths from captured tool output.
+    let log_excerpt = crate::privacy::redact_local_paths(&log_excerpt);
 
     Ok(ModelTestExecutionResult {
         engine_mode: "JModelTest".to_string(),

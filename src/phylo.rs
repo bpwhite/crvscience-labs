@@ -1721,6 +1721,8 @@ pub fn compute_msa_telemetry(
     aligned: &[AlignedSequence],
     external_log: Option<String>,
 ) -> MsaExecutionTelemetry {
+    // Telemetry is published; strip absolute local paths from captured tool output.
+    let external_log = external_log.map(|l| crate::privacy::redact_local_paths(&l));
     let n = aligned.len();
     let len = aligned.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
     if n == 0 || len == 0 {

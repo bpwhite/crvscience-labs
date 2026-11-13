@@ -1431,7 +1431,7 @@ fn dispatch_pipeline(
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\coleoptera_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("coleoptera_work"));
             let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             eprintln!("[bio-suite] Launching Coleoptera 6-Family Functional Phylogenomics & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
             let report = bio_suite::mcmc_skyline::run_coleoptera_function_skyline_pipeline(&work_dir, cfg);
@@ -1444,7 +1444,7 @@ fn dispatch_pipeline(
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\primate_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("primate_work"));
             let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             eprintln!("[bio-suite] Launching Primate Africa-to-Americas Radiation & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
             let report = bio_suite::mcmc_skyline::run_primate_function_skyline_pipeline(&work_dir, cfg);
@@ -1457,7 +1457,7 @@ fn dispatch_pipeline(
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\rodent_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("rodent_work"));
             let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             eprintln!("[bio-suite] Launching Rodent North America Radiation & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
             let report = bio_suite::mcmc_skyline::run_rodent_function_skyline_pipeline(&work_dir, cfg);
@@ -1470,7 +1470,7 @@ fn dispatch_pipeline(
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\rhinolophus_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("rhinolophus_work"));
             let ws_root = env::current_dir()
                 .ok()
                 .and_then(|p| {
@@ -1493,7 +1493,7 @@ fn dispatch_pipeline(
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\anopheles_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("anopheles_work"));
             let mut cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             cfg.generations = 25_000;
             cfg.burnin_fraction = 0.20;
@@ -1684,7 +1684,7 @@ fn main() {
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\coleoptera_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("coleoptera_work"));
             let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             eprintln!("[bio-suite] Launching Coleoptera 6-Family Functional Phylogenomics & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
             let report = bio_suite::mcmc_skyline::run_coleoptera_function_skyline_pipeline(&work_dir, cfg);
@@ -1697,7 +1697,7 @@ fn main() {
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\primate_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("primate_work"));
             let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             eprintln!("[bio-suite] Launching Primate Africa-to-Americas Radiation & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
             let report = bio_suite::mcmc_skyline::run_primate_function_skyline_pipeline(&work_dir, cfg);
@@ -1710,7 +1710,7 @@ fn main() {
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\rodent_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("rodent_work"));
             let cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             eprintln!("[bio-suite] Launching Rodent North America Radiation & 3-PopSet Bayesian Skyline MCMC (G=10,000, burn-in=20%)...");
             let report = bio_suite::mcmc_skyline::run_rodent_function_skyline_pipeline(&work_dir, cfg);
@@ -1723,7 +1723,7 @@ fn main() {
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\rhinolophus_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("rhinolophus_work"));
             let ws_root = env::current_dir()
                 .ok()
                 .and_then(|p| {
@@ -1746,7 +1746,7 @@ fn main() {
                 .position(|a| a == "--work-dir")
                 .and_then(|idx| env::args().nth(idx + 1))
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from("C:\\Users\\bpcwh\\.gemini\\antigravity\\brain\\43261c0d-30eb-48a7-b798-c3e58ff0e47e\\scratch\\anopheles_work"));
+                .unwrap_or_else(|| bio_suite::privacy::default_scratch_dir("anopheles_work"));
             let mut cfg = bio_suite::mcmc_skyline::McmcSkylineConfig::default();
             cfg.generations = 25_000;
             cfg.burnin_fraction = 0.20;

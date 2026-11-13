@@ -3,6 +3,27 @@
 //! Release JSON and telemetry are published on crvscience.com and GitHub, so captured tool
 //! output must not carry absolute local paths (which include the operator's user name).
 
+use std::path::PathBuf;
+
+/// Default working directory for audit/sweep binaries when none is passed on the command line:
+/// `<system temp>/bio-suite/<sub>`. Keeps operator-specific paths out of source code.
+pub fn default_scratch_dir(sub: &str) -> PathBuf {
+    let base = std::env::temp_dir().join("bio-suite");
+    if sub.is_empty() { base } else { base.join(sub) }
+}
+
+/// Root of this crate (the crvscience-labs checkout).
+pub fn labs_repo_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+/// Root of the CRV Science web checkout: `CRV_WEB_ROOT` if set, else the parent of crvscience-labs.
+pub fn web_root_dir() -> PathBuf {
+    std::env::var_os("CRV_WEB_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| labs_repo_dir().parent().map(PathBuf::from).unwrap_or_else(labs_repo_dir))
+}
+
 /// Repository folder names; an absolute path inside one of them is rewritten repo-relative.
 const REPO_MARKERS: [&str; 2] = ["crvscience-web", "crvscience-labs"];
 

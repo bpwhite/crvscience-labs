@@ -616,14 +616,16 @@ fn translate_vert_mito_orf(seq: &str) -> String {
 fn main() {
     let t0 = Instant::now();
     let args: Vec<String> = env::args().collect();
+    let default_scratch = bio_suite::privacy::default_scratch_dir("").display().to_string();
+    let default_cache = bio_suite::privacy::labs_repo_dir().join("cache").display().to_string();
     let scratch_dir = args
         .get(1)
         .map(|s| s.as_str())
-        .unwrap_or(r"C:\Users\bpcwh\.gemini\antigravity\brain\6c376949-d838-4351-9ac7-267dcbdd921f\scratch");
+        .unwrap_or(&default_scratch);
     let cache_dir = args
         .get(2)
         .map(|s| s.as_str())
-        .unwrap_or(r"c:\Users\bpcwh\Documents\Code\CRVScience-web\crvscience-labs\cache");
+        .unwrap_or(&default_cache);
 
     let scratch_path = Path::new(scratch_dir);
     let cache_path = Path::new(cache_dir);

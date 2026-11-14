@@ -4,6 +4,42 @@ Changes to `bio-suite-seqnet` since it was ingested from the `bio-suite-seqnet.t
 
 ---
 
+## 2026-11-14: Isoptera (PREPRINT-26) validation sweep & homology/stratum fixes
+
+**Why:** Replicated the PREPRINT-25 phylogenomic pipeline on the global radiation of Isoptera (64 species x 16 loci across 14 Blattodea/Termitidae taxonomic strata, pre-registered in `crvscience-labs/benchmarks/isoptera_preprint26_design.json`) using `bio-suite-seqnet` as Stage 1 ingest, and fixed six bugs surfaced during cold fetch, Stage 2 homology QC, and Stage 2–4 phylogenomic validation.
+
+### Fixed
+- **Epifamily `-oidae` false stratum match and `Termitidae` subfamily resolution (`src/entrez.rs`).**
+  - `extract_family_or_stratum` previously stopped at the first taxon suffix matching `"idae"` or `"oidae"`, causing Blattodea epifamily `Termitoidae` to shadow downstream Termitidae subfamilies (`Macrotermitinae`, `Apicotermitinae`, `Cubitermitinae`, `Termitinae`, `Nasutitermitinae`, `Syntermitinae`) and NCBI's informal `"Cubitermes group"` clade to fail lookup.
+  - Updated `extract_family_or_stratum` to ignore `Termitoidae` (`!ends_with("oidae")`), normalize `"Cubitermes group"` -> `"Cubitermitinae"` prior to `-inae` checks, and scan lineage tokens in reverse order prioritizing exact `sampling_taxa` matches via `parse_mitogenome_insdseq_with_strata` and `parse_insdseq_xml_with_strata`.
+- **Extended mitochondrial feature synonyms (`src/entrez.rs`).**
+  - Extended `mito_feature_canonical` to recognize `nadh1`..`nadh6`, `nadh4l`, `rrn16`/`16srrn`/`16sribosomalrnarrnl`, and `rrn12`/`12srrn`/`12sribosomalrnarrns`.
+- **Mitogenome-anchored nuclear warm-cache, quota ranking & epoch refill dedup (`src/neurons.rs`).**
+  - Stage 1 anchored nuclear queries now scan both `cached_initial` and `newly_fetched`, skip candidates unable to reach `min_required_loci`, rank descending by `mito_count` (capped at `24` per stratum), inherit resolved stratum onto nuclear records lacking family metadata, and persist `attempted_refills: HashSet<(String, String)>` across `Epoch > 1` gap refills.
+- **Unaligned index-0 K2P false saturation (`src/neurons.rs`).**
+  - `compute_approx_k2p` previously compared raw unaligned byte positions `0..min_len`, causing genuine homologs with a 3-bp start offset (*Blattella germanica* vs. *Mastotermes darwiniensis* `COI`, `83.0%` identical at shift `+3`), internal indels (`ND4L`, `rrnL_16S`, `rrnS_12S`), or minus-strand submissions (`GU205094.1`) to saturate at `k2p = 1.5000` despite `kmer_sim = 0.91–0.97`, triggering `488` false-positive quarantines (primarily `LOW_HYBRID_NEURAL_CONSENSUS` on `ND4L`, `COI`, `ATP8`, `ND3`, `COIII`, `ND6`).
+  - Added `compute_k2p_with_index` (preserving `compute_approx_k2p` signature) using `AnchorIndex::best_diagonal` (`>= 4` hits across both strands) + banded semi-global Needleman-Wunsch alignment (`match = +2, mismatch = -4, gap = -6`, band `±36 bp`, capped at `2,400 bp`) so only homologous aligned columns enter Kimura 2-Parameter counting.
+- **Outgroup region-anchor hijacking & overly strict `K=10` core mapping (`src/neurons.rs`, `src/region.rs`).**
+  - Selecting `region_anchor` solely by `max_by_key(seq_length)` picked the minus-strand outgroup cockroach *Blattella germanica* `LSU_28S` (`GU205094.1`, `2,598 bp`, lowest centroid 4-mer similarity `0.8094` vs. `0.9499` for *Pseudacanthotermes spiniger* `EU253824.1`), leaving 238 clean termite `28S` records unmapped and isolating *Sigmella normalis* cockroaches as a spurious core (`303/326` `LSU_28S` quarantined). Simultaneously, exact `K = 10` k-mer seeds rejected divergent short mitochondrial loci (`ATP8` `159 bp`, `ND4L` `288 bp`, `ND6` `492 bp`).
+  - Switched `region_anchor` selection to maximize centroid 4-mer similarity `sims[idx]` among clean records `>= p90_clean_len * 3 / 4`, and updated `region::AnchorIndex` to adaptive `k = 7` (`<= 550 bp`) / `k = 8` (`> 550 bp`) across top-3 diagonal bins validated by banded Smith-Waterman local homology (`norm_sw >= 0.20, raw_sw >= 36`) plus exported `pub fn revcomp` and `AnchorIndex::best_diagonal`.
+
+### Added
+- **Parallelized `seqnet-runie` Stage 2+3 & `RY3` protein-coding supermatrix (`src/seqnet_runie.rs`, `src/main.rs`).**
+  - Parallelized per-locus native MAFFT, BIC ModelTest, and ML gene-tree inference via `rayon::par_iter()`, and added `RY3` third-codon-position recoded supermatrix inference (`supermatrix_ry3.fasta`, `supermatrix_ry3.nwk`, `supermatrix_ry3_ln_l`, `supermatrix_rcfv_4state`, `supermatrix_rcfv_ry3`, `validation_supermatrix_ry3`).
+- **`bio-suite-supervisor` Stage 1 `seqnet` integration (`src/supervisor_isoptera.rs`).**
+  - Wired `bio-suite-seqnet` Stage 1 (`seqnet_isoptera_preprint26.sqlite`, `CRV-ISOPTERA-PREPRINT26-DB01`) directly into `execute_isoptera_supervisor_study`.
+
+### Verified
+- **Unit & integration tests:** All `13` `bio-suite-seqnet` lib unit tests (including 6 new tests across `entrez::tests`, `region::tests`, and `neurons::tests`) + `convergence_test` (`1/1`) + `bio-suite` (`7/7` lib + `20/20` `core_fidelity`) pass in `--release`.
+- **End-to-end validation sweep (`bio-suite seqnet-runie --benchmark crvscience-labs/benchmarks/isoptera_preprint26_design.json`):**
+  - Pre-fix baseline vs. post-fix (7,807 cached NCBI sequences, `CRV-ISOPTERA-PREPRINT26-DB01`):
+    - Clean records: `7,002 -> 7,490` | Quarantined: `805 -> 317` (eliminated `488` false quarantines while keeping genuine `100-N` `LSU_28S` scaffolds, non-overlapping `D1-D2` `28S`, and `INTERNAL_STOP_CODON_NUMT` rejects out).
+    - `2`-epoch convergence (`297` OTUs assembled, `64` retained across `14/14` families): matrix occupancy improved `88.88% -> 93.48%`, mean consensus `0.9015 -> 0.9233`.
+    - `LSU_28S` recovered from `2` taxa (skipped) to `36 taxa x 2,466 bp` (`lnL = -7780.69`); `ATP8` `63 taxa x 176 bp`; all `16/16` loci retained (`supermatrix 64 taxa x 16,675 bp`; RCFV reduced `90.6%` from `0.0396` 4-state to `0.0037` `RY3`; `msc_normalized_quartet_score = 0.9296`).
+    - Cladistic check against the frozen benchmark recovered `5/6` scored clades in `supermatrix_ml`, `supermatrix_ry3_ml`, and `quartet_msc` (`Xylophagodea`, `Isoptera`, `Euisoptera`, `Neoisoptera`, `Termitidae` all `100%`/`95%` bootstrap and `0.9905–1.0000` LPP, plus monophyletic `Cryptocercidae`, `Kalotermitidae`, `Apicotermitinae`, `Cubitermitinae`, `Nasutitermitinae`, `Syntermitinae`). On `non_macrotermitine_termitidae` (`best_jaccard = 0.9565`), the newly recovered 36-taxon nuclear `LSU_28S` signal (`(Sphaerotermes_sphaerothorax, Foraminitermes_valens)` at `100%`) resolved the non-fungus-growing *Sphaerotermes sphaerothorax* (subfamily Sphaerotermitinae, cataloged under `Macrotermitinae` in legacy NCBI taxonomy) inside the non-Macrotermitinae Termitidae grade sister to the `1.00`-supported 9-species fungus-growing `Macrotermitinae sensu stricto`.
+
+---
+
 ## 2026-11-13: Mitogenome mode (commit `b689370`)
 
 **Why:** To reproduce the PREPRINT-18 dataset dimensions (64 species x 16 loci, mitochondrial loci from complete mitogenomes). Per-locus title queries cannot do this, because mitogenome records are titled "... mitochondrion, complete genome" and never name individual genes.

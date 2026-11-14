@@ -268,7 +268,7 @@ pub fn compute_k2p_with_index(
                         let ub = norm_nuc(sbs[j - 1]);
                         let valid_b = matches!(ub, b'A' | b'C' | b'G' | b'T');
                         let sub = if valid_a && valid_b {
-                            if ua == ub { 2 } else { -3 }
+                            if ua == ub { 2 } else { -4 }
                         } else {
                             0
                         };
@@ -282,14 +282,14 @@ pub fn compute_k2p_with_index(
                             dir = 0;
                         }
                         if j >= row_lo[i - 1] && j <= row_hi[i - 1] && dp_prev[j] > neg / 2 {
-                            let v = dp_prev[j] - 4;
+                            let v = dp_prev[j] - 6;
                             if v > best_v {
                                 best_v = v;
                                 dir = 1;
                             }
                         }
                         if j > lo && dp_curr[j - 1] > neg / 2 {
-                            let v = dp_curr[j - 1] - 4;
+                            let v = dp_curr[j - 1] - 6;
                             if v > best_v {
                                 best_v = v;
                                 dir = 2;

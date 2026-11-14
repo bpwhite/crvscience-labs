@@ -291,14 +291,51 @@ pub fn execute_isoptera_supervisor_study(
     let mut iter1_rescued_rc = 0usize;
     let mut iter1_quarantined = 0usize;
 
-    // Log every actively quarantined record from seqnet's SQLite `quarantine_ledger` to Stage 1 audit & 0-Beaker set.
+    // Accumulate full counts/bytes across all actively quarantined SQLite records, while picking
+    // up to 24 diverse `(reason_code, locus)` representatives for BLAST diagnostics & Table S1.
     let mut active_quarantine: Vec<_> = seqnet_res
         .quarantine_entries
         .iter()
         .filter(|q| q.currently_quarantined)
         .collect();
-    active_quarantine.sort_by(|a, b| a.accession_version.cmp(&b.accession_version).then_with(|| a.locus_canonical.cmp(&b.locus_canonical)));
-    for q in active_quarantine {
+    active_quarantine.sort_by(|a, b| {
+        a.last_reason_code
+            .cmp(&b.last_reason_code)
+            .then_with(|| a.locus_canonical.cmp(&b.locus_canonical))
+            .then_with(|| a.accession_version.cmp(&b.accession_version))
+    });
+    for q in &active_quarantine {
+        let cached = seqnet_cached_map.get(&(q.accession_version.clone(), q.locus_canonical.clone()));
+        quarantined_raw_bp += cached.map(|r| r.seq_length).unwrap_or(0);
+        iter1_quarantined += 1;
+    }
+
+    let mut rep_quarantine: Vec<_> = Vec::with_capacity(24);
+    let mut seen_rep_keys: std::collections::HashSet<(String, String)> =
+        std::collections::HashSet::new();
+    let mut seen_bucket: std::collections::HashSet<(String, String)> =
+        std::collections::HashSet::new();
+    for q in &active_quarantine {
+        if rep_quarantine.len() >= 24 {
+            break;
+        }
+        let bucket = (q.last_reason_code.clone(), q.locus_canonical.clone());
+        if seen_bucket.insert(bucket) {
+            seen_rep_keys.insert((q.accession_version.clone(), q.locus_canonical.clone()));
+            rep_quarantine.push(*q);
+        }
+    }
+    for q in &active_quarantine {
+        if rep_quarantine.len() >= 24 {
+            break;
+        }
+        let key = (q.accession_version.clone(), q.locus_canonical.clone());
+        if seen_rep_keys.insert(key) {
+            rep_quarantine.push(*q);
+        }
+    }
+
+    for q in rep_quarantine {
         let cached = seqnet_cached_map.get(&(q.accession_version.clone(), q.locus_canonical.clone()));
         let raw_seq = cached.map(|r| r.sequence_raw.as_str()).unwrap_or("");
         let raw_len = cached.map(|r| r.seq_length).unwrap_or(0);
@@ -314,8 +351,6 @@ pub fn execute_isoptera_supervisor_study(
         } else {
             super_blast_pair("EMPTY", "ACGT", "REF", "ACGT")
         };
-        quarantined_raw_bp += raw_len;
-        iter1_quarantined += 1;
         let obs_desc = if raw_len > 0 {
             format!(
                 "seqnet Stage 2 QC ({} | {} bp | K2P z={:.2}, consensus={:.3}): {}",
@@ -2215,6 +2250,15 @@ fn build_isoptera_supplemental_tables_html(
             html_esc(&anom.autonomous_resolution),
         ));
     }
+    if report.quarantined_records_on_disk > manifest.ncbi_flagged_anomalies.len() {
+        let omitted = report.quarantined_records_on_disk - manifest.ncbi_flagged_anomalies.len();
+        s1_quar_rows.push_str(&format!(
+            "<tr><td><code>+{} more</code></td><td>Multi-locus SQLite quarantine ledger</td><td>&mdash;</td><td><code>SQLITE_QUARANTINE_LEDGER</code></td><td><code>CRV-ISOPTERA-PREPRINT26-DB01</code></td><td>{} additional soft-quarantined sequence records archived in SQLite <code>quarantine_ledger</code> &amp; non-public dump (total = {} quarantined).</td></tr>\n",
+            omitted,
+            omitted,
+            report.quarantined_records_on_disk
+        ));
+    }
 
     let mut s2_rows = String::new();
     for fam in &report.functional_families {
@@ -2797,11 +2841,11 @@ pub fn export_isoptera_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "isoptera-global-radiation-preprint",
         "preprintId": "PREPRINT-26",
-        "zenodoVersion": "1.0.0",
+        "zenodoVersion": "2.0.0",
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/isoptera-global-radiation-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-26 (v1.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor + bio-suite-seqnet Across {} Verified NCBI Records (L = {} Aligned Columns)", report.total_records_on_disk, fmt_commas_usize(report.supermatrix_aligned_cols)),
+        "subtitle": format!("PREPRINT-26 (v2.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor + bio-suite-seqnet Across {} Verified NCBI Records (L = {} Aligned Columns)", report.total_records_on_disk, fmt_commas_usize(report.supermatrix_aligned_cols)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -3057,7 +3101,7 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 10, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-26 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-26 (v2.0.0 Empirical Preprint) &nbsp;|&nbsp;
       <strong>Companion:</strong> Lab Discovery #137 &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS</code>
     </div>
@@ -3113,7 +3157,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 10, 2026 \\quad|\\quad Preprint ID: PREPRINT-26 (v1.0.0 Empirical Preprint)}}
+\\date{{November 10, 2026 \\quad|\\quad Preprint ID: PREPRINT-26 (v2.0.0 Empirical Preprint)}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

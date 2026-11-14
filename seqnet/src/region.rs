@@ -242,8 +242,8 @@ impl AnchorIndex {
     /// used to anchor fast pairwise alignment in `compute_approx_k2p`.
     pub fn best_diagonal(&self, seq: &[u8]) -> Option<(bool, i64, usize)> {
         let rc_seq = revcomp(seq);
-        let fwd = self.candidate_bins(seq, 2).into_iter().next();
-        let rev = self.candidate_bins(&rc_seq, 2).into_iter().next();
+        let fwd = self.candidate_bins(seq, 4).into_iter().next();
+        let rev = self.candidate_bins(&rc_seq, 4).into_iter().next();
         match (fwd, rev) {
             (Some(a), Some(b)) => {
                 if b.0 > a.0 {

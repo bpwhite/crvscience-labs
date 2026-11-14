@@ -4,6 +4,20 @@ Changes to `bio-suite-seqnet` since it was ingested from the `bio-suite-seqnet.t
 
 ---
 
+## 2026-11-14: Compact mitogenome bounds & per-locus fallback for Nematoda (PREPRINT-27)
+
+**Why:** Preparing `bio-suite-seqnet` Stage 1 for phylum-wide Nematoda (`crvscience-labs/benchmarks/nematoda_preprint27_design.json`), where Chromadorean mitogenomes lack `atp8` (`~6.5–15 kb`) and several agricultural pest families (`Hoplolaimidae`, `Tylenchulidae`, `Anguinidae`, `Criconematidae`, `Trichodoridae`) have sparse complete mitogenomes on NCBI but dense nuclear `SSU_18S` / `LSU_28S` and single-locus `COI` / mitochondrial rRNA submissions.
+
+### Changed
+- **Widened `build_locus_panel` bounds & rRNA title synonyms (`seqnet/src/config.rs`):** Adjusted minimum length bounds for partial/divergent metazoan markers (`COI` `350..1650`, `SSU_18S` `520..2100`, `LSU_28S` `500..3800`, etc.) and added `"small subunit ribosomal RNA"` / `"large subunit ribosomal RNA"` title synonyms.
+- **Compact/multipartite mitogenome length window (`seqnet/src/entrez.rs`):** Expanded `build_mitogenome_query` from `10000:30000[SLEN]` to `6500:30000[SLEN]` to capture compact or multipartite nematode mitochondrial circles.
+- **Per-locus mitochondrial fallback when mitogenomes are scarce (`seqnet/src/neurons.rs`):** When `use_mitogenomes` returns fewer than `12` distinct species for a stratum, automatically supplements with per-locus `COI`, `COII`, `CYTB`, `rrnL_16S`, and `rrnS_12S` queries alongside nuclear loci while leaving mitogenome-rich strata unchanged.
+
+### Verified
+- Added `nematoda_family_strata_and_compact_mitogenome_bounds` unit test in `seqnet/src/entrez.rs` and verified via `cargo test --workspace --release`.
+
+---
+
 ## 2026-11-14: Isoptera (PREPRINT-26) validation sweep & homology/stratum fixes
 
 **Why:** Replicated the PREPRINT-25 phylogenomic pipeline on the global radiation of Isoptera (64 species x 16 loci across 14 Blattodea/Termitidae taxonomic strata, pre-registered in `crvscience-labs/benchmarks/isoptera_preprint26_design.json`) using `bio-suite-seqnet` as Stage 1 ingest, and fixed six bugs surfaced during cold fetch, Stage 2 homology QC, and Stage 2–4 phylogenomic validation.

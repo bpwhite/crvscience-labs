@@ -296,7 +296,7 @@ impl EntrezClient {
 /// GenBank records only: RefSeq `NC_` mitogenomes duplicate a GenBank submission.
 pub fn build_mitogenome_query(taxon_query: &str) -> String {
     format!(
-        "\"{}\"[Organism] AND mitochondrion[Filter] AND (\"complete genome\"[Title] OR \"partial genome\"[Title]) AND 10000:30000[SLEN] NOT srcdb_refseq[PROP]",
+        "\"{}\"[Organism] AND mitochondrion[Filter] AND (\"complete genome\"[Title] OR \"partial genome\"[Title]) AND 6500:30000[SLEN] NOT srcdb_refseq[PROP]",
         taxon_query
     )
 }
@@ -885,6 +885,16 @@ mod tests {
         let tax = "Eukaryota; Metazoa; Arthropoda; Insecta; Coleoptera; Adephaga; Carabidae; Trechinae; Bembidion";
         assert_eq!(extract_family_or_stratum(tax, &strata, None), "Carabidae");
         assert_eq!(extract_family_or_stratum(tax, &[], None), "Carabidae");
+    }
+
+    #[test]
+    fn nematoda_family_strata_and_compact_mitogenome_bounds() {
+        let strata = vec!["Meloidogynidae".to_string(), "Heteroderidae".to_string(), "Longidoridae".to_string()];
+        let meloi = "Eukaryota; Metazoa; Ecdysozoa; Nematoda; Chromadorea; Rhabditida; Tylenchina; Tylenchomorpha; Tylenchoidea; Meloidogynidae; Meloidogyne";
+        assert_eq!(extract_family_or_stratum(meloi, &strata, None), "Meloidogynidae");
+        let longi = "Eukaryota; Metazoa; Ecdysozoa; Nematoda; Enoplea; Dorylaimia; Dorylaimida; Dorylaimina; Dorylaimoidea; Longidoridae; Xiphinema";
+        assert_eq!(extract_family_or_stratum(longi, &strata, None), "Longidoridae");
+        assert!(build_mitogenome_query("Heteroderidae").contains("6500:30000[SLEN]"));
     }
 }
 

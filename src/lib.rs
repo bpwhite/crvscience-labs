@@ -68,6 +68,7 @@ pub mod supervisor_basal_metazoa_manuscript;
 pub mod supervisor_figures;
 pub mod supervisor_isoptera;
 pub mod supervisor_manuscript;
+pub mod supervisor_nematoda;
 pub mod supervisor_nudibranchs;
 pub mod supervisor_snails;
 pub mod supervisor_study;

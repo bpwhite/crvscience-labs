@@ -593,6 +593,98 @@ pub(crate) const ISOPTERA_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "isoptera-global-supp-s3-cox1-ry3-alignview",
 };
 
+pub(crate) const NEMATODA_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [312.0, 214.0, 148.0, 94.8, 68.4, 52.6, 58.4],
+    backbone_node_ages: [74.6, 124.2, 178.4, 242.6, 386.4, 468.0],
+    fig1_max_ma: 500.0,
+    fig1_eras: &[
+        ("Cambrian-Ord", 500.0, 443.8, "#f1f5f9"),
+        ("Silurian-Dev", 443.8, 358.9, "#f8fafc"),
+        ("Carb-Perm", 358.9, 251.9, "#f1f5f9"),
+        ("Mesozoic", 251.9, 66.0, "#f8fafc"),
+        ("Cenozoic", 66.0, 0.0, "#f1f5f9"),
+    ],
+    fig1_ticks: &[500, 400, 300, 200, 100, 50, 0],
+    fig1_node_y_slots: [7.8, 15.2, 24.4, 36.0, 26.5, 44.5, 51.8, 58.0],
+    fig1_clade_cards: &[
+        ("[A]", 0, 3, "Rhabditida & Cephalobida Outgroups (n=4)", "Caenorhabditis elegans, Oscheius, Acrobeloides, Heterorhabditis", "Bacteriovore & entomopathogenic Chromadorea root"),
+        ("[B]", 4, 9, "Clade I Dorylaimia Virus Vectors (n=6)", "Xiphinema, Paralongidorus, Longidorus, Trichodorus", "Odontostylet root ectoparasites + nepovirus/tobravirus vectors"),
+        ("[C]", 10, 19, "Panagrolaimomorpha & Aphelenchoidea (n=10)", "Steinernema, Bursaphelenchus xylophilus, Aphelenchoides", "Entomopathogenic symbionts, pine-wilt GH45 & foliar pests"),
+        ("[D]", 20, 31, "Basal Tylenchomorpha Plant Parasites (n=12)", "Mesocriconema, Tylenchulus, Anguina, Helicotylenchus, Rotylenchulus", "Ring, citrus, seed-gall & reniform HGT PCWDE acquisition"),
+        ("[E]", 32, 41, "Pratylenchidae Migratory Endoparasites (n=10)", "Pratylenchus penetrans, P. vulnus, Radopholus similis, Hirschmanniella", "Root-lesion, burrowing & rice-root cortical necrosis pests"),
+        ("[F]", 42, 52, "Heteroderidae Cyst Nematodes (n=11)", "Heterodera glycines, H. schachtii, Globodera pallida, G. rostochiensis", "Multinucleate syncytium effectors + diapause egg-cyst dormancy"),
+        ("[G]", 53, 63, "Meloidogynidae Root-Knot Nematodes (n=11)", "Meloidogyne incognita, M. javanica, M. enterolobii, M. hapla", "Multinucleate giant-cell effectors + mitotic polyploidy"),
+    ],
+    fig1_web_svg: "nematoda-pests-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of Plant-Parasitic & Agricultural Pest Nematodes (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) across Phylum Nematoda with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 3, "Chromadorea Outgroups (n=4)", ""),
+        ("[B]", 4, 9, "Clade I Virus Vectors (n=6)", "8,4"),
+        ("[C]", 10, 19, "Aphelenchoidea & Steinernema (n=10)", ""),
+        ("[D]", 20, 31, "Basal Tylenchomorpha (n=12)", "9,3,2,3"),
+        ("[E]", 32, 41, "Pratylenchidae Root-Lesion (n=10)", "5,3"),
+        ("[F]", 42, 52, "Heteroderidae Cyst Nematodes (n=11)", ""),
+        ("[G]", 53, 63, "Meloidogynidae Root-Knot (n=11)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "nematoda-pests-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Agricultural Pest & Free-Living Nematodes (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T003", 0),
+        ("Node II", "B:T007", 1),
+        ("Node III", "C:T015", 2),
+        ("Node IV", "D:T023", 3),
+        ("Node V", "D:T028", 4),
+        ("Node VI", "E:T037", 5),
+        ("Node VII", "F:T047", 6),
+        ("Node VIII", "G:T059", 7),
+    ],
+    fig3_abba_arc_tips: ("G:T059", "G:T055"),
+    fig3_web_svg: "nematoda-pests-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression.",
+    fig4a_web_svg: "nematoda-pests-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional Standardized COX1/CYTB Bayesian Coalescent Skyline Matrix Across Global Agricultural Pest Nematodes (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six single-species/genus regional mtDNA COX1/CYTB coalescent skylines (25,000 MCMC generations) across Meloidogyne incognita, M. javanica/arenaria, Globodera pallida/rostochiensis, Heterodera glycines/schachtii, Pratylenchus, and Bursaphelenchus xylophilus.",
+    fig4b_web_svg: "nematoda-pests-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 18S/28S/ITS rDNA (4Ne) vs. Nuclear HGT GH5 Cellulase & Effector Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Paired multi-locus skylines across cyst (Heterodera/Globodera) and root-knot/lesion (Meloidogyne/Pratylenchus) cohorts separating maternal mtDNA expansion from Katoh E-INS-i rDNA and nuclear HGT cellulase/effector coding sweeps.",
+    fig5_short_fam_titles: [
+        "HGT Plant-Cell-Wall Degrading Enzymes (GH5 Endoglucanase / PL3 / EXPB2)",
+        "Esophageal Stylet Effectors & Host Syncytium Remodeling (CRT1 / Annexin / VTE1 / 29D09)",
+        "Anhydrobiosis Stress Chaperones & Antioxidant Enzymes (HSP90 / HSP70 / SOD / PRDX)",
+        "Xenobiotic Detoxification & Nematicide Cytochrome P450s (cyp-31A2 / cyp-35C1 / cyp-14A)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: HGT GH5 Cellulase / PL3 / EXPB2",
+        "FAM-02: Stylet Effector CRT1 / VTE1 / 29D09",
+        "FAM-03: Anhydrobiosis HSP90 / SOD / PRDX",
+        "FAM-04: Nematicide Detox CYP31A2 / CYP35C1",
+    ],
+    fig5_panel_d_header: "Panel D | CYP31A2 Structure & Fe³⁺–Heme Pocket (1TQN, 2.05 Å)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Microsomal P450 Fold (461 Cα Threaded with C. elegans cyp-31A2)",
+    fig5_web_svg: "nematoda-pests-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP31A2 Heme-Thiolate Active Site",
+    fig5_caption: "Translated amino-acid motif alignments across 48 Nematoda NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Caenorhabditis elegans cyp-31A2 structure threaded on 1TQN (2.05 A) with zoomed Fe3+-Protoporphyrin IX (HEM A 508) and Cys442-Sg axial thiolate coordination.",
+    fig6_web_svg: "nematoda-pests-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    fig6_caption: "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon, 18-locus Nematoda supermatrix) and Pipeline B (12 single-species/genus agricultural pest nematode coalescent cohorts, N = 432).",
+    fig6_clade_label: "Phylum Nematoda",
+    fig6_p450_label: "CYP31A2 / HGT GH5 / Stylet Effectors",
+    fig6_its_label: "Meloidogyne & Heterodera 18S/28S/ITS rDNA",
+    supp_s1_fasta_name: "supp_s1_cyp31a2_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (C. elegans cyp-31A2 / cyp-35C1 / cyp-14A)",
+    supp_s1_source: "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS (FAM-04)",
+    supp_s1_stem: "nematoda-pests-supp-s1-cyp31a2-alignview",
+    supp_s2_title: "Cohort L5 Meloidogyne 18S/28S/ITS Ribosomal rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS (Cohort L5)",
+    supp_s2_stem: "nematoda-pests-supp-s2-rdna-einsi-alignview",
+    supp_s3_title: "Phylum Nematoda Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "nematoda-pests-supp-s3-cox1-ry3-alignview",
+};
+
 fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
@@ -4038,4 +4130,15 @@ pub fn generate_isoptera_locked_figures(
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
     generate_locked_figures_with_theme(manifest, study, &ISOPTERA_THEME, run_dir, web_figures_dir)
+}
+
+/// Generates all 6 Preprint-27 (`Nematoda Agricultural Pests`) locked-format figures (`.svg` + `.png` + `.pdf`)
+/// plus 3 Native Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
+pub fn generate_nematoda_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    generate_locked_figures_with_theme(manifest, study, &NEMATODA_THEME, run_dir, web_figures_dir)
 }

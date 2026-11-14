@@ -1,0 +1,207 @@
+{
+  "benchmark_id": "nematoda-preprint27-design-v1",
+  "title": "Nematoda Agricultural Pests 64-species x 16-locus design (PREPRINT-27 dimensions) vs. published phylum-wide phylogenomics",
+  "fixed_before_first_run": "2026-11-14",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at the dataset dimensions of PREPRINT-27 (nematoda-agricultural-pests-preprint): 64 species across 14 Nematoda families and 16 loci (14 mitochondrial loci + nuclear SSU_18S + LSU_28S). PREPRINT-27 only sets the taxon strata and quotas; it is not a validation source. Final trees are scored against deep phylum clades and infraordinal plant-parasitic groupings reported in the peer-reviewed studies below. A clade is testable when the run samples >= 2 tips inside and >= 2 outside it, and recovered when the unrooted tree contains the corresponding bipartition.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-27",
+    "species": 64,
+    "loci": 16,
+    "taxon_design": "4 outgroups (2 Rhabditidae, 1 Cephalobidae, 1 Heterorhabditidae), 6 Clade I Dorylaimia virus-vector ectoparasites (4 Longidoridae, 2 Trichodoridae), 10 Panagrolaimomorpha & Aphelenchoidea (3 Steinernematidae, 7 Aphelenchoididae), 12 basal Tylenchomorpha ecto-/semi-endoparasites (3 Criconematidae, 3 Tylenchulidae, 3 Anguinidae, 3 Hoplolaimidae), 10 migratory endoparasites (10 Pratylenchidae), 11 cyst nematodes (11 Heteroderidae), and 11 root-knot nematodes (11 Meloidogynidae).",
+    "taxonomy_note": "Most Chromadorean nematodes (Rhabditida/Tylenchida/Aphelenchida) lack mitochondrial atp8, retaining 12 mitochondrial PCGs + 2 rRNAs. Families without abundant complete mitogenomes on NCBI (Criconematidae, Tylenchulidae, Anguinidae, Hoplolaimidae, Trichodoridae) are supplemented automatically by seqnet via per-locus mitochondrial COI/COII/CYTB/16S/12S queries alongside nuclear SSU 18S and LSU 28S rRNA.",
+    "locus_interpretation": "14 mitochondrial loci (12 Chromadorean PCGs + 16S rrnL + 12S rrnS) + nuclear SSU_18S + LSU_28S = 16 orthologous phylogenomic loci. Horizontally transferred plant-cell-wall degrading enzymes (GH5/PL3/expansins), dorsal/subventral stylet effectors, stress chaperones, and nematicide target CYP450/receptor families are analyzed separately in Stage 4 codon-selection sweeps."
+  },
+  "sources": [
+    {
+      "key": "Holterman2006",
+      "citation": "Holterman, M., van der Wurff, A., van den Elsen, S., van Megen, H., Bongers, T., Holovachov, O., Bakker, J., & Helder, J. (2006). Phylum-Wide Analysis of SSU rDNA Reveals Deep Phylogenetic Relationships among Nematodes and Accelerated Evolution toward Crown Clades. Molecular Biology and Evolution, 23(9), 1792-1800.",
+      "doi": "10.1093/molbev/msl044"
+    },
+    {
+      "key": "vanMegen2009",
+      "citation": "van Megen, H., van den Elsen, S., Holterman, M., Karssen, G., Mooyman, P., Bongers, T., Holovachov, O., Bakker, J., & Helder, J. (2009). A phylogenetic tree of nematodes based on about 1200 full-length small subunit ribosomal DNA sequences. Nematology, 11(6), 927-950.",
+      "doi": "10.1163/156854109x456862"
+    },
+    {
+      "key": "Smythe2019",
+      "citation": "Smythe, A. B., Holovachov, O., & Kocot, K. M. (2019). Improved phylogenomic sampling of free-living nematodes enhances resolution of higher-level nematode phylogeny. BMC Evolutionary Biology, 19, 121.",
+      "doi": "10.1186/s12862-019-1444-x"
+    },
+    {
+      "key": "Danchin2010",
+      "citation": "Danchin, E. G. J., Rosso, M.-N., Vieira, P., de Almeida-Engler, J., Coutinho, P. M., Henrissat, B., & Abad, P. (2010). Multiple lateral gene transfers and duplications have promoted plant parasitism ability in nematodes. Proceedings of the National Academy of Sciences, 107(41), 17651-17656.",
+      "doi": "10.1073/pnas.1008486107"
+    },
+    {
+      "key": "Kikuchi2011",
+      "citation": "Kikuchi, T., Cotton, J. A., Dalzell, J. J., Hasegawa, K., Kanzaki, N., McVeigh, P., Takanashi, T., Tsai, I. J., Assefa, S. A., Cock, P. J. A., Otto, T. D., Hunt, M., Reid, A. J., Sanchez-Flores, A., Tsuchihara, K., Yokoi, T., Larsson, M. C., Miwa, J., Maule, A. G., Sahashi, N., Jones, J. T., & Berriman, M. (2011). Genomic Insights into the Origin of Parasitism in the Emerging Plant Pathogen Bursaphelenchus xylophilus. PLoS Pathogens, 7(9), e1002219.",
+      "doi": "10.1371/journal.ppat.1002219"
+    },
+    {
+      "key": "Abad2008",
+      "citation": "Abad, P., Gouzy, J., Aury, J.-M., Castagnone-Sereno, P., Danchin, E. G. J., et al. (2008). Genome sequence of the metazoan plant-parasitic nematode Meloidogyne incognita. Nature Biotechnology, 26(8), 909-915.",
+      "doi": "10.1038/nbt.1482"
+    },
+    {
+      "key": "RotaStabelli2013",
+      "citation": "Rota-Stabelli, O., Daley, A. C., & Pisani, D. (2013). Molecular Timetrees Reveal a Cambrian Colonization of Land and a New Scenario for Ecdysozoan Evolution. Current Biology, 23(5), 392-398.",
+      "doi": "10.1016/j.cub.2013.01.026"
+    }
+  ],
+  "taxon_group": "Nematoda",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 60,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Outgroups_Rhabditida_Cephalobina": ["Rhabditidae", "Cephalobidae", "Heterorhabditidae"],
+    "Clade_I_Virus_Vector_Ectoparasites": ["Longidoridae", "Trichodoridae"],
+    "Panagrolaimomorpha_Aphelenchoidea": ["Steinernematidae", "Aphelenchoididae"],
+    "Basal_Tylenchomorpha": ["Criconematidae", "Tylenchulidae", "Anguinidae", "Hoplolaimidae"],
+    "Pratylenchidae_Migratory_Endoparasites": ["Pratylenchidae"],
+    "Heteroderidae_Cyst_Nematodes": ["Heteroderidae"],
+    "Meloidogynidae_Root_Knot_Nematodes": ["Meloidogynidae"]
+  },
+  "species_per_family": {
+    "Rhabditidae": 2,
+    "Cephalobidae": 1,
+    "Heterorhabditidae": 1,
+    "Longidoridae": 4,
+    "Trichodoridae": 2,
+    "Steinernematidae": 3,
+    "Aphelenchoididae": 7,
+    "Criconematidae": 3,
+    "Tylenchulidae": 3,
+    "Anguinidae": 3,
+    "Hoplolaimidae": 3,
+    "Pratylenchidae": 10,
+    "Heteroderidae": 11,
+    "Meloidogynidae": 11
+  },
+  "scored_clades": [
+    {
+      "id": "dorylaimia_vs_chromadorea",
+      "name": "Clade I/II Enoplea-Dorylaimia (Longidoridae + Trichodoridae vs. Chromadorea)",
+      "families": [
+        "Rhabditidae",
+        "Cephalobidae",
+        "Heterorhabditidae",
+        "Steinernematidae",
+        "Aphelenchoididae",
+        "Criconematidae",
+        "Tylenchulidae",
+        "Anguinidae",
+        "Hoplolaimidae",
+        "Pratylenchidae",
+        "Heteroderidae",
+        "Meloidogynidae"
+      ],
+      "support": [
+        { "source": "Holterman2006", "statement": "Deep split separates Enoplea (Dorylaimida/Triplonchida Clades 1-2) from Chromadorea (Clades 8-12)" },
+        { "source": "Smythe2019", "statement": "Dorylaimia (including Longidoridae) + Enoplia recovered sister to Chromadorea with full phylogenomic support" }
+      ]
+    },
+    {
+      "id": "tylenchomorpha_core",
+      "name": "Tylenchomorpha Core Plant-Parasitic Families",
+      "families": [
+        "Criconematidae",
+        "Tylenchulidae",
+        "Anguinidae",
+        "Hoplolaimidae",
+        "Pratylenchidae",
+        "Heteroderidae",
+        "Meloidogynidae"
+      ],
+      "support": [
+        { "source": "Holterman2006", "statement": "Clade 12 Tylenchomorpha forms a strongly supported radiation uniting foliar, migratory, and sedentary plant parasites" },
+        { "source": "vanMegen2009", "statement": "Tylenchida families cluster within Clade 12 sister to Aphelenchoididae" }
+      ]
+    },
+    {
+      "id": "hoplolaimina_sedentary_crown",
+      "name": "Hoplolaimina + Pratylenchidae Advanced Plant-Parasite Crown",
+      "families": [
+        "Hoplolaimidae",
+        "Pratylenchidae",
+        "Heteroderidae",
+        "Meloidogynidae"
+      ],
+      "support": [
+        { "source": "Holterman2006", "statement": "Hoplolaimidae, Pratylenchidae, Heteroderidae, and Meloidogynidae form the crown plant-parasitic Subclade 12B" },
+        { "source": "Danchin2010", "statement": "Sedentary root-knot and cyst nematodes share expanded HGT cellulase and pectate lyase arsenals inherited from a tylenchid ancestor" }
+      ]
+    },
+    {
+      "id": "longidoridae_monophyly",
+      "name": "Longidoridae (Needle & Dagger Virus-Vector Nematodes)",
+      "families": ["Longidoridae"],
+      "support": [
+        { "source": "Holterman2006", "statement": "Longidoridae (Xiphinema + Longidorus) forms a monophyletic Clade 2 dorylaimid family" },
+        { "source": "vanMegen2009", "statement": "Longidoridae maximally supported as a cohesive Clade 2 plant-ectoparasitic lineage" }
+      ]
+    },
+    {
+      "id": "aphelenchoididae_monophyly",
+      "name": "Aphelenchoididae (Pine-Wilt & Foliar Nematodes)",
+      "families": ["Aphelenchoididae"],
+      "support": [
+        { "source": "Kikuchi2011", "statement": "Bursaphelenchus and Aphelenchoides form a distinct Clade 10B fungal/plant-parasitic radiation" },
+        { "source": "vanMegen2009", "statement": "Aphelenchoididae constitutes a cohesive Clade 10 lineage separated from Clade 12 Tylenchida" }
+      ]
+    },
+    {
+      "id": "heteroderidae_monophyly",
+      "name": "Heteroderidae (Cyst Nematodes)",
+      "families": ["Heteroderidae"],
+      "support": [
+        { "source": "Holterman2006", "statement": "Heterodera + Globodera cyst nematodes form a strongly supported derived clade within Subclade 12B" },
+        { "source": "vanMegen2009", "statement": "Heteroderidae strongly supported with syncytium-inducing sedentary parasitism" }
+      ]
+    },
+    {
+      "id": "meloidogynidae_monophyly",
+      "name": "Meloidogynidae (Root-Knot Nematodes)",
+      "families": ["Meloidogynidae"],
+      "support": [
+        { "source": "Holterman2006", "statement": "Meloidogyne forms a maximally supported monophyletic root-knot clade inside Subclade 12B" },
+        { "source": "Abad2008", "statement": "Root-knot nematodes share a derived giant-cell endoparasitic genomic architecture" }
+      ]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "tylenchida_aphelenchoididae_sister",
+      "name": "Tylenchomorpha + Aphelenchoididae relationship",
+      "families": ["Aphelenchoididae", "Criconematidae", "Tylenchulidae", "Anguinidae", "Hoplolaimidae", "Pratylenchidae", "Heteroderidae", "Meloidogynidae"],
+      "why_not_scored": "Aphelenchoidea was historically placed with Tylenchida, whereas Holterman2006, vanMegen2009, and Kikuchi2011 place Aphelenchoididae in Clade 10B with Panagrolaimomorpha/Steinernematidae rather than Clade 12."
+    },
+    {
+      "id": "pratylenchidae_monophyly",
+      "name": "Pratylenchidae (monophyly check)",
+      "families": ["Pratylenchidae"],
+      "why_not_scored": "Pratylenchidae (Pratylenchus, Nacobbus, Hirschmanniella, Radopholus) is known to be paraphyletic with respect to Hoplolaimidae, Heteroderidae, and Meloidogynidae in Holterman2006 and vanMegen2009."
+    },
+    { "id": "steinernematidae", "name": "Steinernematidae", "families": ["Steinernematidae"], "why_not_scored": "Single-family monophyly check." },
+    { "id": "criconematidae", "name": "Criconematidae", "families": ["Criconematidae"], "why_not_scored": "Single-family monophyly check." },
+    { "id": "tylenchulidae", "name": "Tylenchulidae", "families": ["Tylenchulidae"], "why_not_scored": "Single-family monophyly check." },
+    { "id": "anguinidae", "name": "Anguinidae", "families": ["Anguinidae"], "why_not_scored": "Single-family monophyly check." },
+    { "id": "hoplolaimidae", "name": "Hoplolaimidae", "families": ["Hoplolaimidae"], "why_not_scored": "Single-family monophyly check." }
+  ]
+}

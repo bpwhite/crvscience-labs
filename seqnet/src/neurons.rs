@@ -447,6 +447,11 @@ pub fn run_neural_network_schedule(
             .collect();
         let use_mitogenomes = cfg.mitogenome_loci && !mito_panel.is_empty();
         'strata: for stratum in &strata {
+            let mut mito_species_in_stratum: HashSet<String> = cached_initial
+                .iter()
+                .filter(|r| r.locus_class == LocusClass::Mitochondrial && r.family.eq_ignore_ascii_case(stratum))
+                .map(|r| r.species_binomial.clone())
+                .collect();
             if use_mitogenomes {
                 let watermark = db.get_sync_watermark(stratum, MITOGENOME_WATERMARK)?;
                 let retmax = if watermark.is_some() {
@@ -458,6 +463,9 @@ pub fn run_neural_network_schedule(
                     Ok(batch) => {
                         consecutive_failures = 0;
                         live_delta_fetched += batch.len();
+                        for r in &batch {
+                            mito_species_in_stratum.insert(r.species_binomial.clone());
+                        }
                         newly_fetched.extend(batch);
                         let _ = db.upsert_sync_watermark(
                             stratum,
@@ -481,7 +489,14 @@ pub fn run_neural_network_schedule(
                 }
             }
             for locus in &panel {
-                if use_mitogenomes && locus.locus_class == LocusClass::Mitochondrial {
+                let is_fallback_mito = matches!(
+                    locus.canonical_name.as_str(),
+                    "COI" | "COII" | "CYTB" | "rrnL_16S" | "rrnS_12S"
+                );
+                if use_mitogenomes
+                    && locus.locus_class == LocusClass::Mitochondrial
+                    && (mito_species_in_stratum.len() >= 12 || !is_fallback_mito)
+                {
                     continue;
                 }
                 // Watermarks are kept per (stratum, locus) so each query only pulls its own delta.

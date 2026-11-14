@@ -227,27 +227,27 @@ pub fn build_locus_panel(n_nuclear: usize, n_mito: usize, invert_mito: bool) -> 
     let mito_code = if invert_mito { 5 } else { 2 };
 
     let core_mito: &[(&str, bool, usize, usize, &[&str])] = &[
-        ("COI", true, 500, 1600, &["COI", "COX1", "CO1", "cytochrome c oxidase subunit I", "cytochrome oxidase subunit I"]),
-        ("COII", true, 450, 800, &["COII", "COX2", "CO2", "cytochrome c oxidase subunit II"]),
-        ("COIII", true, 500, 850, &["COIII", "COX3", "CO3", "cytochrome c oxidase subunit III"]),
-        ("CYTB", true, 600, 1200, &["CYTB", "COB", "cytochrome b"]),
-        ("ND1", true, 600, 1050, &["ND1", "NAD1", "NADH dehydrogenase subunit 1"]),
-        ("ND2", true, 600, 1100, &["ND2", "NAD2", "NADH dehydrogenase subunit 2"]),
-        ("ND4", true, 750, 1450, &["ND4", "NAD4", "NADH dehydrogenase subunit 4"]),
-        ("ND5", true, 900, 1800, &["ND5", "NAD5", "NADH dehydrogenase subunit 5"]),
-        ("ATP6", true, 450, 750, &["ATP6", "ATP synthase F0 subunit 6"]),
-        ("rrnL_16S", false, 400, 1450, &["16S", "rrnL", "l-rRNA", "16S ribosomal RNA"]),
-        ("rrnS_12S", false, 300, 950, &["12S", "rrnS", "s-rRNA", "12S ribosomal RNA"]),
-        ("ND3", true, 280, 420, &["ND3", "NAD3", "NADH dehydrogenase subunit 3"]),
-        ("ND4L", true, 220, 350, &["ND4L", "NAD4L"]),
-        ("ND6", true, 350, 600, &["ND6", "NAD6"]),
+        ("COI", true, 350, 1650, &["COI", "COX1", "CO1", "cytochrome c oxidase subunit I", "cytochrome oxidase subunit I"]),
+        ("COII", true, 380, 850, &["COII", "COX2", "CO2", "cytochrome c oxidase subunit II"]),
+        ("COIII", true, 450, 880, &["COIII", "COX3", "CO3", "cytochrome c oxidase subunit III"]),
+        ("CYTB", true, 450, 1250, &["CYTB", "COB", "cytochrome b"]),
+        ("ND1", true, 500, 1080, &["ND1", "NAD1", "NADH dehydrogenase subunit 1"]),
+        ("ND2", true, 480, 1120, &["ND2", "NAD2", "NADH dehydrogenase subunit 2"]),
+        ("ND4", true, 620, 1480, &["ND4", "NAD4", "NADH dehydrogenase subunit 4"]),
+        ("ND5", true, 800, 1850, &["ND5", "NAD5", "NADH dehydrogenase subunit 5"]),
+        ("ATP6", true, 380, 780, &["ATP6", "ATP synthase F0 subunit 6"]),
+        ("rrnL_16S", false, 350, 1450, &["16S", "rrnL", "l-rRNA", "16S ribosomal RNA"]),
+        ("rrnS_12S", false, 280, 950, &["12S", "rrnS", "s-rRNA", "12S ribosomal RNA"]),
+        ("ND3", true, 250, 440, &["ND3", "NAD3", "NADH dehydrogenase subunit 3"]),
+        ("ND4L", true, 180, 360, &["ND4L", "NAD4L"]),
+        ("ND6", true, 280, 620, &["ND6", "NAD6"]),
         ("ATP8", true, 120, 220, &["ATP8", "ATP synthase F0 subunit 8"]),
     ];
 
     let core_nuclear: &[(&str, bool, usize, usize, &[&str])] = &[
         // "SSU"/"LSU" alone also name mitochondrial 12S/16S rRNA, so they are not used as synonyms
-        ("SSU_18S", false, 600, 2100, &["18S", "18S ribosomal RNA", "18S rRNA"]),
-        ("LSU_28S", false, 600, 3800, &["28S", "28S ribosomal RNA", "28S rRNA"]),
+        ("SSU_18S", false, 520, 2100, &["18S", "18S ribosomal RNA", "18S rRNA", "small subunit ribosomal RNA"]),
+        ("LSU_28S", false, 500, 3800, &["28S", "28S ribosomal RNA", "28S rRNA", "large subunit ribosomal RNA"]),
         ("H3", true, 280, 400, &["H3", "histone H3"]),
         ("EF1a", true, 500, 1300, &["EF-1a", "EF1a", "elongation factor 1-alpha"]),
         ("CAD", true, 600, 2600, &["CAD", "carbamoyl-phosphate synthetase"]),

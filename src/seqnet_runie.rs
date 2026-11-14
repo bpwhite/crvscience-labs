@@ -11,6 +11,7 @@
 //! 4. native quartet MSC species tree from the gene trees
 //! 5. validation of both trees against clades reported in published studies (benchmark JSON)
 
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
@@ -24,8 +25,10 @@ use bio_suite_seqnet::otu::AssembledSpeciesOtu;
 use crate::coalescent::run_native_quartet_coalescent;
 use crate::fetch::FastaRecord;
 use crate::mafft_native::align_sequences_mafft_native;
+use crate::mcmc_skyline::compute_rcfv_4state_and_ry;
 use crate::modeltest::run_native_modeltest;
 use crate::phylo::AlignedSequence;
+use crate::supervisor_study::recode_ry3;
 use crate::tree_builder::{infer_native_ml_gene_tree, PhyloRunModel};
 
 // ---------------------------------------------------------------------------
@@ -167,8 +170,12 @@ pub struct SeqnetRunieReport {
     pub loci: Vec<LocusStageReport>,
     pub supermatrix_length: usize,
     pub supermatrix_ln_l: f64,
+    pub supermatrix_ry3_ln_l: f64,
+    pub supermatrix_rcfv_4state: f64,
+    pub supermatrix_rcfv_ry3: f64,
     pub msc_normalized_quartet_score: f64,
     pub validation_supermatrix: TreeValidation,
+    pub validation_supermatrix_ry3: Option<TreeValidation>,
     pub validation_msc: Option<TreeValidation>,
     pub stage_seconds: BTreeMap<String, f64>,
 }
@@ -258,82 +265,109 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
     );
 
     // ---- Stage 2-3: per-locus alignment, model selection, gene trees -----------------------
-    eprintln!("[seqnet-runie] Stage 2/5 + 3/5: native MSA, model selection and ML gene trees per locus");
+    eprintln!("[seqnet-runie] Stage 2/5 + 3/5: parallel native MSA, model selection and ML gene trees per locus");
     let labels_all: Vec<String> = otus.iter().map(|o| o.terminal_label.clone()).collect();
+    let panel = cfg.locus_panel();
+    let is_coding: HashMap<String, bool> = panel
+        .iter()
+        .map(|l| (l.canonical_name.clone(), l.protein_coding))
+        .collect();
+    let t = Instant::now();
+    let per_locus_results: Vec<Result<Option<(String, LocusStageReport, usize, HashMap<String, String>, String)>, String>> = bench
+        .loci
+        .par_iter()
+        .map(|locus| {
+            let records: Vec<FastaRecord> = otus
+                .iter()
+                .filter_map(|o| {
+                    o.locus_slots.get(locus).map(|slot| FastaRecord {
+                        id: o.terminal_label.clone(),
+                        accession: slot.accession_version.clone(),
+                        taxon: o.species_binomial.clone(),
+                        common_name: String::new(),
+                        family: o.family.clone(),
+                        gene: locus.clone(),
+                        description: format!("{} {} {}", slot.accession_version, o.species_binomial, locus),
+                        sequence: slot.sequence_raw.clone(),
+                        cached_from_disk: true,
+                    })
+                })
+                .collect();
+            if records.len() < 4 {
+                eprintln!("[seqnet-runie]   {}: {} taxa, skipped", locus, records.len());
+                return Ok(None);
+            }
+            let ta = Instant::now();
+            let (_, aligned, _) = align_sequences_mafft_native(&records);
+            let align_ms = ta.elapsed().as_secs_f64() * 1000.0;
+            write_fasta(&aln_dir.join(format!("{locus}.fasta")), &aligned)?;
+            let aln_len = aligned.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
+
+            let mt = run_native_modeltest(&aligned);
+            let model = map_model(&mt.best_model_bic);
+            let tt = Instant::now();
+            let labels: Vec<String> = aligned.iter().map(|a| a.id.clone()).collect();
+            let seqs: Vec<String> = aligned.iter().map(|a| a.aligned_seq.clone()).collect();
+            let gt = infer_native_ml_gene_tree(&seqs, &labels, model);
+            let tree_ms = tt.elapsed().as_secs_f64() * 1000.0;
+            fs::write(tree_dir.join(format!("{locus}.nwk")), &gt.newick_tree).map_err(|e| e.to_string())?;
+            eprintln!(
+                "[seqnet-runie]   {:<9} {:>4} taxa x {:>5} bp | BIC {:<10} -> {:<8} | lnL {:.1}",
+                locus, aligned.len(), aln_len, mt.best_model_bic, model.code(), gt.ln_l
+            );
+            let rep = LocusStageReport {
+                locus: locus.clone(),
+                taxa: aligned.len(),
+                aligned_length: aln_len,
+                best_model_bic: mt.best_model_bic.clone(),
+                ml_model_used: model.code().to_string(),
+                gene_tree_ln_l: gt.ln_l,
+                align_ms,
+                tree_ms,
+            };
+            let rows: HashMap<String, String> = aligned.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
+            Ok(Some((locus.clone(), rep, aln_len, rows, gt.newick_tree)))
+        })
+        .collect();
     let mut locus_reports = Vec::new();
     let mut gene_trees: Vec<String> = Vec::new();
     let mut aligned_by_locus: Vec<(String, usize, HashMap<String, String>)> = Vec::new();
-    let t = Instant::now();
-    for locus in &bench.loci {
-        let records: Vec<FastaRecord> = otus
-            .iter()
-            .filter_map(|o| {
-                o.locus_slots.get(locus).map(|slot| FastaRecord {
-                    id: o.terminal_label.clone(),
-                    accession: slot.accession_version.clone(),
-                    taxon: o.species_binomial.clone(),
-                    common_name: String::new(),
-                    family: o.family.clone(),
-                    gene: locus.clone(),
-                    description: format!("{} {} {}", slot.accession_version, o.species_binomial, locus),
-                    sequence: slot.sequence_raw.clone(),
-                    cached_from_disk: true,
-                })
-            })
-            .collect();
-        if records.len() < 4 {
-            eprintln!("[seqnet-runie]   {}: {} taxa, skipped", locus, records.len());
-            continue;
+    for item in per_locus_results {
+        if let Some((locus, rep, aln_len, rows, nwk)) = item? {
+            locus_reports.push(rep);
+            gene_trees.push(nwk);
+            aligned_by_locus.push((locus, aln_len, rows));
         }
-        let ta = Instant::now();
-        let (_, aligned, _) = align_sequences_mafft_native(&records);
-        let align_ms = ta.elapsed().as_secs_f64() * 1000.0;
-        write_fasta(&aln_dir.join(format!("{locus}.fasta")), &aligned)?;
-        let aln_len = aligned.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
-
-        let mt = run_native_modeltest(&aligned);
-        let model = map_model(&mt.best_model_bic);
-        let tt = Instant::now();
-        let labels: Vec<String> = aligned.iter().map(|a| a.id.clone()).collect();
-        let seqs: Vec<String> = aligned.iter().map(|a| a.aligned_seq.clone()).collect();
-        let gt = infer_native_ml_gene_tree(&seqs, &labels, model);
-        let tree_ms = tt.elapsed().as_secs_f64() * 1000.0;
-        fs::write(tree_dir.join(format!("{locus}.nwk")), &gt.newick_tree).map_err(|e| e.to_string())?;
-        gene_trees.push(gt.newick_tree.clone());
-        eprintln!(
-            "[seqnet-runie]   {:<9} {:>4} taxa x {:>5} bp | BIC {:<10} -> {:<8} | lnL {:.1}",
-            locus, aligned.len(), aln_len, mt.best_model_bic, model.code(), gt.ln_l
-        );
-        locus_reports.push(LocusStageReport {
-            locus: locus.clone(),
-            taxa: aligned.len(),
-            aligned_length: aln_len,
-            best_model_bic: mt.best_model_bic.clone(),
-            ml_model_used: model.code().to_string(),
-            gene_tree_ln_l: gt.ln_l,
-            align_ms,
-            tree_ms,
-        });
-        aligned_by_locus.push((
-            locus.clone(),
-            aln_len,
-            aligned.into_iter().map(|a| (a.id, a.aligned_seq)).collect(),
-        ));
     }
     stage_seconds.insert("2_3_loci".to_string(), t.elapsed().as_secs_f64());
 
     // Supermatrix (absent loci padded as gaps = missing data in the ML likelihood)
+    // Build both unrecoded 4-state and RuNIE RY3 (protein-coding 3rd-position purine/pyrimidine) supermatrices.
     let t = Instant::now();
     let mut super_rows: Vec<String> = Vec::with_capacity(labels_all.len());
+    let mut super_rows_ry3: Vec<String> = Vec::with_capacity(labels_all.len());
     for label in &labels_all {
         let mut row = String::new();
-        for (_, len, rows) in &aligned_by_locus {
+        let mut row_ry3 = String::new();
+        for (locus_name, len, rows) in &aligned_by_locus {
             match rows.get(label) {
-                Some(s) => row.push_str(s),
-                None => row.push_str(&"-".repeat(*len)),
+                Some(s) => {
+                    row.push_str(s);
+                    if *is_coding.get(locus_name.as_str()).unwrap_or(&false) {
+                        row_ry3.push_str(&recode_ry3(s));
+                    } else {
+                        row_ry3.push_str(s);
+                    }
+                }
+                None => {
+                    let gap = "-".repeat(*len);
+                    row.push_str(&gap);
+                    row_ry3.push_str(&gap);
+                }
             }
         }
         super_rows.push(row);
+        super_rows_ry3.push(row_ry3);
     }
     let super_len = super_rows.first().map(|r| r.len()).unwrap_or(0);
     let super_aligned: Vec<AlignedSequence> = labels_all
@@ -348,14 +382,37 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
         })
         .collect();
     write_fasta(&aln_dir.join("supermatrix.fasta"), &super_aligned)?;
+    let super_ry3_aligned: Vec<AlignedSequence> = labels_all
+        .iter()
+        .zip(super_rows_ry3.iter())
+        .map(|(l, s)| AlignedSequence {
+            id: l.clone(),
+            taxon: l.clone(),
+            common_name: String::new(),
+            family: tip_family.get(l).cloned().unwrap_or_default(),
+            aligned_seq: s.clone(),
+        })
+        .collect();
+    write_fasta(&aln_dir.join("supermatrix_ry3.fasta"), &super_ry3_aligned)?;
+    let super_vecs: Vec<Vec<u8>> = super_rows.iter().map(|s| s.as_bytes().to_vec()).collect();
+    let super_ry3_vecs: Vec<Vec<u8>> = super_rows_ry3.iter().map(|s| s.as_bytes().to_vec()).collect();
+    let (supermatrix_rcfv_4state, _, _) = compute_rcfv_4state_and_ry(&super_vecs);
+    let (_, supermatrix_rcfv_ry3, _) = compute_rcfv_4state_and_ry(&super_ry3_vecs);
     eprintln!(
-        "[seqnet-runie]   supermatrix {} taxa x {} bp, ML tree (GTR+F+I+G4 fast NNI)...",
+        "[seqnet-runie]   supermatrix {} taxa x {} bp | RCFV 4-state {:.4} vs RY3 {:.4} | ML trees (GTR+F+I+G4 fast NNI)...",
         labels_all.len(),
-        super_len
+        super_len,
+        supermatrix_rcfv_4state,
+        supermatrix_rcfv_ry3
     );
     let st = infer_native_ml_gene_tree(&super_rows, &labels_all, PhyloRunModel::GtrInvGamma4Fast);
     fs::write(tree_dir.join("supermatrix.nwk"), &st.newick_tree).map_err(|e| e.to_string())?;
     stage_seconds.insert("3_supermatrix_ml".to_string(), t.elapsed().as_secs_f64());
+
+    let t_ry3 = Instant::now();
+    let sm_ry3 = infer_native_ml_gene_tree(&super_rows_ry3, &labels_all, PhyloRunModel::GtrInvGamma4Fast);
+    fs::write(tree_dir.join("supermatrix_ry3.nwk"), &sm_ry3.newick_tree).map_err(|e| e.to_string())?;
+    stage_seconds.insert("3_supermatrix_ry3_ml".to_string(), t_ry3.elapsed().as_secs_f64());
 
     // ---- Stage 4: quartet MSC ---------------------------------------------------------------
     eprintln!("[seqnet-runie] Stage 4/5: native quartet MSC species tree from {} gene trees", gene_trees.len());
@@ -380,6 +437,7 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
     // ---- Stage 5: validation against published clades --------------------------------------
     eprintln!("[seqnet-runie] Stage 5/5: validation against {} published clades", bench.scored_clades.len());
     let validation_supermatrix = validate_tree("supermatrix_ml", &st.newick_tree, &tip_family, &bench);
+    let validation_supermatrix_ry3 = Some(validate_tree("supermatrix_ry3_ml", &sm_ry3.newick_tree, &tip_family, &bench));
     let validation_msc = msc
         .as_ref()
         .map(|m| validate_tree("quartet_msc", &m.species_tree_newick, &tip_family, &bench));
@@ -401,8 +459,12 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
         loci: locus_reports,
         supermatrix_length: super_len,
         supermatrix_ln_l: st.ln_l,
+        supermatrix_ry3_ln_l: sm_ry3.ln_l,
+        supermatrix_rcfv_4state,
+        supermatrix_rcfv_ry3,
         msc_normalized_quartet_score: msc.as_ref().map(|m| m.normalized_quartet_score).unwrap_or(0.0),
         validation_supermatrix,
+        validation_supermatrix_ry3,
         validation_msc,
         stage_seconds,
     };

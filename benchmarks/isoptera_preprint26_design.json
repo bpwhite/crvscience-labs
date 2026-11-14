@@ -1,0 +1,232 @@
+{
+  "benchmark_id": "isoptera-preprint26-design-v1",
+  "title": "Isoptera (Blattodea: Termitoidae) 64-species x 16-locus design (PREPRINT-26 dimensions) vs. published phylogenomics",
+  "fixed_before_first_run": "2026-11-14",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at the dataset dimensions of PREPRINT-26 (isoptera-global-radiation-preprint): 64 species and 16 loci, with 15 mitochondrial loci sliced from complete/partial mitogenomes plus nuclear 28S rRNA. PREPRINT-26 only sets the taxon strata and quotas; it is not a validation source. Final trees are scored against inter-family and inter-subfamily clades reported in the peer-reviewed studies below. A clade is testable when the run samples >= 2 tips inside and >= 2 outside it, and recovered when the unrooted tree contains the corresponding bipartition.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-26",
+    "species": 64,
+    "loci": 16,
+    "taxon_design": "4 outgroups (1 Blattidae, 1 Blattellidae, 2 Cryptocercidae), 6 basal termites (1 Mastotermitidae, 4 Termopsidae, 1 Hodotermitidae), 22 lower termites (10 Kalotermitidae, 12 Rhinotermitidae), and 32 higher Termitidae across 6 subfamilies (10 Macrotermitinae, 3 Apicotermitinae, 2 Cubitermitinae, 6 Termitinae, 8 Nasutitermitinae, 3 Syntermitinae).",
+    "taxonomy_note": "NCBI Taxonomy places all termites in epifamily Termitoidae (which ends in '-idae' and must not mask family/subfamily strata). NCBI places Blattella under Blattellidae (Ectobiidae synonym returns 0 GenBank mitogenomes), unites Zootermopsis/Porotermes/Stolotermes under Termopsidae (Archotermopsidae/Stolotermitidae return 0 GenBank mitogenomes), and encodes Cubitermitinae as 'Termitidae; Termitinae; Cubitermes group' inside INSDSeq_taxonomy.",
+    "locus_interpretation": "15 mitochondrial loci (13 PCGs + 16S rrnL + 12S rrnS) sliced from GenBank mitogenomes (NOT srcdb_refseq[PROP]) plus mitogenome-anchored nuclear 28S (LSU_28S) = 16 orthologous phylogenomic loci. Multi-copy physiological nuclear paralog panels (GH9 cellulases, vitellogenins, CYP450s) remain in Stage 4 codon-selection tests rather than the species-level orthogonal panel."
+  },
+  "sources": [
+    {
+      "key": "Bourguignon2015",
+      "citation": "Bourguignon, T., et al. (2015). The evolutionary history of termites as inferred from 66 mitochondrial genomes. Molecular Biology and Evolution, 32(2), 406-421.",
+      "doi": "10.1093/molbev/msu308"
+    },
+    {
+      "key": "Bourguignon2017",
+      "citation": "Bourguignon, T., et al. (2017). Mitochondrial phylogenomics resolves the global spread of higher termites, ecosystem engineers of the tropics. Molecular Biology and Evolution, 34(3), 589-597.",
+      "doi": "10.1093/molbev/msw253"
+    },
+    {
+      "key": "Bucek2019",
+      "citation": "Bucek, A., et al. (2019). Evolution of termite symbiosis informed by transcriptome-based phylogenies. Current Biology, 29(21), 3728-3734.",
+      "doi": "10.1016/j.cub.2019.08.076"
+    },
+    {
+      "key": "Inward2007",
+      "citation": "Inward, D., Beccaloni, G., & Eggleton, P. (2007). Death of an order: a comprehensive molecular phylogenetic study confirms that termites are eusocial cockroaches. Biology Letters, 3(3), 331-335.",
+      "doi": "10.1098/rsbl.2007.0102"
+    },
+    {
+      "key": "Evangelista2019",
+      "citation": "Evangelista, D. A., et al. (2019). An integrative phylogenomic approach illuminates the evolutionary history of cockroaches and termites (Blattodea). Proceedings of the Royal Society B, 286(1895), 20182076.",
+      "doi": "10.1098/rspb.2018.2076"
+    }
+  ],
+  "taxon_group": "Blattodea",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 80,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "ATP8",
+    "rrnL_16S",
+    "rrnS_12S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Outgroups_Blattodea": ["Blattidae", "Blattellidae", "Cryptocercidae"],
+    "Basal_Isoptera": ["Mastotermitidae", "Termopsidae", "Hodotermitidae"],
+    "Lower_Termites": ["Kalotermitidae", "Rhinotermitidae"],
+    "Higher_Termitidae_Fungus": ["Macrotermitinae"],
+    "Higher_Termitidae_Soil_Humus": ["Apicotermitinae", "Cubitermitinae", "Termitinae"],
+    "Higher_Termitidae_Nasute_Syntermitine": ["Nasutitermitinae", "Syntermitinae"]
+  },
+  "species_per_family": {
+    "Blattidae": 1,
+    "Blattellidae": 1,
+    "Cryptocercidae": 2,
+    "Mastotermitidae": 1,
+    "Termopsidae": 4,
+    "Hodotermitidae": 1,
+    "Kalotermitidae": 10,
+    "Rhinotermitidae": 12,
+    "Macrotermitinae": 10,
+    "Apicotermitinae": 3,
+    "Cubitermitinae": 2,
+    "Termitinae": 6,
+    "Nasutitermitinae": 8,
+    "Syntermitinae": 3
+  },
+  "scored_clades": [
+    {
+      "id": "xylophagodea",
+      "name": "Xylophagodea (Cryptocercidae + Isoptera vs. Blattidae + Blattellidae)",
+      "families": [
+        "Cryptocercidae",
+        "Mastotermitidae",
+        "Termopsidae",
+        "Hodotermitidae",
+        "Kalotermitidae",
+        "Rhinotermitidae",
+        "Macrotermitinae",
+        "Apicotermitinae",
+        "Cubitermitinae",
+        "Termitinae",
+        "Nasutitermitinae",
+        "Syntermitinae"
+      ],
+      "support": [
+        { "source": "Inward2007", "statement": "Cryptocercus wood-roaches recovered as sister group to Isoptera (clade Xylophagodea)" },
+        { "source": "Bourguignon2015", "statement": "Cryptocercidae + Isoptera forms the sister group to remaining Blattodea outgroups" },
+        { "source": "Evangelista2019", "statement": "Strongly supported sister relationship between Cryptocercidae and Isoptera" }
+      ],
+      "note": "With 2 non-xylophagous cockroach outgroup tips (Blattidae + Blattellidae), this is the Dictyoptera outgroup split on the unrooted tree."
+    },
+    {
+      "id": "isoptera",
+      "name": "Isoptera (all termites vs. Cryptocercidae + cockroach outgroups)",
+      "families": [
+        "Mastotermitidae",
+        "Termopsidae",
+        "Hodotermitidae",
+        "Kalotermitidae",
+        "Rhinotermitidae",
+        "Macrotermitinae",
+        "Apicotermitinae",
+        "Cubitermitinae",
+        "Termitinae",
+        "Nasutitermitinae",
+        "Syntermitinae"
+      ],
+      "support": [
+        { "source": "Inward2007", "statement": "Termites form a strictly monophyletic clade nested inside Blattodea sister to Cryptocercus" },
+        { "source": "Bourguignon2015", "statement": "Isoptera monophyly recovered with maximal posterior and bootstrap support" },
+        { "source": "Bucek2019", "statement": "Isoptera monophyletic across transcriptome matrices" }
+      ]
+    },
+    {
+      "id": "euisoptera",
+      "name": "Euisoptera (all non-Mastotermitidae termites)",
+      "families": [
+        "Termopsidae",
+        "Hodotermitidae",
+        "Kalotermitidae",
+        "Rhinotermitidae",
+        "Macrotermitinae",
+        "Apicotermitinae",
+        "Cubitermitinae",
+        "Termitinae",
+        "Nasutitermitinae",
+        "Syntermitinae"
+      ],
+      "support": [
+        { "source": "Bourguignon2015", "statement": "Mastotermes darwiniensis recovered as sister to all other living termites (Euisoptera)" },
+        { "source": "Bucek2019", "statement": "Euisoptera maximally supported as sister to Mastotermitidae" }
+      ]
+    },
+    {
+      "id": "neoisoptera",
+      "name": "Neoisoptera (Rhinotermitidae + Termitidae)",
+      "families": [
+        "Rhinotermitidae",
+        "Macrotermitinae",
+        "Apicotermitinae",
+        "Cubitermitinae",
+        "Termitinae",
+        "Nasutitermitinae",
+        "Syntermitinae"
+      ],
+      "support": [
+        { "source": "Bourguignon2015", "statement": "Neoisoptera strongly supported as a monophyletic frontal-gland clade" },
+        { "source": "Bucek2019", "statement": "Neoisoptera uniting Rhinotermitidae and Termitidae recovered with full support" }
+      ]
+    },
+    {
+      "id": "termitidae",
+      "name": "Termitidae (all six sampled higher termite subfamilies)",
+      "families": [
+        "Macrotermitinae",
+        "Apicotermitinae",
+        "Cubitermitinae",
+        "Termitinae",
+        "Nasutitermitinae",
+        "Syntermitinae"
+      ],
+      "support": [
+        { "source": "Bourguignon2015", "statement": "Higher termites (Termitidae) form a strictly monophyletic crown clade nested inside paraphyletic Rhinotermitidae" },
+        { "source": "Bourguignon2017", "statement": "Monophyly of Termitidae maximally supported across mitochondrial genomes" },
+        { "source": "Bucek2019", "statement": "Termitidae maximally supported across all transcriptomic datasets" }
+      ]
+    },
+    {
+      "id": "non_macrotermitine_termitidae",
+      "name": "Non-Macrotermitinae Termitidae (sister clade to basal Macrotermitinae)",
+      "families": [
+        "Apicotermitinae",
+        "Cubitermitinae",
+        "Termitinae",
+        "Nasutitermitinae",
+        "Syntermitinae"
+      ],
+      "support": [
+        { "source": "Bourguignon2015", "statement": "Macrotermitinae branched at the base of Termitidae, sister to all other higher termite subfamilies" },
+        { "source": "Bourguignon2017", "statement": "All non-Macrotermitinae/Sphaerotermitinae subfamilies form a strongly supported clade sister to Macrotermitinae" },
+        { "source": "Bucek2019", "statement": "Macrotermitinae + Sphaerotermitinae sister to the remaining crown Termitidae" }
+      ]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "rhinotermitidae",
+      "name": "Rhinotermitidae (monophyly check)",
+      "families": ["Rhinotermitidae"],
+      "why_not_scored": "Known to be paraphyletic with respect to Termitidae in Bourguignon2015 and Bucek2019 (Heterotermes + Coptotermes + Reticulitermes are closer to Termitidae than to basal Rhinotermitidae genera)."
+    },
+    {
+      "id": "termitinae",
+      "name": "Termitinae (monophyly check)",
+      "families": ["Termitinae"],
+      "why_not_scored": "Known to be non-monophyletic/paraphyletic across Cubitermitinae, Syntermitinae, and Nasutitermitinae in Bourguignon2015, Bourguignon2017, and Bucek2019."
+    },
+    {
+      "id": "nasutitermitinae_syntermitinae",
+      "name": "Nasutitermitinae + Syntermitinae",
+      "families": ["Nasutitermitinae", "Syntermitinae"],
+      "why_not_scored": "Relationship between Nasutitermitinae, Syntermitinae, and Amitermes/Termitinae clades differs between Bourguignon2017 mitogenomes and Bucek2019 transcriptomes."
+    },
+    { "id": "cryptocercidae", "name": "Cryptocercidae", "families": ["Cryptocercidae"], "why_not_scored": "Single-stratum monophyly check (not an inter-family benchmark clade)." },
+    { "id": "termopsidae", "name": "Termopsidae", "families": ["Termopsidae"], "why_not_scored": "Single-stratum paraphyletic assemblage in Bourguignon2015 / Bucek2019 (Archotermopsidae + Stolotermitidae + Hodotermitidae grade)." },
+    { "id": "kalotermitidae", "name": "Kalotermitidae", "families": ["Kalotermitidae"], "why_not_scored": "Single-family monophyly check." },
+    { "id": "macrotermitinae", "name": "Macrotermitinae", "families": ["Macrotermitinae"], "why_not_scored": "Single-subfamily monophyly check." },
+    { "id": "apicotermitinae", "name": "Apicotermitinae", "families": ["Apicotermitinae"], "why_not_scored": "Single-subfamily monophyly check." },
+    { "id": "cubitermitinae", "name": "Cubitermitinae", "families": ["Cubitermitinae"], "why_not_scored": "Single-subfamily monophyly check." },
+    { "id": "nasutitermitinae", "name": "Nasutitermitinae", "families": ["Nasutitermitinae"], "why_not_scored": "Single-subfamily monophyly check." },
+    { "id": "syntermitinae", "name": "Syntermitinae", "families": ["Syntermitinae"], "why_not_scored": "Single-subfamily monophyly check." }
+  ]
+}

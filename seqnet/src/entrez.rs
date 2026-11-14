@@ -94,6 +94,7 @@ pub struct EntrezClient {
     email: String,
     min_interval: Duration,
     last_call: Mutex<Option<Instant>>,
+    sampling_taxa: Vec<String>,
 }
 
 impl EntrezClient {
@@ -115,6 +116,7 @@ impl EntrezClient {
             email: cfg.ncbi_email.clone(),
             min_interval,
             last_call: Mutex::new(None),
+            sampling_taxa: cfg.sampling_strata(),
         }
     }
 
@@ -142,11 +144,17 @@ impl EntrezClient {
         retmax: usize,
     ) -> Result<Vec<SequenceRecord>> {
         let term = build_locus_query(taxon_query, locus);
+        let preferred = if taxon_query.contains(' ') { None } else { Some(taxon_query) };
         self.with_retries(taxon_query, &locus.canonical_name, || {
             let accessions = self.esearch_accessions(&term, since_mdat, retmax)?;
             let mut records = Vec::new();
             for xml_body in self.efetch_insdseq(&accessions, 100)? {
-                records.extend(parse_insdseq_xml(&xml_body, locus));
+                records.extend(parse_insdseq_xml_with_strata(
+                    &xml_body,
+                    locus,
+                    &self.sampling_taxa,
+                    preferred,
+                ));
             }
             Ok(records)
         })
@@ -168,7 +176,12 @@ impl EntrezClient {
             let mut records = Vec::new();
             // Mitogenome XML is ~40 kB per record with features; keep POST bodies modest.
             for xml_body in self.efetch_insdseq(&accessions, 40)? {
-                records.extend(parse_mitogenome_insdseq(&xml_body, mito_loci));
+                records.extend(parse_mitogenome_insdseq_with_strata(
+                    &xml_body,
+                    mito_loci,
+                    &self.sampling_taxa,
+                    Some(taxon_query),
+                ));
             }
             Ok(records)
         })
@@ -304,21 +317,21 @@ pub fn mito_feature_canonical(name: &str) -> Option<&'static str> {
         "cox3" | "coiii" | "co3" | "coxiii" | "cytochromecoxidasesubunitiii" | "cytochromecoxidasesubunit3"
         | "cytochromeoxidasesubunitiii" | "cytochromeoxidasesubunit3" => "COIII",
         "cytb" | "cob" | "cyb" | "cytochromeb" | "apocytochromeb" => "CYTB",
-        "nd1" | "nad1" | "nadhdehydrogenasesubunit1" | "nadhdehydrogenasesubuniti" => "ND1",
-        "nd2" | "nad2" | "nadhdehydrogenasesubunit2" | "nadhdehydrogenasesubunitii" => "ND2",
-        "nd3" | "nad3" | "nadhdehydrogenasesubunit3" | "nadhdehydrogenasesubunitiii" => "ND3",
-        "nd4" | "nad4" | "nadhdehydrogenasesubunit4" | "nadhdehydrogenasesubunitiv" => "ND4",
-        "nd4l" | "nad4l" | "nadhdehydrogenasesubunit4l" | "nadhdehydrogenasesubunitivl" => "ND4L",
-        "nd5" | "nad5" | "nadhdehydrogenasesubunit5" | "nadhdehydrogenasesubunitv" => "ND5",
-        "nd6" | "nad6" | "nadhdehydrogenasesubunit6" | "nadhdehydrogenasesubunitvi" => "ND6",
+        "nd1" | "nad1" | "nadh1" | "nadhdehydrogenasesubunit1" | "nadhdehydrogenasesubuniti" => "ND1",
+        "nd2" | "nad2" | "nadh2" | "nadhdehydrogenasesubunit2" | "nadhdehydrogenasesubunitii" => "ND2",
+        "nd3" | "nad3" | "nadh3" | "nadhdehydrogenasesubunit3" | "nadhdehydrogenasesubunitiii" => "ND3",
+        "nd4" | "nad4" | "nadh4" | "nadhdehydrogenasesubunit4" | "nadhdehydrogenasesubunitiv" => "ND4",
+        "nd4l" | "nad4l" | "nadh4l" | "nadhdehydrogenasesubunit4l" | "nadhdehydrogenasesubunitivl" => "ND4L",
+        "nd5" | "nad5" | "nadh5" | "nadhdehydrogenasesubunit5" | "nadhdehydrogenasesubunitv" => "ND5",
+        "nd6" | "nad6" | "nadh6" | "nadhdehydrogenasesubunit6" | "nadhdehydrogenasesubunitvi" => "ND6",
         "atp6" | "atpase6" | "atpsynthasef0subunit6" | "atpsynthasefosubunit6" | "atpsynthasesubunit6"
         | "atpasesubunit6" => "ATP6",
         "atp8" | "atpase8" | "atpsynthasef0subunit8" | "atpsynthasefosubunit8" | "atpsynthasesubunit8"
         | "atpasesubunit8" => "ATP8",
         "rrnl" | "16s" | "lrrna" | "16srrna" | "16sribosomalrna" | "largesubunitribosomalrna" | "lsurrna"
-        | "rnr2" | "16sribosomalrnalargesubunit" => "rrnL_16S",
+        | "rnr2" | "16sribosomalrnalargesubunit" | "rrn16" | "16srrn" | "16sribosomalrnarrnl" => "rrnL_16S",
         "rrns" | "12s" | "srrna" | "12srrna" | "12sribosomalrna" | "smallsubunitribosomalrna" | "ssurrna"
-        | "rnr1" | "12sribosomalrnasmallsubunit" => "rrnS_12S",
+        | "rnr1" | "12sribosomalrnasmallsubunit" | "rrn12" | "12srrn" | "12sribosomalrnarrns" => "rrnS_12S",
         _ => return None,
     };
     Some(out)
@@ -327,6 +340,17 @@ pub fn mito_feature_canonical(name: &str) -> Option<&'static str> {
 /// Slices CDS/rRNA features of mitogenome INSDSeq records into per-locus records (first feature
 /// per locus per record; length bounds from the locus spec).
 pub fn parse_mitogenome_insdseq(xml: &str, mito_loci: &[LocusSpec]) -> Vec<SequenceRecord> {
+    parse_mitogenome_insdseq_with_strata(xml, mito_loci, &[], None)
+}
+
+/// Slices CDS/rRNA features of mitogenome INSDSeq records while mapping each record to the active
+/// `sampling_taxa` stratum (including `-inae` subfamilies and NCBI's `Cubitermes group` for `Cubitermitinae`).
+pub fn parse_mitogenome_insdseq_with_strata(
+    xml: &str,
+    mito_loci: &[LocusSpec],
+    sampling_taxa: &[String],
+    preferred_stratum: Option<&str>,
+) -> Vec<SequenceRecord> {
     let mut out = Vec::new();
     for block in xml.split("<INSDSeq>").skip(1) {
         let Some(end_idx) = block.find("</INSDSeq>") else {
@@ -363,7 +387,7 @@ pub fn parse_mitogenome_insdseq(xml: &str, mito_loci: &[LocusSpec]) -> Vec<Seque
             if sub.len() < spec.min_expected_bp || sub.len() > spec.max_expected_bp {
                 continue;
             }
-            if let Some(rec) = build_record(rec_xml, spec, sub) {
+            if let Some(rec) = build_record(rec_xml, spec, sub, sampling_taxa, preferred_stratum) {
                 seen.insert(canon);
                 out.push(rec);
             }
@@ -473,6 +497,17 @@ pub fn build_locus_query(taxon_query: &str, locus: &LocusSpec) -> String {
 
 /// Lightweight, allocation-conscious INSDSeq XML extractor for NCBI `efetch` GenBank XML.
 pub fn parse_insdseq_xml(xml: &str, locus: &LocusSpec) -> Vec<SequenceRecord> {
+    parse_insdseq_xml_with_strata(xml, locus, &[], None)
+}
+
+/// Allocation-conscious INSDSeq XML extractor resolving records to active `sampling_taxa` strata
+/// (supporting subfamily `-inae` strata, epifamily `-oidae` exclusion, and `Cubitermes group`).
+pub fn parse_insdseq_xml_with_strata(
+    xml: &str,
+    locus: &LocusSpec,
+    sampling_taxa: &[String],
+    preferred_stratum: Option<&str>,
+) -> Vec<SequenceRecord> {
     let mut out = Vec::new();
     for block in xml.split("<INSDSeq>").skip(1) {
         let Some(end_idx) = block.find("</INSDSeq>") else {
@@ -482,16 +517,74 @@ pub fn parse_insdseq_xml(xml: &str, locus: &LocusSpec) -> Vec<SequenceRecord> {
         let seq_raw = extract_xml_tag(rec_xml, "INSDSeq_sequence")
             .unwrap_or_default()
             .to_ascii_uppercase();
-        if let Some(rec) = build_record(rec_xml, locus, seq_raw) {
+        if let Some(rec) = build_record(rec_xml, locus, seq_raw, sampling_taxa, preferred_stratum) {
             out.push(rec);
         }
     }
     out
 }
 
+/// Resolves the sampling stratum or family name from an NCBI `; `-delimited taxonomy lineage.
+/// Skips epifamilies ending in `-oidae` (e.g. `Termitoidae`), resolves NCBI's `Cubitermes group`
+/// to `Cubitermitinae` before matching `-inae` subfamilies, and prioritizes `sampling_taxa` from
+/// most-specific to broadest rank.
+pub fn extract_family_or_stratum(
+    taxonomy_csv: &str,
+    sampling_taxa: &[String],
+    preferred_stratum: Option<&str>,
+) -> String {
+    let tokens: Vec<&str> = taxonomy_csv
+        .split(';')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    if let Some(cubitermitinae) = sampling_taxa
+        .iter()
+        .find(|s| s.eq_ignore_ascii_case("Cubitermitinae"))
+    {
+        if tokens
+            .iter()
+            .any(|t| t.eq_ignore_ascii_case("Cubitermes group") || t.eq_ignore_ascii_case("Cubitermitinae"))
+        {
+            return cubitermitinae.clone();
+        }
+    }
+
+    if !sampling_taxa.is_empty() {
+        for tok in tokens.iter().rev() {
+            if let Some(matched) = sampling_taxa.iter().find(|s| s.eq_ignore_ascii_case(tok)) {
+                return matched.clone();
+            }
+        }
+        if let Some(pref) = preferred_stratum {
+            if let Some(matched) = sampling_taxa.iter().find(|s| s.eq_ignore_ascii_case(pref)) {
+                return matched.clone();
+            }
+        }
+    }
+
+    tokens
+        .iter()
+        .rev()
+        .find(|t| {
+            let low = t.to_ascii_lowercase();
+            low.ends_with("idae") && !low.ends_with("oidae")
+        })
+        .copied()
+        .unwrap_or("")
+        .to_string()
+}
+
 /// Builds a `SequenceRecord` for `locus` from one INSDSeq record's metadata and `seq_raw`.
 /// Returns `None` for missing metadata or unresolved (`sp.`, `cf.`, ...) species names.
-fn build_record(rec_xml: &str, locus: &LocusSpec, seq_raw: String) -> Option<SequenceRecord> {
+fn build_record(
+    rec_xml: &str,
+    locus: &LocusSpec,
+    seq_raw: String,
+    sampling_taxa: &[String],
+    preferred_stratum: Option<&str>,
+) -> Option<SequenceRecord> {
     {
         let acc = extract_xml_tag(rec_xml, "INSDSeq_accession-version")
             .or_else(|| extract_xml_tag(rec_xml, "INSDSeq_primary-accession"))
@@ -516,12 +609,7 @@ fn build_record(rec_xml: &str, locus: &LocusSpec, seq_raw: String) -> Option<Seq
         let genus = parts[0].to_string();
         let species_binomial = format!("{} {}", parts[0], parts[1]);
 
-        let family = taxonomy
-            .split(';')
-            .map(|s| s.trim())
-            .find(|t| t.ends_with("idae"))
-            .unwrap_or("")
-            .to_string();
+        let family = extract_family_or_stratum(&taxonomy, sampling_taxa, preferred_stratum);
 
         let voucher_id = extract_insd_qualifier(rec_xml, "specimen_voucher").unwrap_or_default();
         let isolate_code = extract_insd_qualifier(rec_xml, "isolate").unwrap_or_default();
@@ -749,6 +837,54 @@ mod tests {
         let panel = build_named_locus_panel(&["SSU_18S".to_string()], true);
         let gbseq = FIXTURE.replace("INSDSeq", "GBSeq").replace("INSDSet", "GBSet");
         assert!(parse_insdseq_xml(&gbseq, &panel[0]).is_empty());
+    }
+
+    #[test]
+    fn termitoidae_epifamily_is_not_treated_as_family() {
+        let tax = "Eukaryota; Metazoa; Arthropoda; Insecta; Blattodea; Termitoidae; Kalotermitidae; Kalotermes";
+        assert_eq!(extract_family_or_stratum(tax, &[], None), "Kalotermitidae");
+        let strata = vec!["Blattidae".to_string(), "Kalotermitidae".to_string()];
+        assert_eq!(
+            extract_family_or_stratum(tax, &strata, Some("Kalotermitidae")),
+            "Kalotermitidae"
+        );
+        assert_eq!(mito_feature_canonical("nadh4l"), Some("ND4L"));
+        assert_eq!(mito_feature_canonical("rrn16"), Some("rrnL_16S"));
+        assert_eq!(mito_feature_canonical("rrn12"), Some("rrnS_12S"));
+    }
+
+    #[test]
+    fn termitidae_subfamily_strata_and_cubitermes_group_resolve() {
+        let strata: Vec<String> = [
+            "Macrotermitinae",
+            "Apicotermitinae",
+            "Cubitermitinae",
+            "Termitinae",
+            "Nasutitermitinae",
+            "Syntermitinae",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        let macro_tax = "Eukaryota; Arthropoda; Insecta; Blattodea; Termitoidae; Termitidae; Macrotermitinae; Macrotermes";
+        assert_eq!(
+            extract_family_or_stratum(macro_tax, &strata, None),
+            "Macrotermitinae"
+        );
+        // NCBI places Cubitermes under `Termitinae; Cubitermes group`, so Termitinae queries must still map it to Cubitermitinae.
+        let cubi_tax = "Eukaryota; Arthropoda; Insecta; Blattodea; Termitoidae; Termitidae; Termitinae; Cubitermes group; Cubitermes";
+        assert_eq!(
+            extract_family_or_stratum(cubi_tax, &strata, Some("Termitinae")),
+            "Cubitermitinae"
+        );
+    }
+
+    #[test]
+    fn coleoptera_family_unaffected_when_subfamily_not_in_strata() {
+        let strata = vec!["Carabidae".to_string(), "Dytiscidae".to_string()];
+        let tax = "Eukaryota; Metazoa; Arthropoda; Insecta; Coleoptera; Adephaga; Carabidae; Trechinae; Bembidion";
+        assert_eq!(extract_family_or_stratum(tax, &strata, None), "Carabidae");
+        assert_eq!(extract_family_or_stratum(tax, &[], None), "Carabidae");
     }
 }
 

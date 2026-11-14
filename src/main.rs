@@ -1563,7 +1563,10 @@ fn main() {
             };
             match bio_suite::seqnet_runie::run_seqnet_runie_pipeline(&spec) {
                 Ok(report) => {
-                    for v in std::iter::once(&report.validation_supermatrix).chain(report.validation_msc.iter()) {
+                    for v in std::iter::once(&report.validation_supermatrix)
+                        .chain(report.validation_supermatrix_ry3.iter())
+                        .chain(report.validation_msc.iter())
+                    {
                         eprintln!(
                             "[seqnet-runie] {}: {}/{} testable published clades recovered ({} tips)",
                             v.tree, v.scored_recovered, v.scored_testable, v.tips

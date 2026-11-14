@@ -253,6 +253,9 @@ pub fn run_neural_network_schedule(
     let cache_hits = cached_initial.len();
     let mut live_delta_fetched = 0usize;
     let today_mdat = Utc::now().format("%Y/%m/%d").to_string();
+    let mut attempted_refills: HashSet<(String, String)> = HashSet::new();
+    let min_required_loci =
+        ((panel.len() as f64 * cfg.min_locus_coverage_ratio) - 1e-9).ceil().max(1.0) as usize;
 
     if cfg.allow_live_entrez {
         let client = EntrezClient::new(cfg);
@@ -348,32 +351,86 @@ pub fn run_neural_network_schedule(
                 );
             }
         }
-        // Mitogenome mode: query nuclear loci by name for every species that has a mitogenome, so
-        // nuclear markers land on the same species as the mito loci (stratum queries rarely overlap).
+        // Mitogenome mode: query nuclear loci by name for top-coverage mitogenome species per stratum,
+        // considering both warm-start cache and fresh fetches, capped to avoid unbounded queries.
         if use_mitogenomes && !offline {
             let nuclear: Vec<&LocusSpec> = panel
                 .iter()
                 .filter(|l| l.locus_class == LocusClass::Nuclear)
                 .collect();
-            let have: HashSet<(String, String)> = newly_fetched
-                .iter()
-                .map(|r| (r.species_binomial.clone(), r.locus_canonical.clone()))
-                .collect();
-            let mut mito_species: Vec<String> = newly_fetched
-                .iter()
-                .filter(|r| r.locus_class == LocusClass::Mitochondrial)
-                .map(|r| r.species_binomial.clone())
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
-            mito_species.sort();
+            let mut have: HashSet<(String, String)> = HashSet::new();
+            let mut mito_loci_by_sp: HashMap<String, HashSet<String>> = HashMap::new();
+            let mut sp_stratum: HashMap<String, String> = HashMap::new();
+            for r in cached_initial.iter().chain(newly_fetched.iter()) {
+                have.insert((r.species_binomial.clone(), r.locus_canonical.clone()));
+                if r.locus_class == LocusClass::Mitochondrial {
+                    mito_loci_by_sp
+                        .entry(r.species_binomial.clone())
+                        .or_default()
+                        .insert(r.locus_canonical.clone());
+                }
+                if !r.family.is_empty() {
+                    let matches_strata = strata.iter().any(|s| s.eq_ignore_ascii_case(&r.family));
+                    let entry = sp_stratum.entry(r.species_binomial.clone()).or_default();
+                    let cur_matches = !entry.is_empty()
+                        && strata.iter().any(|s| s.eq_ignore_ascii_case(entry));
+                    if entry.is_empty()
+                        || (!cur_matches && (matches_strata || r.locus_class == LocusClass::Mitochondrial))
+                        || (matches_strata && r.locus_class == LocusClass::Mitochondrial)
+                    {
+                        *entry = r.family.clone();
+                    }
+                }
+            }
+            for rec in &mut newly_fetched {
+                if let Some(parent_stratum) = sp_stratum.get(&rec.species_binomial) {
+                    if !parent_stratum.is_empty() {
+                        let fam_ok = !rec.family.is_empty()
+                            && (strata.is_empty() || strata.iter().any(|s| s.eq_ignore_ascii_case(&rec.family)));
+                        if !fam_ok {
+                            rec.family = parent_stratum.clone();
+                        }
+                    }
+                }
+            }
+            let mut by_stratum: std::collections::BTreeMap<String, Vec<(usize, String)>> =
+                std::collections::BTreeMap::new();
+            for (sp, mito_loci) in &mito_loci_by_sp {
+                let mito_count = mito_loci.len();
+                if mito_count + nuclear.len() < min_required_loci {
+                    continue;
+                }
+                let st = sp_stratum.get(sp).cloned().unwrap_or_default();
+                by_stratum.entry(st).or_default().push((mito_count, sp.clone()));
+            }
+            let mut mito_species = Vec::new();
+            for (_st, mut candidates) in by_stratum {
+                candidates.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+                candidates.truncate(24);
+                for (_cnt, sp) in candidates {
+                    mito_species.push(sp);
+                }
+            }
             let mut anchored = Vec::new();
             for sp in &mito_species {
+                let parent_stratum = sp_stratum.get(sp).map(String::as_str).unwrap_or("");
                 for locus in &nuclear {
                     if have.contains(&(sp.clone(), locus.canonical_name.clone())) {
                         continue;
                     }
-                    if let Ok(found) = client.fetch_locus_delta(sp, locus, None, 5) {
+                    if !attempted_refills.insert((sp.clone(), locus.canonical_name.clone())) {
+                        continue;
+                    }
+                    if let Ok(mut found) = client.fetch_locus_delta(sp, locus, None, 5) {
+                        if !parent_stratum.is_empty() {
+                            for rec in &mut found {
+                                let fam_ok = !rec.family.is_empty()
+                                    && (strata.is_empty() || strata.iter().any(|s| s.eq_ignore_ascii_case(&rec.family)));
+                                if !fam_ok {
+                                    rec.family = parent_stratum.to_string();
+                                }
+                            }
+                        }
                         anchored.extend(found);
                     }
                 }
@@ -424,25 +481,65 @@ pub fn run_neural_network_schedule(
         // Stage 1 Feedback Refill: If Epoch > 1 and Stage 3 requested targeted species/locus fills
         if epoch > 1 && cfg.allow_live_entrez && !pending_directives.is_empty() {
             let client = EntrezClient::new(cfg);
+            let strata = cfg.sampling_strata();
+            let mut sp_stratum_pool: HashMap<String, String> = HashMap::new();
+            let mut pool_have: HashSet<(String, String)> = HashSet::new();
+            for r in &working_pool {
+                pool_have.insert((r.species_binomial.clone(), r.locus_canonical.clone()));
+                if !r.family.is_empty() {
+                    let matches_strata = strata.iter().any(|s| s.eq_ignore_ascii_case(&r.family));
+                    let entry = sp_stratum_pool.entry(r.species_binomial.clone()).or_default();
+                    let cur_matches = !entry.is_empty()
+                        && strata.iter().any(|s| s.eq_ignore_ascii_case(entry));
+                    if entry.is_empty()
+                        || (!cur_matches && (matches_strata || r.locus_class == LocusClass::Mitochondrial))
+                        || (matches_strata && r.locus_class == LocusClass::Mitochondrial)
+                    {
+                        *entry = r.family.clone();
+                    }
+                }
+            }
             let mut refill_records = Vec::new();
             for dir in pending_directives.iter().take(cfg.max_refill_directives) {
                 // In mitogenome mode a species' mito loci come from its mitogenome; per-locus
                 // refills would mix specimens, so only nuclear gaps are refilled.
                 let refillable = dir.missing_loci.iter().filter(|l| {
-                    !(cfg.mitogenome_loci
-                        && locus_map
-                            .get(*l)
-                            .map(|s| s.locus_class == LocusClass::Mitochondrial)
-                            .unwrap_or(false))
+                    let key = (dir.species_binomial.clone(), (*l).clone());
+                    !pool_have.contains(&key)
+                        && !attempted_refills.contains(&key)
+                        && !(cfg.mitogenome_loci
+                            && locus_map
+                                .get(*l)
+                                .map(|s| s.locus_class == LocusClass::Mitochondrial)
+                                .unwrap_or(false))
                 });
-                for missing_loc in refillable.take(cfg.max_refill_loci_per_directive) {
-                    if let Some(spec) = locus_map.get(missing_loc) {
-                        if let Ok(found) = client.fetch_locus_delta(
+                let parent_stratum = sp_stratum_pool
+                    .get(&dir.species_binomial)
+                    .map(String::as_str)
+                    .unwrap_or("");
+                let chosen: Vec<String> = refillable
+                    .take(cfg.max_refill_loci_per_directive)
+                    .cloned()
+                    .collect();
+                for missing_loc in chosen {
+                    attempted_refills.insert((dir.species_binomial.clone(), missing_loc.clone()));
+                    if let Some(spec) = locus_map.get(&missing_loc) {
+                        if let Ok(mut found) = client.fetch_locus_delta(
                             &dir.species_binomial,
                             spec,
                             None,
                             25,
                         ) {
+                            if !parent_stratum.is_empty() {
+                                for rec in &mut found {
+                                    let fam_ok = !rec.family.is_empty()
+                                        && (strata.is_empty()
+                                            || strata.iter().any(|s| s.eq_ignore_ascii_case(&rec.family)));
+                                    if !fam_ok {
+                                        rec.family = parent_stratum.to_string();
+                                    }
+                                }
+                            }
                             refill_records.extend(found);
                         }
                     }

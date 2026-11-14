@@ -1,0 +1,107 @@
+{
+  "benchmark_id": "coleoptera-preprint18-design-v1",
+  "title": "Coleoptera 64-species x 16-locus design (PREPRINT-18 dimensions) vs. published phylogenomics",
+  "fixed_before_first_run": "2026-11-13",
+  "purpose": "Repeat the seqnet -> RuNIE validation at the dataset size of PREPRINT-18 (coleoptera-ecosystem-function-preprint): 64 species and 16 loci, mitochondrial loci taken from complete mitogenomes. PREPRINT-18 only sets the dimensions and taxon design; it is not a validation source. Final trees are scored against clades reported in the published studies below. A clade is testable when the run samples >= 2 tips inside and >= 2 outside it, and recovered when the unrooted tree contains the corresponding bipartition.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-18",
+    "species": 64,
+    "loci": 16,
+    "taxon_design": "10 species each of Carabidae, Scarabaeidae, Coccinellidae, Cerambycidae, Chrysomelidae and Curculionidae; 1 Cupedidae (Archostemata); 1 Hydroscaphidae (Myxophaga); 2 Neuropterida outgroups (Nemopteridae; antlion lineage)",
+    "locus_interpretation": "PREPRINT-18 reports a 16-locus supermatrix but lists 13 mitochondrial protein-coding genes + 12S + 16S + six nuclear loci (21 named). Its five functional nuclear gene families (GH45, GH28, GH5, aquaporin, CYP6) were multi-copy paralog families sampled from a few species (mostly predicted mRNAs), so they are not species-level orthologous markers. This design uses the 15 mitogenome loci + nuclear 28S = 16 loci.",
+    "outgroup_note": "NCBI Taxonomy has no Ascalaphidae (owlflies sit inside Myrmeleontidae), so the antlion-lineage outgroup is sampled from Myrmeleontidae."
+  },
+  "sources": [
+    {
+      "key": "McKenna2019",
+      "citation": "McKenna, D. D., et al. (2019). The evolution and genomic basis of beetle diversity. Proceedings of the National Academy of Sciences, 116(49), 24729-24737.",
+      "doi": "10.1073/pnas.1909655116",
+      "pmcid": "PMC6900523"
+    },
+    {
+      "key": "Zhang2018",
+      "citation": "Zhang, S.-Q., Che, L.-H., Li, Y., Pang, H., Slipinski, A., & Zhang, P. (2018). Evolutionary history of Coleoptera revealed by extensive sampling of genes and species. Nature Communications, 9, 205.",
+      "doi": "10.1038/s41467-017-02644-4",
+      "pmcid": "PMC5768713"
+    }
+  ],
+  "taxon_group": "Coleoptera",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 60,
+  "loci": ["COI", "COII", "COIII", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6", "ATP6", "ATP8", "rrnL_16S", "rrnS_12S", "LSU_28S"],
+  "sampling_families": {
+    "Outgroup_Neuropterida": ["Nemopteridae", "Myrmeleontidae"],
+    "Archostemata": ["Cupedidae"],
+    "Myxophaga": ["Hydroscaphidae"],
+    "Adephaga": ["Carabidae"],
+    "Polyphaga": ["Scarabaeidae", "Coccinellidae", "Cerambycidae", "Chrysomelidae", "Curculionidae"]
+  },
+  "species_per_family": {
+    "Carabidae": 10,
+    "Scarabaeidae": 10,
+    "Coccinellidae": 10,
+    "Cerambycidae": 10,
+    "Chrysomelidae": 10,
+    "Curculionidae": 10,
+    "Cupedidae": 1,
+    "Hydroscaphidae": 1,
+    "Nemopteridae": 1,
+    "Myrmeleontidae": 1
+  },
+  "scored_clades": [
+    {
+      "id": "coleoptera",
+      "name": "Coleoptera (vs. Neuropterida outgroups)",
+      "families": ["Cupedidae", "Hydroscaphidae", "Carabidae", "Scarabaeidae", "Coccinellidae", "Cerambycidae", "Chrysomelidae", "Curculionidae"],
+      "support": [
+        { "source": "McKenna2019", "kind": "paraphrase", "statement": "Beetle monophyly relative to neuropteroid outgroups (rooting of all analyses)" },
+        { "source": "Zhang2018", "kind": "paraphrase", "statement": "Beetle monophyly relative to neuropteroid outgroups (rooting of all analyses)" }
+      ],
+      "note": "With 2 outgroup tips this is the outgroup pair split."
+    },
+    {
+      "id": "polyphaga",
+      "name": "Polyphaga",
+      "families": ["Scarabaeidae", "Coccinellidae", "Cerambycidae", "Chrysomelidae", "Curculionidae"],
+      "support": [
+        { "source": "Zhang2018", "statement": "the strongly supported suborder Polyphaga" },
+        { "source": "McKenna2019", "statement": "ML analyses separated Polyphaga from Adephaga + Myxophaga + Archostemata" }
+      ]
+    },
+    {
+      "id": "cucujiformia",
+      "name": "Cucujiformia (Coccinellidae + Phytophaga)",
+      "families": ["Coccinellidae", "Cerambycidae", "Chrysomelidae", "Curculionidae"],
+      "support": [{ "source": "Zhang2018", "statement": "Bostrichiformia strongly supported as the sister group of the hyperdiverse series Cucujiformia (BS = 100%)" }]
+    },
+    {
+      "id": "phytophaga",
+      "name": "Phytophaga (Curculionoidea + Chrysomeloidea)",
+      "families": ["Cerambycidae", "Chrysomelidae", "Curculionidae"],
+      "support": [
+        { "source": "Zhang2018", "statement": "Phytophaga consists of the two highly supported superfamilies Curculionoidea and Chrysomeloidea" },
+        { "source": "McKenna2019", "statement": "Phytophaga (Chrysomeloidea + Curculionoidea) recovered, nested within Cucujoidea" }
+      ]
+    },
+    {
+      "id": "chrysomeloidea",
+      "name": "Chrysomeloidea (Cerambycidae + Chrysomelidae)",
+      "families": ["Cerambycidae", "Chrysomelidae"],
+      "support": [{ "source": "Zhang2018", "statement": "highly supported superfamily (with Curculionoidea forming Phytophaga)" }]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "adephaga_myxophaga_archostemata",
+      "name": "Adephaga + Myxophaga + Archostemata",
+      "families": ["Carabidae", "Hydroscaphidae", "Cupedidae"],
+      "why_not_scored": "McKenna2019 ML separates Polyphaga from these three suborders, but suborder relationships differ between analyses in the cited studies."
+    },
+    { "id": "carabidae", "name": "Carabidae", "families": ["Carabidae"], "why_not_scored": "Family monophyly not explicitly tested in the cited texts." },
+    { "id": "scarabaeidae", "name": "Scarabaeidae", "families": ["Scarabaeidae"], "why_not_scored": "Family monophyly not explicitly tested in the cited texts." },
+    { "id": "coccinellidae", "name": "Coccinellidae", "families": ["Coccinellidae"], "why_not_scored": "Family monophyly not explicitly tested in the cited texts." },
+    { "id": "cerambycidae", "name": "Cerambycidae", "families": ["Cerambycidae"], "why_not_scored": "Family monophyly not explicitly tested in the cited texts." },
+    { "id": "chrysomelidae", "name": "Chrysomelidae", "families": ["Chrysomelidae"], "why_not_scored": "Family monophyly not explicitly tested in the cited texts." },
+    { "id": "curculionidae", "name": "Curculionidae", "families": ["Curculionidae"], "why_not_scored": "Family monophyly not explicitly tested in the cited texts." }
+  ]
+}

@@ -141,19 +141,54 @@ impl EntrezClient {
         since_mdat: Option<&str>,
         retmax: usize,
     ) -> Result<Vec<SequenceRecord>> {
+        let term = build_locus_query(taxon_query, locus);
+        self.with_retries(taxon_query, &locus.canonical_name, || {
+            let accessions = self.esearch_accessions(&term, since_mdat, retmax)?;
+            let mut records = Vec::new();
+            for xml_body in self.efetch_insdseq(&accessions, 100)? {
+                records.extend(parse_insdseq_xml(&xml_body, locus));
+            }
+            Ok(records)
+        })
+    }
+
+    /// Mitogenome mode: one query per stratum for complete/partial mitochondrial genomes; every
+    /// panel locus found in a record's CDS/rRNA feature table becomes its own `SequenceRecord`
+    /// (same accession, different `locus_canonical`).
+    pub fn fetch_mitogenome_delta(
+        &self,
+        taxon_query: &str,
+        mito_loci: &[LocusSpec],
+        since_mdat: Option<&str>,
+        retmax: usize,
+    ) -> Result<Vec<SequenceRecord>> {
+        let term = build_mitogenome_query(taxon_query);
+        self.with_retries(taxon_query, "mitogenome", || {
+            let accessions = self.esearch_accessions(&term, since_mdat, retmax)?;
+            let mut records = Vec::new();
+            // Mitogenome XML is ~40 kB per record with features; keep POST bodies modest.
+            for xml_body in self.efetch_insdseq(&accessions, 40)? {
+                records.extend(parse_mitogenome_insdseq(&xml_body, mito_loci));
+            }
+            Ok(records)
+        })
+    }
+
+    /// Retries transient failures (timeouts, HTTP 429/5xx) up to 3 times with backoff.
+    fn with_retries<T>(&self, taxon_query: &str, what: &str, f: impl Fn() -> Result<T>) -> Result<T> {
         let mut last_err = None;
         for (attempt, wait_s) in [0u64, 2, 5, 12].into_iter().enumerate() {
             if wait_s > 0 {
                 std::thread::sleep(Duration::from_secs(wait_s));
             }
-            match self.fetch_locus_delta_once(taxon_query, locus, since_mdat, retmax) {
+            match f() {
                 Ok(r) => return Ok(r),
                 Err(e) => {
                     eprintln!(
                         "  [Stage 1] Entrez attempt {} for {} / {} failed: {:#}",
                         attempt + 1,
                         taxon_query,
-                        locus.canonical_name,
+                        what,
                         e
                     );
                     last_err = Some(e);
@@ -163,15 +198,7 @@ impl EntrezClient {
         Err(last_err.unwrap_or_else(|| anyhow::anyhow!("Entrez request failed")))
     }
 
-    fn fetch_locus_delta_once(
-        &self,
-        taxon_query: &str,
-        locus: &LocusSpec,
-        since_mdat: Option<&str>,
-        retmax: usize,
-    ) -> Result<Vec<SequenceRecord>> {
-        let term = build_locus_query(taxon_query, locus);
-
+    fn esearch_accessions(&self, term: &str, since_mdat: Option<&str>, retmax: usize) -> Result<Vec<String>> {
         let today = Utc::now().format("%Y/%m/%d").to_string();
         self.wait_rate_limit();
 
@@ -184,7 +211,7 @@ impl EntrezClient {
             .query("retmax", &retmax.to_string())
             .query("tool", "bio-suite-seqnet")
             .query("email", &self.email)
-            .query("term", &term);
+            .query("term", term);
 
         if let Some(ref key) = self.api_key {
             req = req.query("api_key", key);
@@ -210,13 +237,13 @@ impl EntrezClient {
             .into_iter()
             .filter_map(|v| v.as_str().map(|s| s.to_string()))
             .collect();
+        Ok(accessions)
+    }
 
-        if accessions.is_empty() {
-            return Ok(Vec::new());
-        }
-
-        let mut records = Vec::new();
-        for chunk in accessions.chunks(100) {
+    /// EFetch INSDSeq XML bodies for `accessions`, `chunk` records per POST.
+    fn efetch_insdseq(&self, accessions: &[String], chunk: usize) -> Result<Vec<String>> {
+        let mut bodies = Vec::new();
+        for chunk in accessions.chunks(chunk.max(1)) {
             self.wait_rate_limit();
             let id_csv = chunk.join(",");
             let freq = self.agent.post(EFETCH_URL);
@@ -240,18 +267,184 @@ impl EntrezClient {
                 .into_string()
                 .context("failed reading EFetch XML body")?;
 
-            let parsed = parse_insdseq_xml(&xml_body, locus);
-            if parsed.is_empty() && !xml_body.contains("<INSDSeq>") {
+            if !xml_body.contains("<INSDSeq>") {
                 anyhow::bail!(
                     "EFetch returned no INSDSeq records for {} requested accessions (unexpected response format)",
                     chunk.len()
                 );
             }
-            records.extend(parsed);
+            bodies.push(xml_body);
         }
-
-        Ok(records)
+        Ok(bodies)
     }
+}
+
+/// Entrez `nuccore` query for complete or partial mitochondrial genomes of one stratum.
+/// GenBank records only: RefSeq `NC_` mitogenomes duplicate a GenBank submission.
+pub fn build_mitogenome_query(taxon_query: &str) -> String {
+    format!(
+        "\"{}\"[Organism] AND mitochondrion[Filter] AND (\"complete genome\"[Title] OR \"partial genome\"[Title]) AND 10000:30000[SLEN] NOT srcdb_refseq[PROP]",
+        taxon_query
+    )
+}
+
+/// Maps a mitochondrial CDS/rRNA `gene` or `product` qualifier to a canonical panel locus.
+pub fn mito_feature_canonical(name: &str) -> Option<&'static str> {
+    let n: String = name
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase();
+    let n = n.strip_suffix("gene").unwrap_or(&n);
+    let out = match n {
+        "cox1" | "coi" | "co1" | "coxi" | "cytochromecoxidasesubuniti" | "cytochromecoxidasesubunit1"
+        | "cytochromeoxidasesubuniti" | "cytochromeoxidasesubunit1" => "COI",
+        "cox2" | "coii" | "co2" | "coxii" | "cytochromecoxidasesubunitii" | "cytochromecoxidasesubunit2"
+        | "cytochromeoxidasesubunitii" | "cytochromeoxidasesubunit2" => "COII",
+        "cox3" | "coiii" | "co3" | "coxiii" | "cytochromecoxidasesubunitiii" | "cytochromecoxidasesubunit3"
+        | "cytochromeoxidasesubunitiii" | "cytochromeoxidasesubunit3" => "COIII",
+        "cytb" | "cob" | "cyb" | "cytochromeb" | "apocytochromeb" => "CYTB",
+        "nd1" | "nad1" | "nadhdehydrogenasesubunit1" | "nadhdehydrogenasesubuniti" => "ND1",
+        "nd2" | "nad2" | "nadhdehydrogenasesubunit2" | "nadhdehydrogenasesubunitii" => "ND2",
+        "nd3" | "nad3" | "nadhdehydrogenasesubunit3" | "nadhdehydrogenasesubunitiii" => "ND3",
+        "nd4" | "nad4" | "nadhdehydrogenasesubunit4" | "nadhdehydrogenasesubunitiv" => "ND4",
+        "nd4l" | "nad4l" | "nadhdehydrogenasesubunit4l" | "nadhdehydrogenasesubunitivl" => "ND4L",
+        "nd5" | "nad5" | "nadhdehydrogenasesubunit5" | "nadhdehydrogenasesubunitv" => "ND5",
+        "nd6" | "nad6" | "nadhdehydrogenasesubunit6" | "nadhdehydrogenasesubunitvi" => "ND6",
+        "atp6" | "atpase6" | "atpsynthasef0subunit6" | "atpsynthasefosubunit6" | "atpsynthasesubunit6"
+        | "atpasesubunit6" => "ATP6",
+        "atp8" | "atpase8" | "atpsynthasef0subunit8" | "atpsynthasefosubunit8" | "atpsynthasesubunit8"
+        | "atpasesubunit8" => "ATP8",
+        "rrnl" | "16s" | "lrrna" | "16srrna" | "16sribosomalrna" | "largesubunitribosomalrna" | "lsurrna"
+        | "rnr2" | "16sribosomalrnalargesubunit" => "rrnL_16S",
+        "rrns" | "12s" | "srrna" | "12srrna" | "12sribosomalrna" | "smallsubunitribosomalrna" | "ssurrna"
+        | "rnr1" | "12sribosomalrnasmallsubunit" => "rrnS_12S",
+        _ => return None,
+    };
+    Some(out)
+}
+
+/// Slices CDS/rRNA features of mitogenome INSDSeq records into per-locus records (first feature
+/// per locus per record; length bounds from the locus spec).
+pub fn parse_mitogenome_insdseq(xml: &str, mito_loci: &[LocusSpec]) -> Vec<SequenceRecord> {
+    let mut out = Vec::new();
+    for block in xml.split("<INSDSeq>").skip(1) {
+        let Some(end_idx) = block.find("</INSDSeq>") else {
+            continue;
+        };
+        let rec_xml = &block[..end_idx];
+        let Some(seq) = extract_xml_tag(rec_xml, "INSDSeq_sequence") else {
+            continue;
+        };
+        let seq = seq.to_ascii_uppercase();
+        let table = match (rec_xml.find("<INSDSeq_feature-table>"), rec_xml.find("</INSDSeq_feature-table>")) {
+            (Some(a), Some(b)) if b > a => &rec_xml[a..b],
+            _ => continue,
+        };
+        let mut seen: std::collections::HashSet<&'static str> = std::collections::HashSet::new();
+        for feat in table.split("<INSDFeature>").skip(1) {
+            let key = extract_xml_tag(feat, "INSDFeature_key").unwrap_or_default();
+            if key != "CDS" && key != "rRNA" {
+                continue;
+            }
+            let canon = ["gene", "product"]
+                .iter()
+                .filter_map(|q| extract_insd_qualifier(feat, q))
+                .find_map(|v| mito_feature_canonical(&v));
+            let Some(canon) = canon else { continue };
+            let Some(spec) = mito_loci.iter().find(|l| l.canonical_name == canon) else {
+                continue;
+            };
+            if (key == "CDS") != spec.protein_coding || seen.contains(canon) {
+                continue;
+            }
+            let Some(loc) = extract_xml_tag(feat, "INSDFeature_location") else { continue };
+            let Some(sub) = extract_location(seq.as_bytes(), &loc) else { continue };
+            if sub.len() < spec.min_expected_bp || sub.len() > spec.max_expected_bp {
+                continue;
+            }
+            if let Some(rec) = build_record(rec_xml, spec, sub) {
+                seen.insert(canon);
+                out.push(rec);
+            }
+        }
+    }
+    out
+}
+
+/// Extracts an INSDFeature location (`a..b`, `complement(..)`, `join(..)`/`order(..)`, partial
+/// `<`/`>` ends) from a record sequence. Remote locations (`ACC:a..b`) return `None`.
+pub fn extract_location(seq: &[u8], loc: &str) -> Option<String> {
+    fn wrapper<'a>(s: &'a str, name: &str) -> Option<&'a str> {
+        let rest = s.strip_prefix(name)?.strip_prefix('(')?;
+        rest.strip_suffix(')')
+    }
+    fn split_top(s: &str) -> Vec<&str> {
+        let (mut depth, mut start, mut parts) = (0i32, 0usize, Vec::new());
+        for (i, c) in s.char_indices() {
+            match c {
+                '(' => depth += 1,
+                ')' => depth -= 1,
+                ',' if depth == 0 => {
+                    parts.push(&s[start..i]);
+                    start = i + 1;
+                }
+                _ => {}
+            }
+        }
+        parts.push(&s[start..]);
+        parts
+    }
+    fn inner(seq: &[u8], s: &str) -> Option<Vec<u8>> {
+        let s = s.trim();
+        if let Some(x) = wrapper(s, "complement") {
+            return inner(seq, x).map(|v| revcomp(&v));
+        }
+        if let Some(x) = wrapper(s, "join").or_else(|| wrapper(s, "order")) {
+            let mut out = Vec::new();
+            for part in split_top(x) {
+                out.extend(inner(seq, part)?);
+            }
+            return Some(out);
+        }
+        let clean: String = s.chars().filter(|c| !matches!(c, '<' | '>')).collect();
+        let (a, b) = match clean.split_once("..") {
+            Some((a, b)) => (a.trim().parse::<usize>().ok()?, b.trim().parse::<usize>().ok()?),
+            None => {
+                let p = clean.trim().parse::<usize>().ok()?;
+                (p, p)
+            }
+        };
+        if a == 0 || a > b || b > seq.len() {
+            return None;
+        }
+        Some(seq[a - 1..b].to_vec())
+    }
+    if loc.contains(':') {
+        return None;
+    }
+    inner(seq, &loc.replace(char::is_whitespace, "")).map(|v| String::from_utf8_lossy(&v).into_owned())
+}
+
+fn revcomp(s: &[u8]) -> Vec<u8> {
+    s.iter()
+        .rev()
+        .map(|b| match b.to_ascii_uppercase() {
+            b'A' => b'T',
+            b'T' | b'U' => b'A',
+            b'C' => b'G',
+            b'G' => b'C',
+            b'R' => b'Y',
+            b'Y' => b'R',
+            b'K' => b'M',
+            b'M' => b'K',
+            b'B' => b'V',
+            b'V' => b'B',
+            b'D' => b'H',
+            b'H' => b'D',
+            other => other,
+        })
+        .collect()
 }
 
 /// Entrez `nuccore` query for one `(taxon, locus)` pair.
@@ -286,29 +479,39 @@ pub fn parse_insdseq_xml(xml: &str, locus: &LocusSpec) -> Vec<SequenceRecord> {
             continue;
         };
         let rec_xml = &block[..end_idx];
+        let seq_raw = extract_xml_tag(rec_xml, "INSDSeq_sequence")
+            .unwrap_or_default()
+            .to_ascii_uppercase();
+        if let Some(rec) = build_record(rec_xml, locus, seq_raw) {
+            out.push(rec);
+        }
+    }
+    out
+}
 
+/// Builds a `SequenceRecord` for `locus` from one INSDSeq record's metadata and `seq_raw`.
+/// Returns `None` for missing metadata or unresolved (`sp.`, `cf.`, ...) species names.
+fn build_record(rec_xml: &str, locus: &LocusSpec, seq_raw: String) -> Option<SequenceRecord> {
+    {
         let acc = extract_xml_tag(rec_xml, "INSDSeq_accession-version")
             .or_else(|| extract_xml_tag(rec_xml, "INSDSeq_primary-accession"))
             .unwrap_or_default();
         let organism = extract_xml_tag(rec_xml, "INSDSeq_organism").unwrap_or_default();
         let taxonomy = extract_xml_tag(rec_xml, "INSDSeq_taxonomy").unwrap_or_default();
-        let seq_raw = extract_xml_tag(rec_xml, "INSDSeq_sequence")
-            .unwrap_or_default()
-            .to_ascii_uppercase();
         if acc.is_empty() || organism.is_empty() || seq_raw.is_empty() {
-            continue;
+            return None;
         }
 
         let parts: Vec<&str> = organism.split_whitespace().collect();
         if parts.len() < 2 {
-            continue;
+            return None;
         }
         // Reject unverified `sp.`, `cf.`, `aff.`, or environmental placeholders at species level
         if matches!(
             parts[1].to_ascii_lowercase().as_str(),
-            "sp." | "sp" | "cf." | "aff." | "environmental" | "uncultured"
+            "sp." | "sp" | "cf." | "aff." | "gen." | "gen" | "nr." | "environmental" | "uncultured"
         ) {
-            continue;
+            return None;
         }
         let genus = parts[0].to_string();
         let species_binomial = format!("{} {}", parts[0], parts[1]);
@@ -341,7 +544,7 @@ pub fn parse_insdseq_xml(xml: &str, locus: &LocusSpec) -> Vec<SequenceRecord> {
             true
         };
 
-        out.push(SequenceRecord {
+        Some(SequenceRecord {
             accession_version: acc,
             ncbi_taxid: taxid,
             organism_name: organism,
@@ -360,9 +563,8 @@ pub fn parse_insdseq_xml(xml: &str, locus: &LocusSpec) -> Vec<SequenceRecord> {
             shannon_entropy: entropy,
             reading_frame_ok: rf_ok,
             ncbi_mod_date,
-        });
+        })
     }
-    out
 }
 
 fn extract_xml_tag(xml: &str, tag: &str) -> Option<String> {
@@ -370,7 +572,18 @@ fn extract_xml_tag(xml: &str, tag: &str) -> Option<String> {
     let close = format!("</{}>", tag);
     let start = xml.find(&open)? + open.len();
     let end = xml[start..].find(&close)? + start;
-    Some(xml[start..end].trim().to_string())
+    let raw = xml[start..end].trim();
+    if !raw.contains('&') {
+        return Some(raw.to_string());
+    }
+    // XML entities: partial feature ends arrive as `&lt;1487..3019`, names may carry `&amp;`.
+    Some(
+        raw.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
+            .replace("&amp;", "&"),
+    )
 }
 
 fn extract_insd_qualifier(xml: &str, qual_name: &str) -> Option<String> {
@@ -464,6 +677,70 @@ mod tests {
         assert!(q18.contains("NOT srcdb_refseq_model[PROP]"));
         let qcoi = build_locus_query("Carabidae", &panel[1]);
         assert!(qcoi.contains("AND mitochondrion[Filter]") && !qcoi.contains("biomol_mrna"));
+    }
+
+    #[test]
+    fn feature_locations_cover_complement_join_and_partials() {
+        let seq = b"AACCGGTTAC";
+        assert_eq!(extract_location(seq, "3..6").as_deref(), Some("CCGG"));
+        assert_eq!(extract_location(seq, "<1..>4").as_deref(), Some("AACC"));
+        // complement(7..10) = revcomp("TTAC") = "GTAA"
+        assert_eq!(extract_location(seq, "complement(7..10)").as_deref(), Some("GTAA"));
+        assert_eq!(extract_location(seq, "join(9..10,1..2)").as_deref(), Some("ACAA"));
+        assert_eq!(extract_location(seq, "complement(join(1..2,9..10))").as_deref(), Some("GTTT"));
+        assert_eq!(extract_location(seq, "X12345.1:1..4"), None);
+        assert_eq!(extract_location(seq, "5..11"), None, "out of range");
+    }
+
+    #[test]
+    fn mito_feature_names_map_to_panel_loci() {
+        assert_eq!(mito_feature_canonical("COX1"), Some("COI"));
+        assert_eq!(mito_feature_canonical("cytochrome c oxidase subunit I"), Some("COI"));
+        assert_eq!(mito_feature_canonical("nad4L"), Some("ND4L"));
+        assert_eq!(mito_feature_canonical("ND4"), Some("ND4"));
+        assert_eq!(mito_feature_canonical("ATP synthase F0 subunit 8"), Some("ATP8"));
+        assert_eq!(mito_feature_canonical("l-rRNA"), Some("rrnL_16S"));
+        assert_eq!(mito_feature_canonical("12S ribosomal RNA"), Some("rrnS_12S"));
+        assert_eq!(mito_feature_canonical("tRNA-Leu"), None);
+    }
+
+    #[test]
+    fn mitogenome_record_is_sliced_into_panel_loci() {
+        // 400 bp toy "mitogenome": a forward CDS (ATP8, 150 bp) and a reverse-strand rRNA (12S, 330 bp
+        // would exceed the record, so use a short 12S span and widen bounds via a custom spec).
+        let codon_body: String = "ATGAAA".repeat(25); // 150 bp, no TAA/TAG
+        let filler: String = "C".repeat(250);
+        let seq = format!("{}{}", codon_body, filler).to_ascii_lowercase();
+        let xml = format!(
+            r#"<INSDSet><INSDSeq><INSDSeq_accession-version>MT000001.1</INSDSeq_accession-version>
+<INSDSeq_organism>Tenomerga mucida</INSDSeq_organism>
+<INSDSeq_taxonomy>Eukaryota; Metazoa; Arthropoda; Insecta; Coleoptera; Archostemata; Cupedidae; Tenomerga</INSDSeq_taxonomy>
+<INSDSeq_feature-table>
+<INSDFeature><INSDFeature_key>source</INSDFeature_key><INSDFeature_location>1..400</INSDFeature_location><INSDFeature_quals>
+<INSDQualifier><INSDQualifier_name>db_xref</INSDQualifier_name><INSDQualifier_value>taxon:999</INSDQualifier_value></INSDQualifier></INSDFeature_quals></INSDFeature>
+<INSDFeature><INSDFeature_key>gene</INSDFeature_key><INSDFeature_location>1..150</INSDFeature_location><INSDFeature_quals>
+<INSDQualifier><INSDQualifier_name>gene</INSDQualifier_name><INSDQualifier_value>ATP8</INSDQualifier_value></INSDQualifier></INSDFeature_quals></INSDFeature>
+<INSDFeature><INSDFeature_key>CDS</INSDFeature_key><INSDFeature_location>&lt;1..150</INSDFeature_location><INSDFeature_quals>
+<INSDQualifier><INSDQualifier_name>gene</INSDQualifier_name><INSDQualifier_value>ATP8</INSDQualifier_value></INSDQualifier></INSDFeature_quals></INSDFeature>
+<INSDFeature><INSDFeature_key>rRNA</INSDFeature_key><INSDFeature_location>complement(51..400)</INSDFeature_location><INSDFeature_quals>
+<INSDQualifier><INSDQualifier_name>product</INSDQualifier_name><INSDQualifier_value>12S ribosomal RNA</INSDQualifier_value></INSDQualifier></INSDFeature_quals></INSDFeature>
+<INSDFeature><INSDFeature_key>tRNA</INSDFeature_key><INSDFeature_location>151..170</INSDFeature_location><INSDFeature_quals>
+<INSDQualifier><INSDQualifier_name>product</INSDQualifier_name><INSDQualifier_value>tRNA-Leu</INSDQualifier_value></INSDQualifier></INSDFeature_quals></INSDFeature>
+</INSDSeq_feature-table>
+<INSDSeq_sequence>{seq}</INSDSeq_sequence></INSDSeq></INSDSet>"#
+        );
+        let panel = build_named_locus_panel(&["ATP8".into(), "rrnS_12S".into(), "COI".into()], true);
+        let recs = parse_mitogenome_insdseq(&xml, &panel);
+        assert_eq!(recs.len(), 2, "ATP8 CDS + 12S rRNA; `gene` and tRNA features ignored");
+        let atp8 = recs.iter().find(|r| r.locus_canonical == "ATP8").unwrap();
+        assert_eq!(atp8.seq_length, 150);
+        assert!(atp8.reading_frame_ok);
+        assert_eq!(atp8.family, "Cupedidae");
+        assert_eq!(atp8.ncbi_taxid, 999);
+        let s12 = recs.iter().find(|r| r.locus_canonical == "rrnS_12S").unwrap();
+        assert_eq!(s12.seq_length, 350);
+        assert!(s12.sequence_raw.starts_with("GGGG"), "reverse strand is reverse-complemented");
+        assert!(build_mitogenome_query("Cupedidae").contains("NOT srcdb_refseq[PROP]"));
     }
 
     #[test]

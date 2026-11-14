@@ -22,7 +22,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use crate::align_nexus::{align_all_loci_parallel, write_partitioned_nexus, LocusPartitionMeta};
-use crate::config::{ConsensusConfig, LocusSpec};
+use crate::config::{ConsensusConfig, LocusClass, LocusSpec};
+
+/// Sync-watermark key for the per-stratum mitogenome query (mitogenome mode).
+const MITOGENOME_WATERMARK: &str = "__mitogenome__";
 use crate::db::{QuarantineEntry, RunAuditRecord, SeqNetDatabase, SequenceRecord};
 use crate::entrez::EntrezClient;
 use crate::neural_tensor::{HybridConsensusWeights, SeqFeatureVec};
@@ -257,8 +260,51 @@ pub fn run_neural_network_schedule(
         let strata = cfg.sampling_strata();
         let mut offline = false;
         let mut consecutive_failures = 0usize;
+        // Mitogenome mode: mito loci are sliced from mitogenome records (one query per stratum).
+        let mito_panel: Vec<LocusSpec> = panel
+            .iter()
+            .filter(|l| l.locus_class == LocusClass::Mitochondrial)
+            .cloned()
+            .collect();
+        let use_mitogenomes = cfg.mitogenome_loci && !mito_panel.is_empty();
         'strata: for stratum in &strata {
+            if use_mitogenomes {
+                let watermark = db.get_sync_watermark(stratum, MITOGENOME_WATERMARK)?;
+                let retmax = if watermark.is_some() {
+                    cfg.mitogenome_retmax_per_stratum.min(150)
+                } else {
+                    cfg.mitogenome_retmax_per_stratum
+                };
+                match client.fetch_mitogenome_delta(stratum, &mito_panel, watermark.as_deref(), retmax) {
+                    Ok(batch) => {
+                        consecutive_failures = 0;
+                        live_delta_fetched += batch.len();
+                        newly_fetched.extend(batch);
+                        let _ = db.upsert_sync_watermark(
+                            stratum,
+                            MITOGENOME_WATERMARK,
+                            &today_mdat,
+                            cache_hits + live_delta_fetched,
+                            &run_id,
+                        );
+                    }
+                    Err(err) => {
+                        feedback_log.push(format!(
+                            "[Stage 1 Entrez Notice] `{}` / mitogenomes live query failed after retries ({}); skipped",
+                            stratum, err
+                        ));
+                        consecutive_failures += 1;
+                        if consecutive_failures >= 4 {
+                            offline = true;
+                            break 'strata;
+                        }
+                    }
+                }
+            }
             for locus in &panel {
+                if use_mitogenomes && locus.locus_class == LocusClass::Mitochondrial {
+                    continue;
+                }
                 // Watermarks are kept per (stratum, locus) so each query only pulls its own delta.
                 let watermark = db.get_sync_watermark(stratum, &locus.canonical_name)?;
                 let retmax = if watermark.is_some() {
@@ -302,6 +348,45 @@ pub fn run_neural_network_schedule(
                 );
             }
         }
+        // Mitogenome mode: query nuclear loci by name for every species that has a mitogenome, so
+        // nuclear markers land on the same species as the mito loci (stratum queries rarely overlap).
+        if use_mitogenomes && !offline {
+            let nuclear: Vec<&LocusSpec> = panel
+                .iter()
+                .filter(|l| l.locus_class == LocusClass::Nuclear)
+                .collect();
+            let have: HashSet<(String, String)> = newly_fetched
+                .iter()
+                .map(|r| (r.species_binomial.clone(), r.locus_canonical.clone()))
+                .collect();
+            let mut mito_species: Vec<String> = newly_fetched
+                .iter()
+                .filter(|r| r.locus_class == LocusClass::Mitochondrial)
+                .map(|r| r.species_binomial.clone())
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect();
+            mito_species.sort();
+            let mut anchored = Vec::new();
+            for sp in &mito_species {
+                for locus in &nuclear {
+                    if have.contains(&(sp.clone(), locus.canonical_name.clone())) {
+                        continue;
+                    }
+                    if let Ok(found) = client.fetch_locus_delta(sp, locus, None, 5) {
+                        anchored.extend(found);
+                    }
+                }
+            }
+            println!(
+                "  [Stage 1] mitogenome-anchored nuclear queries: {} species x {} loci -> {} records",
+                mito_species.len(),
+                nuclear.len(),
+                anchored.len()
+            );
+            live_delta_fetched += anchored.len();
+            newly_fetched.extend(anchored);
+        }
         if offline {
             println!("  [Stage 1] Entrez unavailable; continuing on SQLite cache");
         }
@@ -341,7 +426,16 @@ pub fn run_neural_network_schedule(
             let client = EntrezClient::new(cfg);
             let mut refill_records = Vec::new();
             for dir in pending_directives.iter().take(cfg.max_refill_directives) {
-                for missing_loc in dir.missing_loci.iter().take(cfg.max_refill_loci_per_directive) {
+                // In mitogenome mode a species' mito loci come from its mitogenome; per-locus
+                // refills would mix specimens, so only nuclear gaps are refilled.
+                let refillable = dir.missing_loci.iter().filter(|l| {
+                    !(cfg.mitogenome_loci
+                        && locus_map
+                            .get(*l)
+                            .map(|s| s.locus_class == LocusClass::Mitochondrial)
+                            .unwrap_or(false))
+                });
+                for missing_loc in refillable.take(cfg.max_refill_loci_per_directive) {
                     if let Some(spec) = locus_map.get(missing_loc) {
                         if let Ok(found) = client.fetch_locus_delta(
                             &dir.species_binomial,

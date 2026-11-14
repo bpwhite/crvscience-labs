@@ -60,6 +60,23 @@ pub struct CladeBenchmark {
     pub scored_clades: Vec<ReferenceClade>,
     #[serde(default)]
     pub report_only_clades: Vec<ReferenceClade>,
+    /// Label for the seqnet run / quarantine ledger (default `Coleoptera`).
+    #[serde(default = "default_taxon_group")]
+    pub taxon_group: String,
+    /// Slice mitochondrial loci from mitogenome records (seqnet mitogenome mode).
+    #[serde(default)]
+    pub mitogenome_loci: bool,
+    /// Entrez `retmax` for the per-family mitogenome query (mitogenome mode).
+    #[serde(default)]
+    pub mitogenome_retmax_per_family: Option<usize>,
+    /// Tips kept per family after OTU assembly (best locus coverage first). Families not listed
+    /// keep every OTU.
+    #[serde(default)]
+    pub species_per_family: BTreeMap<String, usize>,
+}
+
+fn default_taxon_group() -> String {
+    "Coleoptera".to_string()
 }
 
 impl CladeBenchmark {
@@ -141,6 +158,8 @@ pub struct SeqnetRunieReport {
     pub sequences_cached: usize,
     pub sequences_fetched_live: usize,
     pub sequences_quarantined: usize,
+    /// OTUs from benchmark families before per-family quotas.
+    pub otus_assembled: usize,
     pub otus: usize,
     pub families_sampled: BTreeMap<String, usize>,
     pub families_missing: Vec<String>,
@@ -175,7 +194,7 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
     );
     let t = Instant::now();
     let cfg = ConsensusConfig {
-        taxon_group: "Coleoptera".to_string(),
+        taxon_group: bench.taxon_group.clone(),
         analysis_level: AnalysisLevel::MultiLocusPhylogenetic,
         target_loci_count: bench.loci.len(),
         target_nuclear_loci: 0,
@@ -196,6 +215,8 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
         max_refill_directives: spec.refill_directives,
         max_refill_loci_per_directive: bench.loci.len(),
         refill_min_coverage: 0.5,
+        mitogenome_loci: bench.mitogenome_loci,
+        mitogenome_retmax_per_stratum: bench.mitogenome_retmax_per_family.unwrap_or(60),
         ..ConsensusConfig::default()
     };
     let seq = run_neural_network_schedule(&cfg, None, None, EngineControlFlags::new())
@@ -204,12 +225,14 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
 
     // Keep only OTUs from the benchmark's families (taxonomy strings name the family directly)
     let fam_set: BTreeSet<&str> = families.iter().map(|s| s.as_str()).collect();
-    let otus: Vec<AssembledSpeciesOtu> = seq
+    let otus_all: Vec<AssembledSpeciesOtu> = seq
         .otus
         .iter()
         .filter(|o| fam_set.contains(o.family.as_str()))
         .cloned()
         .collect();
+    let otus_assembled = otus_all.len();
+    let otus = apply_family_quotas(otus_all, &bench.species_per_family);
     if otus.len() < 8 {
         return Err(format!("only {} OTUs after seqnet; too few for a tree", otus.len()));
     }
@@ -225,8 +248,9 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
         .cloned()
         .collect();
     eprintln!(
-        "[seqnet-runie]   {} OTUs from {} of {} families (occupancy {:.1}%, {} quarantined)",
+        "[seqnet-runie]   {} OTUs kept of {} assembled, from {} of {} families (occupancy {:.1}%, {} quarantined)",
         otus.len(),
+        otus_assembled,
         families_sampled.len(),
         families.len(),
         seq.audit.final_matrix_occupancy * 100.0,
@@ -369,6 +393,7 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
         sequences_cached: seq.audit.cache_hits,
         sequences_fetched_live: seq.audit.live_delta_fetched,
         sequences_quarantined: seq.audit.quarantined_count,
+        otus_assembled,
         otus: otus.len(),
         families_sampled,
         families_missing,
@@ -387,6 +412,37 @@ pub fn run_seqnet_runie_pipeline(spec: &SeqnetRunieSpec) -> Result<SeqnetRunieRe
     )
     .map_err(|e| e.to_string())?;
     Ok(report)
+}
+
+/// Keeps at most `quota[family]` OTUs per listed family: most loci first, then most total bp,
+/// then label (deterministic). Families without a quota keep every OTU.
+fn apply_family_quotas(
+    otus: Vec<AssembledSpeciesOtu>,
+    quota: &BTreeMap<String, usize>,
+) -> Vec<AssembledSpeciesOtu> {
+    if quota.is_empty() {
+        return otus;
+    }
+    let mut by_family: BTreeMap<String, Vec<AssembledSpeciesOtu>> = BTreeMap::new();
+    for o in otus {
+        by_family.entry(o.family.clone()).or_default().push(o);
+    }
+    let mut kept = Vec::new();
+    for (family, mut group) in by_family {
+        if let Some(&n) = quota.get(&family) {
+            group.sort_by(|a, b| {
+                let bp = |o: &AssembledSpeciesOtu| o.locus_slots.values().map(|s| s.sequence_raw.len()).sum::<usize>();
+                b.locus_slots
+                    .len()
+                    .cmp(&a.locus_slots.len())
+                    .then(bp(b).cmp(&bp(a)))
+                    .then(a.terminal_label.cmp(&b.terminal_label))
+            });
+            group.truncate(n);
+        }
+        kept.extend(group);
+    }
+    kept
 }
 
 fn map_model(best_bic: &str) -> PhyloRunModel {
@@ -612,6 +668,10 @@ mod tests {
                 ReferenceClade { id: "ac".into(), name: "AC".into(), families: vec!["A".into(), "C".into()], why_not_scored: None },
             ],
             report_only_clades: vec![],
+            taxon_group: default_taxon_group(),
+            mitogenome_loci: false,
+            mitogenome_retmax_per_family: None,
+            species_per_family: BTreeMap::new(),
         }
     }
 

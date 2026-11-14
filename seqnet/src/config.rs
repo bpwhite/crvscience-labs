@@ -143,6 +143,12 @@ pub struct ConsensusConfig {
     pub region_min_core_coverage: f64,
     /// Fraction of mapped records that must cover an anchor position for it to be in the core.
     pub region_core_support: f64,
+    /// Mitogenome mode: mitochondrial loci are sliced from complete/near-complete mitogenome
+    /// records (CDS/rRNA features) instead of per-locus title queries, so every mito locus of a
+    /// species comes from one specimen. Nuclear loci are still queried per locus.
+    pub mitogenome_loci: bool,
+    /// Entrez `retmax` for the per-stratum mitogenome query (mitogenome mode only).
+    pub mitogenome_retmax_per_stratum: usize,
 }
 
 impl ConsensusConfig {
@@ -208,6 +214,8 @@ impl Default for ConsensusConfig {
             refill_min_coverage: 0.55,
             region_min_core_coverage: 0.6,
             region_core_support: 0.5,
+            mitogenome_loci: false,
+            mitogenome_retmax_per_stratum: 60,
         }
     }
 }

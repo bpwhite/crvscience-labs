@@ -135,42 +135,16 @@ pub fn compute_4mer_profile(seq: &str) -> [f32; 256] {
     vec
 }
 
-/// Computes Kimura 2-Parameter (K2P, Kimura 1980) genetic distance on overlapping ungapped
-/// positions (or k-mer/windowed anchor positions when lengths differ).
-pub fn compute_approx_k2p(seq_a: &str, seq_b: &str) -> f64 {
-    let ba = seq_a.as_bytes();
-    let bb = seq_b.as_bytes();
-    let overlap = ba.len().min(bb.len());
-    if overlap < 30 {
-        return 0.50;
+#[inline]
+fn norm_nuc(b: u8) -> u8 {
+    match b.to_ascii_uppercase() {
+        b'U' => b'T',
+        other => other,
     }
+}
 
-    let mut transitions = 0usize;
-    let mut transversions = 0usize;
-    let mut compared = 0usize;
-
-    for i in 0..overlap {
-        let a = ba[i].to_ascii_uppercase();
-        let b = bb[i].to_ascii_uppercase();
-        let valid_a = matches!(a, b'A' | b'C' | b'G' | b'T');
-        let valid_b = matches!(b, b'A' | b'C' | b'G' | b'T');
-        if !valid_a || !valid_b {
-            continue;
-        }
-        compared += 1;
-        if a != b {
-            let is_ti = matches!(
-                (a, b),
-                (b'A', b'G') | (b'G', b'A') | (b'C', b'T') | (b'T', b'C')
-            );
-            if is_ti {
-                transitions += 1;
-            } else {
-                transversions += 1;
-            }
-        }
-    }
-
+#[inline]
+fn k2p_from_counts(compared: usize, transitions: usize, transversions: usize) -> f64 {
     if compared < 20 {
         return 0.50;
     }
@@ -179,6 +153,208 @@ pub fn compute_approx_k2p(seq_a: &str, seq_b: &str) -> f64 {
     let term1 = (1.0 - 2.0 * p - q).max(0.01);
     let term2 = (1.0 - 2.0 * q).max(0.01);
     (-0.5 * term1.ln() - 0.25 * term2.ln()).clamp(0.0, 1.5)
+}
+
+fn unaligned_k2p(ba: &[u8], bb: &[u8]) -> f64 {
+    let overlap = ba.len().min(bb.len());
+    if overlap < 30 {
+        return 0.50;
+    }
+    let mut transitions = 0usize;
+    let mut transversions = 0usize;
+    let mut compared = 0usize;
+    for i in 0..overlap {
+        let a = norm_nuc(ba[i]);
+        let b = norm_nuc(bb[i]);
+        if !matches!(a, b'A' | b'C' | b'G' | b'T') || !matches!(b, b'A' | b'C' | b'G' | b'T') {
+            continue;
+        }
+        compared += 1;
+        if a != b {
+            if matches!((a, b), (b'A', b'G') | (b'G', b'A') | (b'C', b'T') | (b'T', b'C')) {
+                transitions += 1;
+            } else {
+                transversions += 1;
+            }
+        }
+    }
+    k2p_from_counts(compared, transitions, transversions)
+}
+
+/// Computes Kimura 2-Parameter (K2P, Kimura 1980) genetic distance over homologous aligned
+/// positions using a prebuilt k-mer `AnchorIndex` (or building one when `None`) plus banded
+/// semi-global Needleman-Wunsch alignment across both strands, eliminating false K2P saturation
+/// from 5'/3' start offsets, indels, or reverse-complemented submissions.
+pub fn compute_k2p_with_index(
+    index: Option<&crate::region::AnchorIndex>,
+    seq_a: &str,
+    seq_b: &str,
+) -> f64 {
+    let ba = seq_a.as_bytes();
+    let bb = seq_b.as_bytes();
+    if ba.len().min(bb.len()) < 30 {
+        return 0.50;
+    }
+
+    let owned_idx;
+    let idx = match index {
+        Some(i) => i,
+        None => {
+            owned_idx = crate::region::AnchorIndex::new(ba);
+            &owned_idx
+        }
+    };
+
+    if let Some((is_rev, offset, hit_center)) = idx.best_diagonal(bb) {
+        let rc_buf;
+        let sb: &[u8] = if is_rev {
+            rc_buf = crate::region::revcomp(bb);
+            &rc_buf
+        } else {
+            bb
+        };
+
+        let ov_a0 = offset.max(0) as usize;
+        let ov_a1 = ((offset + sb.len() as i64).max(0) as usize).min(ba.len());
+        let ov_len = ov_a1.saturating_sub(ov_a0);
+        if ov_len >= 30 {
+            const MAX_K2P_WIN: usize = 2400;
+            const BAND: i64 = 36;
+            let win = ov_len.min(MAX_K2P_WIN);
+            let a0 = hit_center
+                .saturating_sub(win / 2)
+                .max(ov_a0)
+                .min(ov_a1 - win);
+            let a1 = a0 + win;
+            let b0_raw = a0 as i64 - offset;
+            let b0 = (b0_raw - BAND).max(0) as usize;
+            let b1 = (b0_raw + win as i64 + BAND).clamp(b0 as i64, sb.len() as i64) as usize;
+            let sa = &ba[a0..a1];
+            let sbs = &sb[b0..b1];
+            let n = sa.len();
+            let m = sbs.len();
+
+            if m >= 20 {
+                let d0 = b0_raw - b0 as i64;
+                let width = (2 * BAND + 1) as usize;
+                let mut bt = vec![0u8; (n + 1) * width];
+                let mut row_lo = vec![0usize; n + 1];
+                let mut row_hi = vec![0usize; n + 1];
+                let neg = i32::MIN / 4;
+                let mut dp_prev = vec![0i32; m + 1];
+                let mut dp_curr = vec![neg; m + 1];
+
+                row_lo[0] = 0;
+                row_hi[0] = m;
+
+                let mut best_end_score = neg;
+                let mut best_end_i = n;
+                let mut best_end_j = 0usize;
+
+                for i in 1..=n {
+                    let lo = (i as i64 + d0 - BAND).clamp(0, m as i64) as usize;
+                    let hi = (i as i64 + d0 + BAND).clamp(lo as i64, m as i64) as usize;
+                    row_lo[i] = lo;
+                    row_hi[i] = hi;
+                    dp_curr[lo..=hi].fill(neg);
+                    let ua = norm_nuc(sa[i - 1]);
+                    let valid_a = matches!(ua, b'A' | b'C' | b'G' | b'T');
+                    for j in lo..=hi {
+                        if j == 0 {
+                            dp_curr[0] = 0;
+                            bt[i * width] = 1;
+                            continue;
+                        }
+                        let ub = norm_nuc(sbs[j - 1]);
+                        let valid_b = matches!(ub, b'A' | b'C' | b'G' | b'T');
+                        let sub = if valid_a && valid_b {
+                            if ua == ub { 2 } else { -3 }
+                        } else {
+                            0
+                        };
+                        let mut best_v = neg;
+                        let mut dir = 0u8;
+                        if (j - 1) >= row_lo[i - 1]
+                            && (j - 1) <= row_hi[i - 1]
+                            && dp_prev[j - 1] > neg / 2
+                        {
+                            best_v = dp_prev[j - 1] + sub;
+                            dir = 0;
+                        }
+                        if j >= row_lo[i - 1] && j <= row_hi[i - 1] && dp_prev[j] > neg / 2 {
+                            let v = dp_prev[j] - 4;
+                            if v > best_v {
+                                best_v = v;
+                                dir = 1;
+                            }
+                        }
+                        if j > lo && dp_curr[j - 1] > neg / 2 {
+                            let v = dp_curr[j - 1] - 4;
+                            if v > best_v {
+                                best_v = v;
+                                dir = 2;
+                            }
+                        }
+                        dp_curr[j] = best_v;
+                        bt[i * width + (j - lo)] = dir;
+                        if (i == n || j == m) && best_v > best_end_score {
+                            best_end_score = best_v;
+                            best_end_i = i;
+                            best_end_j = j;
+                        }
+                    }
+                    std::mem::swap(&mut dp_prev, &mut dp_curr);
+                }
+
+                if best_end_score > neg / 2 {
+                    let mut ci = best_end_i;
+                    let mut cj = best_end_j;
+                    let mut transitions = 0usize;
+                    let mut transversions = 0usize;
+                    let mut compared = 0usize;
+                    while ci > 0 && cj > 0 {
+                        let lo = row_lo[ci];
+                        let dir = bt[ci * width + (cj - lo)];
+                        match dir {
+                            0 => {
+                                let a = norm_nuc(sa[ci - 1]);
+                                let b = norm_nuc(sbs[cj - 1]);
+                                if matches!(a, b'A' | b'C' | b'G' | b'T')
+                                    && matches!(b, b'A' | b'C' | b'G' | b'T')
+                                {
+                                    compared += 1;
+                                    if a != b {
+                                        if matches!(
+                                            (a, b),
+                                            (b'A', b'G') | (b'G', b'A') | (b'C', b'T') | (b'T', b'C')
+                                        ) {
+                                            transitions += 1;
+                                        } else {
+                                            transversions += 1;
+                                        }
+                                    }
+                                }
+                                ci -= 1;
+                                cj -= 1;
+                            }
+                            1 => ci -= 1,
+                            _ => cj -= 1,
+                        }
+                    }
+                    if compared >= 20 {
+                        return k2p_from_counts(compared, transitions, transversions);
+                    }
+                }
+            }
+        }
+    }
+
+    unaligned_k2p(ba, bb)
+}
+
+/// Computes Kimura 2-Parameter (K2P, Kimura 1980) genetic distance on aligned homologous positions.
+pub fn compute_approx_k2p(seq_a: &str, seq_b: &str) -> f64 {
+    compute_k2p_with_index(None, seq_a, seq_b)
 }
 
 /// Executes the full 3-stage sequence analysis neural network schedule until consensus
@@ -642,10 +818,11 @@ pub fn run_neural_network_schedule(
                     .map(|(i, _)| i)
                     .unwrap_or(0);
                 let anchor_seq = &recs[anchor_idx].sequence_raw;
+                let k2p_index = crate::region::AnchorIndex::new(anchor_seq.as_bytes());
 
                 let k2p_dists: Vec<f64> = recs
                     .iter()
-                    .map(|r| compute_approx_k2p(anchor_seq, &r.sequence_raw))
+                    .map(|r| compute_k2p_with_index(Some(&k2p_index), anchor_seq, &r.sequence_raw))
                     .collect();
 
                 let mut sorted_k2p = k2p_dists.clone();
@@ -657,16 +834,47 @@ pub fn run_neural_network_schedule(
                 // Robust MAD floor (`0.035` prevents zero-variance division on conserved nuclear genes)
                 let k2p_mad = (abs_devs[abs_devs.len() / 2] * 1.4826).max(0.035);
 
-                // Region coherence: map every record onto the longest clean record and keep only
-                // records covering the locus core (stretch shared by most records), so one locus
-                // column never mixes non-overlapping fragments (e.g. 5' vs 3' COI).
+                // Region coherence: map every record onto a centroid-representative long anchor and
+                // keep only records covering the locus core (stretch shared by most records), so one
+                // locus column never mixes non-overlapping fragments (e.g. D1-D2 vs D2-D3 28S).
                 let region_cov: Vec<Option<f64>> = if cfg.region_min_core_coverage > 0.0 {
-                    let region_anchor = recs
+                    let mut clean_lens: Vec<usize> = recs
                         .iter()
                         .filter(|r| r.reading_frame_ok && r.ambig_fraction <= cfg.max_ambig_fraction)
-                        .max_by_key(|r| r.seq_length)
-                        .or_else(|| recs.iter().max_by_key(|r| r.seq_length))
-                        .map(|r| r.sequence_raw.as_bytes())
+                        .map(|r| r.seq_length)
+                        .collect();
+                    if clean_lens.is_empty() {
+                        clean_lens = recs.iter().map(|r| r.seq_length).collect();
+                    }
+                    clean_lens.sort_unstable();
+                    let p90_len = clean_lens
+                        .get((clean_lens.len() * 9 / 10).min(clean_lens.len().saturating_sub(1)))
+                        .copied()
+                        .unwrap_or(0);
+                    let min_anchor_len = (p90_len * 3) / 4;
+                    let region_anchor = recs
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, r)| {
+                            r.reading_frame_ok
+                                && r.ambig_fraction <= cfg.max_ambig_fraction
+                                && r.seq_length >= min_anchor_len
+                        })
+                        .max_by(|(ia, _), (ib, _)| {
+                            sims[*ia]
+                                .partial_cmp(&sims[*ib])
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                        .or_else(|| {
+                            recs.iter()
+                                .enumerate()
+                                .filter(|(_, r)| {
+                                    r.reading_frame_ok && r.ambig_fraction <= cfg.max_ambig_fraction
+                                })
+                                .max_by_key(|(_, r)| r.seq_length)
+                        })
+                        .or_else(|| recs.iter().enumerate().max_by_key(|(_, r)| r.seq_length))
+                        .map(|(_, r)| r.sequence_raw.as_bytes())
                         .unwrap_or(&[]);
                     let index = crate::region::AnchorIndex::new(region_anchor);
                     let spans: Vec<Option<crate::region::AnchorSpan>> =
@@ -1069,4 +1277,66 @@ pub fn run_neural_network_schedule(
         partitions,
         quarantine_entries: latest_quarantine_vec,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn pseudo_dna(len: usize, mut seed: u64) -> String {
+        (0..len)
+            .map(|_| {
+                seed = seed
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                ["A", "C", "G", "T"][(seed >> 33) as usize % 4]
+            })
+            .collect()
+    }
+
+    #[test]
+    fn homology_k2p_handles_shift_indel_and_revcomp_without_false_saturation() {
+        let anchor = pseudo_dna(600, 9001);
+        // +3 bp shifted homolog with 10% point mutations
+        let mut shifted_bytes = anchor.as_bytes()[3..].to_vec();
+        for i in (5..shifted_bytes.len()).step_by(10) {
+            shifted_bytes[i] = match shifted_bytes[i] {
+                b'A' => b'G',
+                b'G' => b'A',
+                b'C' => b'T',
+                _ => b'C',
+            };
+        }
+        let shifted = String::from_utf8(shifted_bytes).unwrap();
+        let k2p_shift = compute_approx_k2p(&anchor, &shifted);
+        assert!(
+            k2p_shift < 0.25,
+            "3-bp shifted homolog must not saturate K2P (got {k2p_shift})"
+        );
+
+        // Internal 6-bp deletion homolog
+        let mut deleted = anchor[..210].to_string();
+        deleted.push_str(&anchor[216..]);
+        let k2p_indel = compute_approx_k2p(&anchor, &deleted);
+        assert!(
+            k2p_indel < 0.05,
+            "6-bp internal indel homolog must stay aligned (got {k2p_indel})"
+        );
+
+        // Reverse-complement homolog
+        let rc = String::from_utf8(crate::region::revcomp(shifted.as_bytes())).unwrap();
+        let k2p_rc = compute_approx_k2p(&anchor, &rc);
+        assert!(
+            k2p_rc < 0.25,
+            "reverse-complement homolog must align cleanly (got {k2p_rc})"
+        );
+
+        // Unrelated sequence must still show high divergence
+        let unrelated = pseudo_dna(600, 424242);
+        let k2p_unrel = compute_approx_k2p(&anchor, &unrelated);
+        assert!(
+            k2p_unrel >= 0.80,
+            "unrelated decoy must yield high K2P (got {k2p_unrel})"
+        );
+    }
 }

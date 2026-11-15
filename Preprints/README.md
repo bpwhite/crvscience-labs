@@ -1,10 +1,10 @@
-# CRV Science Labs Preprints (`PREPRINT-01` – `PREPRINT-27`)
+# CRV Science Labs Preprints (`PREPRINT-01` – `PREPRINT-28`)
 
 **Author:** Bryan P. White (ORCID: [0000-0003-4191-3511](https://orcid.org/0000-0003-4191-3511))  
 **Portal:** https://crvscience.com/labs  
 **Repository:** https://github.com/bpwhite/crvscience-labs
 
-This directory archives standalone LaTeX source (`.tex`) and single-column PDF (`.pdf`) editions for all **27** CRV Science Labs empirical preprints, beginning with **PREPRINT-01** (*RuNIE — Rust Native Inference Engine*).
+This directory archives standalone LaTeX source (`.tex`) and single-column PDF (`.pdf`) editions for all **28** CRV Science Labs empirical preprints, beginning with **PREPRINT-01** (*RuNIE — Rust Native Inference Engine*).
 
 | ID | Slug | Title | Zenodo DOI | Files |
 | :--- | :--- | :--- | :--- | :--- |
@@ -35,3 +35,4 @@ This directory archives standalone LaTeX source (`.tex`) and single-column PDF (
 | PREPRINT-25 | `nudibranch-global-radiation-preprint` | Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines | [10.5281/zenodo.24107446](https://doi.org/10.5281/zenodo.24107446) | `nudibranch-global-radiation-preprint.tex`, `nudibranch-global-radiation-preprint.pdf` |
 | PREPRINT-26 | `isoptera-global-radiation-preprint` | Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines | [10.5281/zenodo.24116968](https://doi.org/10.5281/zenodo.24116968) | `isoptera-global-radiation-preprint.tex`, `isoptera-global-radiation-preprint.pdf` |
 | PREPRINT-27 | `nematoda-agricultural-pests-preprint` | Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines | [10.5281/zenodo.24223794](https://doi.org/10.5281/zenodo.24223794) | `nematoda-agricultural-pests-preprint.tex`, `nematoda-agricultural-pests-preprint.pdf` |
+| PREPRINT-28 | `acanthochitonidae-phylogenomics-preprint` | Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora | [10.5281/zenodo.24263607](https://doi.org/10.5281/zenodo.24263607) | `acanthochitonidae-phylogenomics-preprint.tex`, `acanthochitonidae-phylogenomics-preprint.pdf` |

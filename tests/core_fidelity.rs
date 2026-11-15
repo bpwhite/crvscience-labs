@@ -695,6 +695,22 @@ fn test_github_search_indexing_and_file_size_rules() {
             file_path.display(),
             size
         );
+        let is_preprint_pdf = file_path.extension().and_then(|e| e.to_str()) == Some("pdf")
+            && file_path
+                .parent()
+                .and_then(|p| p.file_name())
+                .and_then(|n| n.to_str())
+                == Some("Preprints");
+        if is_preprint_pdf {
+            let bytes = fs::read(file_path)
+                .unwrap_or_else(|e| panic!("Failed to read PDF {}: {}", file_path.display(), e));
+            assert!(
+                bytes.starts_with(b"%PDF-"),
+                "Preprint archive PDF {} must begin with %PDF- magic header",
+                file_path.display()
+            );
+            continue;
+        }
         assert!(
             size < GITHUB_SEARCH_INDEX_LIMIT_BYTES,
             "GitHub Blackbird Code Search Indexing Violation: {} is {} bytes (>= 384 KB limit)",

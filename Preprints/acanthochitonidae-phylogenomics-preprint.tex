@@ -1,0 +1,158 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.72in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\title{Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 15, 2026 \\ \small Preprint ID: PREPRINT-28 (v1.0.0 Empirical Preprint)}
+\begin{document}
+\maketitle
+\begin{abstract}
+We present a 100\% Native Rust (biosuite-only) phylogenomic synthesis of Class Polyplacophora and Acanthochitonidae across 555 verified NCBI records (6 quarantined UNVERIFIED assemblies logged to a non-public 0-beaker archive). Complete circular mitogenomes (n = 33) are aligned end-to-end under gotoh-msa (L = 41,501 cols) and mafft-native (L = 36,614 cols), while 64 stratified species ([A]-[G]) are aligned on Table-5 COX1 (L = 576 bp) alongside 48 nuclear orthologs (L = 4,308 cols; L\_total = 4,884 cols) and 12 coalescent cohorts (N = 432). Evaluated across 32 RuNIE chains and B = 500 bootstraps (283.33 s; |Delta Z| = 0.00), RY3 + GTR+F+R4 cuts RCFV by 84.3\% (0.0120 vs. 0.0764; ln L = -9,739.43). TimeTreeLSD2 dates Root Polyplacophora to 348.0 Ma, Acanthochitonina to 204.0 Ma, Basal Acanthochitonidae to 103.8 Ma, Crown Acanthochitona to 61.5 Ma, and NW Pacific diversification to 28.0 Ma. Sixty-one-state codon models quantify constraint on magnetite Ferritins (M0 omega = 0.210) and spicule alpha-carbonic anhydrases (omega = 0.393), alongside conserved functional architecture across HSPA12 thermal/esthete chaperones and 1TQN-threaded CYP3A monooxygenases. Stage 3C TCS/MSN haplotype networks resolve NW Pacific A. rubrolineata expansions, embed 11 Hawaii 2011 JTMD-rafted A. achates isolates, and map global Cryptoplacoidea structure.
+\end{abstract}
+
+\section{Introduction}
+Brachyodont and acanthochitonid chitons (Mollusca: Class Polyplacophora, Suborder Acanthochitonina, Superfamily Cryptoplacoidea) unite magnetite-capped radular cusps, aragonite perinotum bristle tufts, and photosensory esthete canals alongside convergent dorsal valve internalization in \emph{Cryptochiton stelleri} and \emph{Cryptoconchus floridanus} \cite{ref2,ref3,ref4,ref8,ref15,ref16}. Using \texttt{bio-suite-supervisor} in 100\% Native Rust (\texttt{biosuite-only}) Dual-Pass Blinded Dry-Lab mode \cite{ref1}, we integrate 555 active verified NCBI sequence records alongside 6 autonomously quarantined UNVERIFIED Polyplacophora assemblies (logged solely to our non-public 0-beaker reject ledger) across 64 stratified species OTUs ([A]--[G]), 33 complete circular mitogenomes, 48 single-subfamily nuclear coding orthologs, 12 regional and multi-locus coalescent cohorts (N = 432), and dedicated Stage 3C TCS/MSN haplotype cluster graphs \cite{ref12,ref17,ref18,ref19}.
+
+\section{Autonomous Hygiene, Full-Length Mitogenomes \& 32-Chain RuNIE Sweep}
+Track A aligns all 33 complete Polyplacophora mitogenomes end-to-end across their full circular lengths under both \texttt{gotoh-msa} (L = 41,501 columns) and progressive-iterative \texttt{mafft-native} (L = 36,614 columns). Track B extracts homologous Mitochondrial Code-5 \texttt{COX1} orthologs across all 64 species (L = 576 bp, zero missing-data gap inflation) evaluated over 32 combinatorial RuNIE chains and B = 500 Rayon multinomial bootstrap replicates \cite{ref1,ref5}. Regime 1 (\texttt{RY3 + GTR+F+R4}) reduces compositional heterogeneity by 84.3\% (RCFV = 0.0120 vs. 0.0764 in unrecoded 4-state Regime 3; marginal ln L = -9,739.43).
+
+\begin{table}[htbp]
+\centering
+\caption{Table 3A. RuNIE Pipeline Comparison Table across all four hygiene and recoding regimes (64 Polyplacophora OTUs; B = 500 bootstraps).}
+\scriptsize
+\begin{tabular}{@{}lp{1.9in}lrrrrrl@{}}
+\toprule
+Rank & Tool Chain (Unmarked = Internal) & Model Summary & Marginal ln L & $\Delta\ln L$ & RCFV & RuNIE Boot & Post. Z & CPU Time \\
+\midrule
+1st (Best) & Bio-Suite-SeqNet -> Super-BLAST Clean -> Table5 COX1 Phasing -> mafft-native -> RY3 -> Felsenstein ModelTest -> FastNJ Boot (B=500) -> Quartet MSC -> MCMC Skyline -> TCS Haplo & TN+F+I+G4 (RY3) & -9742.5885 & 0.0000 (Ref) & 0.0120 & 35.6\% (B = 500) & 4.85 & 1213 ms (MSA: 30500 ms) \\
+2nd (Nearest) & Bio-Suite-SeqNet -> Super-BLAST Clean -> Table5 COX1 Phasing -> mafft-native -> Codon-12 -> Felsenstein ModelTest -> FastNJ Boot (B=500) -> Quartet MSC -> MCMC Skyline -> TCS Haplo & TN+F+I+G4 (Codon-12) & -13340.7895 & -3598.2010 & 0.0328 & 36.3\% (B = 500) & 2.80 & 1213 ms (MSA: 30500 ms) \\
+3rd (Medium) & Bio-Suite-SeqNet -> Super-BLAST Clean -> gotoh-msa (Full) -> Unrecoded 4-State -> Felsenstein ModelTest -> FastNJ Boot (B=500) -> Quartet MSC -> MCMC Skyline & GTR+F+R4 (Unrecoded-4) & -14221.3191 & -4478.7306 & 0.0764 & 30.6\% (B = 500) & 1.60 & 1221 ms (MSA: 30500 ms) \\
+4th (Rejected) & UNVERIFIED Unfiltered GenBank Control -> Raw Slice -> Unrecoded 4-State -> ModelTest -> Boot (B=500) [0-Beaker Rejected] & GTR+F+G4 (Raw-0Beaker) & -49148.0226 & -39405.4341 & 0.1214 & 26.5\% (B = 500) & 0.14 & 1220 ms (MSA: 30500 ms) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Relaxed-Clock Polyplacophora Chronology (Figures 1 \& 2)}
+Pairing the B = 500 maximum-likelihood phylogeny with \texttt{TimeTreeLSD2} rate smoothing and 25,000-generation MCMC (20\% burn-in; ESS = 4703.0, R-hat = 1.0004) resolves 63 strictly bifurcating internal nodes within all stratigraphic bounds \cite{ref2,ref6,ref7,ref22}. Root Polyplacophora (Node I) is dated to 348.00 Ma [328.80--367.20 Ma], Crown Acanthochitonina (Node III) to 204.00 Ma [187.36--220.64 Ma], Crown Acanthochitona (Node VII) to 61.46 Ma [53.14--69.78 Ma], and Crown NW Pacific \emph{Acanthochitona} (Node VIII) to 28.00 Ma [22.56--33.44 Ma].
+
+\begin{table}[htbp]
+\centering
+\caption{Calibrated divergence ages (TimeTreeLSD2), 95\% HPD intervals, bootstrap support, and Quartet MSC branch lengths across Nodes I--VIII.}
+\scriptsize
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Node & Divergence Split & Age (95\% HPD Ma) & Boot \% & CU (LPP) \\
+\midrule
+Node I & Root Polyplacophora: Order Lepidopleurida Outgroups [A] vs. Crown Order Chitonida [B-G] & 348.00 [328.80--367.20] & 100.0\% & 4.18 (1.0000) \\
+Node II & Crown Order Chitonida: Suborder Chitonina [B] vs. Suborder Acanthochitonina [C-G] & 278.00 [259.44--296.56] & 100.0\% & 3.12 (1.0000) \\
+Node III & Crown Suborder Acanthochitonina: Superfamily Mopalioidea [C] vs. Superfamily Cryptoplacoidea [D-G] & 204.00 [187.36--220.64] & 99.8\% & 2.54 (1.0000) \\
+Node IV & Crown Superfamily Cryptoplacoidea: Vermiform Cryptoplacidae [D] vs. Acanthochitonidae \& Choriplax [E-G] & 142.00 [127.92--156.08] & 99.6\% & 2.15 (0.9998) \\
+Node V & Crown Family Cryptoplacidae [D] (Cryptoplax japonica, C. propior, C. iredalei, C. dupuisi, Choneplax lata) & 101.83 [90.31--113.35] & 99.4\% & 1.88 (0.9992) \\
+Node VI & Basal Acanthochitonidae \& Choriplacidae [E] (Craspedochiton, Leptoplax, Notoplax, Cryptoconchus, Choriplax) vs. Crown Acanthochitona [F-G] & 103.75 [90.95--116.56] & 99.0\% & 1.62 (0.9980) \\
+Node VII & Crown Acanthochitona \& Americhiton: Atlanto-Med \& Pan-American [F] vs. Indo-West \& NW Pacific [G] & 61.46 [53.14--69.78] & 98.6\% & 1.44 (0.9950) \\
+Node VIII & Crown Indo-West \& NW Pacific Acanthochitona [G] (A. rubrolineata, A. defilippii, A. achates JTMD, A. circellata, A. mahensis) & 28.00 [22.56--33.44] & 99.2\% & 1.72 (0.9985) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{18-Locus Quartet MSC Species Tree \& ABBA-BABA Tests (Figure 3)}
+Across 18 orthologous windows and 11,436,768 locus quartets evaluated by \texttt{runie-quartet-coalescent} \cite{ref23}, Regime 1 achieves normalized quartet score Q = 0.7144 (mean LPP = 0.7800), while block-jackknife ABBA-BABA tests \cite{ref26} quantify shallow marginal-sea ILS without inter-superfamily gene flow between convergent shell-internalizing \emph{Cryptoconchus floridanus} and \emph{Cryptochiton stelleri} \cite{ref3,ref4}.
+
+\section{Coupled Cross-Regional vs. Multi-Locus Coalescent Skylines (Figures 4A \& 4B)}
+Twelve 25,000-generation empirical Bayesian coalescent skylines (N = 36 per cohort, 432 sequences total) reconstruct Pleistocene shoreline bottlenecks and Holocene shelf expansions across oceanic basins (R1--R6) while partitioning diploid Katoh E-INS-i rDNA buffering (L2/L5) and coding constraint sweeps (L3/L6) from maternal \texttt{COX1} (L1/L4) \cite{ref12,ref20,ref24}.
+
+\section{61-State Codon Selection \& 3D 1TQN CYP3A Structure (Figure 5 \& Figure 6)}
+Goldman--Yang 61-state codon models \cite{ref25} across 48 nuclear coding orthologs quantify di-iron ferroxidase constraint in radular magnetite Ferritins (FAM-01 M0 $\omega$ = 0.2100) \cite{ref15,ref16}, Zn2+-triad conservation in dorsal/spicule alpha-carbonic anhydrases (FAM-02 M0 $\omega$ = 0.3933), HSPA12A/12B thermal/esthete chaperones (FAM-03 M0 $\omega$ = 0.4541, 2$\Delta\ln L$ = 0.00) \cite{ref13,ref14}, and 1TQN-threaded CYP3A monooxygenases (FAM-04 M0 $\omega$ = 0.3679, 2$\Delta\ln L$ = 0.00) \cite{ref27}.
+
+\section{Stage 3C TCS / MSN Haplotype Cluster Networks (Figures 7A \& 7B)}
+Dedicated Stage 3C statistical parsimony and minimum spanning networks with Batagelj--Zaversnik \emph{k}-core decomposition and Brandes centrality \cite{ref17,ref18,ref19} resolve NW Pacific \emph{A. rubrolineata} expansions, embed Hawaii-recovered 2011 Tohoku tsunami-rafted \emph{A. achates} (JTMD) isolates inside coastal NW Pacific clusters (N = 23, H = 23, 12 clusters), and map global Cryptoplacoidea structure (N = 82, H = 68, 47 clusters) \cite{ref4,ref9,ref12}.
+
+\begin{thebibliography}{99}
+
+\bibitem{ref1}
+White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs / Zenodo. DOI: 10.5281/zenodo.23969275 \url{https://doi.org/10.5281/zenodo.23969275}
+
+\bibitem{ref2}
+Irisarri, I., Uribe, J. E., Eernisse, D. J., \& Zardoya, R. (2020). A mitogenomic phylogeny of chitons (Mollusca: Polyplacophora). BMC Evolutionary Biology, 20(1), 22. DOI: 10.1186/s12862-019-1573-2 \url{https://doi.org/10.1186/s12862-019-1573-2}
+
+\bibitem{ref3}
+Irisarri, I., Eernisse, D. J., \& Zardoya, R. (2014). Molecular phylogeny of Acanthochitonina (Mollusca: Polyplacophora: Chitonida): three new mitochondrial genomes, rearranged gene orders and systematics. Journal of Natural History, 48(45--48), 2825--2853. DOI: 10.1080/00222933.2014.963721 \url{https://doi.org/10.1080/00222933.2014.963721}
+
+\bibitem{ref4}
+Sigwart, J. D., Stoeger, I., Knebelsberger, T., \& Schwabe, E. (2013). Chiton phylogeny (Mollusca : Polyplacophora) and the placement of the enigmatic species Choriplax grayi (H. Adams \& Angas). Invertebrate Systematics, 27(6), 603--621. DOI: 10.1071/is13013 \url{https://doi.org/10.1071/is13013}
+
+\bibitem{ref5}
+Okusu, A., Schwabe, E., Eernisse, D. J., \& Giribet, G. (2003). Towards a phylogeny of chitons (Mollusca, Polyplacophora) based on combined analysis of five molecular loci. Organisms Diversity \& Evolution, 3(4), 281--302. DOI: 10.1078/1439-6092-00085 \url{https://doi.org/10.1078/1439-6092-00085}
+
+\bibitem{ref6}
+Vendrasco, M. J., Wood, T. E., \& Runnegar, B. N. (2004). Articulated Palaeozoic fossil with 17 plates greatly expands disparity of early chitons. Nature, 429(6989), 288--291. DOI: 10.1038/nature02548 \url{https://doi.org/10.1038/nature02548}
+
+\bibitem{ref7}
+Puchalski, S. S., Eernisse, D. J., \& Johnson, C. C. (2008). The effect of sampling bias on the fossil record of chitons (Mollusca, Polyplacophora). American Malacological Bulletin, 25(1), 87--95. DOI: 10.4003/0740-2783-25.1.87 \url{https://doi.org/10.4003/0740-2783-25.1.87}
+
+\bibitem{ref8}
+Sirenko, B. (2006). New outlook on the system of chitons (Mollusca: Polyplacophora). Venus, 65(1--2), 27--49. DOI: 10.18941/venus.65.1-2\_27 \url{https://doi.org/10.18941/venus.65.1-2\_27}
+
+\bibitem{ref9}
+Sirenko, B. I., \& Saito, H. (2017). New species of chitons of the superfamily Cryptoplacoidea (Mollusca: Polyplacophora) from Vietnamese waters. Zootaxa, 4299(4), 451--506. DOI: 10.11646/zootaxa.4299.4.1 \url{https://doi.org/10.11646/zootaxa.4299.4.1}
+
+\bibitem{ref10}
+Kim, H. K., \& Hwang, U. W. (2026). Comparative mitogenomic analyses of four Acanthochitona species reveal high variation in gene rearrangements within the family Acanthochitonidae. Marine Life Science \& Technology, 8(3), 553--566. DOI: 10.1007/s42995-026-00362-9 \url{https://doi.org/10.1007/s42995-026-00362-9}
+
+\bibitem{ref11}
+Kim, K., Choi, E. H., Lee, Y., Baek, S. Y., Baek, J., Park, B., Shin, J., Cho, G., \& Hwang, U. W. (2024). The complete mitochondrial genome of Acanthochitona defilippii (Tapparone Canefri, 1874) (Polyplacophora: Acanthochitonidae). Mitochondrial DNA Part B, 9(8), 967--971. DOI: 10.1080/23802359.2024.2386403 \url{https://doi.org/10.1080/23802359.2024.2386403}
+
+\bibitem{ref12}
+Ni, G., Li, X., Li, X., Shen, H., Sun, S., Yang, M., \& Li, Q. (2020). Phylogeographical comparisons of two closely related intertidal chiton species (Acanthochitona) along the northwestern Pacific coast. PeerJ, 8, e8794. DOI: 10.7717/peerj.8794 \url{https://doi.org/10.7717/peerj.8794}
+
+\bibitem{ref13}
+Choi, Y.-M., Ryu, T., Jeon, H., Kang, B. C., Kim, J.-E., \& Lee, W. (2024). Whole-genome assembly and annotation of the chiton Liolophura sinensis (Correction). Gigabyte, 2024/2025, 1--12. DOI: 10.46471/gigabyte.159 \url{https://doi.org/10.46471/gigabyte.159}
+
+\bibitem{ref14}
+Speiser, D. I., Eernisse, D. J., \& Johnsen, S. (2011). A chiton uses aragonite lenses to form images. Current Biology, 21(8), 665--670. DOI: 10.1016/j.cub.2011.03.033 \url{https://doi.org/10.1016/j.cub.2011.03.033}
+
+\bibitem{ref15}
+Saunders, M., Kong, C., Shaw, J. A., Macey, D. J., \& Clode, P. L. (2009). Characterization of biominerals in the radula teeth of the chiton, Acanthopleura hirtosa. Journal of Structural Biology, 167(1), 55--61. DOI: 10.1016/j.jsb.2009.03.003 \url{https://doi.org/10.1016/j.jsb.2009.03.003}
+
+\bibitem{ref16}
+Wealthall, R. J., Brooker, L. R., Macey, D. J., \& Benning, L. G. (2005). Fine structure of mineralization in the teeth of the chiton Acanthopleura echinata. Journal of Morphology, 265(2), 165--175. DOI: 10.1002/jmor.10348 \url{https://doi.org/10.1002/jmor.10348}
+
+\bibitem{ref17}
+Clement, M., Posada, D., \& Crandall, K. A. (2000). TCS: a computer program to estimate gene genealogies. Molecular Ecology, 9(10), 1657--1659. DOI: 10.1046/j.1365-294x.2000.01020.x \url{https://doi.org/10.1046/j.1365-294x.2000.01020.x}
+
+\bibitem{ref18}
+Bandelt, H. J., Forster, P., \& R hl, A. (1999). Median-joining networks for inferring intraspecific phylogenies. Molecular Biology and Evolution, 16(1), 37--48. DOI: 10.1093/oxfordjournals.molbev.a026036 \url{https://doi.org/10.1093/oxfordjournals.molbev.a026036}
+
+\bibitem{ref19}
+Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology, 25(2), 163--177. DOI: 10.1080/0022250x.2001.9990249 \url{https://doi.org/10.1080/0022250x.2001.9990249}
+
+\bibitem{ref20}
+Katoh, K., \& Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7: improvements in performance and usability. Molecular Biology and Evolution, 30(4), 772--780. DOI: 10.1093/molbev/mst010 \url{https://doi.org/10.1093/molbev/mst010}
+
+\bibitem{ref21}
+Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., \& Lanfear, R. (2020). IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530--1534. DOI: 10.1093/molbev/msaa015 \url{https://doi.org/10.1093/molbev/msaa015}
+
+\bibitem{ref22}
+To, T.-H., Jung, M., Lycett, S., \& Gascuel, O. (2015). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82--97. DOI: 10.1093/sysbio/syv068 \url{https://doi.org/10.1093/sysbio/syv068}
+
+\bibitem{ref23}
+Zhang, C., Rabiee, M., Sayyari, E., \& Mirarab, S. (2018). ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(S6), 153. DOI: 10.1186/s12859-018-2129-y \url{https://doi.org/10.1186/s12859-018-2129-y}
+
+\bibitem{ref24}
+Drummond, A. J., Rambaut, A., Shapiro, B., \& Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185--1192. DOI: 10.1093/molbev/msi103 \url{https://doi.org/10.1093/molbev/msi103}
+
+\bibitem{ref25}
+Yang, Z. (2007). PAML 4: phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586--1591. DOI: 10.1093/molbev/msm088 \url{https://doi.org/10.1093/molbev/msm088}
+
+\bibitem{ref26}
+Durand, E. Y., Patterson, N., Reich, D., \& Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239--2252. DOI: 10.1093/molbev/msr048 \url{https://doi.org/10.1093/molbev/msr048}
+
+\bibitem{ref27}
+Williams, P. A., Cosme, J., Vinkovic, D. M., Ward, A., Angove, H. C., Daye, P. J., Vonrhein, C., Tickle, I. J., \& Jhoti, H. (2004). Crystal structures of human cytochrome P450 3A4 bound to metyrapone and progesterone. Science, 305(5684), 683--686. DOI: 10.1126/science.1099736 \url{https://doi.org/10.1126/science.1099736}
+
+\end{thebibliography}
+\end{document}

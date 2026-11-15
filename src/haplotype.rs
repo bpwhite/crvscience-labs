@@ -12,7 +12,7 @@
 
 use crate::complexity::round4;
 use crate::fetch::{FastaRecord, PoliteCacheManager};
-use crate::phylo::{align_sequences, compute_k2p_and_tn93};
+use crate::phylo::{align_sequences, compute_k2p_and_tn93, AlignedSequence};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::time::Instant;
@@ -145,6 +145,18 @@ fn diff_aligned_sequences(seq_a: &[u8], seq_b: &[u8]) -> (usize, Vec<Segregating
     (diffs, muts)
 }
 
+/// Connector hub summary from iterative k-core peeling and Brandes shortest-path betweenness.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HaplotypeHubSummary {
+    pub haplotype_id: String,
+    pub cluster_id: String,
+    pub sample_count: usize,
+    pub primary_taxon: String,
+    pub degree: usize,
+    pub k_core: usize,
+    pub brandes_betweenness_cb: f64,
+}
+
 /// Core Haplotype Clustering, Population Genetics & Adaptive Visualization Builder.
 pub fn analyze_haplotype_clusters(
     cohort_id: &str,
@@ -153,6 +165,58 @@ pub fn analyze_haplotype_clusters(
     max_cluster_step_threshold: usize,
 ) -> HaplotypeClusterCohortReport {
     let (_method, aligned) = align_sequences(records);
+    analyze_haplotype_clusters_from_aligned(
+        cohort_id,
+        cohort_title,
+        records,
+        &aligned,
+        max_cluster_step_threshold,
+    )
+}
+
+/// Fast-path Haplotype Clustering for pre-aligned FASTA cohorts (skips redundant MSA when equal-length).
+pub fn analyze_haplotype_clusters_prealigned(
+    cohort_id: &str,
+    cohort_title: &str,
+    records: &[FastaRecord],
+    max_cluster_step_threshold: usize,
+) -> HaplotypeClusterCohortReport {
+    let first_len = records.first().map(|r| r.sequence.len()).unwrap_or(0);
+    let is_equal_len = first_len > 0 && records.iter().all(|r| r.sequence.len() == first_len);
+    if !is_equal_len {
+        return analyze_haplotype_clusters(
+            cohort_id,
+            cohort_title,
+            records,
+            max_cluster_step_threshold,
+        );
+    }
+    let aligned: Vec<AlignedSequence> = records
+        .iter()
+        .map(|r| AlignedSequence {
+            id: r.id.clone(),
+            taxon: r.taxon.clone(),
+            common_name: r.common_name.clone(),
+            family: r.family.clone(),
+            aligned_seq: r.sequence.to_ascii_uppercase(),
+        })
+        .collect();
+    analyze_haplotype_clusters_from_aligned(
+        cohort_id,
+        cohort_title,
+        records,
+        &aligned,
+        max_cluster_step_threshold,
+    )
+}
+
+fn analyze_haplotype_clusters_from_aligned(
+    cohort_id: &str,
+    cohort_title: &str,
+    records: &[FastaRecord],
+    aligned: &[AlignedSequence],
+    max_cluster_step_threshold: usize,
+) -> HaplotypeClusterCohortReport {
     let n_total = aligned.len();
     let align_len = aligned.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
 
@@ -184,7 +248,7 @@ pub fn analyze_haplotype_clusters(
     let mut parsimony_informative_sites = 0usize;
     for col in 0..align_len {
         let mut counts = [0usize; 4];
-        for a in &aligned {
+        for a in aligned {
             match a.aligned_seq.as_bytes()[col] {
                 b'A' => counts[0] += 1,
                 b'C' => counts[1] += 1,
@@ -939,158 +1003,573 @@ fn build_adaptive_visualizations(
     }
 }
 
-/// Renders a clean, self-contained vector SVG Minimum Spanning Haplotype Network with proportional
-/// node radii, mutational step hatch marks, and cluster color coding.
+fn xml_escape_haplo(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+fn roman_numeral(mut n: usize) -> String {
+    let table = [
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ];
+    let mut out = String::new();
+    for &(val, sym) in &table {
+        while n >= val {
+            out.push_str(sym);
+            n -= val;
+        }
+    }
+    if out.is_empty() { "I".to_string() } else { out }
+}
+
+/// Monotone-chain 2D convex hull returning vertices in counter-clockwise order.
+fn convex_hull_2d(mut pts: Vec<(f64, f64)>) -> Vec<(f64, f64)> {
+    if pts.len() <= 2 {
+        return pts;
+    }
+    pts.sort_by(|a, b| {
+        a.0.partial_cmp(&b.0)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+    });
+    let cross = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| -> f64 {
+        (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0)
+    };
+    let mut lower: Vec<(f64, f64)> = Vec::new();
+    for &p in &pts {
+        while lower.len() >= 2 && cross(lower[lower.len() - 2], lower[lower.len() - 1], p) <= 0.0 {
+            lower.pop();
+        }
+        lower.push(p);
+    }
+    let mut upper: Vec<(f64, f64)> = Vec::new();
+    for &p in pts.iter().rev() {
+        while upper.len() >= 2 && cross(upper[upper.len() - 2], upper[upper.len() - 1], p) <= 0.0 {
+            upper.pop();
+        }
+        upper.push(p);
+    }
+    lower.pop();
+    upper.pop();
+    lower.extend(upper);
+    lower
+}
+
+fn svg_pie_wedge_path(cx: f64, cy: f64, r: f64, a0: f64, a1: f64) -> String {
+    let x0 = cx + r * a0.cos();
+    let y0 = cy + r * a0.sin();
+    let x1 = cx + r * a1.cos();
+    let y1 = cy + r * a1.sin();
+    let large_arc = if (a1 - a0) > std::f64::consts::PI { 1 } else { 0 };
+    format!(
+        "M {:.2} {:.2} L {:.2} {:.2} A {:.2} {:.2} 0 {} 1 {:.2} {:.2} Z",
+        cx, cy, x0, y0, r, r, large_arc, x1, y1
+    )
+}
+
+/// Renders a publication-grade vector SVG TCS/Minimum Spanning Haplotype Network with
+/// pie-chart subpopulation nodes (`r ∝ sqrt(n)`), force-directed collision-free layout,
+/// dashed/cream cluster convex hulls (`I..IX`), inferred mutational step dots, and scale legends.
 fn render_standalone_svg_haplotype_network(
     title: &str,
     clusters: &[HaplotypeClusterGroup],
     haplotypes: &[HaplotypeNode],
     msn_edges: &[HaplotypeNetworkEdge],
 ) -> String {
-    let width = 820.0f64;
-    let height = 440.0f64;
-    let cx = 370.0f64;
-    let cy = 225.0f64;
-    let palette = ["#38bdf8", "#34d399", "#f59e0b", "#a855f7", "#f43f5e", "#ec4899"];
+    let width = 1080.0f64;
+    let height = 680.0f64;
+    let plot_x0 = 200.0f64;
+    let plot_x1 = 1045.0f64;
+    let plot_y0 = 64.0f64;
+    let plot_y1 = 644.0f64;
 
-    // Assign deterministic 2D coordinates: cluster hubs arranged on an inner ring, satellites arranged around their hub
-    let mut coords: BTreeMap<String, (f64, f64, usize)> = BTreeMap::new();
+    let pop_palette = [
+        "#dc2626", "#0891b2", "#16a34a", "#eab308", "#c026d3", "#1e3a8a",
+        "#7c3aed", "#ea580c", "#db2777", "#65a30d", "#4f46e5", "#64748b",
+    ];
+
+    // 1. Collect subpopulations ordered by total sample count descending
+    let mut pop_totals: BTreeMap<String, usize> = BTreeMap::new();
+    for h in haplotypes {
+        for (pop, &cnt) in &h.subpopulation_counts {
+            *pop_totals.entry(pop.clone()).or_insert(0) += cnt;
+        }
+        if h.subpopulation_counts.is_empty() {
+            *pop_totals.entry(h.primary_taxon.clone()).or_insert(0) += h.sample_count;
+        }
+    }
+    let mut pop_list: Vec<(String, usize)> = pop_totals.into_iter().collect();
+    pop_list.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    let pop_color_map: BTreeMap<String, &str> = pop_list
+        .iter()
+        .enumerate()
+        .map(|(i, (name, _))| (name.clone(), pop_palette[i % pop_palette.len()]))
+        .collect();
+
+    let n_haps = haplotypes.len();
+    let mut hap_idx_by_id: BTreeMap<&str, usize> = BTreeMap::new();
+    for (i, h) in haplotypes.iter().enumerate() {
+        hap_idx_by_id.insert(h.haplotype_id.as_str(), i);
+    }
+
+    let radii: Vec<f64> = haplotypes
+        .iter()
+        .map(|h| (4.8 + (h.sample_count as f64).sqrt() * 5.0).clamp(6.0, 42.0))
+        .collect();
+    let cluster_of_hap: Vec<usize> = haplotypes
+        .iter()
+        .map(|h| {
+            clusters
+                .iter()
+                .position(|c| c.cluster_id == h.cluster_id)
+                .unwrap_or(0)
+        })
+        .collect();
+
+    // 2. Deterministic 2-level initial placement by cluster centroid + golden-angle radial layout
     let num_c = clusters.len().max(1);
-    let hub_ring_rx = if num_c == 1 { 0.0 } else { 155.0 };
-    let hub_ring_ry = if num_c == 1 { 0.0 } else { 105.0 };
+    let cols_c = (num_c as f64).sqrt().ceil().max(1.0) as usize;
+    let rows_c = ((num_c + cols_c - 1) / cols_c).max(1);
+    let cell_w = (plot_x1 - plot_x0) / (cols_c as f64);
+    let cell_h = (plot_y1 - plot_y0) / (rows_c as f64);
+
+    let mut pos: Vec<(f64, f64)> = vec![((plot_x0 + plot_x1) * 0.5, (plot_y0 + plot_y1) * 0.5); n_haps];
+    let mut cluster_centers: Vec<(f64, f64)> = Vec::with_capacity(num_c);
+    for c_idx in 0..num_c {
+        let col = c_idx % cols_c;
+        let row = c_idx / cols_c;
+        let cx = plot_x0 + cell_w * (col as f64 + 0.5);
+        let cy = plot_y0 + cell_h * (row as f64 + 0.5);
+        cluster_centers.push((cx, cy));
+    }
 
     for (c_idx, cl) in clusters.iter().enumerate() {
-        let angle = (c_idx as f64 / num_c as f64) * std::f64::consts::TAU - std::f64::consts::FRAC_PI_2;
-        let hx = cx + hub_ring_rx * angle.cos();
-        let hy = cy + hub_ring_ry * angle.sin();
-        coords.insert(cl.hub_haplotype_id.clone(), (hx, hy, c_idx));
-
-        let sats: Vec<&String> = cl
-            .haplotype_ids
-            .iter()
-            .filter(|&id| id != &cl.hub_haplotype_id)
-            .collect();
-        let s_count = sats.len().max(1);
-        for (s_idx, sat_id) in sats.iter().enumerate() {
-            let sat_angle = angle + ((s_idx as f64 / s_count as f64) - 0.5) * 2.4
-                + (s_idx as f64 * 0.55);
-            let sat_r = 46.0 + ((s_idx % 3) as f64) * 18.0;
-            let sx = (hx + sat_r * sat_angle.cos()).clamp(45.0, 685.0);
-            let sy = (hy + sat_r * sat_angle.sin()).clamp(52.0, 395.0);
-            coords.insert((*sat_id).clone(), (sx, sy, c_idx));
+        let (cx, cy) = cluster_centers[c_idx];
+        let mut member_idx = 0usize;
+        for hid in &cl.haplotype_ids {
+            if let Some(&hi) = hap_idx_by_id.get(hid.as_str()) {
+                if hid == &cl.hub_haplotype_id {
+                    pos[hi] = (cx, cy);
+                } else {
+                    let angle = (member_idx as f64) * 2.399_963_229_7; // golden angle
+                    let dist = 26.0 + radii[hi] + ((member_idx as f64).sqrt() * 20.0);
+                    pos[hi] = (
+                        (cx + dist * angle.cos()).clamp(plot_x0 + 30.0, plot_x1 - 30.0),
+                        (cy + dist * angle.sin()).clamp(plot_y0 + 30.0, plot_y1 - 30.0),
+                    );
+                    member_idx += 1;
+                }
+            }
         }
     }
 
+    // 3. Deterministic force-directed + hard collision-separation relaxation
+    let edge_pairs: Vec<(usize, usize, usize, bool)> = msn_edges
+        .iter()
+        .filter_map(|e| {
+            let u = *hap_idx_by_id.get(e.source_haplotype.as_str())?;
+            let v = *hap_idx_by_id.get(e.target_haplotype.as_str())?;
+            let is_bridge = e.edge_type == "inter-cluster-bridge";
+            Some((u, v, e.mutational_steps_snps, is_bridge))
+        })
+        .collect();
+
+    for iter in 0..180 {
+        let temp = 1.0 - (iter as f64 / 180.0) * 0.72;
+        let mut disp = vec![(0.0_f64, 0.0_f64); n_haps];
+
+        // Pairwise repulsion & strict non-overlap separation
+        for i in 0..n_haps {
+            for j in (i + 1)..n_haps {
+                let mut dx = pos[i].0 - pos[j].0;
+                let mut dy = pos[i].1 - pos[j].1;
+                let mut d2 = dx * dx + dy * dy;
+                if d2 < 1e-4 {
+                    dx = 0.5 + ((i % 5) as f64) * 0.1;
+                    dy = 0.5 - ((j % 5) as f64) * 0.1;
+                    d2 = dx * dx + dy * dy;
+                }
+                let d = d2.sqrt();
+                let same_cluster = cluster_of_hap[i] == cluster_of_hap[j];
+                let min_sep = radii[i] + radii[j] + if same_cluster { 16.0 } else { 40.0 };
+                let repulse = if same_cluster { 950.0 } else { 2400.0 } / (d2 + 80.0);
+                let overlap_push = if d < min_sep { (min_sep - d) * 0.65 } else { 0.0 };
+                let f = repulse + overlap_push;
+                let ux = dx / d;
+                let uy = dy / d;
+                disp[i].0 += ux * f;
+                disp[i].1 += uy * f;
+                disp[j].0 -= ux * f;
+                disp[j].1 -= uy * f;
+            }
+        }
+
+        // Edge spring attraction
+        for &(u, v, steps, is_bridge) in &edge_pairs {
+            let dx = pos[v].0 - pos[u].0;
+            let dy = pos[v].1 - pos[u].1;
+            let d = (dx * dx + dy * dy).sqrt().max(1e-4);
+            let target = radii[u]
+                + radii[v]
+                + if is_bridge {
+                    58.0 + (steps.min(12) as f64) * 4.5
+                } else {
+                    22.0 + (steps.min(6) as f64) * 5.0
+                };
+            let k_spring = if is_bridge { 0.14 } else { 0.24 };
+            let f = (d - target) * k_spring;
+            let ux = dx / d;
+            let uy = dy / d;
+            disp[u].0 += ux * f;
+            disp[u].1 += uy * f;
+            disp[v].0 -= ux * f;
+            disp[v].1 -= uy * f;
+        }
+
+        // Gentle cluster centroid cohesion
+        for c_idx in 0..num_c {
+            let mut sx = 0.0;
+            let mut sy = 0.0;
+            let mut cnt = 0usize;
+            for i in 0..n_haps {
+                if cluster_of_hap[i] == c_idx {
+                    sx += pos[i].0;
+                    sy += pos[i].1;
+                    cnt += 1;
+                }
+            }
+            if cnt > 0 {
+                let cx = sx / cnt as f64;
+                let cy = sy / cnt as f64;
+                for i in 0..n_haps {
+                    if cluster_of_hap[i] == c_idx {
+                        disp[i].0 += (cx - pos[i].0) * 0.035;
+                        disp[i].1 += (cy - pos[i].1) * 0.035;
+                    }
+                }
+            }
+        }
+
+        for i in 0..n_haps {
+            let step_len = (disp[i].0 * disp[i].0 + disp[i].1 * disp[i].1).sqrt();
+            let max_step = 18.0 * temp;
+            if step_len > max_step && step_len > 1e-6 {
+                disp[i].0 = disp[i].0 / step_len * max_step;
+                disp[i].1 = disp[i].1 / step_len * max_step;
+            }
+            let r = radii[i] + 22.0;
+            pos[i].0 = (pos[i].0 + disp[i].0).clamp(plot_x0 + r, plot_x1 - r);
+            pos[i].1 = (pos[i].1 + disp[i].1).clamp(plot_y0 + r, plot_y1 - r);
+        }
+    }
+
+    // 4. Begin clean white publication SVG
     let mut svg = format!(
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {:.0} {:.0}\" width=\"100%\" style=\"max-width:820px;background:#070a10;border:1px solid rgba(56,189,248,0.28);border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;\">\n\
-         <text x=\"18\" y=\"26\" fill=\"#e2e8f0\" font-size=\"12\" font-weight=\"700\">{}</text>\n\
-         <text x=\"18\" y=\"42\" fill=\"#94a3b8\" font-size=\"10\">Minimum Spanning Network (MSN) • Circle radius proportional to haplotype sample size (n) • Cross-ticks = mutational steps</text>\n",
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {:.0} {:.0}\" width=\"100%\" style=\"max-width:1080px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;\">\n\
+         <rect x=\"0\" y=\"0\" width=\"{:.0}\" height=\"{:.0}\" fill=\"#ffffff\"/>\n\
+         <text x=\"200\" y=\"26\" fill=\"#0f172a\" font-size=\"13.5\" font-weight=\"700\">{}</text>\n\
+         <text x=\"200\" y=\"43\" fill=\"#475569\" font-size=\"10\">TCS / Minimum Spanning Haplotype Network • Pie area ∝ sample size (n) • Dots = inferred mutational steps • Dashed hulls = clusters</text>\n",
         width,
         height,
-        title.replace('&', "&amp;")
+        width,
+        height,
+        xml_escape_haplo(title)
     );
 
-    // Draw edges first
-    for edge in msn_edges {
-        if let (Some(&(x1, y1, _)), Some(&(x2, y2, _))) = (
-            coords.get(&edge.source_haplotype),
-            coords.get(&edge.target_haplotype),
-        ) {
-            let is_bridge = edge.edge_type == "inter-cluster-bridge";
-            let is_loop = edge.edge_type == "reticulation-loop";
-            let stroke = if is_bridge {
-                "#f59e0b"
-            } else if is_loop {
-                "#64748b"
-            } else {
-                "#475569"
-            };
-            let dash = if is_loop {
-                " stroke-dasharray=\"3,3\""
-            } else if is_bridge {
-                " stroke-dasharray=\"6,3\""
-            } else {
-                ""
-            };
+    // 5. Render padded convex-hull polygons per multi-haplotype cluster (`I, II, III...`)
+    let skip_singleton_hulls = clusters.len() > 10;
+    let plot_cy = (plot_y0 + plot_y1) * 0.5;
+    let mut cluster_labels: Vec<(f64, f64, String)> = Vec::new();
+
+    for (c_idx, cl) in clusters.iter().enumerate() {
+        if skip_singleton_hulls && cl.unique_haplotypes < 2 {
+            continue;
+        }
+        let mut ring_pts: Vec<(f64, f64)> = Vec::new();
+        let mut min_y = f64::MAX;
+        let mut max_y = f64::MIN;
+        let mut top_x = 0.0;
+        let mut bot_x = 0.0;
+        let mut sum_y = 0.0;
+        let mut cnt_c = 0usize;
+        for (i, &ci) in cluster_of_hap.iter().enumerate() {
+            if ci == c_idx {
+                let pad_r = radii[i] + 15.0;
+                sum_y += pos[i].1;
+                cnt_c += 1;
+                for k in 0..12 {
+                    let a = (k as f64 / 12.0) * std::f64::consts::TAU;
+                    let px = pos[i].0 + pad_r * a.cos();
+                    let py = pos[i].1 + pad_r * a.sin();
+                    ring_pts.push((px, py));
+                    if py < min_y {
+                        min_y = py;
+                        top_x = pos[i].0;
+                    }
+                    if py > max_y {
+                        max_y = py;
+                        bot_x = pos[i].0;
+                    }
+                }
+            }
+        }
+        let hull = convex_hull_2d(ring_pts);
+        if hull.len() >= 3 {
+            let pts_str: String = hull
+                .iter()
+                .map(|(x, y)| format!("{:.1},{:.1}", x, y))
+                .collect::<Vec<_>>()
+                .join(" ");
             svg.push_str(&format!(
-                "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{}\" stroke-width=\"{}\"{} />\n",
+                "  <polygon points=\"{}\" fill=\"#fefce8\" fill-opacity=\"0.78\" stroke=\"#334155\" stroke-width=\"1.2\" stroke-dasharray=\"5,3\" stroke-linejoin=\"round\"/>\n",
+                pts_str
+            ));
+            let rom = roman_numeral(c_idx + 1);
+            let dom = cl.dominant_population.chars().take(22).collect::<String>();
+            let mean_y = if cnt_c > 0 { sum_y / cnt_c as f64 } else { plot_cy };
+            let use_bottom = mean_y > plot_cy + 40.0 && max_y + 16.0 < height - 12.0;
+            let (lx, ly) = if use_bottom {
+                (bot_x, (max_y + 14.0).min(height - 10.0))
+            } else {
+                (top_x, (min_y - 6.0).max(plot_y0 - 2.0))
+            };
+            cluster_labels.push((
+                lx.clamp(plot_x0 + 68.0, plot_x1 - 68.0),
+                ly,
+                format!("Cluster {} ({})", rom, dom),
+            ));
+        }
+    }
+
+    // 6. Render MSN edges + intermediate mutational-step dots / step badges
+    for edge in msn_edges {
+        if let (Some(&ui), Some(&vi)) = (
+            hap_idx_by_id.get(edge.source_haplotype.as_str()),
+            hap_idx_by_id.get(edge.target_haplotype.as_str()),
+        ) {
+            let (x1, y1) = pos[ui];
+            let (x2, y2) = pos[vi];
+            let dx = x2 - x1;
+            let dy = y2 - y1;
+            let dist = (dx * dx + dy * dy).sqrt().max(1e-4);
+            let ux = dx / dist;
+            let uy = dy / dist;
+
+            let is_loop = edge.edge_type == "reticulation-loop";
+            let is_bridge = edge.edge_type == "inter-cluster-bridge";
+            let stroke = if is_loop {
+                "#64748b"
+            } else if is_bridge {
+                "#1d4ed8"
+            } else {
+                "#1e293b"
+            };
+            let dash = if is_loop { " stroke-dasharray=\"3,2.5\"" } else { "" };
+            svg.push_str(&format!(
+                "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{}\" stroke-width=\"{}\"{}/>\n",
                 x1,
                 y1,
                 x2,
                 y2,
                 stroke,
-                if is_bridge { "2.0" } else { "1.4" },
+                if is_bridge { "1.6" } else { "1.3" },
                 dash
             ));
 
-            // Midpoint mutational step badge for bridges or multi-step edges
-            if is_bridge || edge.mutational_steps_snps > 1 {
-                let mx = (x1 + x2) * 0.5;
-                let my = (y1 + y2) * 0.5;
+            // Draw inferred median-step dots along visible segment between circle perimeters
+            let steps = edge.mutational_steps_snps;
+            let p_start = radii[ui] + 3.0;
+            let p_end = (dist - radii[vi] - 3.0).max(p_start + 2.0);
+            let seg_len = p_end - p_start;
+            if steps >= 2 && steps <= 6 && seg_len >= 10.0 {
+                let n_dots = steps - 1;
+                for d_idx in 1..=n_dots {
+                    let frac = d_idx as f64 / (n_dots as f64 + 1.0);
+                    let t = p_start + seg_len * frac;
+                    let mx = x1 + ux * t;
+                    let my = y1 + uy * t;
+                    svg.push_str(&format!(
+                        "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2.2\" fill=\"#0f172a\"/>\n",
+                        mx, my
+                    ));
+                }
+            } else if steps > 6 {
+                let mid = (p_start + p_end) * 0.5;
+                let mx = x1 + ux * mid;
+                let my = y1 + uy * mid;
                 svg.push_str(&format!(
-                    "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"36\" height=\"13\" rx=\"3\" fill=\"#0f172a\" stroke=\"{}\" stroke-width=\"0.8\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#cbd5e1\" font-size=\"8.5\" text-anchor=\"middle\">{} snp</text>\n",
-                    mx - 18.0,
+                    "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"26\" height=\"13\" rx=\"3\" fill=\"#ffffff\" fill-opacity=\"0.92\" stroke=\"{}\" stroke-width=\"0.7\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\" font-weight=\"600\" text-anchor=\"middle\">({})</text>\n",
+                    mx - 13.0,
                     my - 6.5,
                     stroke,
                     mx,
                     my + 3.0,
-                    edge.mutational_steps_snps
+                    steps
                 ));
             }
         }
     }
 
-    // Draw haplotype nodes
-    for hap in haplotypes {
-        if let Some(&(x, y, c_idx)) = coords.get(&hap.haplotype_id) {
-            let color = palette[c_idx % palette.len()];
-            let r = (6.0 + (hap.sample_count as f64).sqrt() * 4.2).clamp(6.5, 24.0);
+    // 7. Render pie-chart haplotype nodes + crisp labels
+    for (i, hap) in haplotypes.iter().enumerate() {
+        let (x, y) = pos[i];
+        let r = radii[i];
+        let mut wedges: Vec<(&str, usize)> = if hap.subpopulation_counts.is_empty() {
+            vec![(hap.primary_taxon.as_str(), hap.sample_count.max(1))]
+        } else {
+            hap.subpopulation_counts
+                .iter()
+                .map(|(k, &v)| (k.as_str(), v))
+                .collect()
+        };
+        wedges.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+
+        let total_w: usize = wedges.iter().map(|w| w.1).sum::<usize>().max(1);
+        if wedges.len() <= 1 {
+            let color = wedges
+                .first()
+                .and_then(|(p, _)| pop_color_map.get(*p).copied())
+                .unwrap_or("#0891b2");
             svg.push_str(&format!(
-                "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"{:.1}\" fill=\"{}\" fill-opacity=\"0.24\" stroke=\"{}\" stroke-width=\"{}\"/>\n",
-                x,
-                y,
-                r,
-                color,
-                color,
-                if hap.is_cluster_hub { "2.4" } else { "1.4" }
+                "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"{:.1}\" fill=\"{}\" stroke=\"#0f172a\" stroke-width=\"1.1\"/>\n",
+                x, y, r, color
             ));
-            if hap.is_cluster_hub || haplotypes.len() <= 24 || hap.sample_count >= 3 {
-                svg.push_str(&format!(
-                    "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#f8fafc\" font-size=\"8.5\" font-weight=\"700\" text-anchor=\"middle\">{}</text>\n",
-                    x,
-                    y + 3.0,
-                    hap.haplotype_id
-                ));
+        } else {
+            let mut angle = -std::f64::consts::FRAC_PI_2;
+            for (p, cnt) in wedges {
+                let sweep = (cnt as f64 / total_w as f64) * std::f64::consts::TAU;
+                if sweep > 1e-4 {
+                    let color = pop_color_map.get(p).copied().unwrap_or("#0891b2");
+                    let path_d = svg_pie_wedge_path(x, y, r, angle, angle + sweep);
+                    svg.push_str(&format!(
+                        "  <path d=\"{}\" fill=\"{}\" stroke=\"#0f172a\" stroke-width=\"0.9\"/>\n",
+                        path_d, color
+                    ));
+                    angle += sweep;
+                }
             }
+            svg.push_str(&format!(
+                "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"{:.1}\" fill=\"none\" stroke=\"#0f172a\" stroke-width=\"1.1\"/>\n",
+                x, y, r
+            ));
+        }
+
+        let short_id = hap.haplotype_id.trim_start_matches('H');
+        let short_num = short_id.trim_start_matches('0');
+        let label_txt = if short_num.is_empty() {
+            hap.haplotype_id.as_str()
+        } else {
+            short_num
+        };
+        if r >= 9.5 {
+            let fsize = if r >= 12.0 { "9.5" } else { "8.0" };
+            svg.push_str(&format!(
+                "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"2.0\" paint-order=\"stroke\" font-size=\"{}\" font-weight=\"700\" text-anchor=\"middle\">{}</text>\n",
+                x,
+                y + 3.2,
+                fsize,
+                xml_escape_haplo(label_txt)
+            ));
+        } else if n_haps <= 60 || hap.is_cluster_hub || hap.sample_count >= 2 {
+            // Pick the compass angle maximizing clearance from neighboring nodes
+            let mut best_lx = x + r + 3.0;
+            let mut best_ly = y + 3.0;
+            let mut best_clear = -1.0_f64;
+            for step in 0..8 {
+                let ang = (step as f64) * std::f64::consts::FRAC_PI_4;
+                let tx = x + (r + 7.5) * ang.cos();
+                let ty = y + (r + 7.5) * ang.sin();
+                if tx < plot_x0 + 6.0 || tx > plot_x1 - 6.0 || ty < plot_y0 + 8.0 || ty > plot_y1 - 4.0 {
+                    continue;
+                }
+                let min_d = pos
+                    .iter()
+                    .enumerate()
+                    .filter(|&(j, _)| j != i)
+                    .map(|(j, &(ox, oy))| ((tx - ox).hypot(ty - oy)) - radii[j])
+                    .fold(f64::MAX, f64::min);
+                if min_d > best_clear {
+                    best_clear = min_d;
+                    best_lx = tx;
+                    best_ly = ty + 3.0;
+                }
+            }
+            svg.push_str(&format!(
+                "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" stroke=\"#ffffff\" stroke-width=\"2.4\" paint-order=\"stroke\" font-size=\"8.5\" font-weight=\"700\" text-anchor=\"middle\">{}</text>\n",
+                best_lx,
+                best_ly,
+                xml_escape_haplo(label_txt)
+            ));
         }
     }
 
-    // Legend on right side
-    let lx = 685.0;
-    let mut ly = 74.0;
-    svg.push_str(&format!(
-        "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#cbd5e1\" font-size=\"9.5\" font-weight=\"700\">CLUSTERS (MSN)</text>\n",
-        lx, ly
-    ));
-    ly += 16.0;
-    for (c_idx, cl) in clusters.iter().enumerate() {
-        let color = palette[c_idx % palette.len()];
+    // 7b. Draw cluster labels on top with white halo so bridge lines never obscure them
+    for (lx, ly, lbl) in cluster_labels {
         svg.push_str(&format!(
-            "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"5\" fill=\"{}\" stroke=\"{}\" stroke-width=\"1.5\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#e2e8f0\" font-size=\"8.5\">{} (n={})</text>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#94a3b8\" font-size=\"7.5\">Hub {} • {} haps</text>\n",
-            lx + 6.0,
+            "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" stroke=\"#ffffff\" stroke-width=\"3.5\" paint-order=\"stroke\" font-size=\"11\" font-weight=\"700\" text-anchor=\"middle\">{}</text>\n",
+            lx,
+            ly,
+            xml_escape_haplo(&lbl)
+        ));
+    }
+
+    // 8. Left-side Population/Taxon Legend Box + Nested Sample-Size Scale
+    let shown_pops = pop_list.len().min(18);
+    let legend_h = 34.0 + (shown_pops as f64) * 18.0;
+    svg.push_str(&format!(
+        "  <rect x=\"14\" y=\"16\" width=\"172\" height=\"{:.1}\" rx=\"4\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"1.0\"/>\n\
+         <text x=\"24\" y=\"33\" fill=\"#0f172a\" font-size=\"10.5\" font-weight=\"700\">POPULATIONS / TAXA</text>\n",
+        legend_h
+    ));
+    let mut ly = 50.0;
+    for (pop_name, cnt) in pop_list.iter().take(18) {
+        let color = pop_color_map.get(pop_name).copied().unwrap_or("#0891b2");
+        let trunc = if pop_name.len() > 19 {
+            format!("{}…", &pop_name[..18])
+        } else {
+            pop_name.clone()
+        };
+        svg.push_str(&format!(
+            "  <circle cx=\"28\" cy=\"{:.1}\" r=\"5.5\" fill=\"{}\" stroke=\"#0f172a\" stroke-width=\"0.8\"/>\n  <text x=\"39\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"9\">{} ({})</text>\n",
             ly - 3.0,
             color,
-            color,
-            lx + 16.0,
             ly,
-            cl.cluster_id,
-            cl.total_samples,
-            lx + 16.0,
-            ly + 10.0,
-            cl.hub_haplotype_id,
-            cl.unique_haplotypes
+            xml_escape_haplo(&trunc),
+            cnt
         ));
-        ly += 26.0;
+        ly += 18.0;
+    }
+
+    // Nested sample-size scale (`n = 1, 5, 10, 20`) with non-overlapping top-tangent leader ticks
+    let max_sr = (4.8 + (20.0_f64).sqrt() * 5.0).clamp(6.0, 42.0);
+    let scale_bottom = (30.0 + legend_h + 2.0 * max_sr + 18.0).min(height - 16.0);
+    let scale_cx = 72.0;
+    svg.push_str(&format!(
+        "  <text x=\"18\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"10\" font-weight=\"700\">Sample Size Scale</text>\n",
+        scale_bottom - 2.0 * max_sr - 8.0
+    ));
+    for &sample_n in &[20usize, 10, 5, 1] {
+        let sr = (4.8 + (sample_n as f64).sqrt() * 5.0).clamp(6.0, 42.0);
+        let cy_s = scale_bottom - sr;
+        let top_y = scale_bottom - 2.0 * sr;
+        let label_x = scale_cx + max_sr + 10.0;
+        svg.push_str(&format!(
+            "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"{:.1}\" fill=\"none\" stroke=\"#334155\" stroke-width=\"0.9\"/>\n  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#94a3b8\" stroke-width=\"0.7\" stroke-dasharray=\"2,2\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#334155\" font-size=\"8.5\" font-weight=\"600\" text-anchor=\"start\">n = {}</text>\n",
+            scale_cx,
+            cy_s,
+            sr,
+            scale_cx,
+            top_y,
+            label_x - 3.0,
+            top_y,
+            label_x,
+            top_y + 3.0,
+            sample_n
+        ));
     }
 
     svg.push_str("</svg>");
@@ -1261,4 +1740,217 @@ pub fn run_haplotype_cluster_pipeline_agent() -> Result<HaplotypePipelineReport,
         large_dataset_cohort: large_report,
         emergent_synthesis,
     })
+}
+
+/// Computes iterative k-core peeling and Brandes unweighted shortest-path betweenness centrality
+/// across an MSN haplotype graph.
+pub fn compute_haplotype_kcore_and_betweenness(
+    haplotypes: &[HaplotypeNode],
+    msn_edges: &[HaplotypeNetworkEdge],
+) -> (usize, Vec<HaplotypeHubSummary>) {
+    let n = haplotypes.len();
+    if n == 0 {
+        return (0, Vec::new());
+    }
+    let mut id_to_idx = BTreeMap::new();
+    for (idx, h) in haplotypes.iter().enumerate() {
+        id_to_idx.insert(h.haplotype_id.as_str(), idx);
+    }
+
+    let mut adj: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for e in msn_edges {
+        if let (Some(&u), Some(&v)) = (
+            id_to_idx.get(e.source_haplotype.as_str()),
+            id_to_idx.get(e.target_haplotype.as_str()),
+        ) {
+            if u != v {
+                if !adj[u].contains(&v) {
+                    adj[u].push(v);
+                }
+                if !adj[v].contains(&u) {
+                    adj[v].push(u);
+                }
+            }
+        }
+    }
+
+    // Iterative k-core peeling (Batagelj-Zaversnik O(V + E))
+    let mut deg: Vec<usize> = adj.iter().map(|nbrs| nbrs.len()).collect();
+    let mut k_core = vec![0usize; n];
+    let mut removed = vec![false; n];
+    let mut remaining = n;
+    let mut k = 0usize;
+    while remaining > 0 {
+        let min_deg = deg
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !removed[*i])
+            .map(|(_, &d)| d)
+            .min()
+            .unwrap_or(0);
+        if min_deg > k {
+            k = min_deg;
+        }
+        loop {
+            let mut peeled_any = false;
+            for u in 0..n {
+                if !removed[u] && deg[u] <= k {
+                    removed[u] = true;
+                    k_core[u] = k;
+                    remaining -= 1;
+                    peeled_any = true;
+                    for &v in &adj[u] {
+                        if !removed[v] && deg[v] > 0 {
+                            deg[v] -= 1;
+                        }
+                    }
+                }
+            }
+            if !peeled_any {
+                break;
+            }
+        }
+    }
+    let max_k_core = k_core.iter().copied().max().unwrap_or(0);
+
+    // Brandes shortest-path betweenness centrality
+    let mut cb = vec![0.0_f64; n];
+    for s in 0..n {
+        let mut stack: Vec<usize> = Vec::with_capacity(n);
+        let mut pred: Vec<Vec<usize>> = vec![Vec::new(); n];
+        let mut sigma = vec![0.0_f64; n];
+        let mut dist: Vec<isize> = vec![-1; n];
+        sigma[s] = 1.0;
+        dist[s] = 0;
+
+        let mut queue = std::collections::VecDeque::new();
+        queue.push_back(s);
+        while let Some(v) = queue.pop_front() {
+            stack.push(v);
+            for &w in &adj[v] {
+                if dist[w] < 0 {
+                    dist[w] = dist[v] + 1;
+                    queue.push_back(w);
+                }
+                if dist[w] == dist[v] + 1 {
+                    sigma[w] += sigma[v];
+                    pred[w].push(v);
+                }
+            }
+        }
+
+        let mut delta = vec![0.0_f64; n];
+        while let Some(w) = stack.pop() {
+            for &v in &pred[w] {
+                if sigma[w] > 0.0 {
+                    delta[v] += (sigma[v] / sigma[w]) * (1.0 + delta[w]);
+                }
+            }
+            if w != s {
+                cb[w] += delta[w];
+            }
+        }
+    }
+    let norm = if n > 2 {
+        ((n - 1) * (n - 2)) as f64
+    } else {
+        1.0
+    };
+
+    let mut hubs: Vec<HaplotypeHubSummary> = haplotypes
+        .iter()
+        .enumerate()
+        .map(|(i, h)| HaplotypeHubSummary {
+            haplotype_id: h.haplotype_id.clone(),
+            cluster_id: h.cluster_id.clone(),
+            sample_count: h.sample_count,
+            primary_taxon: h.primary_taxon.clone(),
+            degree: adj[i].len(),
+            k_core: k_core[i],
+            brandes_betweenness_cb: round4(cb[i] / norm),
+        })
+        .collect();
+    hubs.sort_by(|a, b| {
+        b.k_core
+            .cmp(&a.k_core)
+            .then_with(|| {
+                b.brandes_betweenness_cb
+                    .partial_cmp(&a.brandes_betweenness_cb)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .then_with(|| b.sample_count.cmp(&a.sample_count))
+            .then_with(|| a.haplotype_id.cmp(&b.haplotype_id))
+    });
+    (max_k_core, hubs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_prealigned_haplotype_clusters_and_kcore_betweenness() {
+        let records = vec![
+            FastaRecord {
+                id: "SEQ1".to_string(),
+                accession: "ACC1".to_string(),
+                taxon: "Taxon A".to_string(),
+                common_name: String::new(),
+                family: "Clade 1".to_string(),
+                gene: "COX1".to_string(),
+                sequence: "ACGTACGTACGTACGT".to_string(),
+                description: "SEQ1".to_string(),
+                cached_from_disk: true,
+            },
+            FastaRecord {
+                id: "SEQ2".to_string(),
+                accession: "ACC2".to_string(),
+                taxon: "Taxon A".to_string(),
+                common_name: String::new(),
+                family: "Clade 1".to_string(),
+                gene: "COX1".to_string(),
+                sequence: "ACGTACGTACGTACGT".to_string(),
+                description: "SEQ2".to_string(),
+                cached_from_disk: true,
+            },
+            FastaRecord {
+                id: "SEQ3".to_string(),
+                accession: "ACC3".to_string(),
+                taxon: "Taxon B".to_string(),
+                common_name: String::new(),
+                family: "Clade 1".to_string(),
+                gene: "COX1".to_string(),
+                sequence: "ACGTACGTACGTACGA".to_string(),
+                description: "SEQ3".to_string(),
+                cached_from_disk: true,
+            },
+            FastaRecord {
+                id: "SEQ4".to_string(),
+                accession: "ACC4".to_string(),
+                taxon: "Taxon C".to_string(),
+                common_name: String::new(),
+                family: "Clade 2".to_string(),
+                gene: "COX1".to_string(),
+                sequence: "ACGTACGTACGTCCGA".to_string(),
+                description: "SEQ4".to_string(),
+                cached_from_disk: true,
+            },
+        ];
+
+        let report = analyze_haplotype_clusters_prealigned(
+            "test-haplo",
+            "Test Prealigned Haplotype Cohort",
+            &records,
+            3,
+        );
+        assert_eq!(report.diversity_metrics.total_sequences_n, 4);
+        assert_eq!(report.diversity_metrics.unique_haplotypes_h, 3);
+        assert!(report.visualizations.svg_vector_network.contains("<svg"));
+        assert!(!report.msn_edges.is_empty());
+
+        let (max_k_core, hubs) =
+            compute_haplotype_kcore_and_betweenness(&report.haplotypes, &report.msn_edges);
+        assert!(max_k_core >= 1);
+        assert_eq!(hubs.len(), 3);
+    }
 }

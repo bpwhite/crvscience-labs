@@ -325,6 +325,32 @@ pub struct SupervisedPdbStructure {
     pub proximal_cys_sg: Option<(f64, f64, f64, usize, f64)>,
 }
 
+fn default_true() -> bool {
+    true
+}
+
+/// Haplotype clustering, diversity metrics, Minimum Spanning Network (MSN),
+/// and k-core / Brandes betweenness hub topology for a supervisor FASTA cohort.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupervisedHaplotypeCohort {
+    pub cohort_id: String,
+    pub cohort_title: String,
+    pub source_fasta_rel_path: String,
+    pub max_cluster_step_threshold: usize,
+    pub total_sequences_n: usize,
+    pub alignment_length_bp: usize,
+    pub unique_haplotypes_h: usize,
+    pub cluster_count: usize,
+    pub msn_edges_count: usize,
+    pub reticulation_edge_count: usize,
+    pub max_k_core: usize,
+    pub diversity_metrics: crate::haplotype::PopulationDiversityMetrics,
+    pub clusters: Vec<crate::haplotype::HaplotypeClusterGroup>,
+    pub top_connector_hubs: Vec<crate::haplotype::HaplotypeHubSummary>,
+    pub svg_rel_path: String,
+    pub dot_rel_path: String,
+}
+
 /// Generated figure artifact entry (`.svg`, `.png`, `.pdf`) tracked by the Run manifest.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneratedFigureArtifact {
@@ -358,6 +384,8 @@ pub struct SupervisorRunManifest {
     pub stage_msa_ms: u128,
     pub stage_runie_phylo_ms: u128,
     pub stage_skyline_pdb_ms: u128,
+    #[serde(default)]
+    pub stage_haplotype_clusters_ms: u128,
     pub stage_figures_tex_ms: u128,
 
     // Stage 1: Downloads, Super-BLAST Validation & Autonomous Loop-Back
@@ -389,6 +417,8 @@ pub struct SupervisorRunManifest {
     pub calibrated_nodes: Vec<SupervisedCalibratedNode>,
     pub gene_family_selection: Vec<SupervisedGeneFamilySelection>,
     pub skyline_cohorts: Vec<SupervisedSkylineCohort>,
+    #[serde(default)]
+    pub haplotype_cohorts: Vec<SupervisedHaplotypeCohort>,
     pub pdb_structures: Vec<SupervisedPdbStructure>,
     pub abba_baba_summary: String,
 
@@ -414,6 +444,8 @@ pub struct SupervisorRunSpec {
     pub enable_quartet_coalescent: bool,
     pub enable_codon_selection: bool,
     pub enable_bayesian_skyline: bool,
+    #[serde(default = "default_true")]
+    pub enable_haplotype_clusters: bool,
     pub enable_pdb_3d_modeling: bool,
     pub generate_figures_and_preprint: bool,
     pub mcmc_generations: usize,
@@ -435,6 +467,7 @@ impl Default for SupervisorRunSpec {
             enable_quartet_coalescent: true,
             enable_codon_selection: true,
             enable_bayesian_skyline: true,
+            enable_haplotype_clusters: true,
             enable_pdb_3d_modeling: true,
             generate_figures_and_preprint: true,
             mcmc_generations: 10_000,
@@ -1755,6 +1788,230 @@ pub fn is_basal_metazoa_study_target(preset_name: Option<&str>, run_id: &str) ->
     preset_name.map(check).unwrap_or(false) || check(run_id)
 }
 
+/// Parses an aligned or unaligned FASTA file into `FastaRecord` items for haplotype clustering.
+fn parse_fasta_records_for_haplotype(path: &Path) -> Result<Vec<crate::fetch::FastaRecord>, String> {
+    let text = fs::read_to_string(path)
+        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    let mut records = Vec::new();
+    let mut cur_id = String::new();
+    let mut cur_species = String::new();
+    let mut cur_lineage = String::new();
+    let mut cur_seq = String::new();
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Some(header) = trimmed.strip_prefix('>') {
+            if !cur_id.is_empty() && !cur_seq.is_empty() {
+                records.push(crate::fetch::FastaRecord {
+                    id: cur_id.clone(),
+                    accession: cur_id.clone(),
+                    taxon: cur_species.clone(),
+                    common_name: String::new(),
+                    family: cur_lineage.clone(),
+                    gene: path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("locus")
+                        .to_string(),
+                    sequence: cur_seq.clone(),
+                    description: format!("{} ({})", cur_species, cur_lineage),
+                    cached_from_disk: true,
+                });
+            }
+            let parts: Vec<&str> = header.split('|').collect();
+            let raw_id = parts[0].split_whitespace().next().unwrap_or("seq").trim();
+            cur_id = raw_id.to_string();
+            cur_species = parts
+                .get(1)
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| {
+                    header
+                        .split_whitespace()
+                        .skip(1)
+                        .take(2)
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                });
+            if cur_species.is_empty() {
+                cur_species = cur_id.clone();
+            }
+            cur_lineage = parts
+                .get(2)
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| "Supervisor Cohort".to_string());
+            cur_seq.clear();
+        } else {
+            cur_seq.push_str(trimmed);
+        }
+    }
+    if !cur_id.is_empty() && !cur_seq.is_empty() {
+        records.push(crate::fetch::FastaRecord {
+            id: cur_id.clone(),
+            accession: cur_id,
+            taxon: cur_species.clone(),
+            common_name: String::new(),
+            family: cur_lineage.clone(),
+            gene: path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("locus")
+                .to_string(),
+            sequence: cur_seq,
+            description: format!("{} ({})", cur_species, cur_lineage),
+            cached_from_disk: true,
+        });
+    }
+    Ok(records)
+}
+
+/// Executes the dedicated Stage 3C Haplotype Clustering, Minimum Spanning Network (MSN),
+/// and k-core / Brandes betweenness hub topology analysis across the run's aligned FASTA cohorts.
+pub fn run_supervisor_haplotype_stage(
+    manifest: &mut SupervisorRunManifest,
+    run_dir: &Path,
+    spec: &SupervisorRunSpec,
+) -> Result<(), String> {
+    if !spec.enable_haplotype_clusters {
+        manifest.stage_haplotype_clusters_ms = 0;
+        manifest.haplotype_cohorts.clear();
+        return Ok(());
+    }
+
+    let t_hap = Instant::now();
+    let figures_dir = run_dir.join("figures");
+    fs::create_dir_all(&figures_dir)
+        .map_err(|e| format!("Failed to create {}: {}", figures_dir.display(), e))?;
+
+    let mut fasta_targets: Vec<(String, PathBuf)> = Vec::new();
+    if !manifest.aligned_fasta_rel_path.is_empty() {
+        let primary_path = run_dir.join(&manifest.aligned_fasta_rel_path);
+        if primary_path.is_file() {
+            fasta_targets.push((manifest.aligned_fasta_rel_path.clone(), primary_path));
+        }
+    }
+
+    let align_dir = run_dir.join("alignments");
+    if align_dir.is_dir() {
+        let mut extra_paths = Vec::new();
+        if let Ok(entries) = fs::read_dir(&align_dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.extension().and_then(|s| s.to_str()) == Some("fasta") {
+                    let rel = format!(
+                        "alignments/{}",
+                        p.file_name().and_then(|s| s.to_str()).unwrap_or("locus.fasta")
+                    );
+                    if !fasta_targets.iter().any(|(r, _)| r == &rel) {
+                        extra_paths.push((rel, p));
+                    }
+                }
+            }
+        }
+        extra_paths.sort_by(|a, b| a.0.cmp(&b.0));
+        fasta_targets.extend(extra_paths);
+    }
+
+    let mut cohorts = Vec::new();
+    for (rel_path, full_path) in fasta_targets {
+        let records = match parse_fasta_records_for_haplotype(&full_path) {
+            Ok(r) if r.len() >= 3 => r,
+            _ => continue,
+        };
+        let stem = full_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("cohort");
+        let cohort_id: String = stem
+            .chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' {
+                    c.to_ascii_lowercase()
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        let cohort_title = format!(
+            "Haplotype Cluster & MSN Topology ({}, n = {})",
+            stem,
+            records.len()
+        );
+        let max_step_threshold = 3usize;
+        let report = crate::haplotype::analyze_haplotype_clusters_prealigned(
+            &cohort_id,
+            &cohort_title,
+            &records,
+            max_step_threshold,
+        );
+        let (max_k_core, hubs) = crate::haplotype::compute_haplotype_kcore_and_betweenness(
+            &report.haplotypes,
+            &report.msn_edges,
+        );
+        let reticulation_edge_count = report
+            .msn_edges
+            .iter()
+            .filter(|e| e.edge_type == "reticulation-loop")
+            .count();
+
+        let svg_rel = format!("figures/haplo-{}.svg", cohort_id);
+        let dot_rel = format!("figures/haplo-{}.dot", cohort_id);
+        let _ = fs::write(
+            run_dir.join(&svg_rel),
+            &report.visualizations.svg_vector_network,
+        );
+        let _ = fs::write(
+            run_dir.join(&dot_rel),
+            &report.visualizations.graphviz_dot_network,
+        );
+
+        cohorts.push(SupervisedHaplotypeCohort {
+            cohort_id,
+            cohort_title,
+            source_fasta_rel_path: rel_path,
+            max_cluster_step_threshold: max_step_threshold,
+            total_sequences_n: report.diversity_metrics.total_sequences_n,
+            alignment_length_bp: report.diversity_metrics.alignment_length_bp,
+            unique_haplotypes_h: report.diversity_metrics.unique_haplotypes_h,
+            cluster_count: report.clusters.len(),
+            msn_edges_count: report.msn_edges.len(),
+            reticulation_edge_count,
+            max_k_core,
+            diversity_metrics: report.diversity_metrics,
+            clusters: report.clusters,
+            top_connector_hubs: hubs.into_iter().take(8).collect(),
+            svg_rel_path: svg_rel,
+            dot_rel_path: dot_rel,
+        });
+    }
+
+    manifest.haplotype_cohorts = cohorts;
+    manifest.stage_haplotype_clusters_ms = t_hap.elapsed().as_millis().max(1);
+    let total_haplotypes: usize = manifest
+        .haplotype_cohorts
+        .iter()
+        .map(|c| c.unique_haplotypes_h)
+        .sum();
+    let best_k_core = manifest
+        .haplotype_cohorts
+        .iter()
+        .map(|c| c.max_k_core)
+        .max()
+        .unwrap_or(0);
+    eprintln!(
+        "[bio-suite-supervisor] Stage Haplotype Clusters: {} cohorts, {} total unique haplotypes, max k-core = {}, elapsed {} ms",
+        manifest.haplotype_cohorts.len(),
+        total_haplotypes,
+        best_k_core,
+        manifest.stage_haplotype_clusters_ms
+    );
+    Ok(())
+}
+
 /// Master entry point for `bio-suite-supervisor`: executes the entire multi-threaded workflow
 /// (Fetch -> Super-BLAST Validation & Autonomous Loop-Back -> Full-Length Alignment -> 32-Chain RuNIE
 /// Factorial Analysis -> Phylogeny/Chronogram/MSC/Codon/Skyline/PDB -> Locked-Format Figures & Preprint `.tex`),
@@ -1769,6 +2026,7 @@ pub fn run_autonomous_supervisor(
         let run_dir = runs_root_dir.join(&spec.run_id);
         let (mut manifest, report) =
             crate::supervisor_nematoda::execute_nematoda_supervisor_study(spec, cache, runs_root_dir)?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
         let report_path = run_dir.join("multi-compartment-report.json");
         if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
             let _ = fs::write(&report_path, rep_json);
@@ -1810,6 +2068,7 @@ pub fn run_autonomous_supervisor(
         let run_dir = runs_root_dir.join(&spec.run_id);
         let (mut manifest, report) =
             crate::supervisor_isoptera::execute_isoptera_supervisor_study(spec, cache, runs_root_dir)?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
         let report_path = run_dir.join("multi-compartment-report.json");
         if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
             let _ = fs::write(&report_path, rep_json);
@@ -1851,6 +2110,7 @@ pub fn run_autonomous_supervisor(
         let run_dir = runs_root_dir.join(&spec.run_id);
         let (mut manifest, report) =
             crate::supervisor_nudibranchs::execute_nudibranchs_supervisor_study(spec, cache, runs_root_dir)?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
         let report_path = run_dir.join("multi-compartment-report.json");
         if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
             let _ = fs::write(&report_path, rep_json);
@@ -1892,6 +2152,7 @@ pub fn run_autonomous_supervisor(
         let run_dir = runs_root_dir.join(&spec.run_id);
         let (mut manifest, report) =
             crate::supervisor_snails::execute_snails_supervisor_study(spec, cache, runs_root_dir)?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
         let report_path = run_dir.join("multi-compartment-report.json");
         if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
             let _ = fs::write(&report_path, rep_json);
@@ -1933,6 +2194,7 @@ pub fn run_autonomous_supervisor(
         let run_dir = runs_root_dir.join(&spec.run_id);
         let (mut manifest, report) =
             crate::supervisor_basal_metazoa::execute_basal_metazoa_supervisor_study(spec, cache, runs_root_dir)?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
         let report_path = run_dir.join("multi-compartment-report.json");
         if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
             let _ = fs::write(&report_path, rep_json);
@@ -1974,6 +2236,7 @@ pub fn run_autonomous_supervisor(
         let run_dir = runs_root_dir.join(&spec.run_id);
         let (mut manifest, report) =
             crate::supervisor_study::execute_bemisia_supervisor_study(spec, cache, runs_root_dir)?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
         let report_path = run_dir.join("multi-compartment-report.json");
         if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
             let _ = fs::write(&report_path, rep_json);
@@ -2828,6 +3091,7 @@ pub fn run_autonomous_supervisor(
         stage_msa_ms,
         stage_runie_phylo_ms,
         stage_skyline_pdb_ms,
+        stage_haplotype_clusters_ms: 0,
         stage_figures_tex_ms: 0,
         initial_requested_count,
         final_cleaned_cohort_count: cleaned_fasta_records.len(),
@@ -2853,6 +3117,7 @@ pub fn run_autonomous_supervisor(
         calibrated_nodes,
         gene_family_selection,
         skyline_cohorts,
+        haplotype_cohorts: Vec::new(),
         pdb_structures: vec![pdb_structure],
         abba_baba_summary: "ABBA-BABA Patterson's D = +0.284 (Z = 6.42, p = 1.36e-10) confirming autosomal introgression between Anopheles gambiae s.s. and An. coluzzii across the 2La paracentric inversion while X-linked rDNA/autosomal barrier loci remain strictly monophyletic.".to_string(),
         figures: Vec::new(),
@@ -2860,6 +3125,8 @@ pub fn run_autonomous_supervisor(
         html_manuscript_rel_path: "manuscript/single-column-manuscript.html".to_string(),
         pdf_preprint_rel_path: format!("manuscript/{}-preprint.pdf", spec.run_id),
     };
+
+    run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
 
     // =========================================================================
     // STAGE 4: LOCKED-FORMAT FIGURE GENERATOR (.SVG + .PNG + .PDF) & PREPRINT (.TEX)
@@ -3033,6 +3300,9 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             }
             "--no-loopback" => {
                 spec.enable_autonomous_loopback = false;
+            }
+            "--no-haplotype-clusters" => {
+                spec.enable_haplotype_clusters = false;
             }
             "--no-figures" => {
                 spec.generate_figures_and_preprint = false;

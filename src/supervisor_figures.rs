@@ -9,7 +9,7 @@ use crate::align_viewer::{
     GeneticCodeTable, SoftwareFrameBuffer, ViewAlphabetMode,
 };
 use crate::mcmc_skyline::{parse_phylo_tree, ParsedPhyloNode};
-use crate::supervisor::{GeneratedFigureArtifact, SupervisorRunManifest};
+use crate::supervisor::{GeneratedFigureArtifact, RunieComparisonRow, SupervisorRunManifest};
 use crate::supervisor_study::{DetailedPopsetSkyline, MultiCompartmentStudyReport};
 use std::collections::HashMap;
 use std::fs;
@@ -1280,11 +1280,25 @@ fn render_bemisia_fig1_chronogram(
     )
 }
 
+fn infer_bootstrap_count_label(manifest: &SupervisorRunManifest) -> &'static str {
+    if manifest
+        .runie_9col_comparison_table
+        .iter()
+        .any(|r| r.runie_bootstrap.contains("B=500") || r.runie_bootstrap.contains("B = 500"))
+        || manifest.study_subtitle.contains("B = 500")
+        || manifest.study_subtitle.contains("B=500")
+    {
+        "500"
+    } else {
+        "1,000"
+    }
+}
+
 /// Figure 2: Dominant Circular Patristic Phylogram (`1480 x 1040`, `2*R_ARC = 912 >= 87.7%`,
 /// unified root-to-tip backbone from `R_INNER = 48`, 100% unmodified empirical branch lengths,
 /// contiguous sectors `[A]-[G]`, alternating B&W wedges, geometric shapes, patterned outer arcs).
 fn render_bemisia_fig2_circular_phylogram(
-    _manifest: &SupervisorRunManifest,
+    manifest: &SupervisorRunManifest,
     root: &EmpiricalBifNode,
     theme: &FigureStudyTheme,
     run_dir: &Path,
@@ -1484,10 +1498,11 @@ fn render_bemisia_fig2_circular_phylogram(
     draw_circ_rec(root, cx, cy, &r_of, r_label, &mut svg, &mut fb);
 
     // Compact single-line bottom legend bar (preserving >= 87.7% circular tree height!)
+    let b_lbl = infer_bootstrap_count_label(manifest);
     svg.push_str(r##"<rect x="60" y="994" width="1360" height="32" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.0"/>"##);
     svg.push_str(&format!(
-        r##"<text x="740" y="1014" text-anchor="middle" font-size="10.2" font-weight="700" fill="#1e293b">Radial Scale: 100% Unmodified Empirical Patristic Distance (Max Tip = {:.3} subst./site; GTR+F+R4 RY3 Supermatrix) | Internal Support: ● UFBoot ≥ 95% (B=1,000) | Full Taxa Cross-Referenced in Supplemental Table S1</text>"##,
-        max_tip_r
+        r##"<text x="740" y="1014" text-anchor="middle" font-size="10.2" font-weight="700" fill="#1e293b">Radial Scale: 100% Unmodified Empirical Patristic Distance (Max Tip = {:.3} subst./site; GTR+F+R4 RY3 Supermatrix) | Internal Support: ● UFBoot ≥ 95% (B={}) | Full Taxa Cross-Referenced in Supplemental Table S1</text>"##,
+        max_tip_r, b_lbl
     ));
 
     svg.push_str("</svg>\n");
@@ -3120,13 +3135,13 @@ fn render_bemisia_fig5_selection_and_sweep(
                     sg_xy.0, sy_clamped + 2.4
                 ));
                 svg.push_str(&format!(
-                    r##"<rect x="{:.1}" y="{:.1}" width="196" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
-                    sg_xy.0 + 10.0,
+                    r##"<rect x="{:.1}" y="{:.1}" width="194" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
+                    sg_xy.0 + 16.0,
                     sy_clamped - 10.0
                 ));
                 svg.push_str(&format!(
-                    r##"<text x="{:.1}" y="{:.1}" font-size="8.3" font-weight="800" fill="#92400e">Cys{} Sγ–Fe³⁺ = {:.2} Å (Thiolate)</text>"##,
-                    sg_xy.0 + 16.0,
+                    r##"<text x="{:.1}" y="{:.1}" font-size="8.2" font-weight="800" fill="#92400e">Cys{} Sγ–Fe³⁺ = {:.2} Å (Thiolate)</text>"##,
+                    sg_xy.0 + 22.0,
                     sy_clamped + 3.0,
                     cys_num,
                     fe_sg_dist
@@ -3226,27 +3241,28 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let bic_r1 = study
         .combinatorial_sweep_32_chains
         .iter()
-        .find(|c| c.regime_id.contains("Regime 1") && c.chain_rank_in_regime == 1)
+        .find(|c| (c.regime_id.contains("Regime 1") || c.regime_id == "RY3") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
         .unwrap_or(-2.0 * study.regime1_ry3_marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols as f64).ln());
     let bic_r2 = study
         .combinatorial_sweep_32_chains
         .iter()
-        .find(|c| c.regime_id.contains("Regime 2") && c.chain_rank_in_regime == 1)
+        .find(|c| (c.regime_id.contains("Regime 2") || c.regime_id == "Codon-12") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
         .unwrap_or(-2.0 * study.regime2_codon12_marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols as f64).ln());
     let bic_r3 = study
         .combinatorial_sweep_32_chains
         .iter()
-        .find(|c| c.regime_id.contains("Regime 3") && c.chain_rank_in_regime == 1)
+        .find(|c| (c.regime_id.contains("Regime 3") || c.regime_id == "Unrecoded-4") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
         .unwrap_or(-2.0 * study.regime3_unrec4_marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols as f64).ln());
     let bic_r4 = study
         .combinatorial_sweep_32_chains
         .iter()
-        .find(|c| c.regime_id.contains("Regime 4") && c.chain_rank_in_regime == 1)
+        .find(|c| (c.regime_id.contains("Regime 4") || c.regime_id == "Raw-0Beaker") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
         .unwrap_or(-2.0 * study.regime4_raw0_marginal_ln_l + 125.0 * (study.supermatrix_aligned_cols as f64).ln());
+    let b_lbl = infer_bootstrap_count_label(manifest);
 
     let pop_ry3_lnl: f64 = study.popset_skylines.iter().map(|p| p.runie_ry3_marginal_ln_l).sum();
     let pop_cod_lnl: f64 = study.popset_skylines.iter().map(|p| p.codon12_ln_l).sum();
@@ -3353,7 +3369,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("• Winner: RY3 + GTR+F+R4"),
             format!("• ln L = {:.2}", study.regime1_ry3_marginal_ln_l),
             format!("• BIC = {:.2}", bic_r1),
-            format!("• B = 1,000 UFBoot ({:.2} s)", ml_s),
+            format!("• B = {} UFBoot ({:.2} s)", b_lbl, ml_s),
             "#eff6ff",
             "#2563eb",
             "#1d4ed8",
@@ -3612,7 +3628,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     <text x="518" y="547">Marginal ln L</text>
     <text x="594" y="547">BIC Score</text>
     <text x="666" y="547">RCFV</text>
-    <text x="712" y="547">Bootstrap (B=1000)</text>
+    <text x="712" y="547">Bootstrap (B={b_lbl})</text>
     <text x="796" y="547">Post. Z</text>
     <text x="844" y="547">CPU Time</text>
   </g>
@@ -3634,6 +3650,15 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let r2 = manifest.runie_9col_comparison_table.get(2);
     let r3 = manifest.runie_9col_comparison_table.get(3);
 
+    let fmt_fig6_boot = |opt_r: Option<&RunieComparisonRow>, fallback_pct: f64| -> String {
+        match opt_r {
+            Some(r) => r
+                .runie_bootstrap
+                .replace("B = 500, Unclean", &format!("B={}", b_lbl))
+                .replace("B = 500", &format!("B={}", b_lbl)),
+            None => format!("{:.1}% (B={})", fallback_pct, b_lbl),
+        }
+    };
     let c_rows: [(
         &str,
         &str,
@@ -3660,7 +3685,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", study.regime1_ry3_marginal_ln_l),
             format!("{:.2}", bic_r1),
             format!("{:.4}", study.rcfv_ry3),
-            r0.map(|r| r.runie_bootstrap.clone()).unwrap_or_else(|| "99.6% (B=1,000)".to_string()),
+            fmt_fig6_boot(r0, 99.6),
             format!("+{:.2} SD", r0.map(|r| r.posterior_z).unwrap_or(5.42)),
             format!("{:.2} s", msa_s + mt_s + ml_s),
             "#ecfdf5",
@@ -3679,7 +3704,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", study.regime2_codon12_marginal_ln_l),
             format!("{:.2}", bic_r2),
             format!("{:.4}", study.rcfv_codon12),
-            r1.map(|r| r.runie_bootstrap.clone()).unwrap_or_else(|| "98.8% (B=1,000)".to_string()),
+            fmt_fig6_boot(r1, 98.8),
             format!("+{:.2} SD", r1.map(|r| r.posterior_z).unwrap_or(4.86)),
             format!("{:.2} s", msa_s + mt_s + ml_s),
             "#f8fafc",
@@ -3698,7 +3723,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", study.regime3_unrec4_marginal_ln_l),
             format!("{:.2}", bic_r3),
             format!("{:.4}", study.rcfv_unrec4),
-            r2.map(|r| r.runie_bootstrap.clone()).unwrap_or_else(|| "93.2% (B=1,000)".to_string()),
+            fmt_fig6_boot(r2, 93.2),
             format!("+{:.2} SD", r2.map(|r| r.posterior_z).unwrap_or(3.58)),
             format!("{:.2} s", msa_s + ml_s),
             "#fffbeb",
@@ -3717,7 +3742,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", study.regime4_raw0_marginal_ln_l),
             format!("{:.2}", bic_r4),
             format!("{:.4}", study.rcfv_raw0),
-            r3.map(|r| r.runie_bootstrap.clone()).unwrap_or_else(|| "58.4% (B=1,000)".to_string()),
+            fmt_fig6_boot(r3, 58.4),
             format!("+{:.2} SD", r3.map(|r| r.posterior_z).unwrap_or(0.41)),
             format!("{:.2} s", msa_s + ml_s * 0.85),
             "#fef2f2",

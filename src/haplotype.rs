@@ -1284,6 +1284,7 @@ fn render_standalone_svg_haplotype_network(
     let skip_singleton_hulls = clusters.len() > 10;
     let plot_cy = (plot_y0 + plot_y1) * 0.5;
     let mut cluster_labels: Vec<(f64, f64, String)> = Vec::new();
+    let mut drawn_hull_num = 0usize;
 
     for (c_idx, cl) in clusters.iter().enumerate() {
         if skip_singleton_hulls && cl.unique_haplotypes < 2 {
@@ -1328,8 +1329,9 @@ fn render_standalone_svg_haplotype_network(
                 "  <polygon points=\"{}\" fill=\"#fefce8\" fill-opacity=\"0.78\" stroke=\"#334155\" stroke-width=\"1.2\" stroke-dasharray=\"5,3\" stroke-linejoin=\"round\"/>\n",
                 pts_str
             ));
-            let rom = roman_numeral(c_idx + 1);
-            let dom = cl.dominant_population.chars().take(22).collect::<String>();
+            drawn_hull_num += 1;
+            let rom = roman_numeral(drawn_hull_num);
+            let dom = cl.dominant_population.chars().take(26).collect::<String>();
             let mean_y = if cnt_c > 0 { sum_y / cnt_c as f64 } else { plot_cy };
             let use_bottom = mean_y > plot_cy + 40.0 && max_y + 16.0 < height - 12.0;
             let (lx, ly) = if use_bottom {
@@ -1338,7 +1340,7 @@ fn render_standalone_svg_haplotype_network(
                 (top_x, (min_y - 6.0).max(plot_y0 - 2.0))
             };
             cluster_labels.push((
-                lx.clamp(plot_x0 + 68.0, plot_x1 - 68.0),
+                lx.clamp(plot_x0 + 72.0, plot_x1 - 72.0),
                 ly,
                 format!("Cluster {} ({})", rom, dom),
             ));
@@ -1346,6 +1348,7 @@ fn render_standalone_svg_haplotype_network(
     }
 
     // 6. Render MSN edges + intermediate mutational-step dots / step badges
+    let mut placed_step_badges: Vec<(f64, f64)> = Vec::new();
     for edge in msn_edges {
         if let (Some(&ui), Some(&vi)) = (
             hap_idx_by_id.get(edge.source_haplotype.as_str()),
@@ -1399,15 +1402,43 @@ fn render_standalone_svg_haplotype_network(
                 }
             } else if steps > 6 {
                 let mid = (p_start + p_end) * 0.5;
-                let mx = x1 + ux * mid;
-                let my = y1 + uy * mid;
+                let base_mx = x1 + ux * mid;
+                let base_my = y1 + uy * mid;
+                let nx_p = -uy;
+                let ny_p = ux;
+                let mut best_mx = base_mx.clamp(plot_x0 + 18.0, plot_x1 - 18.0);
+                let mut best_my = base_my.clamp(plot_y0 + 10.0, plot_y1 - 10.0);
+                let mut best_score = f64::NEG_INFINITY;
+                for &off in &[0.0_f64, 11.0, -11.0, 19.0, -19.0] {
+                    let cx_p = (base_mx + nx_p * off).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
+                    let cy_p = (base_my + ny_p * off).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
+                    let node_clr = pos
+                        .iter()
+                        .enumerate()
+                        .map(|(k, &(px, py))| (cx_p - px).hypot(cy_p - py) - (radii[k] + 10.0))
+                        .fold(f64::MAX, f64::min);
+                    let badge_clr = placed_step_badges
+                        .iter()
+                        .map(|&(bx, by)| ((cx_p - bx).abs() - 26.0).max((cy_p - by).abs() - 14.0))
+                        .fold(f64::MAX, f64::min);
+                    let sc = node_clr.min(badge_clr) - off.abs() * 0.05;
+                    if sc > best_score {
+                        best_score = sc;
+                        best_mx = cx_p;
+                        best_my = cy_p;
+                    }
+                    if node_clr >= 2.0 && badge_clr >= 2.0 {
+                        break;
+                    }
+                }
+                placed_step_badges.push((best_mx, best_my));
                 svg.push_str(&format!(
                     "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"26\" height=\"13\" rx=\"3\" fill=\"#ffffff\" fill-opacity=\"0.92\" stroke=\"{}\" stroke-width=\"0.7\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\" font-weight=\"600\" text-anchor=\"middle\">({})</text>\n",
-                    mx - 13.0,
-                    my - 6.5,
+                    best_mx - 13.0,
+                    best_my - 6.5,
                     stroke,
-                    mx,
-                    my + 3.0,
+                    best_mx,
+                    best_my + 3.0,
                     steps
                 ));
             }
@@ -1507,7 +1538,38 @@ fn render_standalone_svg_haplotype_network(
         }
     }
 
-    // 7b. Draw cluster labels on top with white halo so bridge lines never obscure them
+    // 7b. Collision-repel cluster labels against each other & haplotype nodes, then draw on top with white halo
+    for _ in 0..40 {
+        let m = cluster_labels.len();
+        for a in 0..m {
+            for b in (a + 1)..m {
+                let dx = cluster_labels[a].0 - cluster_labels[b].0;
+                let dy = cluster_labels[a].1 - cluster_labels[b].1;
+                if dx.abs() < 125.0 && dy.abs() < 16.0 {
+                    let push_y = if dy >= 0.0 { 2.2 } else { -2.2 };
+                    let push_x = if dx >= 0.0 { 1.4 } else { -1.4 };
+                    cluster_labels[a].1 += push_y;
+                    cluster_labels[b].1 -= push_y;
+                    cluster_labels[a].0 += push_x;
+                    cluster_labels[b].0 -= push_x;
+                }
+            }
+        }
+        for lbl_pos in &mut cluster_labels {
+            for (k, &(px, py)) in pos.iter().enumerate() {
+                let dx = lbl_pos.0 - px;
+                let dy = lbl_pos.1 - py;
+                let d = dx.hypot(dy).max(1e-3);
+                let min_clr = radii[k] + 13.0;
+                if d < min_clr {
+                    lbl_pos.0 += (dx / d) * 2.4;
+                    lbl_pos.1 += (dy / d) * 2.4;
+                }
+            }
+            lbl_pos.0 = lbl_pos.0.clamp(plot_x0 + 72.0, plot_x1 - 72.0);
+            lbl_pos.1 = lbl_pos.1.clamp(plot_y0 - 4.0, height - 10.0);
+        }
+    }
     for (lx, ly, lbl) in cluster_labels {
         svg.push_str(&format!(
             "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" stroke=\"#ffffff\" stroke-width=\"3.5\" paint-order=\"stroke\" font-size=\"11\" font-weight=\"700\" text-anchor=\"middle\">{}</text>\n",
@@ -1521,20 +1583,21 @@ fn render_standalone_svg_haplotype_network(
     let shown_pops = pop_list.len().min(18);
     let legend_h = 34.0 + (shown_pops as f64) * 18.0;
     svg.push_str(&format!(
-        "  <rect x=\"14\" y=\"16\" width=\"172\" height=\"{:.1}\" rx=\"4\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"1.0\"/>\n\
+        "  <rect x=\"14\" y=\"16\" width=\"182\" height=\"{:.1}\" rx=\"4\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"1.0\"/>\n\
          <text x=\"24\" y=\"33\" fill=\"#0f172a\" font-size=\"10.5\" font-weight=\"700\">POPULATIONS / TAXA</text>\n",
         legend_h
     ));
     let mut ly = 50.0;
     for (pop_name, cnt) in pop_list.iter().take(18) {
         let color = pop_color_map.get(pop_name).copied().unwrap_or("#0891b2");
-        let trunc = if pop_name.len() > 19 {
-            format!("{}…", &pop_name[..18])
+        let char_cnt = pop_name.chars().count();
+        let trunc = if char_cnt > 24 {
+            format!("{}…", pop_name.chars().take(23).collect::<String>())
         } else {
             pop_name.clone()
         };
         svg.push_str(&format!(
-            "  <circle cx=\"28\" cy=\"{:.1}\" r=\"5.5\" fill=\"{}\" stroke=\"#0f172a\" stroke-width=\"0.8\"/>\n  <text x=\"39\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"9\">{} ({})</text>\n",
+            "  <circle cx=\"28\" cy=\"{:.1}\" r=\"5.5\" fill=\"{}\" stroke=\"#0f172a\" stroke-width=\"0.8\"/>\n  <text x=\"39\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.7\">{} ({})</text>\n",
             ly - 3.0,
             color,
             ly,

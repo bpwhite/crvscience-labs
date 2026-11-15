@@ -1570,7 +1570,8 @@ pub fn optimize_m2a_and_beb(
 
     let mut p2 = (1.0 - p0 - p1).max(0.0);
     let (final_lnl, neb_l0, neb_l1, neb_l2) = eval_m2a(kappa, p0, p1, w0, w2, scale);
-    if final_lnl <= m1a_lnl + 1e-3 || p2 < 1e-4 {
+    let m2a_collapsed_to_null = final_lnl <= m1a_lnl + 1e-3 || p2 < 1e-4;
+    if m2a_collapsed_to_null {
         best_lnl = m1a_lnl;
         kappa = m1a_kappa;
         p0 = m1a_p0;
@@ -1689,8 +1690,13 @@ pub fn optimize_m2a_and_beb(
         let pr0 = c0 / denom;
         let pr1 = c1 / denom;
         let pr2 = c2 / denom;
-        pat_neb_p2[p_idx] = pr2;
-        pat_neb_mean_w[p_idx] = pr0 * w0 + pr1 * 1.0 + pr2 * w2;
+        if m2a_collapsed_to_null {
+            pat_neb_p2[p_idx] = 0.0;
+            pat_neb_mean_w[p_idx] = (pr0 * w0 + (pr1 + pr2) * 1.0).min(1.0);
+        } else {
+            pat_neb_p2[p_idx] = pr2;
+            pat_neb_mean_w[p_idx] = pr0 * w0 + pr1 * 1.0 + pr2 * w2;
+        }
 
         // BEB integrated over the 10,000-cell 4D prior grid
         let mut beb_pr0_w0 = [0.0f64; 10];
@@ -1731,9 +1737,15 @@ pub fn optimize_m2a_and_beb(
             ew2 += beb_pr2_w2[jw2] * w2_grid[jw2] * w2_grid[jw2];
         }
         let var_w = (ew2 - ew * ew).max(0.0);
-        pat_beb_p2[p_idx] = beb_p2.clamp(0.0, 1.0);
-        pat_beb_mean_w[p_idx] = ew;
-        pat_beb_se_w[p_idx] = var_w.sqrt();
+        if m2a_collapsed_to_null {
+            pat_beb_p2[p_idx] = 0.0;
+            pat_beb_mean_w[p_idx] = ew.min(1.0);
+            pat_beb_se_w[p_idx] = var_w.sqrt();
+        } else {
+            pat_beb_p2[p_idx] = beb_p2.clamp(0.0, 1.0);
+            pat_beb_mean_w[p_idx] = ew;
+            pat_beb_se_w[p_idx] = var_w.sqrt();
+        }
     }
 
     let mut neb_p95 = 0usize;

@@ -427,3 +427,194 @@ pub fn parse_single_fasta(raw: &str) -> Option<(String, String)> {
         Some((header, seq))
     }
 }
+
+/// Sequence character normalization mode for shared multi-FASTA parsing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FastaSeqMode {
+    /// Keep each trimmed non-empty sequence line verbatim (case and gap/symbol characters preserved).
+    RawTrimmed,
+    /// Uppercase each trimmed sequence line while preserving non-whitespace symbols.
+    UppercaseTrimmed,
+    /// Strip embedded whitespace inside sequence lines and convert characters to ASCII uppercase.
+    UppercaseNonWhitespace,
+    /// Retain only ASCII alphabetic characters and `-` gaps, converted to ASCII uppercase.
+    UppercaseAlphaGap,
+    /// Retain only ASCII alphabetic characters, converted to ASCII uppercase.
+    UppercaseAlphaOnly,
+}
+
+/// Parses a single-record (or last-header concatenated) cached FASTA slice without altering sequence characters.
+pub fn parse_single_fasta_raw(raw: &str) -> Option<(String, String)> {
+    let mut desc = String::new();
+    let mut seq = String::new();
+    for line in raw.lines() {
+        let t = line.trim();
+        if let Some(rest) = t.strip_prefix('>') {
+            desc = rest.to_string();
+        } else if !t.is_empty() {
+            seq.push_str(t);
+        }
+    }
+    if seq.is_empty() {
+        None
+    } else {
+        Some((desc, seq))
+    }
+}
+
+/// Parses a multi-FASTA buffer into `(record_id, sequence)` pairs using the requested normalization mode.
+///
+/// `record_id` extracts the first whitespace-delimited token after `>` (falling back to `default_id`).
+pub fn parse_multi_fasta_pairs(
+    raw: &str,
+    default_id: &str,
+    mode: FastaSeqMode,
+) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let mut cur_id = String::new();
+    let mut cur_seq = String::new();
+    for line in raw.lines() {
+        let t = line.trim();
+        if t.is_empty() {
+            continue;
+        }
+        if let Some(rest) = t.strip_prefix('>') {
+            if !cur_id.is_empty() {
+                out.push((cur_id.clone(), cur_seq.clone()));
+            }
+            cur_id = rest.split_whitespace().next().unwrap_or(default_id).to_string();
+            cur_seq.clear();
+        } else {
+            match mode {
+                FastaSeqMode::RawTrimmed => cur_seq.push_str(t),
+                FastaSeqMode::UppercaseTrimmed => {
+                    for ch in t.chars() {
+                        cur_seq.push(ch.to_ascii_uppercase());
+                    }
+                }
+                FastaSeqMode::UppercaseNonWhitespace => {
+                    for ch in t.chars() {
+                        if !ch.is_whitespace() {
+                            cur_seq.push(ch.to_ascii_uppercase());
+                        }
+                    }
+                }
+                FastaSeqMode::UppercaseAlphaGap => {
+                    for b in t.bytes() {
+                        let u = b.to_ascii_uppercase();
+                        if u.is_ascii_alphabetic() || u == b'-' {
+                            cur_seq.push(u as char);
+                        }
+                    }
+                }
+                FastaSeqMode::UppercaseAlphaOnly => {
+                    for b in t.bytes() {
+                        let u = b.to_ascii_uppercase();
+                        if u.is_ascii_alphabetic() {
+                            cur_seq.push(u as char);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if !cur_id.is_empty() {
+        out.push((cur_id, cur_seq));
+    }
+    out
+}
+
+/// Reads an aligned or unaligned multi-FASTA file keeping uppercase letters and `-` gap characters.
+///
+/// Panics with path context if the file cannot be read, matching the standalone audit contract.
+pub fn read_multi_fasta_alpha_gap(path: impl AsRef<Path>) -> Vec<(String, String)> {
+    let p = path.as_ref();
+    let content = fs::read_to_string(p)
+        .unwrap_or_else(|e| panic!("Failed reading multi-FASTA {}: {}", p.display(), e));
+    parse_multi_fasta_pairs(&content, "SEQ", FastaSeqMode::UppercaseAlphaGap)
+}
+
+/// Reads a multi-FASTA file gracefully (returning empty on I/O error), uppercasing and stripping whitespace.
+pub fn read_multi_fasta_lossy_upper(path: impl AsRef<Path>) -> Vec<(String, String)> {
+    let raw = fs::read_to_string(path.as_ref()).unwrap_or_default();
+    parse_multi_fasta_pairs(&raw, "", FastaSeqMode::UppercaseNonWhitespace)
+}
+
+/// Reads a multi-FASTA file into [`FastaRecord`] values using raw trimmed sequence lines.
+pub fn load_fasta_records_raw(path: impl AsRef<Path>, family: &str, gene: &str) -> Vec<FastaRecord> {
+    let content = fs::read_to_string(path.as_ref()).expect("Failed reading input FASTA");
+    parse_multi_fasta_pairs(&content, "UNKNOWN", FastaSeqMode::RawTrimmed)
+        .into_iter()
+        .map(|(id, sequence)| FastaRecord {
+            id: id.clone(),
+            accession: id.clone(),
+            taxon: id.clone(),
+            common_name: id.clone(),
+            family: family.to_string(),
+            gene: gene.to_string(),
+            description: id,
+            sequence,
+            cached_from_disk: true,
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod fasta_parser_tests {
+    use super::*;
+
+    #[test]
+    fn parses_single_and_raw_fasta() {
+        let raw = ">NC_001234.1 Example taxon\nacgt ry\n>SECOND\ntttt\n";
+        assert_eq!(
+            parse_single_fasta(raw),
+            Some(("NC_001234.1 Example taxon".to_string(), "ACGTNN".to_string()))
+        );
+        let single_cached = ">hdr one\nacgt\n>hdr two\nTGCA\n";
+        assert_eq!(
+            parse_single_fasta_raw(single_cached),
+            Some(("hdr two".to_string(), "acgtTGCA".to_string()))
+        );
+        assert_eq!(parse_single_fasta_raw(">empty_only\n"), None);
+    }
+
+    #[test]
+    fn parses_multi_fasta_all_modes() {
+        let fasta = ">T001 first taxon\nacgt-?\n  tg ca \n>T002\nGgAa\n";
+        assert_eq!(
+            parse_multi_fasta_pairs(fasta, "SEQ", FastaSeqMode::RawTrimmed),
+            vec![
+                ("T001".to_string(), "acgt-?tg ca".to_string()),
+                ("T002".to_string(), "GgAa".to_string()),
+            ]
+        );
+        assert_eq!(
+            parse_multi_fasta_pairs(fasta, "SEQ", FastaSeqMode::UppercaseTrimmed),
+            vec![
+                ("T001".to_string(), "ACGT-?TG CA".to_string()),
+                ("T002".to_string(), "GGAA".to_string()),
+            ]
+        );
+        assert_eq!(
+            parse_multi_fasta_pairs(fasta, "SEQ", FastaSeqMode::UppercaseNonWhitespace),
+            vec![
+                ("T001".to_string(), "ACGT-?TGCA".to_string()),
+                ("T002".to_string(), "GGAA".to_string()),
+            ]
+        );
+        assert_eq!(
+            parse_multi_fasta_pairs(fasta, "SEQ", FastaSeqMode::UppercaseAlphaGap),
+            vec![
+                ("T001".to_string(), "ACGT-TGCA".to_string()),
+                ("T002".to_string(), "GGAA".to_string()),
+            ]
+        );
+        assert_eq!(
+            parse_multi_fasta_pairs(fasta, "SEQ", FastaSeqMode::UppercaseAlphaOnly),
+            vec![
+                ("T001".to_string(), "ACGTTGCA".to_string()),
+                ("T002".to_string(), "GGAA".to_string()),
+            ]
+        );
+    }
+}

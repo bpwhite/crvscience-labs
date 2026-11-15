@@ -555,28 +555,14 @@ fn read_fasta_map(fasta_path: &Path) -> Result<(HashMap<String, String>, usize),
     let content = fs::read_to_string(fasta_path)
         .map_err(|e| format!("Failed to read FASTA {}: {}", fasta_path.display(), e))?;
     let mut map = HashMap::new();
-    let mut cur_id = String::new();
-    let mut cur_seq = String::new();
     let mut total_len = 0usize;
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-        if let Some(rest) = trimmed.strip_prefix('>') {
-            if !cur_id.is_empty() {
-                total_len += cur_seq.len();
-                map.insert(cur_id.clone(), cur_seq.clone());
-            }
-            cur_id = rest.split_whitespace().next().unwrap_or("").to_string();
-            cur_seq.clear();
-        } else {
-            cur_seq.push_str(trimmed);
-        }
-    }
-    if !cur_id.is_empty() {
-        total_len += cur_seq.len();
-        map.insert(cur_id, cur_seq);
+    for (id, seq) in crate::fetch::parse_multi_fasta_pairs(
+        &content,
+        "",
+        crate::fetch::FastaSeqMode::RawTrimmed,
+    ) {
+        total_len += seq.len();
+        map.insert(id, seq);
     }
     Ok((map, total_len))
 }

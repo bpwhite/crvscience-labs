@@ -74,49 +74,7 @@ struct MultifactorialCellNativeOutput {
 }
 
 fn load_fasta_records(path: &str) -> Vec<FastaRecord> {
-    let content = fs::read_to_string(path).expect("Failed reading input FASTA");
-    let mut records = Vec::new();
-    let mut cur_id = String::new();
-    let mut cur_seq = String::new();
-    for line in content.lines() {
-        let t = line.trim();
-        if t.is_empty() {
-            continue;
-        }
-        if let Some(rest) = t.strip_prefix('>') {
-            if !cur_id.is_empty() {
-                records.push(FastaRecord {
-                    id: cur_id.clone(),
-                    accession: cur_id.clone(),
-                    taxon: cur_id.clone(),
-                    common_name: cur_id.clone(),
-                    family: "Panarthropoda".to_string(),
-                    gene: "Supermatrix".to_string(),
-                    description: cur_id.clone(),
-                    sequence: cur_seq.clone(),
-                    cached_from_disk: true,
-                });
-            }
-            cur_id = rest.split_whitespace().next().unwrap_or("UNKNOWN").to_string();
-            cur_seq.clear();
-        } else {
-            cur_seq.push_str(t);
-        }
-    }
-    if !cur_id.is_empty() {
-        records.push(FastaRecord {
-            id: cur_id.clone(),
-            accession: cur_id.clone(),
-            taxon: cur_id.clone(),
-            common_name: cur_id.clone(),
-            family: "Panarthropoda".to_string(),
-            gene: "Supermatrix".to_string(),
-            description: cur_id,
-            sequence: cur_seq,
-            cached_from_disk: true,
-        });
-    }
-    records
+    bio_suite::fetch::load_fasta_records_raw(path, "Panarthropoda", "Supermatrix")
 }
 
 fn compute_rcfv(seqs: &[String]) -> f64 {

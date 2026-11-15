@@ -307,24 +307,11 @@ pub fn build_domain_models_level(
 
 pub fn read_fasta_records(path: &Path) -> Result<Vec<(String, String)>, String> {
     let txt = fs::read_to_string(path).map_err(|e| format!("{}: {}", path.display(), e))?;
-    let mut recs = Vec::new();
-    let mut id = String::new();
-    let mut seq = String::new();
-    for line in txt.lines() {
-        if let Some(h) = line.strip_prefix('>') {
-            if !id.is_empty() {
-                recs.push((id.clone(), seq.to_ascii_uppercase()));
-            }
-            id = h.split_whitespace().next().unwrap_or("").to_string();
-            seq = String::new();
-        } else {
-            seq.push_str(line.trim());
-        }
-    }
-    if !id.is_empty() {
-        recs.push((id, seq.to_ascii_uppercase()));
-    }
-    Ok(recs)
+    Ok(crate::fetch::parse_multi_fasta_pairs(
+        &txt,
+        "",
+        crate::fetch::FastaSeqMode::UppercaseTrimmed,
+    ))
 }
 
 fn scan_gene_domains(

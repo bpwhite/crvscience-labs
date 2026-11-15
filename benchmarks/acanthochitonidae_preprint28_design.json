@@ -1,0 +1,170 @@
+{
+  "benchmark_id": "acanthochitonidae-preprint28-design-v1",
+  "title": "Polyplacophora & Acanthochitonidae 64-species x 17-locus design (PREPRINT-28 dimensions) vs. published class-wide phylogenomics",
+  "fixed_before_first_run": "2026-11-15",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at the dataset dimensions of PREPRINT-28 (acanthochitonidae-phylogenomics-preprint): 64 species across 11 Polyplacophora families (emphasizing Acanthochitonidae and Cryptoplacidae) and 17 loci (13 mitochondrial PCGs + 16S rrnL + 12S rrnS + nuclear SSU_18S + LSU_28S), paired with intraspecific COX1 and nuclear 18S/28S/ITS haplotype cluster networks and 12 Bayesian coalescent skylines. PREPRINT-28 sets only the taxon strata and quotas; it is not a validation source. Final trees are scored against deep Polyplacophora suborders, superfamilies, and Acanthochitonina groupings reported in the peer-reviewed studies below. A clade is testable when the run samples >= 2 tips inside and >= 2 outside it, and recovered when the unrooted tree contains the corresponding bipartition.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-28",
+    "species": 64,
+    "loci": 17,
+    "taxon_design": "4 Order Lepidopleurida outgroups (2 Leptochitonidae, 1 Nierstraszellidae, 1 Hanleyidae), 11 Suborder Chitonina (8 Chitonidae, 1 Schizochitonidae, 1 Ischnochitonidae, 1 Chaetopleuridae), 10 basal Acanthochitonina Mopalioidea (8 Mopaliidae, 2 Tonicellidae including valve-buried Cryptochiton stelleri), 5 Cryptoplacidae (4 Cryptoplax, 1 Choneplax), 9 basal/non-Acanthochitona Acanthochitonidae & allies (3 Craspedochiton, 3 Leptoplax, 1 Notoplax, 1 valve-buried Cryptoconchus, 1 valve-reduced Choriplax grayi), 15 Atlantic/Mediterranean/South African/Pan-American Acanthochitona & Americhiton, and 10 Indo-West & NW Pacific crown Acanthochitona.",
+    "taxonomy_note": "Full Polyplacophora mitogenomes encode all 13 mitochondrial PCGs (including atp8) plus rrnL (16S) and rrnS (12S). Nuclear SSU_18S and LSU_28S stabilize deep Paleozoic divergences across Acanthochitonidae and Cryptoplacidae genera lacking complete mitogenomes (e.g., Cryptoplax, Choneplax, Craspedochiton, Leptoplax, Cryptoconchus, Americhiton). The Liolophura sinensis chromosome-level RefSeq assembly (formerly released under L. japonica; corrected in Hong Kong Biodiversity Genomics Consortium 2025, DOI: 10.46471/gigabyte.159) anchors the 48 nuclear CDS orthologs across four biological adaptation families (Ferritins, alpha-Carbonic Anhydrases, HSPA12 chaperones, and single-subfamily CYP3A monooxygenases).",
+    "locus_interpretation": "15 mitochondrial loci (13 PCGs + rrnL + rrnS) + nuclear SSU_18S + LSU_28S = 17 orthologous phylogenomic loci. Radula magnetite biomineralization (Ferritins), shell-eye/girdle-spicule aragonite biomineralization (alpha-CA), intertidal heat-shock (HSPA12), and benthic allelochemical detox (CYP3A) nuclear CDS families are analyzed separately in Stage 4 codon-selection sweeps."
+  },
+  "sources": [
+    {
+      "key": "Irisarri2020",
+      "citation": "Irisarri, I., Uribe, J. E., Eernisse, D. J., & Zardoya, R. (2020). A mitogenomic phylogeny of chitons (Mollusca: Polyplacophora). BMC Evolutionary Biology, 20, 22.",
+      "doi": "10.1186/s12862-019-1573-2"
+    },
+    {
+      "key": "Irisarri2014",
+      "citation": "Irisarri, I., Eernisse, D. J., & Zardoya, R. (2014). Molecular phylogeny of Acanthochitonina (Mollusca: Polyplacophora: Chitonida): three new mitochondrial genomes, rearranged gene orders and systematics. Journal of Natural History, 48(45-48), 2825-2853.",
+      "doi": "10.1080/00222933.2014.963721"
+    },
+    {
+      "key": "Sigwart2013",
+      "citation": "Sigwart, J. D., Stoeger, I., Knebelsberger, T., & Schwabe, E. (2013). Chiton phylogeny (Mollusca : Polyplacophora) and the placement of the enigmatic species Choriplax grayi (H. Adams & Angas). Invertebrate Systematics, 27(6), 603-621.",
+      "doi": "10.1071/is13013"
+    },
+    {
+      "key": "Okusu2003",
+      "citation": "Okusu, A., Schwabe, E., Eernisse, D. J., & Giribet, G. (2003). Towards a phylogeny of chitons (Mollusca, Polyplacophora) based on combined analysis of five molecular loci. Organisms Diversity & Evolution, 3(4), 281-302.",
+      "doi": "10.1078/1439-6092-00085"
+    },
+    {
+      "key": "Sirenko2006",
+      "citation": "Sirenko, B. I. (2006). New outlook on the system of chitons (Mollusca: Polyplacophora). Venus, 65(1-2), 27-49.",
+      "doi": "10.18941/venus.65.1-2_27"
+    },
+    {
+      "key": "KimHwang2026",
+      "citation": "Kim, I. H., & Hwang, U. W. (2026). Morphology and mitochondrial genome-based analysis of the systematics and evolution of Acanthochitona species (Polyplacophora: Acanthochitonidae). Marine Life Science & Technology.",
+      "doi": "10.1007/s42995-026-00362-9"
+    },
+    {
+      "key": "Ni2020",
+      "citation": "Ni, G., Li, J., Zhang, Y., & Liu, Z. (2020). Life-history features and oceanography drive phylogeographic patterns of the chiton Acanthochitona cf. rubrolineata (Lischke, 1873) in the northwestern Pacific. PeerJ, 8, e8794.",
+      "doi": "10.7717/peerj.8794"
+    },
+    {
+      "key": "Vendrasco2004",
+      "citation": "Vendrasco, M. J., Wood, T. E., & Runnegar, B. N. (2004). Articulated Palaeozoic fossil with 17 plates greatly expands disparity of early chitons. Nature, 429, 288-291.",
+      "doi": "10.1038/nature02548"
+    }
+  ],
+  "taxon_group": "Polyplacophora",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 60,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "ATP8",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Outgroups_Lepidopleurida": ["Leptochitonidae", "Nierstraszellidae", "Hanleyidae"],
+    "Suborder_Chitonina": ["Chitonidae", "Schizochitonidae", "Ischnochitonidae", "Chaetopleuridae"],
+    "Basal_Acanthochitonina_Mopalioidea": ["Mopaliidae", "Tonicellidae"],
+    "Cryptoplacidae_Wormlike_Chitons": ["Cryptoplacidae"],
+    "Acanthochitonidae_and_Choriplacidae": ["Acanthochitonidae", "Choriplacidae"]
+  },
+  "species_per_family": {
+    "Leptochitonidae": 2,
+    "Nierstraszellidae": 1,
+    "Hanleyidae": 1,
+    "Chitonidae": 8,
+    "Schizochitonidae": 1,
+    "Ischnochitonidae": 1,
+    "Chaetopleuridae": 1,
+    "Mopaliidae": 8,
+    "Tonicellidae": 2,
+    "Cryptoplacidae": 5,
+    "Choriplacidae": 1,
+    "Acanthochitonidae": 33
+  },
+  "total_species": 64,
+  "scored_clades": [
+    {
+      "id": "chitonida_monophyly",
+      "name": "Order Chitonida (Chitonina + Acanthochitonina) relative to Lepidopleurida Outgroup",
+      "families": ["Chitonidae", "Schizochitonidae", "Ischnochitonidae", "Chaetopleuridae", "Mopaliidae", "Tonicellidae", "Cryptoplacidae", "Choriplacidae", "Acanthochitonidae"],
+      "support": [
+        { "source": "Okusu2003", "statement": "Order Chitonida forms a strongly supported clade sister to basal Order Lepidopleurida" },
+        { "source": "Irisarri2020", "statement": "Mitogenomic analyses robustly separate Order Lepidopleurida from monophyletic Chitonida (Chitonina + Acanthochitonina)" }
+      ]
+    },
+    {
+      "id": "chitonina_monophyly",
+      "name": "Suborder Chitonina (Chitonidae, Schizochitonidae, Ischnochitonidae, Chaetopleuridae)",
+      "families": ["Chitonidae", "Schizochitonidae", "Ischnochitonidae", "Chaetopleuridae"],
+      "support": [
+        { "source": "Irisarri2020", "statement": "Suborder Chitonina forms a monophyletic sister lineage to Suborder Acanthochitonina" },
+        { "source": "Sigwart2013", "statement": "Chitonina is recovered as a distinct subordinal clade separate from Acanthochitonina" }
+      ]
+    },
+    {
+      "id": "acanthochitonina_monophyly",
+      "name": "Suborder Acanthochitonina (Mopalioidea + Cryptoplacoidea)",
+      "families": ["Mopaliidae", "Tonicellidae", "Cryptoplacidae", "Choriplacidae", "Acanthochitonidae"],
+      "support": [
+        { "source": "Irisarri2014", "statement": "Suborder Acanthochitonina is monophyletic with shared mitochondrial gene-order hallmarks uniting Mopalioidea and Cryptoplacoidea" },
+        { "source": "Irisarri2020", "statement": "Mopalioidea and Cryptoplacoidea robustly unite into monophyletic Acanthochitonina" }
+      ]
+    },
+    {
+      "id": "cryptoplacoidea_monophyly",
+      "name": "Superfamily Cryptoplacoidea (Cryptoplacidae + Acanthochitonidae + Choriplacidae)",
+      "families": ["Cryptoplacidae", "Choriplacidae", "Acanthochitonidae"],
+      "support": [
+        { "source": "Sirenko2006", "statement": "Cryptoplacoidea unites Acanthochitonidae and Cryptoplacidae by 18 perinotum bristle tufts and reduced articulated valves" },
+        { "source": "Sigwart2013", "statement": "Acanthochitonidae, Choriplax grayi, and Cryptoplacidae share a strongly supported common Cryptoplacoidea ancestry derived relative to Mopalioidea" }
+      ]
+    },
+    {
+      "id": "cryptoplacidae_monophyly",
+      "name": "Family Cryptoplacidae (Cryptoplax + Choneplax)",
+      "families": ["Cryptoplacidae"],
+      "support": [
+        { "source": "Okusu2003", "statement": "Vermiform Cryptoplacidae forms a distinct derived clade within Cryptoplacoidea" },
+        { "source": "Sirenko2017", "statement": "Cryptoplax and Choneplax unite as a specialized crevice-burrowing worm-chiton clade" }
+      ]
+    },
+    {
+      "id": "mopalioidea_monophyly",
+      "name": "Superfamily Mopalioidea (Mopaliidae + Tonicellidae)",
+      "families": ["Mopaliidae", "Tonicellidae"],
+      "support": [
+        { "source": "Irisarri2020", "statement": "Mopalioidea forms the basal sister radiation of Acanthochitonina outside Cryptoplacoidea" },
+        { "source": "Okusu2003", "statement": "Katharina, Cryptochiton, Mopalia, Plaxiphora, and allies cluster within Mopalioidea" }
+      ]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "acanthochitonidae_sensu_lato_monophyly",
+      "name": "Acanthochitonidae sensu lato (paraphyly check vs. Cryptoplacidae)",
+      "families": ["Acanthochitonidae"],
+      "why_not_scored": "Traditional Acanthochitonidae s.l. (Craspedochiton, Leptoplax, Notoplax, Cryptoconchus + Acanthochitona) can test paraphyletic relative to nested Cryptoplacidae or Choriplax/Notoplax assemblages depending on locus sampling (Sigwart2013; Sirenko2017)."
+    },
+    {
+      "id": "cryptoconchus_vs_cryptochiton_convergence",
+      "name": "Convergent complete dorsal valve burial (Cryptoconchus vs. Cryptochiton)",
+      "families": ["Mopaliidae", "Acanthochitonidae"],
+      "why_not_scored": "Tested explicitly as convergent independent origins of internal dorsal valve burial in Mopalioidea (Cryptochiton stelleri) vs. Cryptoplacoidea (Cryptoconchus floridanus)."
+    }
+  ]
+}

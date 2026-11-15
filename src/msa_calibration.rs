@@ -683,17 +683,7 @@ fn fetch_cached_locus(
     for cand in &alt_candidates {
         if cand.exists() {
             if let Ok(raw) = fs::read_to_string(cand) {
-                let mut desc = String::new();
-                let mut seq = String::new();
-                for line in raw.lines() {
-                    let t = line.trim();
-                    if let Some(rest) = t.strip_prefix('>') {
-                        desc = rest.to_string();
-                    } else if !t.is_empty() {
-                        seq.push_str(t);
-                    }
-                }
-                if !seq.is_empty() {
+                if let Some((desc, seq)) = crate::fetch::parse_single_fasta_raw(&raw) {
                     return Ok(FastaRecord {
                         id: acc_spec.to_string(),
                         accession: acc_spec.to_string(),
@@ -724,17 +714,7 @@ fn fetch_named_cache_file(
     let path = cache.cache_dir.join(file_name);
     if path.exists() {
         if let Ok(raw) = fs::read_to_string(&path) {
-            let mut desc = String::new();
-            let mut seq = String::new();
-            for line in raw.lines() {
-                let t = line.trim();
-                if let Some(rest) = t.strip_prefix('>') {
-                    desc = rest.to_string();
-                } else if !t.is_empty() {
-                    seq.push_str(t);
-                }
-            }
-            if !seq.is_empty() {
+            if let Some((desc, seq)) = crate::fetch::parse_single_fasta_raw(&raw) {
                 return Ok(FastaRecord {
                     id: acc_spec.to_string(),
                     accession: acc_spec.to_string(),

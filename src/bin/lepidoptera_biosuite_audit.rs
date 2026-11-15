@@ -229,33 +229,7 @@ fn read_clean_fasta_seq(path: &Path) -> String {
 }
 
 fn read_multi_fasta(path: &Path) -> Vec<(String, String)> {
-    let raw = fs::read_to_string(path).unwrap_or_default();
-    let mut out = Vec::new();
-    let mut cur_id = String::new();
-    let mut cur_seq = String::new();
-    for line in raw.lines() {
-        let t = line.trim();
-        if t.is_empty() {
-            continue;
-        }
-        if let Some(rest) = t.strip_prefix('>') {
-            if !cur_id.is_empty() {
-                out.push((cur_id.clone(), cur_seq.clone()));
-            }
-            cur_id = rest.split_whitespace().next().unwrap_or("").to_string();
-            cur_seq.clear();
-        } else {
-            for ch in t.chars() {
-                if !ch.is_whitespace() {
-                    cur_seq.push(ch.to_ascii_uppercase());
-                }
-            }
-        }
-    }
-    if !cur_id.is_empty() {
-        out.push((cur_id, cur_seq));
-    }
-    out
+    bio_suite::fetch::read_multi_fasta_lossy_upper(path)
 }
 
 fn sha256_blind_token(seq: &str) -> String {

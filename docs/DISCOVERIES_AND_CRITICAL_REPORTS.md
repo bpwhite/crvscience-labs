@@ -5,9 +5,9 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`27`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`139` Total Reports)
+## Validated Preprints (`27`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`140` Total Reports)
 
-- **Total Lab Discovery Entries**: **139** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **140** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-27`, `v2.0.2`)**: **27** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
   - **🔬 Pipeline & Model-Calibration Benchmarks**: **52** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
@@ -45,10 +45,11 @@
 | **#109** `✅ Verified Preprint` | **[Archosauria-to-Crown-Aves Divergence, K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss Under Relaxed-Clock and Coalescent Models](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-CROWN-AVES-TIMETREE-114RECORDS` |
 | **#108** `✅ Verified Preprint` | **[Phylogenomic Divergence, Hominoid Rate Slowdown, and Pleistocene Tip-Dating Across Primates Under Relaxed-Clock and Coalescent Models](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-EUARCHONTOGLIRES-TIMETREE-116RECORDS` |
 
-#### Latest 12 Lab Discovery Entries (`#128`–`#140`)
+#### Latest 12 Lab Discovery Entries (`#129`–`#141`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#141** `🔬 Pipeline Benchmark` | [Neural Networks: Foundations, Core Architectures, Training Principles, and Scientific Applications](https://crvscience.com/labs/discoveries/neural-networks-foundations-architectures-synthesis) | `Tier 1` | 🧪🧪🧪🧪 (`0/5`) | Nov 15, 2026 |
 | **#140** `✅ Verified Preprint` | [Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nematoda-agricultural-pests-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 14, 2026 |
 | **#139** `🔬 Pipeline Benchmark` | [Planetary Boundaries and Earth System Dynamics: A Comprehensive Biophysical Assessment of Holocene Stability, Anthropogenic Forcing, and Coupled Tipping Cascades](https://crvscience.com/labs/discoveries/planetary-boundaries-earth-systems-assessment) | `Tier 1` | 🧪🧪🧪🧪 (`0/5`) | Nov 11, 2026 |
 | **#138** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
@@ -60,7 +61,6 @@
 | **#131** `✅ Verified Preprint` | [Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/rodent-north-america-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#130** `✅ Verified Preprint` | [Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/primate-africa-americas-radiation-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 | **#129** `✅ Verified Preprint` | [Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models](https://crvscience.com/labs/discoveries/coleoptera-ecosystem-function-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
-| **#128** `✅ Verified Preprint` | [RuNIE Long-Form Bayesian MCMC Skyline & the 5-Stage Neanderthal Population Crash (650 to 39.2 ka BP): Coupled 95% Credible Chronogram, Pristine Phylogram, and Effective Population Size Trajectory Benchmarked Against *BEAST across an 87,227-bp Alignment](https://crvscience.com/labs/discoveries/neanderthal-mcmc-skyline-crash) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 
 #### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-065`)
 

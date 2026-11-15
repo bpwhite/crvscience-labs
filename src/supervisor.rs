@@ -2021,6 +2021,55 @@ pub fn run_autonomous_supervisor(
     cache: &PoliteCacheManager,
     runs_root_dir: &Path,
 ) -> Result<SupervisorRunManifest, String> {
+    if crate::supervisor_acanthochitonidae::is_acanthochitonidae_study_target(
+        spec.preset_name.as_deref(),
+        &spec.run_id,
+    ) {
+        let t0_acan = Instant::now();
+        let run_dir = runs_root_dir.join(&spec.run_id);
+        let (mut manifest, report) =
+            crate::supervisor_acanthochitonidae::execute_acanthochitonidae_supervisor_study(
+                spec,
+                cache,
+                runs_root_dir,
+            )?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
+        let report_path = run_dir.join("multi-compartment-report.json");
+        if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
+            let _ = fs::write(&report_path, rep_json);
+        }
+        if spec.generate_figures_and_preprint {
+            let t_fig = Instant::now();
+            let ws_root = resolve_crv_workspace_root();
+            let labs_fig_dir = ws_root.join("labs").join("figures");
+            crate::supervisor_figures::generate_acanthochitonidae_locked_figures(
+                &mut manifest,
+                &report,
+                &run_dir,
+                Some(labs_fig_dir.as_path()),
+            )?;
+            crate::supervisor_acanthochitonidae::export_acanthochitonidae_manuscript_and_staged_bundle(
+                &report,
+                &mut manifest,
+                &ws_root,
+                &run_dir,
+            )?;
+            manifest.stage_figures_tex_ms = t_fig.elapsed().as_millis().max(1);
+        }
+        manifest.total_wall_clock_ms = t0_acan.elapsed().as_millis().max(1);
+        let manifest_path = run_dir.join("run-manifest.json");
+        let manifest_json =
+            serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+        fs::write(&manifest_path, manifest_json).map_err(|e| e.to_string())?;
+        eprintln!(
+            "[bio-suite-supervisor] Multi-Compartment Run '{}' completed in {} ms -> {}",
+            manifest.run_id,
+            manifest.total_wall_clock_ms,
+            manifest_path.display()
+        );
+        return Ok(manifest);
+    }
+
     if is_nematoda_study_target(spec.preset_name.as_deref(), &spec.run_id) {
         let t0_nem = Instant::now();
         let run_dir = runs_root_dir.join(&spec.run_id);
@@ -3225,6 +3274,14 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                        } else if crate::supervisor_acanthochitonidae::is_acanthochitonidae_study_target(Some(v.as_str()), "") {
+                            spec.run_id = "runie-native-acanthochitonidae-28".to_string();
+                            spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            spec.bootstrap_replicates = 500;
+                            spec.enable_haplotype_clusters = true;
+                            if spec.mcmc_generations == 10_000 {
+                                spec.mcmc_generations = 25_000;
+                            }
                         } else if is_nematoda_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-nematoda-pests-27".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3365,6 +3422,19 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                     if let Ok(rep_json) = serde_json::to_string_pretty(&rep) {
                         let _ = fs::write(&rep_path, rep_json);
                     }
+                } else if crate::supervisor_acanthochitonidae::is_acanthochitonidae_study_target(None, &m.run_id) {
+                    crate::supervisor_figures::generate_acanthochitonidae_locked_figures(
+                        &mut m,
+                        &rep,
+                        &run_dir,
+                        Some(labs_fig_dir.as_path()),
+                    )?;
+                    crate::supervisor_acanthochitonidae::export_acanthochitonidae_manuscript_and_staged_bundle(
+                        &rep,
+                        &mut m,
+                        &ws_root,
+                        &run_dir,
+                    )?;
                 } else if is_nematoda_study_target(None, &m.run_id) {
                     crate::supervisor_figures::generate_nematoda_locked_figures(
                         &mut m,

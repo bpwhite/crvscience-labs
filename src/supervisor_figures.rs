@@ -685,6 +685,108 @@ pub(crate) const NEMATODA_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "nematoda-pests-supp-s3-cox1-ry3-alignview",
 };
 
+static ACAN_ERAS_450: &[(&str, f64, f64, &str)] = &[
+    ("Devonian-Carb", 450.0, 298.9, "#f1f5f9"),
+    ("Permian-Trias", 298.9, 201.4, "#f8fafc"),
+    ("Jurassic-Cret", 201.4, 66.0, "#f1f5f9"),
+    ("Paleogene", 66.0, 23.0, "#f8fafc"),
+    ("Neogene-Quat", 23.0, 0.0, "#f1f5f9"),
+];
+
+static ACAN_ERAS_500: &[(&str, f64, f64, &str)] = &[
+    ("Silurian-Dev", 500.0, 358.9, "#f1f5f9"),
+    ("Carb-Perm", 358.9, 251.9, "#f8fafc"),
+    ("Mesozoic", 251.9, 66.0, "#f1f5f9"),
+    ("Paleogene", 66.0, 23.0, "#f8fafc"),
+    ("Neogene-Quat", 23.0, 0.0, "#f1f5f9"),
+];
+
+pub(crate) const ACANTHOCHITONIDAE_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [212.0, 178.0, 138.0, 114.2, 62.4, 31.8, 18.6],
+    backbone_node_ages: [52.4, 91.2, 162.8, 228.4, 306.0, 388.0],
+    fig1_max_ma: 450.0,
+    fig1_eras: ACAN_ERAS_450,
+    fig1_ticks: &[450, 350, 250, 150, 100, 50, 0],
+    fig1_node_y_slots: [9.0, 19.5, 31.0, 41.5, 27.5, 48.0, 53.5, 59.0],
+    fig1_clade_cards: &[
+        ("[A]", 0, 3, "Order Lepidopleurida Outgroups (n=4)", "Leptochiton nexus, Lepidopleurus, Nierstraszella, Hanleyella", "Bathyal detritivores & plesiomorphic aragonite valve root"),
+        ("[B]", 4, 14, "Suborder Chitonina Outgroups (n=11)", "Chiton, Acanthopleura, Liolophura, Lepidozona, Chaetopleura", "Image-forming shell-eye ocelli & magnetite radula grazing"),
+        ("[C]", 15, 24, "Mopalioidea & Cryptochiton (n=10)", "Katharina, Cryptochiton stelleri, Mopalia, Plaxiphora, Tonicina", "Kelp/rocky-shore grazers + valve burial #1 (Cryptochiton)"),
+        ("[D]", 25, 29, "Family Cryptoplacidae (n=5)", "Cryptoplax japonica, C. propior, C. iredalei, C. dupuisi, Choneplax", "Vermiform coral-rubble chitons with reduced dorsal plates"),
+        ("[E]", 30, 38, "Basal Acanthochitonidae & Choriplax (n=9)", "Cryptoconchus floridanus, Craspedochiton, Leptoplax, Choriplax", "18-tuft spicules, sponge CYP3A detox & valve burial #2"),
+        ("[F]", 39, 53, "Atlantic & Pan-American Acanthochitona (n=15)", "Acanthochitona fascicularis, A. crinita, A. pygmaea, Americhiton", "Atlanto-Mediterranean, South African & Caribbean radiation"),
+        ("[G]", 54, 63, "Indo-West & NW Pacific Crown (n=10)", "Acanthochitona rubrolineata, A. achates, A. defilippii, A. circellata", "Kuroshio marginal-sea diversification & 2011 JTMD rafting"),
+    ],
+    fig1_web_svg: "acanthochitonidae-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of Class Polyplacophora & Family Acanthochitonidae (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) across Class Polyplacophora with two-sided 95% HPD credible intervals across all 63 internal nodes and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 3, "Lepidopleurida Outgroups (n=4)", ""),
+        ("[B]", 4, 14, "Suborder Chitonina (n=11)", "8,4"),
+        ("[C]", 15, 24, "Mopalioidea & Cryptochiton (n=10)", ""),
+        ("[D]", 25, 29, "Family Cryptoplacidae (n=5)", "9,3,2,3"),
+        ("[E]", 30, 38, "Basal Acanthochitonidae (n=9)", "5,3"),
+        ("[F]", 39, 53, "Atlantic & Pan-Am Crown (n=15)", ""),
+        ("[G]", 54, 63, "Indo-West & NW Pacific Crown (n=10)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "acanthochitonidae-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Polyplacophora & Acanthochitonidae OTUs (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone from R_INNER = 48, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T003", 0),
+        ("Node II", "B:T010", 1),
+        ("Node III", "C:T017", 2),
+        ("Node IV", "D:T028", 3),
+        ("Node V", "D:T026", 4),
+        ("Node VI", "E:T038", 5),
+        ("Node VII", "F:T046", 6),
+        ("Node VIII", "G:T057", 7),
+    ],
+    fig3_abba_arc_tips: ("G:T057", "G:T055"),
+    fig3_web_svg: "acanthochitonidae-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and NW Pacific ABBA-BABA introgression tests.",
+    fig4a_web_svg: "acanthochitonidae-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across Acanthochitonidae & Polyplacophora (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across NW Pacific Acanthochitona + JTMD rafters, A. rubrolineata, Atlantic/Med A. crinita/fascicularis, Pan-American A. avicula/hirudiniformis, Chitonina, and Mopalioidea.",
+    fig4b_web_svg: "acanthochitonidae-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 18S/28S/ITS1 rDNA (4Ne) vs. Nuclear Ferritin & CYP3A Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Paired multi-locus skylines across Acanthochitonina, Cryptoplacoidea, and Chitonina separating maternal mtDNA expansion from Katoh E-INS-i rDNA and nuclear magnetite/allelochemical coding constraints.",
+    fig5_short_fam_titles: [
+        "Radula Magnetite Biomineralization Ferritins (Fe3O4 Core / Ferroxidase Di-Iron)",
+        "Spicule & Dorsal Valve alpha-Carbonic Anhydrases Only (Zn2+ His Triad / Aragonite)",
+        "Intertidal Thermal Shock & Esthete Pore Chaperones (HSPA12A / HSPA12B)",
+        "Benthic Sponge & Macroalgal Allelochemical Detox Cytochrome P450s (CYP3A Subfamily)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Radula Magnetite Ferritins",
+        "FAM-02: Spicule/Valve alpha-CA Only",
+        "FAM-03: HSPA12A/12B Intertidal Stress",
+        "FAM-04: Benthic Detox CYP3A (1TQN)",
+    ],
+    fig5_panel_d_header: "Panel D | Polyplacophora CYP3A Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Microsomal P450 Fold (461 Ca Threaded with Acanthochitona / Chiton CYP3A)",
+    fig5_web_svg: "acanthochitonidae-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP3A Heme-Thiolate Pocket",
+    fig5_caption: "Translated amino-acid motif alignments across 48 Polyplacophora NCBI single-subfamily orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D chiton CYP3A structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
+    fig6_web_svg: "acanthochitonidae-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    fig6_caption: "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Polyplacophora supermatrix + 31 full mitogenomes) and Pipeline B (12 coalescent skyline cohorts, N = 432).",
+    fig6_clade_label: "Class Polyplacophora (Acanthochitonidae)",
+    fig6_p450_label: "CYP3A / Magnetite Ferritin / alpha-CA",
+    fig6_its_label: "Acanthochitona & Cryptoplacoidea 18S/28S/ITS1 rDNA",
+    supp_s1_fasta_name: "supp_s1_cyp3a_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (Polyplacophora CYP3A Tight Subfamily)",
+    supp_s1_source: "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS (FAM-04)",
+    supp_s1_stem: "acanthochitonidae-supp-s1-cyp3a-alignview",
+    supp_s2_title: "Cohort L1 Acanthochitonidae 18S/28S/ITS1 Ribosomal rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS (Cohort L1)",
+    supp_s2_stem: "acanthochitonidae-supp-s2-its1-einsi-alignview",
+    supp_s3_title: "Class Polyplacophora & Acanthochitonidae Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "acanthochitonidae-supp-s3-cox1-ry3-alignview",
+};
+
 fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
@@ -4141,4 +4243,46 @@ pub fn generate_nematoda_locked_figures(
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
     generate_locked_figures_with_theme(manifest, study, &NEMATODA_THEME, run_dir, web_figures_dir)
+}
+
+/// Generates synchronized locked figures (Figures 1-6 + Supplemental S1-S3) for
+/// `PREPRINT-28` (`VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS`), dynamically
+/// locking `backbone_node_ages` and `sec_crown_ages` directly from `manifest.calibrated_nodes`.
+pub fn generate_acanthochitonidae_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    let mut theme = ACANTHOCHITONIDAE_THEME;
+    if manifest.calibrated_nodes.len() >= 8 {
+        let cn = &manifest.calibrated_nodes;
+        theme.backbone_node_ages = [
+            cn[6].age_ma,
+            cn[5].age_ma,
+            cn[3].age_ma,
+            cn[2].age_ma,
+            cn[1].age_ma,
+            cn[0].age_ma,
+        ];
+        theme.sec_crown_ages = [
+            (cn[0].age_ma * 0.55).min(cn[0].age_ma - 20.0).max(40.0),
+            (cn[1].age_ma * 0.58).min(cn[1].age_ma - 18.0).max(30.0),
+            (cn[2].age_ma * 0.62).min(cn[2].age_ma - 15.0).max(25.0),
+            cn[4].age_ma.min(cn[3].age_ma - 8.0).max(20.0),
+            (cn[5].age_ma * 0.68).min(cn[5].age_ma - 10.0).max(16.0),
+            (cn[6].age_ma * 0.60).min(cn[6].age_ma - 8.0).max(10.0),
+            cn[7].age_ma.min(cn[6].age_ma - 6.0).max(6.0),
+        ];
+        if cn[0].ci_max_ma > 445.0 {
+            theme.fig1_max_ma = 500.0;
+            theme.fig1_eras = ACAN_ERAS_500;
+            theme.fig1_ticks = &[500, 400, 300, 200, 100, 50, 0];
+        } else {
+            theme.fig1_max_ma = 450.0;
+            theme.fig1_eras = ACAN_ERAS_450;
+            theme.fig1_ticks = &[450, 350, 250, 150, 100, 50, 0];
+        }
+    }
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }

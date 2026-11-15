@@ -63,6 +63,7 @@ pub mod splicing_crispr_calibration;
 pub mod super_blast;
 pub mod super_blast_calibration;
 pub mod supervisor;
+pub mod supervisor_acanthochitonidae;
 pub mod supervisor_basal_metazoa;
 pub mod supervisor_basal_metazoa_figures;
 pub mod supervisor_basal_metazoa_manuscript;

@@ -5,18 +5,19 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`26`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`139` Total Reports)
+## Validated Preprints (`27`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`139` Total Reports)
 
 - **Total Lab Discovery Entries**: **139** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
-  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`, `v2.0.2`)**: **26** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
+  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-27`, `v2.0.2`)**: **27** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **53** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **52** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
   - **Curated Validation Dataset Registry**: **65** datasets (`VAL-SET-001` through `VAL-SET-065`)
 
-#### ✅ 26 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-26`, `v2.0.2`)
+#### ✅ 27 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-27`, `v2.0.2`)
 
 | ID & Status | Preprint Monograph Title & Live Link | Master Concept Zenodo DOI | Signal Rating | Validation Set Provenance |
 | :--- | :--- | :--- | :--- | :--- |
+| **#140** `✅ Verified Preprint` | **[Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nematoda-agricultural-pests-phylogenomics)** | `Verified` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS` |
 | **#138** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics)** | [`10.5281/zenodo.24116968`](https://doi.org/10.5281/zenodo.24116968) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS` |
 | **#137** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nudibranch-global-radiation-phylogenomics)** | `Verified` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS` |
 | **#136** `✅ Verified Preprint` | **[Phylogenomic Radiation and Invasion Genomics of Introduced Snails Across Australia and New Zealand (Gastropoda: Stylommatophora & Caenogastropoda): Native Rust Quartet Coalescent Species-Tree Inference, Aestivation and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/invasive-snails-au-nz-phylogenomics)** | [`10.5281/zenodo.24095711`](https://doi.org/10.5281/zenodo.24095711) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS` |
@@ -48,7 +49,7 @@
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
-| **#140** `🔬 Pipeline Benchmark` | [Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nematoda-agricultural-pests-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 14, 2026 |
+| **#140** `✅ Verified Preprint` | [Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nematoda-agricultural-pests-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 14, 2026 |
 | **#139** `🔬 Pipeline Benchmark` | [Planetary Boundaries and Earth System Dynamics: A Comprehensive Biophysical Assessment of Holocene Stability, Anthropogenic Forcing, and Coupled Tipping Cascades](https://crvscience.com/labs/discoveries/planetary-boundaries-earth-systems-assessment) | `Tier 1` | 🧪🧪🧪🧪 (`0/5`) | Nov 11, 2026 |
 | **#138** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
 | **#137** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nudibranch-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |

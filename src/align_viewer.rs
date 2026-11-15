@@ -34,6 +34,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use crate::prng_util::xml_escape;
 
 /// Sequence alphabet / display mode in the alignment viewer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1787,13 +1788,6 @@ impl Default for SnapshotConfig {
     }
 }
 
-fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
-}
 
 /// Generate a publication-grade, pixel-locked SVG multiple sequence alignment snapshot
 /// (modeled on CRV Science Labs Figure 2 standards, with zero duplicate top Figure title banner

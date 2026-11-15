@@ -19,6 +19,7 @@ use bio_suite::haplotype::{analyze_haplotype_clusters, HaplotypeClusterCohortRep
 use bio_suite::phylo::{
     align_sequences_with_mode, compute_k2p_and_tn93, AlignerMode, MsaExecutionTelemetry,
 };
+use bio_suite::prng_util::permutation_between_within_z;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -1898,32 +1899,15 @@ fn main() {
 
     let sec_labels: Vec<String> = mito_specimens.iter().map(|s| s.sector.clone()).collect();
     let b_perms = 500usize;
-    let mut perm_deltas = Vec::with_capacity(b_perms);
-    let mut rng_state = 0x5DEECE66Du64;
-    for _ in 0..b_perms {
-        let mut perm_sec = sec_labels.clone();
-        for k in (1..n64).rev() {
-            rng_state = rng_state
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            let r = (rng_state >> 33) as usize % (k + 1);
-            perm_sec.swap(k, r);
-        }
-        let (mut w_s, mut w_c, mut b_s, mut b_c) = (0.0, 0usize, 0.0, 0usize);
-        for &(i, j, d, _) in &pair_k2p_full {
-            if perm_sec[i] == perm_sec[j] {
-                w_s += d;
-                w_c += 1;
-            } else {
-                b_s += d;
-                b_c += 1;
-            }
-        }
-        perm_deltas.push((b_s / b_c.max(1) as f64) - (w_s / w_c.max(1) as f64));
-    }
-    let pm = perm_deltas.iter().sum::<f64>() / b_perms as f64;
-    let pv = perm_deltas.iter().map(|&x| (x - pm).powi(2)).sum::<f64>() / b_perms as f64;
-    let z_blind = round2((obs_delta - pm) / pv.sqrt().max(1e-6));
+    let full_pairs: Vec<(usize, usize, f64)> =
+        pair_k2p_full.iter().map(|&(i, j, d, _)| (i, j, d)).collect();
+    let z_blind = round2(permutation_between_within_z(
+        &sec_labels,
+        &full_pairs,
+        obs_delta,
+        b_perms,
+        0x5DEECE66Du64,
+    ));
 
     // Context-resolved Pass 2 on 37-gene core RY3 distances
     let core_seqs_vec: Vec<&[u8]> = core_ry3_pairs.iter().map(|(_, s)| s.as_bytes()).collect();
@@ -1944,32 +1928,13 @@ fn main() {
     let cmw = ctx_within.iter().sum::<f64>() / ctx_within.len().max(1) as f64;
     let cmb = ctx_between.iter().sum::<f64>() / ctx_between.len().max(1) as f64;
     let c_obs = cmb - cmw;
-    let mut perm_ctx = Vec::with_capacity(b_perms);
-    let mut rng_ctx = 0x5DEECE66Du64;
-    for _ in 0..b_perms {
-        let mut psec = sec_labels.clone();
-        for k in (1..n64).rev() {
-            rng_ctx = rng_ctx
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            let r = (rng_ctx >> 33) as usize % (k + 1);
-            psec.swap(k, r);
-        }
-        let (mut w_s, mut w_c, mut b_s, mut b_c) = (0.0, 0usize, 0.0, 0usize);
-        for &(i, j, d) in &pair_ctx {
-            if psec[i] == psec[j] {
-                w_s += d;
-                w_c += 1;
-            } else {
-                b_s += d;
-                b_c += 1;
-            }
-        }
-        perm_ctx.push((b_s / b_c.max(1) as f64) - (w_s / w_c.max(1) as f64));
-    }
-    let pcm = perm_ctx.iter().sum::<f64>() / b_perms as f64;
-    let pcv = perm_ctx.iter().map(|&x| (x - pcm).powi(2)).sum::<f64>() / b_perms as f64;
-    let z_ctx = round2((c_obs - pcm) / pcv.sqrt().max(1e-6));
+    let z_ctx = round2(permutation_between_within_z(
+        &sec_labels,
+        &pair_ctx,
+        c_obs,
+        b_perms,
+        0x5DEECE66Du64,
+    ));
     let d_ctx = round4((z_ctx - z_blind).abs() / z_ctx.abs().max(1.0));
 
     let dual_pass_audit = DualPassAuditSummary {

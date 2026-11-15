@@ -20,6 +20,7 @@ use bio_suite::fetch::FastaRecord;
 use bio_suite::phylo::{
     align_sequences_with_mode, compute_k2p_and_tn93, AlignerMode, MsaExecutionTelemetry,
 };
+use bio_suite::prng_util::permutation_between_within_z;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -927,41 +928,15 @@ fn main() {
         .collect();
 
     let b_perms = 500usize;
-    let mut perm_deltas = Vec::with_capacity(b_perms);
-    let mut rng_state = 0x5DEECE66Du64;
-    for _ in 0..b_perms {
-        let mut perm_sec = ord_labels.clone();
-        for k in (1..n54).rev() {
-            rng_state = rng_state
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            let r = (rng_state >> 33) as usize % (k + 1);
-            perm_sec.swap(k, r);
-        }
-        let mut w_sum = 0.0;
-        let mut w_cnt = 0usize;
-        let mut b_sum = 0.0;
-        let mut b_cnt = 0usize;
-        for &(i, j, d, _) in &pair_k2p_full {
-            if perm_sec[i] == perm_sec[j] {
-                w_sum += d;
-                w_cnt += 1;
-            } else {
-                b_sum += d;
-                b_cnt += 1;
-            }
-        }
-        let pd = (b_sum / (b_cnt.max(1) as f64)) - (w_sum / (w_cnt.max(1) as f64));
-        perm_deltas.push(pd);
-    }
-    let perm_mean = perm_deltas.iter().sum::<f64>() / (b_perms as f64);
-    let perm_var = perm_deltas
-        .iter()
-        .map(|&x| (x - perm_mean).powi(2))
-        .sum::<f64>()
-        / (b_perms as f64);
-    let perm_sd = perm_var.sqrt().max(1e-6);
-    let z_blind = round2((obs_delta - perm_mean) / perm_sd);
+    let full_pairs: Vec<(usize, usize, f64)> =
+        pair_k2p_full.iter().map(|&(i, j, d, _)| (i, j, d)).collect();
+    let z_blind = round2(permutation_between_within_z(
+        &ord_labels,
+        &full_pairs,
+        obs_delta,
+        b_perms,
+        0x5DEECE66Du64,
+    ));
 
     // Pass 2 (Context-Resolved on RY3-recoded distances)
     let mut pair_k2p_ry3 = Vec::with_capacity(pair_k2p_full.len());
@@ -985,41 +960,13 @@ fn main() {
     let ctx_mean_b = ctx_between.iter().sum::<f64>() / (ctx_between.len().max(1) as f64);
     let ctx_obs_delta = ctx_mean_b - ctx_mean_w;
 
-    let mut perm_deltas_ctx = Vec::with_capacity(b_perms);
-    let mut rng_state_ctx = 0x5DEECE66Du64;
-    for _ in 0..b_perms {
-        let mut perm_sec = ord_labels.clone();
-        for k in (1..n54).rev() {
-            rng_state_ctx = rng_state_ctx
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            let r = (rng_state_ctx >> 33) as usize % (k + 1);
-            perm_sec.swap(k, r);
-        }
-        let mut w_sum = 0.0;
-        let mut w_cnt = 0usize;
-        let mut b_sum = 0.0;
-        let mut b_cnt = 0usize;
-        for &(i, j, d) in &pair_k2p_ry3 {
-            if perm_sec[i] == perm_sec[j] {
-                w_sum += d;
-                w_cnt += 1;
-            } else {
-                b_sum += d;
-                b_cnt += 1;
-            }
-        }
-        let pd = (b_sum / (b_cnt.max(1) as f64)) - (w_sum / (w_cnt.max(1) as f64));
-        perm_deltas_ctx.push(pd);
-    }
-    let perm_mean_ctx = perm_deltas_ctx.iter().sum::<f64>() / (b_perms as f64);
-    let perm_var_ctx = perm_deltas_ctx
-        .iter()
-        .map(|&x| (x - perm_mean_ctx).powi(2))
-        .sum::<f64>()
-        / (b_perms as f64);
-    let perm_sd_ctx = perm_var_ctx.sqrt().max(1e-6);
-    let z_ctx = round2((ctx_obs_delta - perm_mean_ctx) / perm_sd_ctx);
+    let z_ctx = round2(permutation_between_within_z(
+        &ord_labels,
+        &pair_k2p_ry3,
+        ctx_obs_delta,
+        b_perms,
+        0x5DEECE66Du64,
+    ));
     let d_ctx = round4((z_ctx - z_blind).abs() / z_ctx.max(1.0));
 
     let dual_pass_audit = DualPassAuditSummary {

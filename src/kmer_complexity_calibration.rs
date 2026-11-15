@@ -13,6 +13,7 @@
 use crate::complexity::{
     compute_dna_walk_dfa, compute_dna_walk_hurst, kmer_shannon_entropy, lempel_ziv_76, round4,
 };
+use crate::prng_util::DeterministicLcg64;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use std::time::Instant;
@@ -210,11 +211,10 @@ fn synth_coding_pair(seed: u64, mut_every: usize) -> (String, String) {
         b"CTG", b"GAG", b"GTG", b"ATC", b"GCC", b"GAC", b"AAC", b"TTC",
         b"GGC", b"ACC", b"TAC", b"CAG", b"AAG", b"TCC", b"CGC", b"ATG",
     ];
-    let mut state = seed ^ 0x9E37_79B9_7F4A_7C15;
+    let mut rng = DeterministicLcg64::new(seed ^ 0x9E37_79B9_7F4A_7C15);
     let mut focal = Vec::with_capacity(768);
     for i in 0..256 {
-        state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-        let idx = (((state >> 32) as usize) ^ (i * 7)) & 15;
+        let idx = (((rng.next_u64() >> 32) as usize) ^ (i * 7)) & 15;
         focal.extend_from_slice(codons[idx]);
     }
     let mut sister = focal.clone();
@@ -291,16 +291,14 @@ fn synth_tandem_repeat_expansion(unit: &[u8], flank_seed: u64) -> (String, Strin
 /// Generate a 768-bp uncorrelated I.I.D. maximum-entropy Bernoulli white-noise sequence ($\alpha_{\text{DFA}} \approx 0.50$).
 fn synth_iid_white_noise_pair(seed: u64) -> (String, String) {
     let bases = [b'A', b'C', b'G', b'T'];
-    let mut state = seed ^ 0xA5A5_5A5A_F0F0_0F0F;
+    let mut rng = DeterministicLcg64::new(seed ^ 0xA5A5_5A5A_F0F0_0F0F);
     let mut focal = Vec::with_capacity(768);
     let mut uncorr_ref = Vec::with_capacity(768);
     for _ in 0..768 {
-        state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-        focal.push(bases[((state >> 62) & 3) as usize]);
+        focal.push(bases[((rng.next_u64() >> 62) & 3) as usize]);
     }
     for _ in 0..768 {
-        state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-        uncorr_ref.push(bases[((state >> 62) & 3) as usize]);
+        uncorr_ref.push(bases[((rng.next_u64() >> 62) & 3) as usize]);
     }
     (
         String::from_utf8(focal).unwrap(),

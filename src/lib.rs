@@ -46,6 +46,7 @@ pub mod nonb_dna;
 pub mod orthology;
 pub mod pangenome;
 pub mod phylo;
+pub mod prng_util;
 pub mod privacy;
 pub mod seqnet_runie;
 pub mod pipelines;

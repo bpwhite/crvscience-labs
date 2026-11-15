@@ -9,6 +9,7 @@
 //! the previous Gen-1 linear MI approximation (`j_ij = 1.38*MI_APC + 0.18*MI`) suffered false
 //! positives.
 
+use crate::prng_util::{rand_u01, splitmix64};
 use candle_core::{Device, Tensor};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -82,18 +83,6 @@ pub struct DcaCoevoBenchmarkReport {
 
 fn round4(v: f64) -> f64 {
     (v * 10_000.0).round() / 10_000.0
-}
-
-fn splitmix64(mut x: u64) -> u64 {
-    x = x.wrapping_add(0x9e3779b97f4a7c15);
-    let mut z = x;
-    z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
-    z ^ (z >> 31)
-}
-
-fn rand_u01(seed: u64) -> f64 {
-    (splitmix64(seed) >> 11) as f64 * (1.0 / ((1u64 << 53) as f64))
 }
 
 /// Generates a deterministic, reproducible $M \times L$ 4-state alignment (`0..3` representing

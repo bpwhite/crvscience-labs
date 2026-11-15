@@ -8,6 +8,7 @@
 
 use crate::complexity::round4;
 use crate::fetch::FastaRecord;
+use crate::prng_util::DeterministicLcg64;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -2144,17 +2145,14 @@ fn compute_clade_annotations(
             .into_par_iter()
             .map(|rep_seed| {
                 // Deterministic pseudo-random column resampling per replicate
-                let mut state = (rep_seed as u64 + 1).wrapping_mul(6364136223846793005);
+                let mut rng = DeterministicLcg64::new(
+                    (rep_seed as u64 + 1).wrapping_mul(6364136223846793005),
+                );
                 let mut max_within_d = 0.0f64;
                 let mut min_between_d = f64::INFINITY;
 
                 let sample_cols: Vec<usize> = (0..250)
-                    .map(|_| {
-                        state = state
-                            .wrapping_mul(6364136223846793005)
-                            .wrapping_add(1442695040888963407);
-                        (state as usize) % align_len.max(1)
-                    })
+                    .map(|_| (rng.next_u64() as usize) % align_len.max(1))
                     .collect();
 
                 for &i in member_indices {

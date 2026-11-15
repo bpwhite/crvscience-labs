@@ -3501,12 +3501,9 @@ mod strand_polarity_tests {
     use super::*;
 
     fn pseudo(len: usize, seed: u64) -> Vec<u8> {
-        let mut x = seed;
+        let mut rng = crate::prng_util::DeterministicLcg64::new(seed);
         (0..len)
-            .map(|_| {
-                x = x.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-                b"ACGT"[(x >> 33) as usize % 4]
-            })
+            .map(|_| b"ACGT"[rng.gen_range_usize(4)])
             .collect()
     }
 

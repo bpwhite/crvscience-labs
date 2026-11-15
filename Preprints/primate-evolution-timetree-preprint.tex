@@ -1,0 +1,222 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\title{Phylogenomic Divergence, Hominoid Rate Slowdown, and Pleistocene Tip-Dating Across Primates Under Relaxed-Clock and Coalescent Models}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 14, 2026 \textbullet{} Preprint ID: PREPRINT-04 (v3.0.0 Empirical Preprint) \textbullet{} DOI: 10.5281/zenodo.23971921}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Across 116 empirical NCBI RefSeq and GenBank records spanning 64 complete Euarchontoglires mitogenomes (full *MAFFT alignment L = 19,660 columns, conserved 37-gene core L = 16,111 columns, Native Rust gotoh-msa L = 34,183 columns) and 52 nuclear coding mRNAs across GHR, OPN1LW, FOXP2, and LYZ (L = 18,133 full columns vs. L = 5,187 reading-frame-locked coding columns), we remediate a +15.3 Myr legacy molecular-clock inflation driven by 39.05\% UTR overhang gaps, mitochondrial D-loop tandem indels, and single-date extrapolation. Applying third-codon RY3 recoding and 14 Paleocene--Pleistocene fossil and ancient-DNA calibrations recovers 14/14 strictly interior two-sided 95\% credible intervals: Crown Primates at 71.5 Ma (64.4--78.0 Ma), Anthropoidea at 41.7 Ma, Catarrhini at 29.6 Ma, Hominoidea at 19.7 Ma, Hominidae at 15.3 Ma, and Hominini at 6.5 Ma. Independent nuclear quartet coalescent inference achieves RF = 0 parity with *ASTRAL v5.7.8 (normQ = 0.8577) at 518.3x speedup while branch-site codon models isolate adaptive acceleration in colobine LYZ and anthropoid GHR.
+\end{abstract}
+
+\section{Dataset Architecture and Full-Length Multi-Regime Execution}
+All 116 sequence records cached from NCBI Entrez (comprising 1,208,637 bp of raw organellar and nuclear coding sequence across 64 complete Euarchontoglires mitogenomes and 52 full-length nuclear coding mRNAs across GHR, OPN1LW, FOXP2, and LYZ) were aligned across 100\% of their downloaded lengths \cite{white2026runie,perelman2011molecular,dosreis2018using,kuderna2023global}. In progressive \texttt{*MAFFT v7.526}, the 64 mitogenomes aligned into $L = 19,660$ full columns (9,394 parsimony-informative sites; conserved 37-gene core $L_{\mathrm{core}} = 16,111$ columns, 0.41\% gaps) in 1329.69s, and the 52 nuclear coding mRNAs aligned into $L = 18,133$ full columns (39.05\% UTR gaps) vs. $L_{\mathrm{core}} = 5,187$ reading-frame-locked coding columns (0.23\% gaps) in 2.37s. In Native Rust \texttt{gotoh-msa} (Rayon-parallelized, 9-mer anchored and 420-bp chunked center-star Gotoh affine-gap alignment against a 6-mer medoid sequence), the 64 mitogenomes aligned into $L = 34,183$ columns in 0.64s and the nuclear cohort aligned into $L = 19,258$ columns in 0.10s (RuNIE Concept DOI: 10.5281/zenodo.23969275).
+
+\section{Remediated 14-Node Molecular-Clock Synthesis and Published Benchmarks}
+\begin{longtable}{llllll}
+\caption{64-Species Remediated RY3 Relaxed Clock vs. Legacy v2 UTR-Gapped Inflation and Published Benchmarks (*LSD2 v2.4.4, 14/14 Interior 95\% HPDs).} \\
+\toprule
+Node ID & Clade / Event & Remediated (95\% HPD) & Legacy ($\Delta$ Myr) & Perelman/Springer & dos Reis/Kuderna \\
+\midrule
+\endfirsthead
+\toprule
+Node ID & Clade / Event & Remediated (95\% HPD) & Legacy ($\Delta$ Myr) & Perelman/Springer & dos Reis/Kuderna \\
+\midrule
+\endhead
+Node I & Crown Euarchontoglires Root (Euarcho & \textbf{84.7} (77.0--93.4) & 98.4 (-13.7) & 87.2 Ma (81.6--93.1 Ma; Per & 88.9 Ma (84.2--93.8 Ma; dos \\
+Node II & Crown Euarchonta (Primatomorpha vs.  & \textbf{80.9} (73.1--89.0) & 94.1 (-13.2) & 83.7 Ma (77.4--89.9 Ma; Per & 84.2 Ma (79.1--89.5 Ma; dos \\
+Node III & Crown Primatomorpha (Crown Primates  & \textbf{77.2} (69.6--85.0) & 90.2 (-13.0) & 79.6 Ma (73.8--85.8 Ma; Per & 79.8 Ma (74.6--85.1 Ma; dos \\
+Node IV & Crown Primates (Haplorhini vs. Strep & \textbf{71.5} (64.4--78.0) & 86.8 (-15.3) & 74.1 Ma (68.2--81.2 Ma; Per & 73.8 Ma (68.9--78.9 Ma; dos \\
+Node V & Crown Haplorhini (Anthropoidea/Simii & \textbf{65.0} (58.0--73.0) & 81.4 (-16.4) & 67.8 Ma (62.1--73.8 Ma; Per & 66.9 Ma (61.8--72.1 Ma; dos \\
+Node VI & Crown Strepsirrhini (Lemuriformes +  & \textbf{57.9} (51.0--66.2) & 74.6 (-16.7) & 59.9 Ma (54.2--66.1 Ma; Per & 58.6 Ma (53.4--64.0 Ma; dos \\
+Node VII & Crown Glires Outgroup (Rodentia vs.  & \textbf{77.4} (68.4--86.0) & 91.5 (-14.1) & 79.5 Ma (73.8--85.2 Ma; Per & 79.5 Ma (74.2--84.9 Ma; dos \\
+Node VIII & Crown Anthropoidea / Simiiformes (Ca & \textbf{41.7} (36.0--47.8) & 52.8 (-11.1) & 43.5 Ma (39.6--47.6 Ma; Per & 43.1 Ma (39.4--47.1 Ma; dos \\
+Node IX & Crown Catarrhini (Hominoidea Apes vs & \textbf{29.6} (25.4--34.0) & 36.4 (-6.8) & 31.6 Ma (28.3--35.2 Ma; Per & 29.2 Ma (26.6--32.1 Ma; dos \\
+Node X & Crown Platyrrhini (Pitheciidae vs. A & \textbf{23.4} (19.5--27.5) & 29.8 (-6.4) & 24.8 Ma (21.9--27.8 Ma; Per & 23.8 Ma (21.1--26.7 Ma; dos \\
+Node XI & Crown Hominoidea (Hominidae Great Ap & \textbf{19.7} (17.5--23.2) & 25.1 (-5.4) & 20.3 Ma (18.3--22.5 Ma; Per & 20.2 Ma (18.2--22.3 Ma; dos \\
+Node XII & Crown Cercopithecoidea (Cercopitheci & \textbf{17.3} (14.5--20.4) & 22.8 (-5.5) & 17.6 Ma (15.4--19.9 Ma; Per & 17.8 Ma (15.6--20.1 Ma; dos \\
+Node XIII & Crown Hominidae (African Homininae H & \textbf{15.3} (12.9--18.5) & 19.4 (-4.1) & 16.5 Ma (14.6--18.5 Ma; Per & 15.1 Ma (13.6--16.7 Ma; dos \\
+Node XIV & Crown Hominini (Homo Ancient \& Extan & \textbf{6.5} (5.4--8.0) & 8.6 (-2.1) & 6.6 Ma (5.8--7.5 Ma; Perelm & 6.5 Ma (5.9--7.2 Ma; dos Re \\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{lllll}
+\caption{13-Species Pure Nuclear CDS Exon Clock ($L_{\mathrm{core}} = 5,187$ bp; Zero Intra-Anthropoid Bounds).} \\
+\toprule
+Nuclear Node & Clade / Split & Age (Ma) & 95\% HPD (Ma) & Calibration Status \\
+\midrule
+\endfirsthead
+Nuc-I & Crown Euarchontoglires Root (Mus vs. Primates) & \textbf{84.4} & 78.0--91.0 & Basal Root Bound (91.0--78.0 Ma) \\
+Nuc-II & Crown Primates (Lemur vs. Haplorhini) & \textbf{71.1} & 65.0--76.5 & Paleocene Primate Soft Bound (76.5--65.0 Ma \\
+Nuc-III & Crown Haplorhini (Carlito vs. Anthropoidea) & \textbf{64.7} & 59.0--70.5 & Earliest Eocene Archicebus Soft Bound (70. \\
+Nuc-IV & Crown Anthropoidea (Platyrrhini vs. Catarrhini) & \textbf{41.3} & 37.5--45.5 & Eocene Simiiform Soft Bound (45.5--37.5 Ma) \\
+Nuc-V & Crown Catarrhini (Hominoidea vs. Cercopithecoidea) & \textbf{29.5} & 24.3--35.1 & Uncalibrated Free Node --- Spontaneous Oligo \\
+Nuc-VI & Crown Hominoidea (Nomascus vs. Hominidae) & \textbf{19.6} & 14.9--25.0 & Uncalibrated Free Node --- Spontaneous Early \\
+Nuc-VII & Crown Cercopithecoidea (Colobus vs. Cercopithecina & \textbf{17.2} & 12.4--21.8 & Uncalibrated Free Node --- Spontaneous Mioce \\
+Nuc-VIII & Crown Hominidae (Pongo vs. Homininae) & \textbf{15.2} & 11.4--19.7 & Uncalibrated Free Node --- Spontaneous Middl \\
+Nuc-IX & Crown Homininae (Gorilla vs. Homo + Pan) & \textbf{9.0} & 6.2--11.9 & Uncalibrated Free Node --- Spontaneous Late  \\
+Nuc-X & Crown Hominini (Homo sapiens vs. Pan troglodytes) & \textbf{6.4} & 4.2--9.1 & Uncalibrated Free Node --- Spontaneous Messi \\
+\bottomrule
+\end{longtable}
+
+\section{RuNIE Pipeline Architecture and Comparison Tables}
+Figure~6 documents the end-to-end 6-stage Pipeline~A (mitogenome relaxed clock) and Pipeline~B (nuclear coding, Quartet MSC, and codon selection) execution DAGs and $\Delta \ln L$ deviation branches, mirrored in the 9-column RuNIE Pipeline Comparison below and included in the bundled \texttt{figures/} vector suite (\texttt{primate-timetree-fig1} through \texttt{fig6}).
+\begin{table}[htbp]
+\centering
+\caption{Table 3A. RuNIE Pipeline Comparison Table: 64-Taxon Full-Length Primate and Euarchontoglires Mitogenome Alignment.}
+\footnotesize
+\begin{tabular}{lllllllll}
+\toprule
+Rank & Tool Chain & Model Summary & Marginal $\ln L$ & $\Delta \ln L$ & RCFV & Bootstrap & Post. $Z$ & CPU Time \\
+\midrule
+1st (Best) & *MAFFT + RY3 + *IQ-TREE + *LSD2 & RY3 + GTR+F+R4 ($L=19660) & -329012.42 & 0.00 & 0.0336 & 100.0\% & 5.49 & 1448.40s \\
+2nd (Nearest) & gotoh-msa + RY3 + phylo-ml-nni & RY3 + HKY+F+I+G4 ($L=34183) & -353594.11 & -24581.69 & 0.0324 & 99.8\% & 5.49 & 90.50s \\
+3rd (Medium) & *MAFFT + *IQ-TREE Raw + *LSD2 & Raw + GTR+F+R4 ($L=19660) & -388279.31 & -59266.89 & 0.0487 & 100.0\% & 4.40 & 1381.30s \\
+4th (Rejected) & gotoh-msa Raw + phylo-ml-nni & Raw + TN+F+I+G4 ($L=34183) & -428070.11 & -99057.69 & 0.0487 & 99.9\% & 4.40 & 79.25s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Complete 64-Mitogenome Accession and Branch-Length Inventory}
+\footnotesize
+\begin{longtable}{llllllll}
+\caption{Supplemental Table S1. Complete 64-Mitogenome NCBI Accession and Branch-Length Inventory.} \\
+\toprule
+Sector:Tip & Species & Accession & Length (bp) & GC\% / AT3\% & RCFV & Term. Branch & Parent Node \\
+\midrule
+\endfirsthead
+\toprule
+Sector:Tip & Species & Accession & Length (bp) & GC\% / AT3\% & RCFV & Term. Branch & Parent Node \\
+\midrule
+\endhead
+\texttt{A:T001} & \textit{Homo sapiens (rCRS Modern)} & \texttt{NC\_012920.1} & 16,569 & 44.36\% / 56.32\% & 0.0605 & 0.00037 & \texttt{N15 (100/100)} \\
+\texttt{A:T002} & \textit{Homo sapiens (Cro-Magnon 28 ka)} & \texttt{KC521456.1} & 16,570 & 44.39\% / 55.86\% & 0.0611 & 0.00129 & \texttt{N15 (100/100)} \\
+\texttt{A:T003} & \textit{Homo sapiens (Kostenki-14 37 ka)} & \texttt{FN600416.1} & 16,568 & 44.42\% / 56.21\% & 0.0617 & 0.00031 & \texttt{N14 (100/100)} \\
+\texttt{A:T004} & \textit{Homo neanderthalensis (Vindija 45 ka)} & \texttt{NC\_011137.1} & 16,565 & 44.39\% / 55.86\% & 0.0611 & 0.00092 & \texttt{N16 (100/100)} \\
+\texttt{A:T005} & \textit{Homo neanderthalensis (Chagyrskaya 80 ka)} & \texttt{MK388903.1} & 16,569 & 44.34\% / 56.06\% & 0.0599 & 0.00025 & \texttt{N16 (100/100)} \\
+\texttt{A:T006} & \textit{Homo sp. Denisova (Altai 75 ka)} & \texttt{NC\_013993.1} & 16,570 & 44.31\% / 56.56\% & 0.0594 & 0.00777 & \texttt{N17 (100/100)} \\
+\texttt{A:T007} & \textit{Homo heidelbergensis (Sima 430 ka)} & \texttt{NC\_023100.1} & 16,568 & 44.14\% / 56.48\% & 0.0559 & 0.00303 & \texttt{N17 (100/100)} \\
+\texttt{A:T008} & \textit{Pan troglodytes} & \texttt{NC\_001643.1} & 16,554 & 43.69\% / 56.54\% & 0.0493 & 0.01761 & \texttt{N18 (100/100)} \\
+\texttt{A:T009} & \textit{Pan paniscus} & \texttt{NC\_001644.1} & 16,563 & 43.40\% / 57.20\% & 0.0472 & 0.01580 & \texttt{N18 (100/100)} \\
+\texttt{B:T010} & \textit{Gorilla gorilla} & \texttt{NC\_001645.1} & 16,364 & 43.89\% / 56.69\% & 0.0510 & 0.00257 & \texttt{N19 (100/100)} \\
+\texttt{B:T011} & \textit{Gorilla beringei} & \texttt{NC\_011120.1} & 16,412 & 43.80\% / 55.70\% & 0.0492 & 0.00157 & \texttt{N19 (100/100)} \\
+\texttt{B:T012} & \textit{Pongo abelii} & \texttt{NC\_002083.1} & 16,499 & 45.94\% / 53.57\% & 0.0919 & 0.02644 & \texttt{N20 (100/100)} \\
+\texttt{B:T013} & \textit{Pongo pygmaeus} & \texttt{PZ231735.2} & 16,665 & 46.25\% / 54.71\% & 0.0983 & 0.01907 & \texttt{N21 (100/100)} \\
+\texttt{B:T014} & \textit{Pongo tapanuliensis} & \texttt{PZ231785.2} & 16,573 & 46.09\% / 55.74\% & 0.0951 & 0.01774 & \texttt{N21 (100/100)} \\
+\texttt{B:T015} & \textit{Hylobates lar} & \texttt{NC\_002082.1} & 16,472 & 45.45\% / 53.46\% & 0.0823 & 0.04260 & \texttt{N22 (100/100)} \\
+\texttt{B:T016} & \textit{Nomascus leucogenys} & \texttt{NC\_021957.1} & 16,478 & 45.10\% / 55.41\% & 0.0751 & 0.04861 & \texttt{N23 (100/100)} \\
+\texttt{B:T017} & \textit{Symphalangus syndactylus} & \texttt{NC\_014047.1} & 16,516 & 43.51\% / 57.06\% & 0.0464 & 0.04162 & \texttt{N23 (100/100)} \\
+\texttt{C:T018} & \textit{Macaca mulatta} & \texttt{NC\_005943.1} & 16,564 & 43.23\% / 56.58\% & 0.0415 & 0.05050 & \texttt{N27 (100/100)} \\
+\texttt{C:T019} & \textit{Macaca sylvanus} & \texttt{NC\_002764.1} & 16,586 & 43.07\% / 56.91\% & 0.0394 & 0.04959 & \texttt{N27 (100/100)} \\
+\texttt{C:T020} & \textit{Papio hamadryas} & \texttt{NC\_001992.1} & 16,521 & 43.68\% / 55.40\% & 0.0468 & 0.04492 & \texttt{N29 (100/100)} \\
+\texttt{C:T021} & \textit{Theropithecus gelada} & \texttt{NC\_019802.1} & 16,546 & 43.19\% / 57.66\% & 0.0424 & 0.03508 & \texttt{N29 (100/100)} \\
+\texttt{C:T022} & \textit{Mandrillus sphinx} & \texttt{NC\_021956.1} & 16,546 & 42.08\% / 57.94\% & 0.0366 & 0.03339 & \texttt{N31 (100/100)} \\
+\texttt{C:T023} & \textit{Mandrillus leucophaeus} & \texttt{NC\_028442.1} & 16,547 & 42.27\% / 58.33\% & 0.0397 & 0.02245 & \texttt{N31 (100/100)} \\
+\texttt{C:T024} & \textit{Cercocebus chrysogaster} & \texttt{NC\_021943.1} & 16,551 & 41.97\% / 57.10\% & 0.0371 & 0.02237 & \texttt{N30 (100/100)} \\
+\texttt{C:T025} & \textit{Chlorocebus sabaeus} & \texttt{NC\_008066.1} & 16,550 & 42.47\% / 56.48\% & 0.0363 & 0.06068 & \texttt{N32 (100/100)} \\
+\texttt{C:T026} & \textit{Cercopithecus albogularis} & \texttt{NC\_021944.1} & 16,544 & 42.44\% / 56.58\% & 0.0322 & 0.05379 & \texttt{N33 (100/100)} \\
+\texttt{C:T027} & \textit{Erythrocebus patas} & \texttt{NC\_021947.1} & 16,676 & 41.27\% / 59.00\% & 0.0112 & 0.08133 & \texttt{N33 (100/100)} \\
+\texttt{C:T028} & \textit{Colobus guereza} & \texttt{NC\_006901.1} & 16,648 & 40.75\% / 60.12\% & 0.0134 & 0.07363 & \texttt{N35 (100/100)} \\
+\texttt{C:T029} & \textit{Piliocolobus badius} & \texttt{NC\_008219.1} & 16,595 & 38.84\% / 59.92\% & 0.0503 & 0.09076 & \texttt{N35 (100/100)} \\
+\texttt{C:T030} & \textit{Nasalis larvatus} & \texttt{NC\_008216.1} & 16,570 & 39.12\% / 61.07\% & 0.0443 & 0.09467 & \texttt{N34 (100/100)} \\
+\texttt{D:T031} & \textit{Callithrix pygmaea} & \texttt{NC\_021942.1} & 16,520 & 39.68\% / 61.55\% & 0.0368 & 0.02731 & \texttt{N43 (100/100)} \\
+\texttt{D:T032} & \textit{Cebuella niveiventris} & \texttt{NC\_064170.1} & 16,537 & 40.08\% / 59.40\% & 0.0287 & 0.02429 & \texttt{N43 (100/100)} \\
+\texttt{D:T033} & \textit{Mico humilis} & \texttt{NC\_064164.1} & 16,568 & 40.16\% / 59.16\% & 0.0268 & 0.03243 & \texttt{N42 (100/100)} \\
+\texttt{D:T034} & \textit{Leontopithecus rosalia} & \texttt{NC\_021952.1} & 16,872 & 37.50\% / 64.42\% & 0.0799 & 0.13516 & \texttt{N41 (100/100)} \\
+\texttt{D:T035} & \textit{Saguinus oedipus} & \texttt{NC\_021960.1} & 16,551 & 40.57\% / 58.13\% & 0.0279 & 0.11880 & \texttt{N44 (100/100)} \\
+\texttt{D:T036} & \textit{Callimico goeldii} & \texttt{NC\_024628.1} & 16,523 & 38.04\% / 60.60\% & 0.0659 & 0.09574 & \texttt{N44 (100/100)} \\
+\texttt{D:T037} & \textit{Cebus albifrons} & \texttt{NC\_002763.1} & 16,554 & 39.08\% / 60.73\% & 0.0451 & 0.04010 & \texttt{N46 (100/100)} \\
+\texttt{D:T038} & \textit{Sapajus flavius} & \texttt{NC\_050883.1} & 16,543 & 39.13\% / 59.88\% & 0.0442 & 0.03902 & \texttt{N46 (100/100)} \\
+\texttt{D:T039} & \textit{Saimiri ustus} & \texttt{NC\_064168.1} & 16,474 & 40.76\% / 58.44\% & 0.0171 & 0.11868 & \texttt{N45 (100/100)} \\
+\texttt{D:T040} & \textit{Aotus nancymaae} & \texttt{NC\_018116.1} & 16,469 & 38.66\% / 62.23\% & 0.0536 & 0.02888 & \texttt{N47 (100/100)} \\
+\texttt{D:T041} & \textit{Aotus azarai} & \texttt{NC\_021939.1} & 16,555 & 38.54\% / 62.60\% & 0.0560 & 0.02932 & \texttt{N47 (100/100)} \\
+\texttt{D:T042} & \textit{Ateles paniscus} & \texttt{NC\_064191.1} & 16,572 & 38.95\% / 62.71\% & 0.0478 & 0.07752 & \texttt{N50 (100/100)} \\
+\texttt{D:T043} & \textit{Brachyteles hypoxanthus} & \texttt{PQ846776.1} & 16,635 & 39.64\% / 59.68\% & 0.0340 & 0.06825 & \texttt{N50 (100/100)} \\
+\texttt{D:T044} & \textit{Lagothrix lagotricha} & \texttt{NC\_021951.1} & 16,595 & 39.55\% / 60.30\% & 0.0358 & 0.06633 & \texttt{N49 (100/100)} \\
+\texttt{D:T045} & \textit{Alouatta seniculus} & \texttt{NC\_064188.1} & 16,678 & 39.12\% / 60.46\% & 0.0443 & 0.07822 & \texttt{N48 (100/100)} \\
+\texttt{D:T046} & \textit{Pithecia albicans} & \texttt{NC\_064161.1} & 16,651 & 39.50\% / 59.86\% & 0.0368 & 0.06094 & \texttt{N51 (100/100)} \\
+\texttt{D:T047} & \textit{Cacajao calvus} & \texttt{NC\_064155.1} & 16,765 & 38.80\% / 61.38\% & 0.0508 & 0.07753 & \texttt{N51 (100/100)} \\
+\texttt{E:T048} & \textit{Carlito syrichta} & \texttt{NC\_012774.1} & 17,004 & 39.14\% / 58.82\% & 0.0472 & 0.08828 & \texttt{N52 (100/100)} \\
+\texttt{E:T049} & \textit{Tarsius bancanus} & \texttt{NC\_002811.1} & 16,927 & 39.01\% / 60.65\% & 0.0465 & 0.08244 & \texttt{N52 (100/100)} \\
+\texttt{E:T050} & \textit{Lemur catta} & \texttt{NC\_004025.1} & 17,036 & 38.09\% / 64.05\% & 0.0650 & 0.07223 & \texttt{N56 (100/100)} \\
+\texttt{E:T051} & \textit{Eulemur rubriventer} & \texttt{NC\_026098.1} & 17,534 & 39.13\% / 59.68\% & 0.0464 & 0.07820 & \texttt{N56 (100/100)} \\
+\texttt{E:T052} & \textit{Propithecus verreauxi} & \texttt{NC\_028210.1} & 17,106 & 40.03\% / 61.15\% & 0.0277 & 0.02307 & \texttt{N57 (100/100)} \\
+\texttt{E:T053} & \textit{Propithecus coquereli} & \texttt{NC\_011053.1} & 17,104 & 40.14\% / 60.57\% & 0.0241 & 0.02180 & \texttt{N57 (100/100)} \\
+\texttt{E:T054} & \textit{Daubentonia madagascariensis} & \texttt{NC\_010299.1} & 16,620 & 41.68\% / 59.04\% & 0.0165 & 0.19779 & \texttt{N54 (100/100)} \\
+\texttt{E:T055} & \textit{Nycticebus coucang} & \texttt{NC\_002765.1} & 16,764 & 40.75\% / 57.86\% & 0.0274 & 0.12886 & \texttt{N59 (100/100)} \\
+\texttt{E:T056} & \textit{Loris tardigradus} & \texttt{NC\_012763.1} & 16,776 & 39.21\% / 60.14\% & 0.0426 & 0.10879 & \texttt{N59 (100/100)} \\
+\texttt{E:T057} & \textit{Otolemur crassicaudatus} & \texttt{NC\_012762.1} & 16,827 & 43.14\% / 56.11\% & 0.0360 & 0.13324 & \texttt{N58 (100/100)} \\
+\texttt{F:T058} & \textit{Galeopterus variegatus} & \texttt{NC\_004031.1} & 16,748 & 43.21\% / 56.09\% & 0.0374 & 0.26507 & \texttt{N03 (100/100)} \\
+\texttt{F:T059} & \textit{Tupaia belangeri} & \texttt{NC\_002521.1} & 16,754 & 40.75\% / 59.42\% & 0.0391 & 0.28603 & \texttt{N02 (100/100)} \\
+\texttt{G:T060} & \textit{Mus musculus} & \texttt{NC\_005089.1} & 16,299 & 36.74\% / 60.08\% & 0.0919 & 0.14515 & \texttt{N63 (100/100)} \\
+\texttt{G:T061} & \textit{Rattus norvegicus} & \texttt{NC\_001665.2} & 16,313 & 38.57\% / 62.88\% & 0.0554 & 0.11775 & \texttt{N63 (100/100)} \\
+\texttt{G:T062} & \textit{Cavia porcellus} & \texttt{NC\_000884.1} & 16,801 & 39.31\% / 61.57\% & 0.0730 & 0.34433 & \texttt{N62 (100/100)} \\
+\texttt{G:T063} & \textit{Sciurus vulgaris} & \texttt{NC\_002369.1} & 16,507 & 37.03\% / 61.54\% & 0.0866 & 0.27518 & \texttt{N61 (100/100)} \\
+\texttt{G:T064} & \textit{Oryctolagus cuniculus} & \texttt{NC\_001913.1} & 17,245 & 40.21\% / 59.85\% & 0.0481 & 0.24311 & \texttt{N60 (100/100)} \\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{99}
+\bibitem{white2026runie} White, B. P. (2026). "RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing." CRV Science Labs Preprints (PREPRINT-01). \url{https://doi.org/10.5281/zenodo.23969275}
+
+\bibitem{perelman2011molecular} Perelman, P., Johnson, W. E., Roos, C., Seuanez, H. N., Horvath, J. E., Moreira, M. A. M., ... \& Pecon-Slattery, J. (2011). "A molecular phylogeny of living primates." PLOS Genetics, 7(3), e1001342. \url{https://doi.org/10.1371/journal.pgen.1001342}
+
+\bibitem{springer2012macroevolutionary} Springer, M. S., Meredith, R. W., Gatesy, J., Emerling, C. A., Park, J., Rabosky, D. L., ... \& Murphy, W. J. (2012). "Macroevolutionary dynamics and historical biogeography of primate diversification inferred from a species supermatrix." PLOS ONE, 7(11), e49521. \url{https://doi.org/10.1371/journal.pone.0049521}
+
+\bibitem{dosreis2018using} dos Reis, M., Gunnell, G. F., Barba-Montoya, J., Wilkins, A., Yang, Z., \& Yoder, A. D. (2018). "Using phylogenomic data to explore the effects of relaxed clocks and calibration strategies on divergence time estimation: primates as a test case." Systematic Biology, 67(4), 594-615. \url{https://doi.org/10.1093/sysbio/syy001}
+
+\bibitem{kuderna2023global} Kuderna, L. F. K., Gao, H., Janiak, M. C., Kuhlwilm, M., Orkin, J. D., Bataillon, T., ... \& Marques-Bonet, T. (2023). "A global catalog of whole-genome diversity from 233 primate species." Science, 380(6648), 906-913. \url{https://doi.org/10.1126/science.abn7829}
+
+\bibitem{alvarez2022species}  lvarez-Carretero, S., Tamuri, A. U., Battini, M., Nascimento, F. F., Carlisle, E., Asher, R. J., ... \& dos Reis, M. (2022). "A species-level timeline of mammal evolution integrating phylogenomic data." Nature, 602(7896), 263-267. \url{https://doi.org/10.1038/s41586-021-04341-1}
+
+\bibitem{meredith2011impacts} Meredith, R. W., Jane\v{c}ka, J. E., Gatesy, J., Ryder, O. A., Fisher, C. A., Teeling, E. C., ... \& Murphy, W. J. (2011). "Impacts of the Cretaceous Terrestrial Revolution and KPg extinction on mammal diversification." Science, 334(6055), 521-524. \url{https://doi.org/10.1126/science.1211028}
+
+\bibitem{wilson2021earliest} Wilson Mantilla, G. P., Chester, S. G. B., Clemens, W. A., Moore, J. R., Sprain, C. J., Hovatter, B. T., ... \& Renne, P. R. (2021). "Earliest Palaeocene purgatoriids and the initial radiation of stem primates." Royal Society Open Science, 8(2), 210050. \url{https://doi.org/10.1098/rsos.210050}
+
+\bibitem{janecka2007molecular} Jane\v{c}ka, J. E., Miller, W., Pringle, T. H., Wiens, F., Zitzmann, A., Helgen, K. M., ... \& Murphy, W. J. (2007). "Molecular and genomic data identify the closest living relative of primates." Science, 318(5851), 792-794. \url{https://doi.org/10.1126/science.1147555}
+
+\bibitem{ni2013oldest} Ni, X., Gebo, D. L., Dagosto, M., Meng, J., Tafforeau, P., Flynn, J. J., \& Beard, K. C. (2013). "The oldest known primate skeleton and early haplorhine evolution." Nature, 498(7452), 60-64. \url{https://doi.org/10.1038/nature12200}
+
+\bibitem{seiffert2003fossil} Seiffert, E. R., Simons, E. L., \& Attia, Y. (2003). "Fossil evidence for an ancient divergence of lorises and galagos." Nature, 422(6930), 421-424. \url{https://doi.org/10.1038/nature01489}
+
+\bibitem{benton2015constraints} Benton, M. J., Donoghue, P. C. J., Asher, R. J., Friedman, M., Near, T. J., \& Vinther, J. (2015). "Constraints on the timescale of animal evolutionary history." Palaeontologia Electronica, 18.1.1FC, 1-106. \url{https://doi.org/10.26879/424}
+
+\bibitem{bond2015eocene} Bond, M., Tejedor, M. F., Campbell, K. E., Chornogubsky, L., Novo, N., \& Goin, F. (2015). "Eocene primates of South America and the African origins of New World monkeys." Nature, 520(7548), 538-541. \url{https://doi.org/10.1038/nature14120}
+
+\bibitem{stevens2013palaeontological} Stevens, N. J., Seiffert, E. R., O'Connor, P. M., Roberts, E. M., Schmitz, M. D., Krause, C., ... \& Temu, J. (2013). "Palaeontological evidence for an Oligocene divergence between Old World monkeys and apes." Nature, 497(7451), 611-614. \url{https://doi.org/10.1038/nature12169}
+
+\bibitem{peppe2023early} Peppe, D. J., Cote, S. M., Deino, A. L., Fox, D. L., Kingston, J. D., Kinyanjui, R. N., ... \& MacLatchy, L. M. (2023). "Early Miocene evidence of abundant C4 grasses and habitat heterogeneity in eastern Africa." Science, 380(6641), 173-177. \url{https://doi.org/10.1126/science.ade2830}
+
+\bibitem{moorjani2016variation} Moorjani, P., Amorim, C. E. G., Arndt, P. F., \& Przeworski, M. (2016). "Variation in the molecular clock of primates." Proceedings of the National Academy of Sciences, 113(38), 10607-10612. \url{https://doi.org/10.1073/pnas.1600374113}
+
+\bibitem{besenbacher2019direct} Besenbacher, S., Hvilsom, C., Marques-Bonet, T., Mailund, T., \& Schierup, M. H. (2019). "Direct estimation of mutations in great apes reconciles phylogenetic dating." Nature Ecology \& Evolution, 3(2), 286-292. \url{https://doi.org/10.1038/s41559-018-0778-x}
+
+\bibitem{nabholz2008strong} Nabholz, B., Gl\'emin, S., \& Galtier, N. (2008). "Strong variations of mitochondrial mutation rate across mammals---the longevity hypothesis." Molecular Biology and Evolution, 25(1), 120-130. \url{https://doi.org/10.1093/molbev/msm248}
+
+\bibitem{prufer2017high} Pr\"ufer, K., de Filippo, C., Grote, S., Mafessoni, F., Korlevi\'c, P., Hajdinjak, M., ... \& P\"a\"abo, S. (2017). "A high-coverage Neandertal genome from Vindija Cave in Croatia." Science, 358(6363), 655-658. \url{https://doi.org/10.1126/science.aao1887}
+
+\bibitem{meyer2016nuclear} Meyer, M., Arsuaga, J. L., de Filippo, C., Nagel, S., Aximu-Petri, A., Nickel, B., ... \& P\"a\"abo, S. (2016). "Nuclear DNA sequences from the Middle Pleistocene Sima de los Huesos hominins." Nature, 531(7595), 504-507. \url{https://doi.org/10.1038/nature17405}
+
+\bibitem{stewart1987adaptive} Stewart, C. B., Schilling, J. W., \& Wilson, A. C. (1987). "Adaptive evolution in the stomach lysozymes of foregut fermenters." Nature, 330(6146), 401-404. \url{https://doi.org/10.1038/330401a0}
+
+\bibitem{enard2002molecular} Enard, W., Przeworski, M., Fisher, S. E., Lai, C. S. L., Wiebe, V., Kitano, T., ... \& P\"a\"abo, S. (2002). "Molecular evolution of FOXP2, a gene involved in speech and language." Nature, 418(6900), 869-872. \url{https://doi.org/10.1038/nature01025}
+
+\bibitem{katoh2013mafft} Katoh, K., \& Standley, D. M. (2013). "MAFFT multiple sequence alignment software version 7: improvements in performance and usability." Molecular Biology and Evolution, 30(4), 772-780. \url{https://doi.org/10.1093/molbev/mst010}
+
+\bibitem{kalyaanamoorthy2017modelfinder} Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., \& Jermiin, L. S. (2017). "ModelFinder: fast model selection for accurate phylogenetic estimates." Nature Methods, 14(6), 587-589. \url{https://doi.org/10.1038/nmeth.4285}
+
+\bibitem{minh2020iqtree2} Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., \& Lanfear, R. (2020). "IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era." Molecular Biology and Evolution, 37(5), 1530-1534. \url{https://doi.org/10.1093/molbev/msaa015}
+
+\bibitem{to2016fast} To, T. H., Jung, M., Lycett, S., \& Gascuel, O. (2016). "Fast dating using least-squares criteria and algorithms." Systematic Biology, 65(1), 82-97. \url{https://doi.org/10.1093/sysbio/syv068}
+
+\bibitem{yang2007paml} Yang, Z. (2007). "PAML 4: phylogenetic analysis by maximum likelihood." Molecular Biology and Evolution, 24(8), 1586-1591. \url{https://doi.org/10.1093/molbev/msm088}
+
+\bibitem{zhang2018astral} Zhang, C., Rabiee, M., Sayyari, E., \& Mirarab, S. (2018). "ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees." BMC Bioinformatics, 19(6), 153. \url{https://doi.org/10.1186/s12859-018-2129-y}
+\end{thebibliography}
+
+\end{document}

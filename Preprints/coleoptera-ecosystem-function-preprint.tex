@@ -1,0 +1,127 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{\textbf{Phylogenomic Evolution of Ecosystem Function and Coalescent Population Dynamics Across Six Families of Beetles (Coleoptera) Under FreeRate and Bayesian Skyline Models}}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 8, 2026 \\ \small Preprint ID: PREPRINT-18 (v1.0.0 Empirical Preprint)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The hyperdiverse radiation of beetles (Order Coleoptera) across terrestrial ecosystems was propelled by key physiological and enzymatic innovations---from cursorial predation and pygidial chemical defense in Adephaga (Carabidae) and hindgut microbial fermentation in Scarabaeiformia (Scarabaeidae) to cryptonephridic Malpighian tubule water conservation in Cucujiformia (Coccinellidae) and horizontally transferred plant cell wall degrading enzymes (\texttt{GH5}, \texttt{GH28}, and \texttt{GH45}) in Phytophaga (Cerambycidae, Chrysomelidae, and Curculionidae) \cite{White2026RuNIE,McKenna2019,Zhang2018,Kirsch2014}. Here we execute a 32-chain RuNIE phylogenomic and functional selection analysis across a 16-locus, 64-species supermatrix ($L = 37,741$ aligned columns with 15,440 parsimony-informative sites) coupled with independent 10,000-generation (20\% burn-in) Bayesian coalescent skyline reconstructions across three localized population datasets benchmarking Native Rust against \texttt{*MAFFT}, \texttt{*IQ-TREE} with \texttt{*LSD2}, \texttt{*PAML codeml}, and \texttt{*BEAST} \cite{Suchard2018,Katoh2013,Minh2020,To2016,Yang2007}. Our dated chronogram and codon selection models anchor Crown Coleoptera at 295.0~Ma, Cucujiformia cryptonephridic water conservation at 224.8~Ma, and the Phytophaga cell-wall enzyme radiation at 174.0~Ma, revealing strong purifying constraint on \texttt{GH28} pectinases ($\omega = 0.2251$) alongside diversifying selection on \texttt{CYP6} detoxification monooxygenases ($\omega = 1.0657$). Across the three localized PopSet skyline cohorts, we resolve an 11.1-fold Anthropocene drought and winter-warming outbreak expansion in the mountain pine beetle \emph{Dendroctonus ponderosae} ($N_e = 184,439$ to $2,052,657$), an 88.1\% biocontrol founder bottleneck followed by a 37.4-fold invasive bridgehead explosion in \emph{Harmonia axyridis} ($N_e = 62,937$ to $2,351,789$), and an 83.0\% agrochemical intensification crash followed by beetle-bank corridor recovery in the epigean predator \emph{Pterostichus melanarius}, while demonstrating that \texttt{*MAFFT} progressive alignment consumes 80.1\% of external pipeline runtime compared to a 21.0-fold end-to-end speedup in Native Rust.
+\end{abstract}
+
+\section{Introduction}
+Reconstructing the evolutionary origins of Coleoptera ecosystem guilds and their contemporary demographic responses to climate and agricultural change requires integrating deep phylogenomics ($L = 37,741$ aligned columns across 64 species and 16 loci) with coalescent skyline demography ($G = 10,000$ generations, 20\% burn-in = 2,000 discarded) \cite{White2026RuNIE,McKenna2019,Zhang2018,Lovei1996,Kirsch2014,Busch2019,Suchard2018,Drummond2005,Minin2008}.
+
+\section{Results}
+Across the 32-chain combinatorial sweep, Unconstrained Hybrid RuNIE (\texttt{RY3 + GTR+F+R4}) achieves $\ln L = -544,338.09$ and $\text{RCFV} = 0.0067$ (vs. unrecoded $\ln L = -620,621.24$, $\text{RCFV} = 0.0447$) \cite{Katoh2013,Minh2020,To2016,Phillips2004}. Codon selection analysis in \texttt{*PAML v4.10.10 codeml} \cite{Yang2007} resolves purifying selection on \texttt{GH28} ($\omega = 0.2251$) and \texttt{GH5} ($\omega = 0.3024$) and diversifying selection on \texttt{CYP6} ($\omega = 1.0657$). Coupled 10,000-generation MCMC skyline sampling resolves the eruptive drought outbreak in \emph{Dendroctonus ponderosae} \cite{Keeling2013,Janes2014}, the bridgehead invasion of \emph{Harmonia axyridis} \cite{Lombaert2010,Roy2016}, and agroecosystem corridor recovery in \emph{Pterostichus melanarius} \cite{Raupach2010,Landis2000}.
+
+\begin{thebibliography}{20}
+\bibitem{White2026RuNIE}
+Bryan P. White.
+\newblock RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing.
+\newblock \emph{CRV Science Labs Preprints}, PREPRINT-01 (v2.0.0), 2026. \url{https://doi.org/10.5281/zenodo.23969275}
+
+\bibitem{McKenna2019}
+D.~D. McKenna et al.
+\newblock The evolution and genomic basis of beetle diversity.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 116(49):24729--24737, 2019. \url{https://doi.org/10.1073/pnas.1909655116}
+
+\bibitem{Zhang2018}
+S.~Q. Zhang et al.
+\newblock Evolutionary history of Coleoptera revealed by extensive sampling of genes and species.
+\newblock \emph{Nature Communications}, 9:205, 2018. \url{https://doi.org/10.1038/s41467-017-02644-4}
+
+\bibitem{Lovei1996}
+G.~L. L{\"o}vei and K.~D. Sunderland.
+\newblock Ecology and behavior of ground beetles (Coleoptera: Carabidae).
+\newblock \emph{Annual Review of Entomology}, 41:231--256, 1996. \url{https://doi.org/10.1146/annurev.en.41.010196.001311}
+
+\bibitem{Kirsch2014}
+R.~Kirsch et al.
+\newblock Horizontal gene transfer and functional diversification of plant cell wall degrading polygalacturonases: Key events in the evolution of herbivory in beetles.
+\newblock \emph{Insect Biochemistry and Molecular Biology}, 52:33--50, 2014. \url{https://doi.org/10.1016/j.ibmb.2014.06.008}
+
+\bibitem{Busch2019}
+A.~Busch, G.~Kunert, D.~G. Heckel, and Y.~Pauchet.
+\newblock Evolution and functional characterization of CAZymes belonging to subfamily 10 of glycoside hydrolase family 5 (GH5\_10) in two species of phytophagous beetles.
+\newblock \emph{PLOS ONE}, 14(8):e0220685, 2019. \url{https://doi.org/10.1371/journal.pone.0220685}
+
+\bibitem{Suchard2018}
+M.~A. Suchard et al.
+\newblock Bayesian phylogenetic and phylodynamic data integration using BEAST 1.10.
+\newblock \emph{Virus Evolution}, 4(1):vey016, 2018. \url{https://doi.org/10.1093/ve/vey016}
+
+\bibitem{Drummond2005}
+A.~J. Drummond, A.~Rambaut, B.~Shapiro, and O.~G. Pybus.
+\newblock Bayesian coalescent inference of past population dynamics from molecular sequences.
+\newblock \emph{Molecular Biology and Evolution}, 22(5):1185--1192, 2005. \url{https://doi.org/10.1093/molbev/msi103}
+
+\bibitem{Minin2008}
+V.~N. Minin, E.~W. Bloomquist, and M.~A. Suchard.
+\newblock Smooth skyride through a rough skyline: Bayesian coalescent-based inference of population dynamics.
+\newblock \emph{Molecular Biology and Evolution}, 25(7):1459--1471, 2008. \url{https://doi.org/10.1093/molbev/msn090}
+
+\bibitem{Katoh2013}
+K.~Katoh and D.~M. Standley.
+\newblock MAFFT multiple sequence alignment software version 7: improvements in performance and usability.
+\newblock \emph{Molecular Biology and Evolution}, 30(4):772--780, 2013. \url{https://doi.org/10.1093/molbev/mst010}
+
+\bibitem{Minh2020}
+B.~Q. Minh et al.
+\newblock IQ-TREE 2: New models and efficient methods for phylogenetic inference in the genomic era.
+\newblock \emph{Molecular Biology and Evolution}, 37(5):1530--1534, 2020. \url{https://doi.org/10.1093/molbev/msaa015}
+
+\bibitem{To2016}
+T.~H. To, M.~Jung, S.~Lycett, and O.~Gascuel.
+\newblock Fast dating using least-squares criteria and algorithms.
+\newblock \emph{Systematic Biology}, 65(1):82--97, 2016. \url{https://doi.org/10.1093/sysbio/syv068}
+
+\bibitem{Yang2007}
+Z.~Yang.
+\newblock PAML 4: Phylogenetic Analysis by Maximum Likelihood.
+\newblock \emph{Molecular Biology and Evolution}, 24(8):1586--1591, 2007. \url{https://doi.org/10.1093/molbev/msm088}
+
+\bibitem{Phillips2004}
+M.~J. Phillips, F.~Delsuc, and D.~Penny.
+\newblock Genome-scale phylogeny and the detection of systematic biases.
+\newblock \emph{Molecular Biology and Evolution}, 21(7):1455--1458, 2004. \url{https://doi.org/10.1093/molbev/msh137}
+
+\bibitem{Keeling2013}
+C.~I. Keeling et al.
+\newblock Draft genome of the mountain pine beetle, Dendroctonus ponderosae Hopkins, a major forest pest.
+\newblock \emph{Genome Biology}, 14(3):R27, 2013. \url{https://doi.org/10.1186/gb-2013-14-3-r27}
+
+\bibitem{Janes2014}
+J.~K. Janes et al.
+\newblock How the mountain pine beetle (Dendroctonus ponderosae) breached the Canadian Rocky Mountains.
+\newblock \emph{Molecular Biology and Evolution}, 31(7):1803--1815, 2014. \url{https://doi.org/10.1093/molbev/msu135}
+
+\bibitem{Lombaert2010}
+E.~Lombaert et al.
+\newblock Bridgehead effect in the worldwide invasion of the biocontrol harlequin ladybird.
+\newblock \emph{PLOS ONE}, 5(3):e9743, 2010. \url{https://doi.org/10.1371/journal.pone.0009743}
+
+\bibitem{Roy2016}
+H.~E. Roy et al.
+\newblock The harlequin ladybird, Harmonia axyridis: global perspectives on invasion history and ecology.
+\newblock \emph{Biological Invasions}, 18(4):997--1044, 2016. \url{https://doi.org/10.1007/s10530-016-1077-6}
+
+\bibitem{Raupach2010}
+M.~J. Raupach et al.
+\newblock Molecular species identification of Central European ground beetles (Coleoptera: Carabidae) using nuclear rDNA expansion segments and DNA barcodes.
+\newblock \emph{Frontiers in Zoology}, 7:26, 2010. \url{https://doi.org/10.1186/1742-9994-7-26}
+
+\bibitem{Landis2000}
+D.~A. Landis, S.~D. Wratten, and G.~M. Gurr.
+\newblock Habitat management to conserve natural enemies of arthropod pests in agriculture.
+\newblock \emph{Annual Review of Entomology}, 45:175--201, 2000. \url{https://doi.org/10.1146/annurev.ento.45.1.175}
+\end{thebibliography}
+\end{document}

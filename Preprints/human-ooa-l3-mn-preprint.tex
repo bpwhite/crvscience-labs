@@ -1,0 +1,211 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\title{Human Out-of-Africa L3-to-M/N Mitogenome Divergence, Pleistocene Tip-Dating, Haplotype k-Core Networks, and OXPHOS Purifying Selection}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 14, 2026 \textbullet{} Preprint ID: PREPRINT-02 (v3.0.0 Empirical Preprint) \textbullet{} DOI: 10.5281/zenodo.23970546}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Version 3.0.0 audits and rebuilds our Out-of-Africa human evolutionary phylogenomic synthesis across 117 curated NCBI records (64 complete hominoid and human mitochondrial genomes aligned to L\_full = 17,283 / conserved 37-gene core L\_core = 15,446 columns in *MAFFT v7.526 vs. L = 16,920 columns in Native Rust gotoh-msa, 52 full-length primate nuclear OXPHOS mRNAs across NDUFS1, SDHA, UQCRC1, and COX4I1 aligned to L\_full = 18,402 / reading-frame-locked CDS core L\_core = 6,120 columns vs. L = 24,945 in gotoh-msa, and 1 human Chr1p36.33 NUMT control). Replacing five misassigned or redundant legacy accessions, quarantining the Chr1p36.33 pseudogene (16 internal UGA stops, BL = 0.0035), masking 67 ancient-DNA C->T/G->A terminal deamination singletons, applying RY3 recoding (RCFV = 0.0019), and pairing stratified hominoid fossils with 22 radiometric tips in *LSD2 v2.4.4 fixes free single-root clock collapse (which pushed Macro-Haplogroup R to 38.8 ka, younger than its 45.8 ka Bacho Kiro tip) and yields 63/63 strictly interior 95\% HPDs: Crown AMH at 251.1 ka, East African L3 at 84.2 ka, Macro-Haplogroup M at 73.0 ka, N at 65.7 ka, and R at 60.9 ka. An independent nuclear OXPHOS CDS clock gives 12/12 interior nodes, Native Quartet MSC matches *ASTRAL v5.7.8 (normQ = 0.8951, RF = 0, 60.4x speedup), and 8-epoch Kingman skyline MCMC places the MIS 4/3 OOA founder N\_ef at 25,509.
+\end{abstract}
+
+\section{Dataset Architecture and Full-Length Multi-Regime Execution}
+All 117 curated NCBI sequence records cached on disk (comprising 1,174,655 bp of raw organellar and nuclear coding sequence across 64 complete hominoid and human mitogenomes, 52 primate nuclear OXPHOS coding mRNAs across NDUFS1, SDHA, UQCRC1, and COX4I1, and 1 Chr1p36.33 NUMT pseudogene negative control) were aligned across 100\% of their downloaded lengths \cite{white2026runie,ingman2000mitochondrial,soares2009correcting,fu2013revised}. In progressive \texttt{*MAFFT v7.526}, the 64 mitogenomes aligned into $L_{\mathrm{full}} = 17,283$ columns (4.195\% gaps; 1,583 RY3 PI sites; conserved 37-gene core $L_{\mathrm{core}} = 15,446$ columns, 0.032\% gaps, 67 aDNA deamination terminals masked) in 5.87s, and the 52 nuclear OXPHOS mRNAs aligned into $L_{\mathrm{full}} = 18,402$ columns (54.55\% UTR gaps) vs. $L_{\mathrm{core}} = 6,120$ reading-frame-locked coding columns (0.123\% gaps) in 9.00s. In Native Rust \texttt{gotoh-msa} (Rayon-parallelized, 9-mer anchored and 420-bp chunked center-star Gotoh affine-gap alignment against a 6-mer medoid sequence), the 64 mitogenomes aligned into $L = 16,920$ columns in 0.47s and the 52 nuclear transcripts aligned into $L = 24,945$ columns in 0.14s (RuNIE Concept DOI: 10.5281/zenodo.23969275).
+
+\section{Remediated 12-Node Out-of-Africa Molecular-Clock Synthesis}
+\begin{longtable}{llllll}
+\caption{64-Taxon Stratified RY3 Relaxed Clock vs. Single-Root Negative Control and Published Benchmarks (*LSD2 v2.4.4, 63/63 Internal Nodes Strictly Interior).} \\
+\toprule
+Node ID & Clade / Event & Stratified (95\% HPD) & Single-Root ($\Delta$) & Soares / Benton & Fu / Posth / Hublin \\
+\midrule
+\endfirsthead
+\toprule
+Node ID & Clade / Event & Stratified (95\% HPD) & Single-Root ($\Delta$) & Soares / Benton & Fu / Posth / Hublin \\
+\midrule
+\endhead
+Node I & Crown Hominoidea (Symphalangus vs. Hominid & \textbf{19.73 Ma} (16.27--20.50 Ma) & 19.00 Ma (-0.73 Ma) & 19.5--20.8 Ma (Benton 2015) & 18.0--20.4 Ma (Besenbacher  \\
+Node II & Crown Hominidae (Pongo vs. Homininae) & \textbf{13.61 Ma} (12.50--16.10 Ma) & 14.65 Ma (+1.04 Ma) & 15.2--16.8 Ma (Benton 2015) & 12.5--15.8 Ma (Rieux 2014) \\
+Node III & Crown Homininae (Gorilla vs. Hominini) & \textbf{8.14 Ma} (7.20--10.22 Ma) & 8.29 Ma (+152.6 ka) & 8.5--10.0 Ma (Benton 2015) & 8.0--9.8 Ma (Besenbacher 20 \\
+Node IV & Pan--Homo Divergence (Hominina vs. Panina) & \textbf{6.06 Ma} (5.40--7.92 Ma) & 6.02 Ma (-41.6 ka) & 6.3--7.5 Ma (Benton 2015) & 6.0--6.9 Ma (Besenbacher 20 \\
+Node V & Crown Pan (Pan troglodytes vs. Pan paniscu & \textbf{2.23 Ma} (1.49--3.20 Ma) & 2.16 Ma (-69.5 ka) & 2.1--2.4 Ma (Rieux 2014) & 1.8--2.5 Ma (Fu 2013) \\
+Node VI & Hominin mtDNA MRCA (Sima/Denisova vs. Nean & \textbf{1.24 Ma} (0.96--1.35 Ma) & 963.94 ka (-276.0 ka) & \textasciitilde\{\}1.0--1.2 Ma (Meyer 2014) & 0.70--1.10 Ma (Rieux 2014) \\
+Node VII & Neanderthal--AMH mtDNA Divergence & \textbf{647.15 ka} (474.50--680.00 ka) & 540.92 ka (-106.2 ka) & 400--620 ka (Fu 2013) & 410--490 ka (Posth 2016) \\
+Node VIII & Crown AMH Maternal MRCA (L0 vs. L1--R) & \textbf{251.07 ka} (187.27--260.00 ka) & 228.46 ka (-22.6 ka) & 192.4 $\pm$ 14 ka (Soares 2009 & 157--210 ka (Fu 2013; Rieux \\
+Node IX & East African L3 Macro-Haplogroup Expansion & \textbf{84.21 ka} (72.84--95.00 ka) & 93.93 ka (+9.7 ka) & 71.8 ka (Soares 2012) & 65--85 ka (Posth 2016) \\
+Node X & Non-African M Super-Haplogroup MRCA (Tip-A & \textbf{73.04 ka} (54.65--94.71 ka) & 55.88 ka (-17.2 ka) & 60.4--67 ka (Macaulay 2005) & 53--68 ka (Posth 2016) \\
+Node XI & Non-African N Super-Haplogroup MRCA (Bacho & \textbf{65.66 ka} (58.08--82.00 ka) & 59.94 ka (-5.7 ka) & 58.9--64 ka (Fu 2013) & 55--66 ka (Posth 2016; Hubl \\
+Node XII & Macro-Haplogroup R MRCA (Tip-Anchored Bach & \textbf{60.87 ka} (49.81--82.00 ka) & 38.82 ka (-22.0 ka) & 56.8--60 ka (Soares 2009) & 52--61 ka (Posth 2016; Hubl \\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{lllll}
+\caption{13-Species Independent Primate Nuclear OXPHOS CDS Clock ($L_{\mathrm{core}} = 6,120$ bp; 12/12 Interior, Zero Intra-Hominidae Bounds).} \\
+\toprule
+Nuclear Node & Clade / Split & Age (Ma) & 95\% HPD (Ma) & Status \\
+\midrule
+\endfirsthead
+Nuc-I & Crown Primates (Strepsirrhini vs. Haplorrhini) & \textbf{66.90} & 56.00--76.00 & Interior \\
+Nuc-II & Crown Anthropoidea (Platyrrhini vs. Catarrhini) & \textbf{42.34} & 33.27--47.00 & Interior \\
+Nuc-III & Crown Catarrhini (Cercopithecidae vs. Hominoidea) & \textbf{23.30} & 22.00--30.63 & Interior \\
+Nuc-IV & Crown Cercopithecinae (Papionini vs. Cercopithecin & \textbf{7.92} & 7.50--11.62 & Interior \\
+Nuc-V & Papionini (Macaca vs. Theropithecus) & \textbf{4.60} & 3.15--7.19 & Interior \\
+Nuc-VI & Crown Macaca & \textbf{1.92} & 0.77--3.30 & Interior \\
+Nuc-VII & Crown Hominoidea (Uncalibrated Ingroup Test: Node  & \textbf{14.98} & 11.44--20.40 & Interior \\
+Nuc-VIII & Crown Hominidae (Uncalibrated: Node II) & \textbf{10.63} & 7.49--14.69 & Interior \\
+Nuc-IX & Crown Pongo & \textbf{1.56} & 0.15--2.98 & Interior \\
+Nuc-X & Crown Homininae (Uncalibrated: Node III) & \textbf{6.59} & 4.07--9.54 & Interior \\
+Nuc-XI & Pan--Homo Divergence (Uncalibrated: Node IV) & \textbf{4.14} & 2.04--6.93 & Interior \\
+Nuc-XII & Crown Pan (Uncalibrated: Node V) & \textbf{0.70} & 0.00--1.74 & Interior \\
+\bottomrule
+\end{longtable}
+
+\section{RuNIE Pipeline Architecture, Comparison Tables, Population Networks, and OXPHOS Selection}
+Figures~1 through~6 document the 64-taxon chronogram, 50-AMH haplotype $k$-core network contrast (37-gene core $k=5$ vs. D-loop $k=12$), 8-epoch Kingman skyline MCMC (MIS 4/3 founder $N_{\mathrm{ef}} = 25,509$), 12-partition Quartet MSC ($Q(T)=7680/8580, $RF=0$, $60.4\times$ speedup vs. *ASTRAL), and 8-locus *PAML/Native GY94 selection (MT-COX1 $\omega = 0.0093$).
+\begin{table}[htbp]
+\centering
+\caption{Table 3A. RuNIE Pipeline Comparison Table: 64-Taxon Hominoid and Human Mitogenome Alignment.}
+\footnotesize
+\begin{tabular}{lllllllll}
+\toprule
+Rank & Tool Chain & Model Summary & Marginal $\ln L$ & $\Delta \ln L$ & RCFV & Bootstrap & Post. $Z$ & CPU Time \\
+\midrule
+1st (Best) & *MAFFT + RY3 + *IQ-TREE + *LSD2 & RY3 + GTR+F+I+G4 ($L=15446$) & -44500.39 & 0.00 & 0.0019 & 78.3\% & 8.63 & 51.00s \\
+2nd (Nearest) & gotoh-msa + RY3 + phylo-ml-nni & RY3 + GTR+F+R2 ($L=16920$) & -51239.63 & -6739.24 & 0.0016 & 98.8\% & 5.26 & 4.54s \\
+3rd (Medium) & *MAFFT + *IQ-TREE Raw + *LSD2 Ctrl & Raw + GTR+F+R4 ($L=17283$) & -61092.24 & -16591.85 & 0.0026 & 87.4\% & 4.25 & 22.50s \\
+4th (Rejected) & gotoh-msa Raw + phylo-ml-nni & Raw + GTR+F+R2 ($L=16920$) & -61307.98 & -16807.60 & 0.0026 & 98.7\% & 4.25 & 5.40s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Complete 64-Mitogenome and Chr1p36.33 NUMT01 Accession Inventory}
+\footnotesize
+\begin{longtable}{llllllll}
+\caption{Supplemental Table S1. Complete 64-Mitogenome + Chr1p36.33 NUMT01 Control Accession and Branch-Length Inventory.} \\
+\toprule
+Sector:Tip & Taxon / Clade & Accession & Length (bp) & GC\% / GC3\% & RCFV & Term. BL & Parent Node \\
+\midrule
+\endfirsthead
+\toprule
+Sector:Tip & Taxon / Clade & Accession & Length (bp) & GC\% / GC3\% & RCFV & Term. BL & Parent Node \\
+\midrule
+\endhead
+\texttt{A:T001} & H. sapiens San\_102 (L0k) & \texttt{EF184609.1} & 16,568 & 44.40\% / 44.11\% & 0.0011 & 0.0014 & \texttt{N03 (100\%)} \\
+\texttt{A:T002} & H. sapiens Mbuti (L0d) & \texttt{AF346999.1} & 16,562 & 44.33\% / 43.77\% & 0.0009 & 0.0002 & \texttt{N01 (100\%)} \\
+\texttt{A:T003} & H. sapiens Tor65 (L0f) & \texttt{AY963585.2} & 16,569 & 44.32\% / 45.12\% & 0.0010 & 0.0011 & \texttt{N02 (97\%)} \\
+\texttt{A:T004} & H. sapiens WB506 (L0a2a2a) & \texttt{KJ669118.1} & 16,570 & 44.34\% / 44.07\% & 0.0011 & 0.0002 & \texttt{N01 (100\%)} \\
+\texttt{A:T005} & H. sapiens TZSW053 (L5a) & \texttt{EF184580.1} & 16,559 & 44.33\% / 43.56\% & 0.0010 & 0.0000 & \texttt{N04 (100\%)} \\
+\texttt{A:T006} & H. sapiens TZSW055 (L5a) & \texttt{EF184584.1} & 16,560 & 44.32\% / 43.54\% & 0.0010 & 0.0000 & \texttt{N04 (100\%)} \\
+\texttt{A:T007} & H. sapiens Biaka (L1c) & \texttt{AF346968.1} & 16,567 & 44.45\% / 43.82\% & 0.0017 & 0.0008 & \texttt{N46 (100\%)} \\
+\texttt{A:T008} & H. sapiens Ibo (L1b) & \texttt{AF346986.1} & 16,567 & 44.44\% / 44.22\% & 0.0016 & 0.0012 & \texttt{N47 (100\%)} \\
+\texttt{A:T009} & H. sapiens Tor7 (L1c2a) & \texttt{DQ341059.1} & 16,584 & 44.44\% / 45.04\% & 0.0015 & 0.0010 & \texttt{N46 (100\%)} \\
+\texttt{A:T010} & H. sapiens Effik (L2a) & \texttt{AF346976.1} & 16,570 & 44.41\% / 45.28\% & 0.0008 & 0.0007 & \texttt{N44 (100\%)} \\
+\texttt{A:T011} & H. sapiens Tor39 (L6) & \texttt{DQ341063.1} & 16,572 & 44.40\% / 45.20\% & 0.0007 & 0.0008 & \texttt{N43 (100\%)} \\
+\texttt{A:T012} & H. sapiens Tor71 (L4) & \texttt{DQ341065.1} & 16,567 & 44.48\% / 44.19\% & 0.0023 & 0.0005 & \texttt{N42 (100\%)} \\
+\texttt{B:T013} & H. sapiens Tor73 (L3a) & \texttt{DQ341081.1} & 16,567 & 44.43\% / 44.30\% & 0.0012 & 0.0005 & \texttt{N05 (41\%)} \\
+\texttt{B:T014} & H. sapiens Tor6 (L3b) & \texttt{DQ341073.1} & 16,567 & 44.43\% / 43.61\% & 0.0013 & 0.0008 & \texttt{N06 (32\%)} \\
+\texttt{B:T015} & H. sapiens Tor4 (L3d1) & \texttt{DQ341072.1} & 16,567 & 44.44\% / 44.35\% & 0.0014 & 0.0006 & \texttt{N06 (32\%)} \\
+\texttt{B:T016} & H. sapiens Tor5 (L3e) & \texttt{DQ341071.1} & 16,570 & 44.44\% / 44.20\% & 0.0015 & 0.0001 & \texttt{N08 (35\%)} \\
+\texttt{B:T017} & H. sapiens Tor83 (L3f) & \texttt{DQ341076.1} & 16,569 & 44.43\% / 44.14\% & 0.0012 & 0.0003 & \texttt{N05 (41\%)} \\
+\texttt{B:T018} & H. sapiens SOM111 (L3h2) & \texttt{JN655815.1} & 16,567 & 44.40\% / 44.30\% & 0.0007 & 0.0007 & \texttt{N08 (35\%)} \\
+\texttt{B:T019} & H. sapiens Tor70 (L3i) & \texttt{DQ341068.2} & 16,566 & 44.45\% / 44.20\% & 0.0017 & 0.0002 & \texttt{N09 (32\%)} \\
+\texttt{B:T020} & H. sapiens Tor82 (L3x) & \texttt{DQ341067.1} & 16,570 & 44.41\% / 44.16\% & 0.0009 & 0.0003 & \texttt{N10 (29\%)} \\
+\texttt{B:T021} & H. sapiens Yoruba (L3) & \texttt{AF347015.1} & 16,571 & 44.49\% / 44.31\% & 0.0024 & 0.0003 & \texttt{N10 (29\%)} \\
+\texttt{C:T022} & H. sapiens Bacho Kiro AA7 (M* IU & \texttt{MN706602.1} & 16,568 & 44.40\% / 43.73\% & 0.0007 & 0.0001 & \texttt{N12 (58\%)} \\
+\texttt{C:T023} & H. sapiens China (M* Basal) & \texttt{AF346972.1} & 16,570 & 44.44\% / 44.20\% & 0.0014 & 0.0003 & \texttt{N17 (50\%)} \\
+\texttt{C:T024} & H. sapiens Tor196 (M1) & \texttt{DQ341082.1} & 16,571 & 44.45\% / 44.32\% & 0.0016 & 0.0005 & \texttt{N13 (45\%)} \\
+\texttt{C:T025} & H. sapiens IND12 (M2a) & \texttt{DQ246822.1} & 16,569 & 44.45\% / 45.30\% & 0.0017 & 0.0006 & \texttt{N13 (45\%)} \\
+\texttt{C:T026} & H. sapiens AUR25 (M42a) & \texttt{DQ404445.3} & 16,570 & 44.41\% / 44.12\% & 0.0009 & 0.0005 & \texttt{N20 (100\%)} \\
+\texttt{C:T027} & H. sapiens Aita7942 (M27a) & \texttt{DQ137411.1} & 16,569 & 44.42\% / 45.25\% & 0.0011 & 0.0008 & \texttt{N12 (58\%)} \\
+\texttt{C:T028} & H. sapiens UV241 (M28a) & \texttt{DQ137400.1} & 16,569 & 44.44\% / 45.27\% & 0.0014 & 0.0005 & \texttt{N19 (62\%)} \\
+\texttt{C:T029} & H. sapiens Japanese (D4) & \texttt{AF346989.1} & 16,568 & 44.38\% / 43.61\% & 0.0005 & 0.0003 & \texttt{N15 (87\%)} \\
+\texttt{C:T030} & H. sapiens Ancient939 (D4) & \texttt{KC998701.1} & 16,568 & 44.38\% / 43.72\% & 0.0004 & 0.0003 & \texttt{N15 (87\%)} \\
+\texttt{C:T031} & H. sapiens Saqqaq (D2a1) & \texttt{EU725621.1} & 16,569 & 44.35\% / 45.21\% & 0.0004 & 0.0001 & \texttt{N16 (99\%)} \\
+\texttt{D:T032} & H. sapiens Bacho Kiro BB7 (N* IU & \texttt{MN706603.1} & 16,568 & 44.37\% / 43.70\% & 0.0003 & 0.0001 & \texttt{N21 (18\%)} \\
+\texttt{D:T033} & H. sapiens WLH4 (N* Willandra) & \texttt{KU659023.1} & 16,567 & 44.40\% / 44.31\% & 0.0007 & 0.0003 & \texttt{N25 (97\%)} \\
+\texttt{D:T034} & H. sapiens AUR1 (S1a) & \texttt{DQ404440.3} & 16,570 & 44.42\% / 44.20\% & 0.0012 & 0.0003 & \texttt{N26 (41\%)} \\
+\texttt{D:T035} & H. sapiens AUD38 (O1) & \texttt{DQ404447.3} & 16,569 & 44.39\% / 45.21\% & 0.0011 & 0.0006 & \texttt{N21 (18\%)} \\
+\texttt{D:T036} & H. sapiens Aus13 (N* Sahul) & \texttt{AY289051.1} & 16,568 & 44.40\% / 43.64\% & 0.0008 & 0.0003 & \texttt{N25 (97\%)} \\
+\texttt{D:T037} & H. sapiens NDsq0220 (N9a) & \texttt{AP008824.1} & 16,573 & 44.39\% / 44.15\% & 0.0005 & 0.0003 & \texttt{N23 (27\%)} \\
+\texttt{D:T038} & H. sapiens Na5A (A2) & \texttt{AY195786.2} & 16,565 & 44.36\% / 44.68\% & 0.0008 & 0.0001 & \texttt{N22 (99\%)} \\
+\texttt{D:T039} & H. sapiens Ancient938 (A2) & \texttt{KC998702.1} & 16,568 & 44.40\% / 43.72\% & 0.0008 & 0.0001 & \texttt{N22 (99\%)} \\
+\texttt{E:T040} & H. sapiens Bacho Kiro CC7 (R* IU & \texttt{MN706606.1} & 16,568 & 44.40\% / 44.17\% & 0.0006 & 0.0000 & \texttt{N35 (52\%)} \\
+\texttt{E:T041} & H. sapiens Tianyuan (B* EUP) & \texttt{KC417443.1} & 16,559 & 44.39\% / 43.70\% & 0.0006 & 0.0000 & \texttt{N34 (39\%)} \\
+\texttt{E:T042} & H. sapiens Na1B (B2) & \texttt{AY195749.2} & 16,564 & 44.44\% / 44.38\% & 0.0015 & 0.0006 & \texttt{N36 (59\%)} \\
+\texttt{E:T043} & H. sapiens AUD32 (P8) & \texttt{DQ404446.3} & 16,569 & 44.41\% / 45.21\% & 0.0010 & 0.0004 & \texttt{N33 (61\%)} \\
+\texttt{E:T044} & H. sapiens Kostenki 14 (U2) & \texttt{FN600416.1} & 16,568 & 44.42\% / 43.79\% & 0.0011 & 0.0001 & \texttt{N28 (81\%)} \\
+\texttt{E:T045} & H. sapiens Dolni Vestonice 14 (U & \texttt{KC521458.1} & 16,569 & 44.39\% / 44.02\% & 0.0005 & 0.0000 & \texttt{N30 (27\%)} \\
+\texttt{E:T046} & H. sapiens Oberkassel 998 (U5b1) & \texttt{KC521457.1} & 16,570 & 44.42\% / 44.20\% & 0.0010 & 0.0000 & \texttt{N31 (98\%)} \\
+\texttt{E:T047} & H. sapiens Loschbour (U5b1a) & \texttt{KC521455.1} & 16,568 & 44.42\% / 43.75\% & 0.0011 & 0.0001 & \texttt{N31 (98\%)} \\
+\texttt{E:T048} & H. sapiens Tor41 (U6a) & \texttt{AY882416.1} & 16,568 & 44.44\% / 43.92\% & 0.0014 & 0.0004 & \texttt{N29 (21\%)} \\
+\texttt{E:T049} & H. sapiens Oetzi Iceman (K1f) & \texttt{EU810403.1} & 16,576 & 44.46\% / 44.27\% & 0.0018 & 0.0004 & \texttt{N28 (81\%)} \\
+\texttt{E:T050} & H. sapiens rCRS (H2a2a1) & \texttt{NC\_012920.1} & 16,569 & 44.36\% / 43.68\% & 0.0011 & 0.0003 & \texttt{N36 (59\%)} \\
+\texttt{F:T051} & H. heidelbergensis Sima de los H & \texttt{NC\_023100.1} & 16,568 & 44.14\% / 43.52\% & 0.0046 & 0.0026 & \texttt{N57 (100\%)} \\
+\texttt{F:T052} & H. sp. Denisova 2 & \texttt{KX663333.1} & 16,570 & 44.31\% / 43.81\% & 0.0012 & 0.0002 & \texttt{N55 (81\%)} \\
+\texttt{F:T053} & H. sp. Denisova 8 & \texttt{KT780370.1} & 16,573 & 44.30\% / 44.06\% & 0.0015 & 0.0006 & \texttt{N55 (81\%)} \\
+\texttt{F:T054} & H. sp. Denisova 3 & \texttt{NC\_013993.1} & 16,570 & 44.31\% / 43.44\% & 0.0024 & 0.0014 & \texttt{N56 (100\%)} \\
+\texttt{F:T055} & H. neanderthalensis Hohlenstein- & \texttt{KY751400.1} & 16,564 & 44.30\% / 43.79\% & 0.0014 & 0.0013 & \texttt{N53 (100\%)} \\
+\texttt{F:T056} & H. neanderthalensis Altai (Denis & \texttt{KC879692.1} & 16,567 & 44.34\% / 44.04\% & 0.0009 & 0.0002 & \texttt{N52 (100\%)} \\
+\texttt{F:T057} & H. neanderthalensis Chagyrskaya  & \texttt{MK388903.1} & 16,569 & 44.34\% / 43.94\% & 0.0012 & 0.0001 & \texttt{N50 (99\%)} \\
+\texttt{F:T058} & H. neanderthalensis Mezmaiskaya  & \texttt{FM865411.1} & 16,565 & 44.30\% / 44.00\% & 0.0015 & 0.0005 & \texttt{N51 (86\%)} \\
+\texttt{F:T059} & H. neanderthalensis Vindija 33.1 & \texttt{NC\_011137.1} & 16,565 & 44.39\% / 44.14\% & 0.0016 & 0.0006 & \texttt{N50 (99\%)} \\
+\texttt{G:T060} & Pan troglodytes (Chimpanzee) & \texttt{NC\_001643.1} & 16,554 & 43.69\% / 43.46\% & 0.0136 & 0.0145 & \texttt{N59 (100\%)} \\
+\texttt{G:T061} & Pan paniscus (Bonobo) & \texttt{NC\_001644.1} & 16,563 & 43.40\% / 42.80\% & 0.0194 & 0.0133 & \texttt{N59 (100\%)} \\
+\texttt{G:T062} & Gorilla gorilla gorilla (Western & \texttt{NC\_011120.1} & 16,412 & 43.80\% / 44.30\% & 0.0114 & 0.0532 & \texttt{N61 (100\%)} \\
+\texttt{G:T063} & Pongo abelii (Sumatran Orangutan & \texttt{NC\_002083.1} & 16,499 & 45.94\% / 46.43\% & 0.0314 & 0.0956 & \texttt{N62 (100\%)} \\
+\texttt{G:T064} & Symphalangus syndactylus (Siaman & \texttt{NC\_014047.1} & 16,516 & 43.51\% / 42.94\% & 0.0171 & 0.0717 & \texttt{N63 (100\%)} \\
+\texttt{0:NUMT01} & H. sapiens Chr1p36.33 NUMT Pseudogene & \texttt{NC\_000001.11:629061-634922} & 5,862 & 44.30\% / -- & Filter & 0.0035 & Quarantined \\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{99}
+\bibitem{white2026runie} White, B. P. (2026). "RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing." CRV Science Labs Preprints (PREPRINT-01). \url{https://doi.org/10.5281/zenodo.23969275}
+
+\bibitem{ingman2000mitochondrial} Ingman, M., Kaessmann, H., P\"a\"abo, S., \& Gyllensten, U. (2000). "Mitochondrial genome variation and the origin of modern humans." Nature, 408(6813), 708--713. \url{https://doi.org/10.1038/35047064}
+
+\bibitem{soares2009correcting} Soares, P., Ermini, L., Thomson, N., Mormina, M., Rito, T., R\"ohl, A., Salas, A., Oppenheimer, S., Macaulay, V., \& Richards, M. B. (2009). "Correcting for purifying selection: an improved human mitochondrial molecular clock." American Journal of Human Genetics, 84(6), 740--759. \url{https://doi.org/10.1016/j.ajhg.2009.05.001}
+
+\bibitem{behar2012copernican} Behar, D. M., van Oven, M., Rosset, S., Metspalu, M., Loogv\"ali, E.-L., Silva, N. M., Kivisild, T., Torroni, A., \& Villems, R. (2012). "A 'Copernican' reassessment of the human mitochondrial DNA tree from its root." American Journal of Human Genetics, 90(4), 675--684. \url{https://doi.org/10.1016/j.ajhg.2012.03.002}
+
+\bibitem{soares2012expansion} Soares, P., Alshamali, F., Pereira, J. B., Fernandes, V., Silva, N. M., Afonso, C., ... \& Pereira, L. (2012). "The expansion of mtDNA haplogroup L3 within and out of Africa." Molecular Biology and Evolution, 29(3), 915--927. \url{https://doi.org/10.1093/molbev/msr245}
+
+\bibitem{macaulay2005single} Macaulay, V., Hill, C., Achilli, A., Rengo, C., Clarke, D., Meehan, W., ... \& Richards, M. (2005). "Single, rapid coastal settlement of Asia revealed by analysis of complete mitochondrial genomes." Science, 308(5724), 1034--1036. \url{https://doi.org/10.1126/science.1109792}
+
+\bibitem{fu2013revised} Fu, Q., Mittnik, A., Johnson, P. L. F., Bos, K., Lari, M., Bollongino, R., ... \& Krause, J. (2013). "A revised timescale for human evolution based on ancient mitochondrial genomes." Current Biology, 23(7), 553--559. \url{https://doi.org/10.1016/j.cub.2013.02.044}
+
+\bibitem{fu2014genome} Fu, Q., Li, H., Moorjani, P., Jay, F., Slepchenko, S. M., Bondarev, A. A., ... \& P\"a\"abo, S. (2014). "Genome sequence of a 45,000-year-old modern human from western Siberia." Nature, 514(7523), 445--449. \url{https://doi.org/10.1038/nature13810}
+
+\bibitem{meyer2014mitochondrial} Meyer, M., Fu, Q., Aximu-Petri, A., Glocke, I., Nickel, B., Arsuaga, J.-L., ... \& P\"a\"abo, S. (2014). "A mitochondrial genome sequence of a hominin from Sima de los Huesos." Nature, 505(7483), 403--406. \url{https://doi.org/10.1038/nature12788}
+
+\bibitem{rieux2014improved} Rieux, A., Eriksson, A., Li, M., Sobkowiak, B., Weinert, L. A., Warmuth, V., ... \& Balloux, F. (2014). "Improved calibration of the human mitochondrial clock using ancient genomes." Molecular Biology and Evolution, 31(10), 2780--2792. \url{https://doi.org/10.1093/molbev/msu222}
+
+\bibitem{posth2016pleistocene} Posth, C., Renaud, G., Mittnik, A., Drucker, D. G., Rougier, H., Cupillard, C., ... \& Krause, J. (2016). "Pleistocene mitochondrial genomes suggest a single major dispersal of non-Africans and a late glacial population turnover in Europe." Current Biology, 26(6), 827--833. \url{https://doi.org/10.1016/j.cub.2016.01.037}
+
+\bibitem{slon2017neandertal} Slon, V., Hopfe, C., Wei , C. L., Mafessoni, F., de la Rasilla, M., Lalueza-Fox, C., ... \& Meyer, M. (2017). "Neandertal and Denisovan DNA from Pleistocene sediments." Science, 356(6338), 605--608. \url{https://doi.org/10.1126/science.aam9695}
+
+\bibitem{hublin2020initial} Hublin, J.-J., Sirakov, N., Aldeias, V., Bailey, S., Bard, E., Delvigne, V., ... \& Tsanova, T. (2020). "Initial Upper Palaeolithic Homo sapiens from Bacho Kiro Cave, Bulgaria." Nature, 581(7808), 299--302. \url{https://doi.org/10.1038/s41586-020-2259-z}
+
+\bibitem{besenbacher2019direct} Besenbacher, S., Hvilsom, C., Marques-Bonet, T., Mailund, T., \& Schierup, M. H. (2019). "Direct estimation of mutations in great apes reconciles phylogenetic dating." Nature Ecology \& Evolution, 3(2), 286--292. \url{https://doi.org/10.1038/s41559-018-0778-x}
+
+\bibitem{benton2015constraints} Benton, M. J., Donoghue, P. C. J., Asher, R. J., Friedman, M., Near, T. J., \& Vinther, J. (2015). "Constraints on the timescale of animal evolutionary history." Palaeontologia Electronica, 18.1.1FC, 1--106. \url{https://doi.org/10.26879/424}
+
+\bibitem{tsukihara1996whole} Tsukihara, T., Aoyama, H., Yamashita, E., Tomizaki, T., Yamaguchi, H., Shinzawa-Itoh, K., Nakashima, R., Yaono, R., \& Yoshikawa, S. (1996). "The whole structure of the 13-subunit oxidized cytochrome c oxidase at 2.8 A." Science, 272(5265), 1136--1144. \url{https://doi.org/10.1126/science.272.5265.1136}
+
+\bibitem{katoh2013mafft} Katoh, K., \& Standley, D. M. (2013). "MAFFT multiple sequence alignment software version 7: improvements in performance and usability." Molecular Biology and Evolution, 30(4), 772--780. \url{https://doi.org/10.1093/molbev/mst010}
+
+\bibitem{kalyaanamoorthy2017modelfinder} Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., \& Jermiin, L. S. (2017). "ModelFinder: fast model selection for accurate phylogenetic estimates." Nature Methods, 14(6), 587--589. \url{https://doi.org/10.1038/nmeth.4285}
+
+\bibitem{minh2020iqtree2} Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., \& Lanfear, R. (2020). "IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era." Molecular Biology and Evolution, 37(5), 1530--1534. \url{https://doi.org/10.1093/molbev/msaa015}
+
+\bibitem{to2016fast} To, T.-H., Jung, M., Lycett, S., \& Gascuel, O. (2016). "Fast dating using least-squares criteria and algorithms." Systematic Biology, 65(1), 82--97. \url{https://doi.org/10.1093/sysbio/syv068}
+
+\bibitem{yang2007paml} Yang, Z. (2007). "PAML 4: phylogenetic analysis by maximum likelihood." Molecular Biology and Evolution, 24(8), 1586--1591. \url{https://doi.org/10.1093/molbev/msm088}
+
+\bibitem{zhang2018astral} Zhang, C., Rabiee, M., Sayyari, E., \& Mirarab, S. (2018). "ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees." BMC Bioinformatics, 19(6), 153. \url{https://doi.org/10.1186/s12859-018-2129-y}
+\end{thebibliography}
+
+\end{document}

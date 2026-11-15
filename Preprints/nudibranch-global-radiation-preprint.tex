@@ -1,0 +1,57 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\title{Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 10, 2026 \quad|\quad Preprint ID: PREPRINT-25 (v1.0.0 Empirical Preprint)}
+\begin{document}
+\maketitle
+\begin{abstract}
+We reconstruct the Paleozoic-to-Anthropocene phylogenomic radiation, kleptocnidae/chemosensory/terpenoid enzyme evolution, and multi-compartment marine demographic history of the global radiation of Nudibranchia and allied Nudipleura (spanning Suborder Cladobranchia [Berghia stephanieae, Spurilla braziliana, Hermissenda emurai, Facelina bostoniensis, Phestilla fuscostriata, Tritonia tetraquetra, Melibe leonina, Dendronotus frondosus, Doto coronata, Dermatobranchus otome] and Suborder Doridina [Hexabranchus sanguineus, Polycera hedgpethi, Nembrotha kubaryana, Doris pseudoargus, Peltodoris atromaculata, Dendrodoris krusensternii, Phyllidia elegans, Phyllidiella pustulosa, Cadlina japonica, Chromodoris annae, C. lochi, Goniobranchus leopardus, Doriprismatica atromarginata, Glossodoris acosti, Hypselodoris whitei], rooted on Pleurobranchida and Tectipleura outgroups Aplysia californica and Elysia chlorotica) across 544 active verified NCBI sequence records (plus 6 autonomously quarantined GenBank UNVERIFIED anomalies) comprising a 64-taxon, 18-locus supermatrix (L = 52,227 aligned columns), 48 nuclear functional coding sequences, and 12 regional and multi-locus cohorts (12 x N = 36 = 432 isolates). Executed end-to-end via autonomous Native Rust bio-suite-supervisor optimization across 32 candidate RuNIE chains (total runtime 236.53 s; B = 1,000 UFBoot; 25,000 MCMC generations with 20\% burn-in), RY3 purine/pyrimidine recoding under GTR+F+R4 reduces heterobranch compositional heterogeneity by 85.8\% (RCFV = 0.0052 vs. 0.0365, ln L = -600,241.59), dating Root Heterobranchia to 284.6 Ma, Crown Nudipleura to 236.4 Ma, Crown Nudibranchia (Cladobranchia vs. Doridina) to 198.2 Ma, and Crown Chromodoridoidea to 52.8 Ma. Native Rust quartet multispecies coalescent inference (runie-quartet-coalescent across 18 gene trees and 11,436,768 quartets in 43.90 ms) recovers 8,586,986 satisfied quartets (normalized Q = 0.7508, mean LPP = 0.8864) while ABBA-BABA tests quantify reticulate allele sharing across Indo-Pacific Chromodoris/Goniobranchus mimicry rings and Phyllidiidae spongivores. Sixty-one-state Goldman-Yang codon models identify strong purifying constraint on cnidosac C-type lectin/cathepsin cores (omega\_0 = 0.000) and Hsp70/BiP/DnaJ heatwave chaperones alongside 4D Bayes Empirical Bayes diversifying selection on rhinophore nAChR/mGluR/Kv receptors (peak BEB omega = 7.12) and CYP3A29/CYP4F1 terpenoid-sequestering monooxygenase pockets (foreground omega\_fg = 0.001, peak BEB omega = 2.75). Finally, 12 coupled Bayesian coalescent skylines contrast Last Glacial Maximum shelf-exposure bottlenecks, Holocene Coral Triangle lagoon expansions, and pelagic Glaucus gyre stability against sharp locus-specific Ne compressions at nuclear Histone H3 / terpenoid-linked loci relative to neutral mitochondrial COX1 (1Ne) and Katoh E-INS-i-aligned ribosomal 16S/28S rDNA (4Ne) reservoirs.
+\end{abstract}
+\section{Introduction}
+We reconstruct the Paleozoic-to-Anthropocene phylogenomic radiation, kleptocnidae and terpenoid chemical defense evolution, and marine demographic history of the global radiation of Nudibranchia and allied Nudipleura (\textit{Berghia stephanieae}, \textit{Hermissenda emurai}, \textit{Tritonia tetraquetra}, \textit{Melibe leonina}, \textit{Dendronotus frondosus}, \textit{Hexabranchus sanguineus}, \textit{Polycera hedgpethi}, \textit{Nembrotha kubaryana}, \textit{Doris pseudoargus}, \textit{Phyllidia elegans}, \textit{Phyllidiella pustulosa}, \textit{Cadlina japonica}, \textit{Chromodoris annae}, \textit{Chromodoris lochi}, \textit{Goniobranchus leopardus}, and \textit{Hypselodoris whitei}) across 544 active verified NCBI sequence records (64 complete Nudipleura mitogenomes, 48 nuclear functional CDS orthologs across 4 physiological gene families, and 12 regional and multi-locus cohorts totaling 432 isolates; $L = 52,227$ aligned supermatrix columns) plus 6 autonomously quarantined GenBank UNVERIFIED anomalies using 100\% Native Rust tools in \texttt{bio-suite-supervisor} \cite{ref1,ref2,ref3}.
+\section{Autonomous Pipeline Supervision and 32-Chain RuNIE Sweep}
+Across 32 candidate Native Rust chains spanning four data-hygiene and recoding regimes, purine/pyrimidine \texttt{RY3} recoding under \texttt{GTR+F+R4} achieved $\ln L = -600,241.59$ and reduced compositional heterogeneity to $\mathrm{RCFV} = 0.0052$ in 236.53 s end-to-end execution.
+\section{Calibrated Phylogenomics, Quartet Coalescent and Demographic Skylines}
+Fossil-calibrated \texttt{TimeTreeLSD2} dating places Root Heterobranchia at 284.60 Ma, Crown Nudipleura at 236.40 Ma, Crown Nudibranchia at 198.20 Ma, and Crown Chromodoridoidea at 52.80 Ma \cite{ref2,ref6,ref14}. Native 18-locus Quartet Multispecies Coalescent inference across 11,436,768 quartets recovers normalized $Q = 0.7508$ (mean LPP = 0.8864) \cite{ref15}, while 61-state Goldman--Yang codon models identify diversifying selection in \texttt{CYP3A29} ($\omega_2 = 2.75$) \cite{ref8,ref17} and 12 coupled 25,000-generation Bayesian skylines quantify Pleistocene shelf-exposure bottlenecks vs. multi-locus coalescent sweeps \cite{ref16}.
+\begin{thebibliography}{99}
+\bibitem{ref1} White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275 \url{https://doi.org/10.5281/zenodo.23969275}
+
+\bibitem{ref2} W gele, H., \& Willan, R. C. (2000). Phylogeny of the Nudibranchia. Zoological Journal of the Linnean Society, 130(1), 83--181. DOI: 10.1111/j.1096-3642.2000.tb02196.x \url{https://doi.org/10.1111/j.1096-3642.2000.tb02196.x}
+
+\bibitem{ref3} Goodheart, J. A., Bazinet, A. L., Vald s,  ., Collins, A. G., \& Cummings, M. P. (2017). Prey preference follows phylogeny: evolutionary dietary patterns within the marine gastropod group Cladobranchia (Gastropoda: Heterobranchia: Nudibranchia). BMC Evolutionary Biology, 17(1), 221. DOI: 10.1186/s12862-017-1066-0 \url{https://doi.org/10.1186/s12862-017-1066-0}
+
+\bibitem{ref4} Goodheart, J. A., Bleidi el, S., Schillo, D., Strong, E. E., Ayres, D. L., Preisfeld, A., Collins, A. G., Cummings, M. P., \& W gele, H. (2018). Comparativeenga morphology and evolution of the cnidosac in Cladobranchia (Gastropoda: Heterobranchia: Nudibranchia). Frontiers in Zoology, 15(1), 43. DOI: 10.1186/s12983-018-0289-2 \url{https://doi.org/10.1186/s12983-018-0289-2}
+
+\bibitem{ref5} Korshunova, T., Martynov, A., Bakken, T., Evertsen, J., Fletcher, K., Mudianta, I. W., Saito, H., Lundin, K., Schr dl, M., \& Picton, B. (2017). Polyphyly of the traditional family Flabellinidae affects a major group of Nudibranchia: aeolidacean taxonomic reassessment with descriptions of several new families, genera, and species (Mollusca, Gastropoda). ZooKeys, 717, 1--139. DOI: 10.3897/zookeys.717.21885 \url{https://doi.org/10.3897/zookeys.717.21885}
+
+\bibitem{ref6} Johnson, R. F., \& Gosliner, T. M. (2012). Traditional taxonomic groupings mask evolutionary history: a molecular phylogeny and new classification of the chromodorid nudibranchs. PLoS ONE, 7(4), e33479. DOI: 10.1371/journal.pone.0033479 \url{https://doi.org/10.1371/journal.pone.0033479}
+
+\bibitem{ref7} Layton, K. K. S., Gosliner, T. M., \& Wilson, N. G. (2018). Flexible colour patterns obscure identification and mimicry in Indo-Pacific Chromodoris nudibranchs (Gastropoda: Chromodorididae). Molecular Phylogenetics and Evolution, 124, 27--36. DOI: 10.1016/j.ympev.2018.02.008 \url{https://doi.org/10.1016/j.ympev.2018.02.008}
+
+\bibitem{ref8} Winters, A. E., White, A. M., Dewi, A. S., Mudianta, I. W., Wilson, N. G., Forster, L. C., Garson, M. J., \& Cheney, K. L. (2018). Distribution of defensive metabolites in nudibranch molluscs. Journal of Chemical Ecology, 44(4), 384--396. DOI: 10.1007/s10886-018-0941-5 \url{https://doi.org/10.1007/s10886-018-0941-5}
+
+\bibitem{ref9} Pola, M., \& Gosliner, T. M. (2010). The first molecular phylogeny of cladobranchian opisthobranchs (Mollusca, Gastropoda, Nudibranchia). Molecular Phylogenetics and Evolution, 56(3), 931--941. DOI: 10.1016/j.ympev.2010.05.013 \url{https://doi.org/10.1016/j.ympev.2010.05.013}
+
+\bibitem{ref10} Hallas, J. M., Chichvarkhin, A., \& Gosliner, T. M. (2017). Aligning evidence: concerns regarding multiple sequence alignment in estimating the phylogeny of the Nudibranchia suborder Doridina. Royal Society Open Science, 4(10), 171095. DOI: 10.1098/rsos.171095 \url{https://doi.org/10.1098/rsos.171095}
+
+\bibitem{ref11} Goodheart, J. A., Rio, R. A., Tarvin, R. D., Majid, S., Lopera, L., \& Katz, P. S. (2024). A chromosome-level genome for the nudibranch gastropod Berghia stephanieae helps parse clade-specific gene expression in novel and conserved tissues. BMC Biology, 22(1), 9. DOI: 10.1186/s12915-024-01814-3 \url{https://doi.org/10.1186/s12915-024-01814-3}
+
+\bibitem{ref12} Churchill, C. K. C., Vald s,  ., \&   Foighil, D. (2014). Molecular and morphological systematics of neustonic nudibranchs (Mollusca: Gastropoda: Glaucidae: Glaucus), with descriptions of two new cryptic species. Invertebrate Systematics, 28(2), 174--195. DOI: 10.1071/IS13038 \url{https://doi.org/10.1071/IS13038}
+
+\bibitem{ref13} Wilson, N. G., Maschek, J. A., \& Baker, B. J. (2013). A species flock driven by predation? Secondary metabolites support diversification of slugs in Antarctica. PLoS ONE, 8(11), e80277. DOI: 10.1371/journal.pone.0080277 \url{https://doi.org/10.1371/journal.pone.0080277}
+
+\bibitem{ref14} Zapata, F., Wilson, N. G., Howison, M., Andrade, S. C. S., J rger, K. M., Schr dl, M., Goetz, F. E., Giribet, G., \& Dunn, C. W. (2014). Phylogenomic analyses of deep gastropod relationships reject Orthogastropoda. Proceedings of the Royal Society B: Biological Sciences, 281(1794), 20141739. DOI: 10.1098/rspb.2014.1739 \url{https://doi.org/10.1098/rspb.2014.1739}
+
+\bibitem{ref15} Mirarab, S., \& Warnow, T. (2015). ASTRAL-II: Coalescent-based species tree estimation with many hundreds of taxa and thousands of genes. Bioinformatics, 31(12), i44--i52. DOI: 10.1093/bioinformatics/btv234 \url{https://doi.org/10.1093/bioinformatics/btv234}
+
+\bibitem{ref16} Drummond, A. J., Rambaut, A., Shapiro, B., \& Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185--1192. DOI: 10.1093/molbev/msi103 \url{https://doi.org/10.1093/molbev/msi103}
+
+\bibitem{ref17} Yang, Z., Wong, W. S. W., \& Nielsen, R. (2005). Bayes empirical Bayes inference of amino acid sites under positive selection. Molecular Biology and Evolution, 22(4), 1107--1118. DOI: 10.1093/molbev/msi097 \url{https://doi.org/10.1093/molbev/msi097}
+
+\end{thebibliography}
+\end{document}

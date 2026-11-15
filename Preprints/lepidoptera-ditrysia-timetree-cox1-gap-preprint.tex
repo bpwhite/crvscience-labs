@@ -1,0 +1,60 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+\title{\textbf{Lepidoptera Phylogenomics: Devonian–Cenozoic Time-Tree (363.76 Ma), Angiosperm-Coupled Ditrysian Radiation, and COX1 Barcode Saturation Horizon}}
+\author{\textbf{Bryan P. White}\\CRV Science Labs}
+\date{Preprint ID: PREPRINT-12 (v2.0.0 Empirical Preprint) \textbullet\ Companion: Lab Discovery \#123 \textbullet\ Canonical DOI: 10.5281/zenodo.23994485 \textbullet\ Validation Set: VAL-LEPID-DITRYSIA-COX1-001 (Tier 3 \textbullet\ 5 Beakers)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Understanding how butterflies and moths (order Lepidoptera) diversified alongside flowering plants while establishing the evolutionary boundary where single-locus DNA barcoding loses phylogenetic resolution requires evaluating multi-locus mitogenomic and nuclear datasets under rigorous compositional controls. Using the Rust-Native Inference Engine (RuNIE) and external reference binaries across a 92-specimen Amphiesmenoptera cohort aligned across 100,109 homologous columns in Native Rust (33,419 columns in external progressive alignment), we reconstruct the Late Devonian to Cenozoic evolutionary timescale of Lepidoptera and benchmark the diagnostic horizon of mitochondrial cytochrome c oxidase subunit I (COX1). Relaxed molecular-clock dating places the crown divergence of Ditrysia in the Middle Jurassic (165.11 Ma) and the rapid radiation of butterflies (Papilionoidea) in the Early Cretaceous (113.62 Ma), while demonstrating that single-locus COX1 barcoding maintains 100.0% species-partitioning accuracy across recent divergence strata ($\le$ 36.5 Ma) before succumbing to third-codon-position AT mutational saturation across deeper Mesozoic nodes.
+\end{abstract}
+
+\section{Introduction \& Evolutionary Problem Statement}
+Butterflies and moths (order Lepidoptera) represent one of the largest evolutionary radiations of herbivorous insects on Earth, diversifying alongside angiosperms from the Middle Jurassic (Ditrysia crown = 165.11 Ma) through the Early Cretaceous radiation of Papilionoidea (113.62 Ma) from a Late Devonian Amphiesmenoptera root (363.76 Ma) \cite{white2026runie,kawahara2019pnas,kawahara2023natecolevol}. Across 92 sequence records (72 complete mitogenomes \texttt{A:T001}--\texttt{J:T072}, 5 \textit{COX1} barcode vouchers \texttt{COX073}--\texttt{COX077}, and 15 nuclear protein-coding orthologs \texttt{NUC078}--\texttt{NUC092}; total downloaded dataset of 1,130,376 bp on disk), we execute a 24-chain combinatorial sweep comparing Native Rust \texttt{gotoh-msa} ($L = 100,109$ columns in 0.52 s) against external \textit{*MAFFT v7.526} ($L = 33,419$ columns in 94.44 s), \textit{*IQ-TREE v2.4.0}, \textit{*LSD2 v2.4.4}, and \textit{*PAML v4.10.10 codeml}.
+
+\section{Dual-Pass Taxon-Blinded Hygiene \& Compositional Heterogeneity}
+Native Rust \texttt{popgen-blind-dualpass} across 2,556 pairwise comparisons ($B = 500$ permutations) yields $Z_{\text{blind}} = 7.89$, $Z_{\text{ctx}} = 7.92$, and $D_{\text{ctx}} = 0.0038 < 0.050$, autonomously flagging \texttt{ERR-LEPID-01} (\texttt{F:T055} \texttt{NC\_020003.1} nesting inside \textit{Spodoptera} at K2P = 0.0696), \texttt{ERR-LEPID-02} (\texttt{B:T015 == B:T016} K2P = 0.0000), and \texttt{ERR-LEPID-03} (\texttt{COX077} \textit{Cotesia congregata} parasitoid voucher at K2P = 0.3768). Third-codon positions violate stationarity ($\text{RCFV}_{\text{pos3}} = 0.0702 > 0.050$, 91.64\% AT$_3$), whereas \texttt{RY3} recoding compresses RCFV by 70.4\% to 0.0208 and \texttt{Dayhoff-6} recoding reaches 0.0129.
+
+\section{Calibrated Time-Tree, Nuclear P450 Selection \& COX1 Barcode Horizon}
+Pipeline A Total-Evidence ($L = 7,476$ bp, $\ln L = -124,426.07$, CPU = 13.68 s) and Pipeline B 4-Gene mtDNA ($L = 4,206$ bp, $\ln L = -69,996.95$, CPU = 46.40 s) date Amphiesmenoptera to 363.76 Ma, Glossata to 181.46 Ma, Ditrysia to 165.11 Ma, Apoditrysia to 127.62 Ma, Obtectomera to 126.89 Ma, Macroheterocera to 103.10 Ma, and Papilionoidea to 113.62 Ma. In \textit{*PAML codeml}, swallowtail \textit{CYP6B} P450s show significant foreground acceleration in furanocoumarin-specialist \textit{Papilio polyxenes} ($\omega_{\text{fg}} = 0.2938$ vs. $\omega_{\text{bg}} = 0.1602$, $2\Delta\ln L = 4.8302, p = 0.0280^*$) while \textit{EF-1$\alpha$} ($\omega_0 = 0.0155$) and \textit{CAD} ($\omega_0 = 0.0155$) experience strong purifying selection. Across \texttt{TIER-1} (0.0--15.0 Ma, K2P = 0.36\%, ABGD = 100.0\%) and \texttt{TIER-2} (15.0--36.5 Ma, K2P = 7.03\%, Ti/Tv = 2.0703, ABGD = 100.0\%), \textit{COX1} maintains linear diagnostic power before collapsing above 36.5 Ma (\texttt{TIER-3} to \texttt{TIER-5}: K2P = 12.89\%--21.28\%, Ti/Tv = 0.70--0.55, ABGD = 20.0\%--0.1\%).
+
+\begin{thebibliography}{26}
+\bibitem{ref1} White, B. P. (2026). Rust-Native Inference Engine (RuNIE). \textit{CRV Science Labs Preprints}, PREPRINT-01, doi:10.5281/zenodo.23969275.
+\bibitem{ref2} Kawahara, A. Y., et al. (2019). Phylogenomics reveals the evolutionary timing and pattern of butterflies and moths. \textit{PNAS}, 116(45), 22657--22663.
+\bibitem{ref3} Kawahara, A. Y., et al. (2023). A global phylogeny of butterflies reveals their evolutionary history, ancestral hosts and biogeographic origins. \textit{Nature Ecology \& Evolution}, 7, 903--913.
+\bibitem{ref4} Espeland, M., et al. (2018). A comprehensive and dated phylogenomic analysis of butterflies. \textit{Current Biology}, 28(5), 770--778.
+\bibitem{ref5} van Eldijk, T. J. B., et al. (2018). A Triassic-Jurassic window into the evolution of Lepidoptera. \textit{Science Advances}, 4(1), e1701568.
+\bibitem{ref6} Wahlberg, N., Wheat, C. W., \& Pena, C. (2013). Timing and patterns in the taxonomic diversification of Lepidoptera. \textit{PLOS ONE}, 8(11), e80875.
+\bibitem{ref7} Regier, J. C., et al. (2013). A large-scale, higher-level, molecular phylogenetic study of the insect order Lepidoptera. \textit{PLOS ONE}, 8(3), e58568.
+\bibitem{ref8} Mitter, C., Davis, D. R., \& Cummings, M. P. (2017). Phylogeny and evolution of Lepidoptera. \textit{Annual Review of Entomology}, 62, 265--283.
+\bibitem{ref9} Hebert, P. D. N., Cywinska, A., Ball, S. L., \& deWaard, J. R. (2003). Biological identifications through DNA barcodes. \textit{Proc. R. Soc. B}, 270(1512), 313--321.
+\bibitem{ref10} Hebert, P. D. N., Penton, E. H., Burns, J. M., Janzen, D. H., \& Hallwachs, W. (2004). Ten species in one: DNA barcoding reveals cryptic species in \textit{Astraptes fulgerator}. \textit{PNAS}, 101(41), 14812--14817.
+\bibitem{ref11} Puillandre, N., Lambert, A., Brouillet, S., \& Achaz, G. (2012). ABGD, Automatic Barcode Gap Discovery for primary species delimitation. \textit{Molecular Ecology}, 21(8), 1864--1877.
+\bibitem{ref12} Berenbaum, M. R., Favret, C., \& Schuler, M. A. (1996). On defining key innovations in an adaptive radiation: Cytochrome P450s and Papilionidae. \textit{American Naturalist}, 148, S139--S155.
+\bibitem{ref13} Li, X., Baudry, J., Berenbaum, M. R., \& Schuler, M. A. (2004). Structural and functional divergence of insect CYP6B proteins. \textit{PNAS}, 101(9), 2939--2944.
+\bibitem{ref14} Mao, W., Rupasinghe, S. G., Zangerl, A. R., Schuler, M. A., \& Berenbaum, M. R. (2006). Remarkable substrate-specificity of CYP6AB3 in \textit{Depressaria pastinacella}. \textit{Insect Molecular Biology}, 15(2), 169--179.
+\bibitem{ref15} Wheat, C. W., et al. (2007). The genetic basis of a plant-insect coevolutionary key innovation. \textit{PNAS}, 104(51), 20427--20431.
+\bibitem{ref16} Ratzka, A., et al. (2002). Disarming the mustard oil bomb. \textit{PNAS}, 99(17), 11223--11228.
+\bibitem{ref17} Zhan, S., Merlin, C., Boore, J. L., \& Reppert, S. M. (2011). The monarch butterfly genome yields insights into long-distance migration. \textit{Cell}, 147(5), 1171--1185.
+\bibitem{ref18} Xia, Q., et al. (2004). A draft sequence for the genome of the domesticated silkworm (\textit{Bombyx mori}). \textit{Science}, 306(5703), 1937--1940.
+\bibitem{ref19} You, M., et al. (2013). A heterozygous moth genome provides insights into herbivory and detoxification. \textit{Nature Genetics}, 45(2), 220--225.
+\bibitem{ref20} Katoh, K., \& Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7. \textit{Molecular Biology and Evolution}, 30(4), 772--780.
+\bibitem{ref21} Minh, B. Q., et al. (2020). IQ-TREE 2: New models and efficient methods for phylogenetic inference in the genomic era. \textit{Molecular Biology and Evolution}, 37(5), 1530--1534.
+\bibitem{ref22} To, T. H., Jung, M., Lycett, S., \& Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. \textit{Systematic Biology}, 65(1), 82--97.
+\bibitem{ref23} Yang, Z. (2007). PAML 4: Phylogenetic analysis by maximum likelihood. \textit{Molecular Biology and Evolution}, 24(8), 1586--1591.
+\bibitem{ref24} Goldman, N., \& Yang, Z. (1994). A codon-based model of nucleotide substitution for protein-coding DNA sequences. \textit{Molecular Biology and Evolution}, 11(5), 725--736.
+\bibitem{ref25} Phillips, M. J., Delsuc, F., \& Penny, D. (2004). Genome-scale phylogeny and the detection of systematic biases. \textit{Molecular Biology and Evolution}, 21(7), 1455--1458.
+\bibitem{ref26} Zhong, M., Hansen, B., Nesbit, M., \& Struck, T. H. (2011). Mitogenomic compositional heterogeneity and RCFV metrics in holometabolous insects. \textit{Systematic Biology}, 60(4), 502--518.
+\end{thebibliography}
+
+\section{Supplemental Materials: Supplemental Table S1 (72-Species Voucher Ledger) \& Supplemental Table S2 / Table 3C (24-Chain Combinatorial Sweep)}
+Complete 72-taxon mitogenome and 20-record nuclear/barcode accession metadata (\texttt{A:T001}--\texttt{J:T072}, \texttt{COX073}--\texttt{COX077}, \texttt{NUC078}--\texttt{NUC092}) and the 24-chain RuNIE combinatorial optimization sweep (\texttt{CHAIN-01}--\texttt{CHAIN-24}) are archived in the companion PDF and empirical JSON release (\texttt{lepidoptera-ditrysia-timetree-cox1-gap.json}).
+\end{document}

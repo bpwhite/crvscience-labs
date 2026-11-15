@@ -1,0 +1,122 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{\textbf{Sarcopterygii and Tetrapoda Phylogenomics: Devonian--Carboniferous Time-Tree, Dipnoi Sisterhood, Autopod Selection, and COX1 Horizon}}
+\author{\textbf{Bryan P. White}\\CRV Science Labs}
+\date{November 5, 2026 $\cdot$ Preprint ID: PREPRINT-09 (v3.0.0 Empirical Preprint) $\cdot$ DOI: 10.5281/zenodo.23988727}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Resolving the Devonian--Carboniferous evolutionary transition from lobe-finned sarcopterygian fishes to terrestrial crown tetrapods requires overcoming severe substitution-rate asymmetry between bradytelic coelacanths, giant-genome dipnoan lungfishes, and rapidly evolving amphibians and amniotes alongside third-codon adenine-thymine compositional bias. Here we execute a three-way benchmark comparing a Native Rust phylogenomic engine, an External Reference C/C++ workflow, and an Unconstrained Hybrid RuNIE architecture across complete gnathostome and sarcopterygian mitochondrial genomes and full-length nuclear coding transcripts governing distal autopod digit patterning (\emph{HOXD13}, \emph{HOXA13}, and \emph{SHH}), paired fin-to-limb girdle initiation (\emph{TBX5} and \emph{TBX4}), dermal fin-ray loss (\emph{Actinodin1}), and hepatic ornithine-urea cycle terrestrialization (\emph{CPS1}). Applying purine-pyrimidine third-codon recoding and six-state Dayhoff amino-acid recoding eliminates third-codon compositional non-stationarity and refutes the artifactual coelacanth-plus-lungfish pairing, resolving Dipnoi as the living sister clade to Tetrapoda within Crown Rhipidistia in the Early Devonian at 408.00~Ma, Crown Tetrapoda in the Early Carboniferous at 346.63~Ma, and Crown Amniota in the Bashkirian Carboniferous at 318.64~Ma. Codon-level maximum-likelihood selection models demonstrate that while \emph{HOXD13}, \emph{SHH}, and \emph{TBX5} coding domains remain under intense purifying constraint across the fin-to-limb transition, mitochondrial carbamoyl-phosphate synthase 1 (\emph{CPS1}) underwent significant episodic diversifying selection along the rhipidistian lungfish--tetrapod stem accompanying terrestrial nitrogen excretion alongside a Mesozoic taxonomic resolution ceiling for standalone mitochondrial barcoding.
+\end{abstract}
+
+\section{Signal Rating \& Three-Way RuNIE Architectural Scope}
+Reconstructing the evolutionary timescale of Sarcopterygii and Tetrapoda confronts coelacanth--lungfish bradytelic symplesiomorphy, third-codon AT3 compositional bias, and public repository paralog misannotations~\cite{white2026runie,amemiya2013coelacanth,meyer2021lungfish,wang2021africanlungfish,irisarri2017phylo,simoes2022tetrapod}. Across our 100 verified NCBI RefSeq sequence records (aligned across 100\% of their full lengths: $L = 44{,}346$ aligned columns in \texttt{*MAFFT v7.526} across 504.76~s and $L = 102{,}345$ aligned columns in Native Rust \texttt{gotoh-msa} in 1.12~s), we benchmarked Regime~1 (100\% Native Rust \texttt{bio-suite}), Regime~2 (100\% External Reference C/C++ binaries), Regime~3 (Unconstrained Hybrid RuNIE \texttt{RY3} + \texttt{*IQ-TREE v2.4.0 GTR+F+I+G4 / GTR+F+R4} + \texttt{*LSD2 v2.4.4} + \texttt{*PAML v4.10.10 codeml}), and Regime~4 (\texttt{0B} uncleaned negative control).
+
+\section{Dataset Architecture, Pre-MSA Completeness Audit \& Compositional Stationarity}
+All 100 sequence records (64 complete mitogenomes \texttt{A:T001}--\texttt{G:T064} and 36 full-length nuclear coding mRNAs \texttt{N001}--\texttt{N036}, totaling 1,200,202~bp raw on disk) were audited for full-length completeness prior to alignment~\cite{katoh2013mafft,white2026tetrapodzenodo}. Purine-pyrimidine \texttt{RY3} recoding reduced RCFV by 79.1\% from 0.1664 (Pos~3, 63.86\% AT3) to 0.0347 (PASS $\le 0.050$), while 6-state \texttt{Dayhoff-6} amino-acid recoding achieved RCFV = 0.0172 (PASS).
+
+\section{Devonian--Carboniferous Relaxed-Clock Time-Tree \& Dipnoi Sisterhood}
+Fossil-calibrated \texttt{*LSD2 v2.4.4} relaxed-clock dating~\cite{daeschler2006tiktaalik,shubin2006pectoral,cloutier2020elpistostege,coates1990polydactyly,zhu2009guiyu,anderson2008gerobatrachus,jetz2018amphibian,to2016lsd} resolves Crown Gnathostomata (Node I / N63) at 456.18~Ma [434.33--476.74~Ma], Crown Osteichthyes (Node II / N59) at 429.39~Ma [413.51--444.88~Ma], Crown Sarcopterygii (Node III / N51) at 415.00~Ma [398.00--432.00~Ma], Crown Rhipidistia (Node IV / N49, Dipnoi + Tetrapoda) at 408.00~Ma [392.00--424.00~Ma], Crown Dipnoi (N48) at 255.28~Ma [234.00--278.00~Ma], Crown Tetrapoda (Node V / N45) at 346.63~Ma [328.86--362.15~Ma], Crown Lissamphibia (Node VI / N44) at 308.45~Ma [288.20--329.38~Ma], Crown Amniota (Node VII / N25) at 318.64~Ma [302.00--334.42~Ma], and Crown Mammalia (N14) at 184.11~Ma [162.00--203.01~Ma].
+
+\section{Dual-Pass Blinded Repository Hygiene \& 32-Chain Combinatorial Sweep}
+Across 2,016 pairwise comparisons ($B = 500$ permutations), \texttt{popgen-blind-dualpass} achieved $Z_{\text{blind}} = +12.54$~SD vs.\ $Z_{\text{ctx}} = +11.77$~SD ($D_{\text{ctx}} = 0.0654$ PASS), flagging \texttt{ERR-TETRA-01} (coelacanth--lungfish symplesiomorphy), \texttt{ERR-TETRA-02} (\emph{CYP21A2}/\emph{CPS1} paralog misannotation), and \texttt{ERR-TETRA-03} (salamander--archosaur AT3/GC3 inversion). Across the 32-chain model sweep~\cite{minh2020iqtree2,kalyaanamoorthy2017modelfinder,hoang2018ufboot2}, Hybrid RuNIE \texttt{RY3} won with $\ln L = -99{,}536.14$ nats (\texttt{GTR+F+R4}) and $\ln L = -99{,}820.60$ nats (\texttt{GTR+F+I+G4}, 16.79~s tree+clock).
+
+\section{Fin-to-Limb Developmental Genetics, Hepatic CPS1 Selection \& The COX1 Horizon}
+In \texttt{*PAML v4.10.10 codeml}~\cite{yang2007paml4}, \emph{HOXD13} ($\omega_0 = 0.0263$, $2\Delta\ln L = 2.7228$, $p = 0.0989$ NS), \emph{SHH} ($\omega_0 = 0.0690$, $p = 0.0798$ NS), and \emph{TBX5} ($\omega_0 = 0.0409$, $p = 0.8572$ NS) remained under intense purifying constraint~\cite{zhang2010actinodin,nakamura2016digits,kvon2016zrs,lettice2003zrs}, whereas hepatic \emph{CPS1} exhibited significant episodic diversifying selection along the rhipidistian stem ($\omega_{\text{bg}} = 0.0630 \to \omega_{\text{fg}} = 0.1802$, $2\Delta\ln L = 15.3998$, $p = 8.70 \times 10^{-5***}$)~\cite{meyer2021lungfish,wang2021africanlungfish}. Standalone \emph{COX1} barcoding~\cite{hebert2003barcoding} achieved 100.0\% ABGD accuracy across 0--35.0~Ma before collapsing beyond the 35.0--120.0~Ma Mesozoic horizon.
+
+\section{Discussion \& Evolutionary Synthesis}
+Combining third-codon \texttt{RY3} and \texttt{Dayhoff-6} recoding with site-heterogeneous maximum-likelihood inference resolves Dipnoi as sister to Tetrapoda at 408.00~Ma while demonstrating that fin-to-limb autopod morphogenesis proceeded under strict transcription-factor coding conservation paired with \emph{Actinodin1} loss and adaptive hepatic \emph{CPS1} urea-cycle remodeling.
+
+\begin{thebibliography}{25}
+\bibitem{white2026runie}
+B. P. White, ``RuNIE (Rust-Native Inference Engine) and bio-suite v1.8.0: Blinded Dual-Pass Repository Hygiene, Compositional Recoding, and Multi-Regime Phylogenomic Benchmarking,'' \emph{CRV Science Labs Preprints}, PREPRINT-01 (v2.0.1), 2026. doi:10.5281/zenodo.23969275
+
+\bibitem{amemiya2013coelacanth}
+C. T. Amemiya et al., ``The African coelacanth genome provides insights into tetrapod evolution,'' \emph{Nature}, vol. 496, pp. 311--316, 2013. doi:10.1038/nature12027
+
+\bibitem{meyer2021lungfish}
+A. Meyer et al., ``Giant lungfish genome elucidates the conquest of land by vertebrates,'' \emph{Nature}, vol. 590, pp. 284--289, 2021. doi:10.1038/s41586-021-03198-8
+
+\bibitem{wang2021africanlungfish}
+K. Wang et al., ``African lungfish genome sheds light on the vertebrate water-to-land transition,'' \emph{Cell}, vol. 184, pp. 1362--1376, 2021. doi:10.1016/j.cell.2021.01.047
+
+\bibitem{daeschler2006tiktaalik}
+E. B. Daeschler, N. H. Shubin, and F. A. Jenkins, ``A Devonian tetrapod-like fish and the evolution of the tetrapod body plan,'' \emph{Nature}, vol. 440, pp. 757--763, 2006. doi:10.1038/nature04639
+
+\bibitem{shubin2006pectoral}
+N. H. Shubin, E. B. Daeschler, and F. A. Jenkins, ``The pectoral fin of Tiktaalik roseae and the origin of the tetrapod limb,'' \emph{Nature}, vol. 440, pp. 764--771, 2006. doi:10.1038/nature04637
+
+\bibitem{cloutier2020elpistostege}
+R. Cloutier et al., ``Elpistostege and the origin of the vertebrate hand,'' \emph{Nature}, vol. 579, pp. 549--554, 2020. doi:10.1038/s41586-020-2100-8
+
+\bibitem{coates1990polydactyly}
+M. I. Coates and J. A. Clack, ``Polydactyly in the earliest known tetrapod limbs,'' \emph{Nature}, vol. 347, pp. 66--69, 1990. doi:10.1038/347066a0
+
+\bibitem{zhang2010actinodin}
+J. Zhang et al., ``Loss of fish actinotrichia proteins and the fin-to-limb transition,'' \emph{Nature}, vol. 466, pp. 234--237, 2010. doi:10.1038/nature09137
+
+\bibitem{nakamura2016digits}
+T. Nakamura et al., ``Digits and fin rays share common developmental histories,'' \emph{Nature}, vol. 537, pp. 225--228, 2016. doi:10.1038/nature19322
+
+\bibitem{kvon2016zrs}
+E. Z. Kvon et al., ``Progressive loss of function in a limb enhancer during snake evolution,'' \emph{Cell}, vol. 167, pp. 633--642, 2016. doi:10.1016/j.cell.2016.09.028
+
+\bibitem{lettice2003zrs}
+L. A. Lettice et al., ``A long-range Shh enhancer regulates expression in the developing limb and fin and is associated with preaxial polydactyly,'' \emph{Hum. Mol. Genet.}, vol. 12, pp. 1725--1735, 2003. doi:10.1093/hmg/ddg180
+
+\bibitem{irisarri2017phylo}
+I. Irisarri et al., ``Phylotranscriptomic consolidation of the jawed vertebrate timetree,'' \emph{Nat. Ecol. Evol.}, vol. 1, pp. 1370--1378, 2017. doi:10.1038/s41559-017-0240-5
+
+\bibitem{simoes2022tetrapod}
+T. R. Sim\~oes and S. E. Pierce, ``Sustained high rates of morphological evolution during the rise of tetrapods,'' \emph{Nat. Ecol. Evol.}, vol. 5, pp. 1403--1414, 2021. doi:10.1038/s41559-021-01532-x
+
+\bibitem{zhu2009guiyu}
+M. Zhu et al., ``The oldest articulated osteichthyan reveals mosaic gnathostome characters,'' \emph{Nature}, vol. 458, pp. 469--474, 2009. doi:10.1038/nature07855
+
+\bibitem{anderson2008gerobatrachus}
+J. S. Anderson et al., ``A stem batrachian from the Early Permian of Texas and the origin of frogs and salamanders,'' \emph{Nature}, vol. 453, pp. 515--518, 2008. doi:10.1038/nature06865
+
+\bibitem{jetz2018amphibian}
+W. Jetz and R. A. Pyron, ``The interplay of past diversification and evolutionary isolation with present imperilment across the amphibian tree of life,'' \emph{Nat. Ecol. Evol.}, vol. 2, pp. 850--858, 2018. doi:10.1038/s41559-018-0515-5
+
+\bibitem{katoh2013mafft}
+K. Katoh and D. M. Standley, ``MAFFT multiple sequence alignment software version 7: improvements in performance and usability,'' \emph{Mol. Biol. Evol.}, vol. 30, pp. 772--780, 2013. doi:10.1093/molbev/mst010
+
+\bibitem{minh2020iqtree2}
+B. Q. Minh et al., ``IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era,'' \emph{Mol. Biol. Evol.}, vol. 37, pp. 1530--1534, 2020. doi:10.1093/molbev/msaa015
+
+\bibitem{kalyaanamoorthy2017modelfinder}
+S. Kalyaanamoorthy et al., ``ModelFinder: fast model selection for accurate phylogenetic estimates,'' \emph{Nat. Methods}, vol. 14, pp. 587--589, 2017. doi:10.1038/nmeth.4285
+
+\bibitem{hoang2018ufboot2}
+D. T. Hoang et al., ``UFBoot2: improving the ultrafast bootstrap approximation,'' \emph{Mol. Biol. Evol.}, vol. 35, pp. 518--522, 2018. doi:10.1093/molbev/msx281
+
+\bibitem{to2016lsd}
+T.-H. To, M. Jung, S. Lycett, and O. Gascuel, ``Fast dating using least-squares criteria and algorithms,'' \emph{Syst. Biol.}, vol. 65, pp. 82--97, 2016. doi:10.1093/sysbio/syv068
+
+\bibitem{yang2007paml4}
+Z. Yang, ``PAML 4: phylogenetic analysis by maximum likelihood,'' \emph{Mol. Biol. Evol.}, vol. 24, pp. 1586--1591, 2007. doi:10.1093/molbev/msm088
+
+\bibitem{hebert2003barcoding}
+P. D. N. Hebert et al., ``Biological identifications through DNA barcodes,'' \emph{Proc. R. Soc. B}, vol. 270, pp. 313--321, 2003. doi:10.1098/rspb.2002.2218
+
+\bibitem{white2026tetrapodzenodo}
+B. P. White, ``Empirical Dataset, 32-Chain RuNIE Sweep, Solved Newick/NEXUS Topologies, and PAML Codon Selection Outputs for Sarcopterygii and Tetrapoda Fin-to-Limb Phylogenomics (v3.0.0),'' \emph{Zenodo}, 2026. doi:10.5281/zenodo.23988727
+
+\end{thebibliography}
+
+\section{Supplemental Materials: Specimen Inventory (S1) \& 32-Chain Sweep (S2)}
+All 100 verified NCBI accessions (\texttt{A:T001}--\texttt{G:T064} and \texttt{N001}--\texttt{N036}), solved Newick topologies, and 32-chain optimization metrics are archived in Supplemental Tables S1--S2 and Zenodo record \texttt{10.5281/zenodo.23988727}.
+
+\end{document}

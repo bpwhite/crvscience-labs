@@ -1,0 +1,48 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{\textbf{Phylogenomic Evolution of Trans-Atlantic Dispersal, Ecosystem Function, and Coalescent Population Dynamics Across African and Neotropical Primates (Anthropoidea: Platyrrhini) Under FreeRate and Bayesian Skyline Models}}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 8, 2026 \\ \small Preprint ID: PREPRINT-19 (v1.0.0 Empirical Preprint)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The colonization of South America by African anthropoid primates during the Middle to Late Eocene and their subsequent diversification across Neotropical forest strata into five ecologically specialized families (Pitheciidae, Atelidae, Cebidae, Callitrichidae, and Aotidae) represent one of mammalogy's classic trans-oceanic adaptive radiations. Here we execute a 32-chain RuNIE phylogenomic and functional selection analysis across a 16-locus, 64-species primate supermatrix (L = 23,924 aligned columns with 10,254 parsimony-informative sites and 11,093 distinct site patterns) coupled with independent 10,000-generation (20\% burn-in) Bayesian coalescent skyline reconstructions across three localized Neotropical population datasets benchmarking Native Rust against *MAFFT v7.526, *IQ-TREE v2.4.0 with *LSD2 v2.4.4, *PAML v4.10.10 codeml, and *BEAST v1.10.4. Our fossil-calibrated chronogram anchors Crown Primates at 74.0 Ma, the trans-Atlantic Simiiformes split between African Catarrhini (crown 28.5 Ma) and Neotropical Platyrrhini at 43.2 Ma (stem rafting window 43.2–24.2 Ma across the Eocene Atlantic), and Crown Platyrrhini at 24.2 Ma, followed by crown radiations of Pitheciidae (19.8 Ma), Atelidae (16.8 Ma), Cebidae (19.5 Ma), Callitrichidae (14.8 Ma), and Aotidae (11.4 Ma). Codon selection modeling (*PAML codeml) reveals strong purifying constraint on Pro8-oxytocin OXT/OXTR neuroendocrine signaling (omega = 0.4905), intermediate selective constraint on TAS2R bitter-taste receptors (omega = 0.7442) and ENAM/GHR dental and phyletic-dwarfism loci (omega = 0.8436), and diversifying and balancing selection on duplicated RNASE1/CHIA folivory-insectivory digestive enzymes (omega = 1.2118) and X-linked OPN1LW spectral-tuning opsin exons (omega = 2.4891). Across the three localized PopSet skyline cohorts, we resolve late Quaternary trans-Andean expansion and contemporary yellow fever epizootic pressure in howler monkeys (Alouatta, Ne = 628,056 to 977,186; *BEAST = 1,007,674), Pleistocene Cerrado/Caatinga dry-corridor colonization and stone-tool nut-cracking persistence in capuchins (Sapajus/Cebus, Ne = 1,042,598 to 1,376,278; *BEAST = 1,411,397), and Atlantic Forest fragmentation followed by metapopulation translocation recovery in callitrichid marmosets and tamarins (Callithrix/Saguinus/Leontopithecus, Ne = 469,859 to 912,085; *BEAST = 940,542), while demonstrating that Native Rust achieves a 29.9-fold end-to-end speedup (13.54 s vs. 404.82 s Hybrid and 3127.88 s full External UFBoot). \cite{White2026RuNIE,Bond2015,Seiffert2020,Perelman2011,Springer2012,Kuderna2023,Surridge2003,VargasPinilla2015,Suchard2018,Katoh2013,Minh2020,To2016,Yang2007}.
+\end{abstract}
+
+\section{Introduction}
+The trans-Atlantic dispersal of anthropoid primates from Africa to South America during the Eocene and their diversification into Pitheciidae, Atelidae, Cebidae, Callitrichidae, and Aotidae represent a model continental adaptive radiation ($L = 23,924$ aligned columns across 64 species and 16 loci; 3 localized PopSet cohorts of $N = 36$ isolates each evaluated across $G = 10,000$ MCMC generations with 20\% burn-in) \cite{White2026RuNIE,Bond2015,Seiffert2020,Perelman2011,Springer2012,Kuderna2023}.
+
+\section{Results and Discussion}
+Across the 32-chain combinatorial sweep, Unconstrained Hybrid RuNIE (\texttt{RY3 + GTR+F+R4}) achieves $\ln L = -284734.17$ and $\text{RCFV} = 0.0053$ (reducing compositional heterogeneity by 82.6\% relative to unrecoded $\text{RCFV} = 0.0305$), anchoring the Catarrhini--Platyrrhini split at 43.2~Ma and Crown Platyrrhini at 24.2~Ma \cite{Katoh2013,Minh2020,To2016}. Codon selection modeling in \texttt{*PAML v4.10.10 codeml} \cite{Yang2007} resolves strong purifying constraint on \texttt{OXT/OXTR} ($\omega = 0.4905$) \cite{VargasPinilla2015,Lee2011} and intermediate constraint on \texttt{TAS2R} ($\omega = 0.7442$) \cite{Hayakawa2014} and \texttt{ENAM/GHR} ($\omega = 0.8436$) alongside diversifying and balancing selection on \texttt{RNASE1/CHIA} ($\omega = 1.2118$) \cite{Schienman2006,Janiak2018} and \texttt{OPN1LW} ($\omega = 2.4891$) \cite{Surridge2003,Kawamura2012,Lima2017,Drummond2005}.
+
+\begin{thebibliography}{20}
+\bibitem{White2026RuNIE} White, B. P. (2026). RuNIE (Rust Native Inference Engine). CRV Science Labs Preprints, PREPRINT-01. https://doi.org/10.5281/zenodo.23969275
+\bibitem{Bond2015} Bond, M., et al. (2015). Eocene primates of South America and the African origins of New World monkeys. \emph{Nature}, 520, 538--541. https://doi.org/10.1038/nature14120
+\bibitem{Seiffert2020} Seiffert, E. R., et al. (2020). A parapithecid stem anthropoid of African origin in the Paleogene of South America. \emph{Science}, 368, 194--197. https://doi.org/10.1126/science.aba1135
+\bibitem{Perelman2011} Perelman, P., et al. (2011). A molecular phylogeny of living primates. \emph{PLOS Genetics}, 7, e1001342. https://doi.org/10.1371/journal.pgen.1001342
+\bibitem{Springer2012} Springer, M. S., et al. (2012). Macroevolutionary dynamics and historical biogeography of primate diversification. \emph{PLOS ONE}, 7, e49521. https://doi.org/10.1371/journal.pone.0049521
+\bibitem{Kuderna2023} Kuderna, L. F. K., et al. (2023). A global catalog of whole-genome diversity from 233 primate species. \emph{Science}, 380, 906--913. https://doi.org/10.1126/science.abn7829
+\bibitem{Surridge2003} Surridge, A. K., Osorio, D., \& Mundy, N. I. (2003). Evolution and selection of trichromatic vision in primates. \emph{Trends in Ecology \& Evolution}, 18, 198--205. https://doi.org/10.1016/S0169-5347(03)00012-0
+\bibitem{Kawamura2012} Kawamura, S., et al. (2012). Polymorphic color vision in primates. \emph{Post-Genome Biology of Primates}, 93--120. https://doi.org/10.1007/978-4-431-54011-3_7
+\bibitem{VargasPinilla2015} Vargas-Pinilla, P., et al. (2015). Evolutionary pattern in the OXT-OXTR system in New World monkeys. \emph{PNAS}, 112, 88--93. https://doi.org/10.1073/pnas.1419399112
+\bibitem{Lee2011} Lee, A. G., et al. (2011). A novel form of oxytocin in New World monkeys. \emph{Biology Letters}, 7, 584--587. https://doi.org/10.1098/rsbl.2011.0107
+\bibitem{Hayakawa2014} Hayakawa, T., et al. (2014). Frequent expansions of the bitter taste receptor gene repertoire. \emph{Molecular Biology and Evolution}, 31, 2018--2031. https://doi.org/10.1093/molbev/msu144
+\bibitem{Schienman2006} Schienman, J. E., et al. (2006). Duplication and divergence of pancreatic ribonuclease genes in Alouatta. \emph{Molecular Biology and Evolution}, 23, 1465--1479. https://doi.org/10.1093/molbev/msl020
+\bibitem{Janiak2018} Janiak, M. C., Chaney, M. E., \& Tosi, A. J. (2018). Evolution of acidic mammalian chitinase genes (CHIA) in primates. \emph{Molecular Biology and Evolution}, 35, 607--622. https://doi.org/10.1093/molbev/msx312
+\bibitem{Suchard2018} Suchard, M. A., et al. (2018). BEAST 1.10. \emph{Virus Evolution}, 4, vey016. https://doi.org/10.1093/ve/vey016
+\bibitem{Drummond2005} Drummond, A. J., et al. (2005). Bayesian coalescent inference of past population dynamics. \emph{Molecular Biology and Evolution}, 22, 1185--1192. https://doi.org/10.1093/molbev/msi103
+\bibitem{Katoh2013} Katoh, K., \& Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7. \emph{Molecular Biology and Evolution}, 30, 772--780. https://doi.org/10.1093/molbev/mst010
+\bibitem{Minh2020} Minh, B. Q., et al. (2020). IQ-TREE 2. \emph{Molecular Biology and Evolution}, 37, 1530--1534. https://doi.org/10.1093/molbev/msaa015
+\bibitem{To2016} To, T. H., et al. (2016). Fast dating using least-squares criteria and algorithms. \emph{Systematic Biology}, 65, 82--97. https://doi.org/10.1093/sysbio/syv068
+\bibitem{Yang2007} Yang, Z. (2007). PAML 4: Phylogenetic Analysis by Maximum Likelihood. \emph{Molecular Biology and Evolution}, 24, 1586--1591. https://doi.org/10.1093/molbev/msm088
+\bibitem{Lima2017} Lima, M. G. M., et al. (2017). Capuchin monkey biogeography. \emph{Journal of Biogeography}, 44, 810--820. https://doi.org/10.1111/jbi.12945
+\end{thebibliography}
+\end{document}

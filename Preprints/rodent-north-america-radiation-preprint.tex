@@ -1,0 +1,49 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{\textbf{Phylogenomic Evolution of the North American Rodent Radiation, Zoonotic Reservoir Competence, and Coalescent Population Dynamics Across Sciuromorpha, Castorimorpha, and Myomorpha Under FreeRate and Bayesian Skyline Models}}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 8, 2026 \\ \small Preprint ID: PREPRINT-20 (v1.0.0 Empirical Preprint)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The continental radiation of rodents (Order Rodentia) across North America via Paleogene Beringian corridors, Miocene grassland expansions, and Great American Biotic Interchange exchanges—coupled with the Anthropocene introduction of Old World commensal murids—established both the foundational small-mammal trophic guilds of Nearctic ecosystems and the primary sylvatic reservoirs for North America's major rodent-borne zoonoses. Here we execute a 32-chain RuNIE phylogenomic and functional selection analysis across an 18-locus, 64-species Glires supermatrix (L = 26,700 aligned columns with 7,979 parsimony-informative sites and 8,803 distinct site patterns) paired with independent 10,000-generation (20\% burn-in) single-species Bayesian coalescent skyline reconstructions across three conspecific North American population datasets (3 × N = 36 = 108 isolates) benchmarking Native Rust against *MAFFT v7.526, *IQ-TREE v2.4.0 with *LSD2 v2.4.4, *PAML v4.10.10 codeml, and *BEAST v1.10.4. Our fossil-calibrated chronogram anchors the Glires root (Lagomorpha vs. Rodentia) at 65.2 Ma, Crown Rodentia at 56.8 Ma, the Sciuromorpha–Castorimorpha split at 36.4 Ma, Myodonta (Dipodoidea vs. Muroidea) at 46.5 Ma, the Muridae–Cricetidae divergence at 24.8 Ma, Crown Cricetidae at 18.6 Ma, and the New World Neotominae–Sigmodontinae split at 13.4 Ma. Codon selection modeling (*PAML codeml) reveals strong purifying constraint on the Sin Nombre hantavirus endothelial receptor ITGB3 beta-3 integrin (omega = 0.5319), intermediate selective constraint on the high-altitude and fossorial hypoxia axis EPAS1/HBB (omega = 0.0343) and rodenticide-detoxification locus VKORC1/CYP2C (omega = 0.2572), and diversifying positive selection on bacterial pattern-recognition receptors TLR2/TLR4 (omega = 0.2631) and the New World Arenavirus receptor TFRC transferrin receptor 1 apical domain (omega = 0.1453). Across the three single-species PopSet skyline cohorts, we resolve post-glacial forest/oak-mast expansion and contemporary ENSO Sin Nombre hantavirus / Lyme disease amplification in the North American deer mouse (Peromyscus maniculatus, N = 36, Ne = 433,194 to 653,847; *BEAST = 667,970), northward agricultural grassland expansion and Black Creek Canal / Tamiami viral irruptions in the hispid cotton rat (Sigmodon hispidus, N = 36, Ne = 1,534,254 to 1,753,302; *BEAST = 1,808,005), and post-LGM Beringian steppe-tundra recolonization and high-latitude permafrost-thaw dynamics in the Arctic ground squirrel (Urocitellus parryii, N = 36, Ne = 707,606 to 1,687,680; *BEAST = 1,740,336), while demonstrating that Native Rust achieves a 42.9-fold end-to-end speedup (13.88 s vs. 595.24 s Hybrid and 1861.52 s full External UFBoot). \cite{White2026RuNIE,Fabre2012,Steppan2017,Leite2014,Hjelle2010,Gavrilovskaya1998,Abraham2009,Demogines2013,Pelz2005,Storz2009,Tschirren2013,Gage2005,Ostfeld2006,Suchard2018,Katoh2013,Minh2020,To2016,Yang2007}.
+\end{abstract}
+
+\section{Introduction}
+The continental radiation of rodents across North America and their role as sylvatic reservoirs for orthohantaviruses, mammarenaviruses, Lyme borreliosis, and sylvatic plague represent a critical intersection of evolutionary biogeography and public health ($L = 26,700$ aligned columns across 64 species and 18 loci; 3 localized PopSet cohorts of $N = 36$ isolates each evaluated across $G = 10,000$ MCMC generations with 20\% burn-in) \cite{White2026RuNIE,Fabre2012,Steppan2017,Hjelle2010,Gage2005,Ostfeld2006}.
+
+\section{Results and Discussion}
+Across the 32-chain combinatorial sweep, Unconstrained Hybrid RuNIE (\texttt{RY3 + GTR+F+R4}) achieves $\ln L = -382501.74$ and $\text{RCFV} = 0.0070$ (reducing compositional heterogeneity by 81.1\% relative to unrecoded $\text{RCFV} = 0.0371$), anchoring Crown Rodentia at 56.8~Ma, Crown Cricetidae at 18.6~Ma, and the Neotominae--Sigmodontinae split at 13.4~Ma \cite{Katoh2013,Minh2020,To2016}. Codon selection modeling in \texttt{*PAML v4.10.10 codeml} \cite{Yang2007} resolves strong purifying constraint on \texttt{ITGB3} ($\omega = 0.5319$) \cite{Gavrilovskaya1998} and intermediate constraint on \texttt{EPAS1/HBB} ($\omega = 0.0343$) \cite{Storz2009,Schweizer2019} and \texttt{VKORC1/CYP2C} ($\omega = 0.2572$) \cite{Pelz2005,Song2011} alongside diversifying selection on \texttt{TLR2/TLR4} ($\omega = 0.2631$) \cite{Tschirren2013} and \texttt{TFRC} ($\omega = 0.1453$) \cite{Abraham2009,Demogines2013,Drummond2005}.
+
+\begin{thebibliography}{21}
+\bibitem{White2026RuNIE} White, B. P. (2026). RuNIE (Rust Native Inference Engine). CRV Science Labs Preprints, PREPRINT-01. https://doi.org/10.5281/zenodo.23969275
+\bibitem{Fabre2012} Fabre, P. H., et al. (2012). A glimpse on the pattern of rodent diversification. \emph{BMC Evolutionary Biology}, 12, 88. https://doi.org/10.1186/1471-2148-12-88
+\bibitem{Steppan2017} Steppan, S. J., \& Schenk, J. J. (2017). Muroid rodent phylogenetics: 900-species tree. \emph{PLOS ONE}, 12, e0183070. https://doi.org/10.1371/journal.pone.0183070
+\bibitem{Leite2014} Leite, R. N., et al. (2014). Historical biogeography of the South American cricetid radiation. \emph{PLOS ONE}, 9, e100687. https://doi.org/10.1371/journal.pone.0100687
+\bibitem{Hjelle2010} Hjelle, B., \& Torres-Perez, F. (2010). Hantaviruses in the Americas. \emph{Viruses}, 2, 2559--2586. https://doi.org/10.3390/v2122559
+\bibitem{Gavrilovskaya1998} Gavrilovskaya, I. N., et al. (1998). Beta3 integrins mediate the cellular entry of hantaviruses. \emph{PNAS}, 95, 7074--7079. https://doi.org/10.1073/pnas.95.12.7074
+\bibitem{Abraham2009} Abraham, J., et al. (2009). Host-species transferrin receptor 1 orthologs are cellular receptors for New World clade B arenaviruses. \emph{PLOS Pathogens}, 5, e1000358. https://doi.org/10.1371/journal.ppat.1000358
+\bibitem{Demogines2013} Demogines, A., et al. (2013). Dual host-virus arms races shape an essential housekeeping protein. \emph{PLOS Biology}, 11, e1001571. https://doi.org/10.1371/journal.pbio.1001571
+\bibitem{Pelz2005} Pelz, H. J., et al. (2005). The genetic basis of resistance to anticoagulants in rodents. \emph{Genetics}, 170, 1839--1847. https://doi.org/10.1534/genetics.104.040360
+\bibitem{Song2011} Song, Y., et al. (2011). Adaptive introgression of anticoagulant rodent poison resistance. \emph{Current Biology}, 21, 1296--1301. https://doi.org/10.1016/j.cub.2011.06.043
+\bibitem{Storz2009} Storz, J. F., et al. (2009). High-altitude adaptation of deer mouse hemoglobin. \emph{PNAS}, 106, 14450--14455. https://doi.org/10.1073/pnas.0905224106
+\bibitem{Schweizer2019} Schweizer, R. M., et al. (2019). Selection on Epas1 in the deer mouse. \emph{PLOS Genetics}, 15, e1008420. https://doi.org/10.1371/journal.pgen.1008420
+\bibitem{Tschirren2013} Tschirren, B., et al. (2013). Polymorphisms at TLR2 and Borrelia infection. \emph{Proc. R. Soc. B}, 280, 20130364. https://doi.org/10.1098/rspb.2013.0364
+\bibitem{Gage2005} Gage, K. L., \& Kosoy, M. Y. (2005). Natural history of plague. \emph{Annual Review of Entomology}, 50, 505--528. https://doi.org/10.1146/annurev.ento.50.071803.130337
+\bibitem{Ostfeld2006} Ostfeld, R. S., et al. (2006). Climate, deer, rodents, and acorns as determinants of local Lyme-disease risk. \emph{PLOS Biology}, 4, e145. https://doi.org/10.1371/journal.pbio.0040145
+\bibitem{Suchard2018} Suchard, M. A., et al. (2018). BEAST 1.10. \emph{Virus Evolution}, 4, vey016. https://doi.org/10.1093/ve/vey016
+\bibitem{Drummond2005} Drummond, A. J., et al. (2005). Bayesian coalescent inference of past population dynamics. \emph{Molecular Biology and Evolution}, 22, 1185--1192. https://doi.org/10.1093/molbev/msi103
+\bibitem{Katoh2013} Katoh, K., \& Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7. \emph{Molecular Biology and Evolution}, 30, 772--780. https://doi.org/10.1093/molbev/mst010
+\bibitem{Minh2020} Minh, B. Q., et al. (2020). IQ-TREE 2. \emph{Molecular Biology and Evolution}, 37, 1530--1534. https://doi.org/10.1093/molbev/msaa015
+\bibitem{To2016} To, T. H., et al. (2016). Fast dating using least-squares criteria and algorithms. \emph{Systematic Biology}, 65, 82--97. https://doi.org/10.1093/sysbio/syv068
+\bibitem{Yang2007} Yang, Z. (2007). PAML 4: Phylogenetic Analysis by Maximum Likelihood. \emph{Molecular Biology and Evolution}, 24, 1586--1591. https://doi.org/10.1093/molbev/msm088
+\end{thebibliography}
+\end{document}

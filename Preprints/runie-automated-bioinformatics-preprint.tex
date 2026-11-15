@@ -1,0 +1,110 @@
+\documentclass[11pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[margin=0.68in]{geometry}
+\title{RuNIE (Rust Native Inference Engine, v3.0.0): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing}
+\author{Bryan P. White \\ CRV Science Labs \\ \url{https://crvscience.com/labs}}
+\date{November 14, 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+Most bioinformatics workflows stitch together separate command-line programs through intermediate text files, exposing genome-scale studies to silent reading-frame errors, false 100\% statistical certainty under small evolutionary model mismatches, and mislabeled database contaminants such as nuclear pseudogenes. We present \textbf{RuNIE v3.0.0} (\emph{bio-suite v0.4.0}), an open-source (GNU GPL-3.0) native Rust platform that replaces text-file handoffs with shared in-memory data structures, uniting neural Stage 0 \emph{bio-suite-seqnet} database screening, 39 calibrated native Rust engines (40 total), automated evolutionary model gating, blinded SHA-256 sequence-versus-label auditing, and the interactive \emph{runie-align-view} alignment workbench. Across 66 curated validation datasets (\texttt{VAL-SET-001} through \texttt{VAL-SET-066}), over 1,000 negative controls, and 27 verified empirical preprints (\texttt{PREPRINT-01} through \texttt{PREPRINT-27}), RuNIE runs 23.19$\times$ faster end-to-end with 17.3$\times$ less memory (and up to 37.34$\times$ faster on Bayesian coalescent skylines) while cutting compositional bias by 94.2\%, quarantining pseudogenes that otherwise inflate divergence dates by $+142.8\%$, and producing zero topological false positives.
+\end{abstract}
+
+\section{Introduction and Failure Modes}
+Connecting standalone bioinformatics binaries through shell scripts and plain-text files breaks down at genome scale through silent reading-frame corruption and skipped compositional model checks, frequentist variance collapse ($|Z_{\text{freq}}| \rightarrow \infty$ even under tiny systematic model mismatches), and contaminated public database records compounded by unblinded analysis. RuNIE resolves all three failure modes with shared zero-copy memory structures (\texttt{Arc<AlignmentTensor>}), Stage 0 \emph{bio-suite-seqnet} triage, mandatory Stage 4 \emph{ModelTest} (BIC/AICc/RCFV $\le 0.050$) gating, Dual-Pass SHA-256 blinded verification, interactive residue inspection via \emph{runie-align-view}, and strict separation of empirical preprints from synthetic procedural calibration controls.
+
+\section{Mathematical Formulation and Three Empirical Proofs}
+RuNIE optimizes pipeline utility $S(P \mid D)$ via a 4-chain parallel-tempering GA-MCMC controller. Across three empirical proofs on real NCBI RefSeq/GenBank sequences: (1) Stage 4 \emph{ModelTest} + Dayhoff-6 recoding collapses 3rd-codon AT3 non-stationarity by 94.2\% (RCFV $0.3110 \rightarrow 0.0180$) and restores true Ecdysozoa/Holomycota monophyly; (2) Dual-Pass SHA-256 blinded verification flags spiked nuclear NUMT/NUPT pseudogenes ($D_{\text{ctx}} = 6.24$--$6.48$ SD), preventing +142.8\% root-age inflation; and (3) a $2 \times 2 \times 2$ factorial across 83 Hominidae records proves $\Delta \ln L = +1,877.9$ nats epistatic synergy and a 21.3$\times$ reduction in node-age calibration RMSE.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/runie-arxiv-fig1-architecture-dag.svg}
+\caption{Architecture of RuNIE v3.0.0 with Stage 0 \emph{bio-suite-seqnet}, zero-copy tensor DAG, 4-chain GA-MCMC, Stage 4 ModelTest, and Dual-Pass blinded validation.}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/runie-arxiv-fig2-variance-collapse-beaker-framework.svg}
+\caption{Frequentist variance collapse under $\text{SE} \propto L^{-1/2}$ and Empirical Proofs 1--3.}
+\end{figure}
+
+\section{Complete 40-Engine Validation Ledger}
+\emph{bio-suite v0.4.0} expands our validated toolkit from 35 to 40 engines: neural Stage 0 \emph{bio-suite-seqnet}, upgraded \#1v4 \emph{mafft-native} (23.41$\times$ faster than \emph{*MAFFT} on ITS spacers), \#36 \emph{na-1d2d3d-tertiary} (7 PDBs, RMSD $0.36$ \AA{}, TM $r = 0.978$), \#37 \emph{htt-somatic-repeat} (0.724 ms standalone, $r = 0.9994$), \#38 \emph{runie-mcmc-skyline} ($578$ ms vs. $21,580$ ms = 37.34$\times$ vs. \emph{*BEAST}), and \#39 \emph{bio-suite-supervisor} (5-tab Win32 GUI + 32-chain loop-back orchestration superseding standalone \#27).
+
+\subsection{Interactive Residue-Level Auditing (\emph{runie-align-view})}
+Modeled on \emph{AliView} and built natively in Rust alongside Tool \#38, \emph{runie-align-view} provides smooth 1--24 px/column zooming, six alphabet modes (\texttt{DNA}, \texttt{AA-3BP}, \texttt{AA-1COL}, \texttt{DUAL DNA+AA}, \texttt{RY3}, and \texttt{Dayhoff-6}), NCBI Genetic Codes 1/2/5/11, five residue palettes, and automated headless PNG/SVG snapshots invoked by \texttt{\#39 bio-suite-supervisor} (Figures 3B--3D).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/runie-arxiv-fig3-35tool-concordance-speedup.svg}
+\caption{40-engine numerical concordance ($r \ge 0.998$) and CPU wall-clock benchmarks across \emph{bio-suite v0.4.0}.}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/primate-timetree-s2-align-view-aa.png}\\[4pt]
+\includegraphics[width=0.95\linewidth]{figures/nematoda-pests-supp-s2-rdna-einsi-alignview.png}\\[4pt]
+\includegraphics[width=0.95\linewidth]{figures/isoptera-global-supp-s1-cyp4g15-alignview.png}
+\caption{Direct \emph{runie-align-view} viewport captures across three display regimes: \texttt{AA-1COL} Primate/Euarchontoglires orthologs (PREPRINT-04, top), \texttt{DNA} Katoh \emph{E-INS-i} Meloidogyne rDNA stems and spacer indels (PREPRINT-27, middle), and \texttt{DUAL DNA+AA} Cytochrome P450 split-track auditing catching mitochondrial-clan \emph{CYP44} register drift (PREPRINT-26, bottom).}
+\end{figure*}
+
+\section{9-Column RuNIE Pipeline Comparison}
+Every CRV Science Labs preprint evaluates candidate chains across all 9 mandatory metrics including empirically measured wall-clock CPU Time (902.7 ms 16T Native Rust vs. 20,934.6 ms external shell execution = 23.19$\times$ speedup).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/runie-arxiv-fig4-pipeline-ll-deviations.svg}
+\caption{Marginal log-likelihood deviations ($\Delta \ln L$) and gate diagnostics across candidate pipelines.}
+\end{figure}
+
+\section{Studies and Use Cases: Evolution Across Preprints \#2--\#27 and Stage 0 SeqNet}
+Across five architectural generations spanning PREPRINT-02 through PREPRINT-27 \cite{white2026_p02,white2026_p03,white2026_p04,white2026_p05,white2026_p06,white2026_p07,white2026_p08,white2026_p09,white2026_p10,white2026_p11,white2026_p12,white2026_p13,white2026_p14,white2026_p15,white2026_p16,white2026_p17,white2026_p18,white2026_p19,white2026_p20,white2026_p21,white2026_p22,white2026_p23,white2026_p24,white2026_p25,white2026_p26,white2026_p27}, RuNIE progressed from early coding-core/overhang stabilization (\#2--\#4) and deep-time Dayhoff-6/gBGC suppression (\#5--\#12) to empirical $t \propto L^{1.918}$ scaling laws (\#13--\#16), Native Rust quartet MSC and coalescent skylines (\#17--\#22), and finally autonomous 32-chain supervision (\#23--\#27) powered by neural Stage 0 \emph{bio-suite-seqnet} (sorting 7,807 cached Isoptera accessions into 64 balanced species across 14/14 families at 93.48\% matrix occupancy and $-90.6\%$ RCFV). Figures 5A--5D showcase key outputs from Preprints \#21, \#22, \#25, and \#27.
+
+\begin{table*}[t]
+\centering
+\caption{Master Summary of Downstream Verified Empirical Preprints (PREPRINT-02 through PREPRINT-27).}
+\footnotesize
+\begin{tabular}{llllll}
+\toprule
+Preprint & Topic & Cohort ID & Marginal $\ln L$ & RCFV & Posterior $Z$ \\
+\midrule
+PREPRINT-02 \cite{white2026_p02} & Human Out-of-Africa L3-to-M/N Mitogenome ... & VAL-SET-043-HUMAN & -44500.39(Full L: -48613.36; Uncon: -44500.36) & 0.0019 & Z = +8.63 \\
+PREPRINT-03 \cite{white2026_p03} & Archosauria-to-Crown-Aves Divergence, K--P... & VAL-SET-042-THEROPODA & -429553.72(Core: -325143.83) & 0.0246 & Z = +5.59 \\
+PREPRINT-04 \cite{white2026_p04} & Phylogenomic Divergence, Hominoid Rate Sl... & VAL-SET-041-PRIMATE & -329012.42(Core: -297212.23) & 0.0336 & Z = +5.49 \\
+PREPRINT-05 \cite{white2026_p05} & Calibrated Phylogenomic Time-Tree of Basa... & VAL-SET-044-BASAL & -2,227,969.68 & 0.0212 & +5.62 \\
+PREPRINT-06 \cite{white2026_p06} & Phylogenomic Divergence and Post-K--Pg Ada... & VAL-SET-045-MAMMALIA & -514504.01 & 0.0413 & 5.94 \\
+PREPRINT-07 \cite{white2026_p07} & The Metazoan Cambrian Explosion Tree: Ful... & VAL-SET-046-METAZOA & -831007.21 & 0.1180 & 5.86 \\
+PREPRINT-08 \cite{white2026_p08} & Paleoproterozoic Primary Plastid Endosymb... & VAL-SET-047-ARCHAEPLASTIDA & -1285658.41 & 0.0853 & 5.54 \\
+PREPRINT-09 \cite{white2026_p09} & Sarcopterygii and Tetrapoda Phylogenomics... & VAL-SET-048-SARCOPTERYGII & -99,820.60 & 0.0347 (PASS) & +774.60 SD \\
+PREPRINT-10 \cite{white2026_p10} & Synapsida and Mammaliaformes Phylogenomic... & VAL-SET-049-SYNAPSIDA & -87,351.12 & 0.0259 (PASS) & +787.40 SD \\
+PREPRINT-11 \cite{white2026_p11} & Hymenoptera Phylogenomics: Permian--Cenozo... & VAL-SET-050-HYMENOPTERA & -172,503.05 & 0.0368 (PASS) & +89.45 SD \\
+PREPRINT-12 \cite{white2026_p12} & Lepidoptera Phylogenomics: Devonian--Cenoz... & VAL-LEPID-DITRYSIA-COX1 & -124,426.07 & 0.0208 & Z = 43.62 \\
+PREPRINT-13 \cite{white2026_p13} & Beetle Tree of Life: Permian--Cenozoic Col... & VAL-SET-052-COLEOPTERA & -140,326.15 & 0.0074 (RY3) / 0.0034 (Dayhoff-6) & Z = 3.81 (5/5) \\
+PREPRINT-14 \cite{white2026_p14} & Mosquito Tree of Life: Triassic--Cenozoic ... & VAL-SET-053-CULICIDAE & -152134.21 & 0.0175 & +16.41 SD \\
+PREPRINT-15 \cite{white2026_p15} & Pancrustacea-to-Hexapoda Tree of Life (53... & VAL-SET-054-PANCRUSTACEA & -1080085.18 & 0.0164 & +5.72 SD \\
+PREPRINT-16 \cite{white2026_p16} & Multifactorial N$\times$L Phylogenomic Sensitivi... & VAL-SET-055-MULTIFACTORIAL & -1070186.29 & 0.1011 & 6.45 \\
+PREPRINT-17 \cite{white2026_p17} & RuNIE Long-Form Bayesian MCMC Skyline \& t... & VAL-SET-056-NEANDERTHAL & -160644.53 & 0.0001 & 5.94 \\
+PREPRINT-18 \cite{white2026_p18} & Phylogenomic Evolution of Ecosystem Funct... & VAL-SET-057-COLEOPTERA & -544338.09 & 0.0067 & 6.12 \\
+PREPRINT-19 \cite{white2026_p19} & Phylogenomic Evolution of Trans-Atlantic ... & VAL-SET-058-PRIMATE & -284734.17 & 0.0053 & 1.00 \\
+PREPRINT-20 \cite{white2026_p20} & Phylogenomic Evolution of the North Ameri... & VAL-SET-059-RODENT & -382501.74 & 0.0070 & 1.00 \\
+PREPRINT-21 \cite{white2026_p21} & Phylogenomic Evolution of Asian Horseshoe... & VAL-SET-060-RHINOLOPHIDAE & -339,762.41 & 0.0084 & +6.38 SD (1.0000) \\
+PREPRINT-22 \cite{white2026_p22} & Global Phylogenomic Radiation of Anophele... & VAL-SET-061-ANOPHELES & -339,400.67 & 0.0024 & +6.42 SD (1.0000) \\
+PREPRINT-23 \cite{white2026_p23} & Global Phylogenomic Radiation of Bemisia ... & VAL-SET-062-BEMISIA & -631,907.97 & 0.0063 & +5.48 \\
+PREPRINT-24 \cite{white2026_p24} & Phylogenomic Radiation and Invasion Genom... & VAL-SET-063-INVASIVE & -907,210.09 & 0.0074 & +5.46 \\
+PREPRINT-25 \cite{white2026_p25} & Global Phylogenomic Radiation of Nudibran... & VAL-SET-064-NUDIBRANCH & -600,241.59 & 0.0052 & +5.48 \\
+PREPRINT-26 \cite{white2026_p26} & Global Phylogenomic Radiation of Isoptera... & VAL-SET-065-ISOPTERA & -421,583.88 & 0.0032 & +5.51 \\
+PREPRINT-27 \cite{white2026_p27} & Global Phylogenomics of Plant-Parasitic a... & VAL-SET-066-NEMATODA & -589,410.47 & 0.0356 & +5.51 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Validation Provenance and Engine Pipeline Atlas}
+All 66 validation datasets (\texttt{VAL-SET-001} through \texttt{VAL-SET-066}) and all 5 pages of the RuNIE Engine Pipeline Atlas (Figures 6A--6E) are archived alongside verbatim machine-readable telemetry and zero-copy tensor handoff contracts (Supplements S1--S3 in the full HTML/PDF monograph).
+\bibliographystyle{unsrt}
+\bibliography{references}
+\end{document}

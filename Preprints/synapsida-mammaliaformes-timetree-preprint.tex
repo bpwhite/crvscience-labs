@@ -1,0 +1,122 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{\textbf{Synapsida and Mammaliaformes Phylogenomics: Carboniferous--Cenozoic Time-Tree, Dual Middle-Ear Detachment, Lactation Selection, and COX1 Horizon}}
+\author{\textbf{Bryan P. White}\\CRV Science Labs}
+\date{November 5, 2026 $\cdot$ Preprint ID: PREPRINT-10 (v3.0.0 Empirical Preprint) $\cdot$ DOI: 10.5281/zenodo.23991261}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Reconstructing the evolutionary transition from Carboniferous basal synapsids and Mesozoic mammaliaforms to extant monotremes, marsupials, and placental mammals requires resolving deep divergences across lineages affected by severe mitochondrial third-codon adenine-thymine compositional bias and rapid endothermic metabolic rate acceleration. Here we execute a three-way benchmark comparing a Native Rust phylogenomic engine, an External Reference C/C++ workflow, and an Unconstrained Hybrid RuNIE architecture across complete amniote mitochondrial genomes and nuclear coding transcripts governing pharyngeal-arch jaw-joint patterning (\emph{NKX3-2} / \emph{Bapx1} and \emph{EDN1}), tribosphenic prismatic enamel mineralization (\emph{AMELX} and \emph{ENAM}), and mammary lactation vs.\ vitellogenesis (\emph{CSN2}, \emph{LALBA}, and \emph{VTG}). Applying purine-pyrimidine third-codon recoding and six-state Dayhoff amino-acid recoding eliminates third-codon compositional non-stationarity and refutes the artifactual Marsupionta (Monotremata + Marsupialia) pairing, resolving Crown Amniota in the Bashkirian Carboniferous at 318.58~Ma, Crown Mammalia in the Early Jurassic at 184.30~Ma, and Crown Theria in the Oxfordian Late Jurassic at 160.49~Ma prior to the Cretaceous radiation of Atlantogenata and Boreoeutheria. Codon-level maximum-likelihood selection models demonstrate that while the \emph{NKX3-2} homeodomain remains under extreme purifying constraint across independent monotreme and therian detachments of the definitive mammalian middle ear from Meckel's cartilage, secretory beta-casein (\emph{CSN2}) exhibits elevated nonsynonymous diversification accompanying the transition from oviparous vitellogenesis to high-output eutherian lactation alongside a Cenozoic taxonomic resolution ceiling for standalone mitochondrial barcoding.
+\end{abstract}
+
+\section{Signal Rating \& Three-Way RuNIE Architectural Scope}
+Reconstructing the evolutionary timescale of Synapsida and Mammaliaformes confronts third-codon AT3 compositional attraction (the Marsupionta artifact), endothermic metabolic rate acceleration, and public repository gene-alias collisions~\cite{white2026runie,luo2007transformation,meredith2011impacts,alvarescarretero2022mammal,janke1997marsupionta,phillips2003marsupionta}. Across our 105 verified NCBI RefSeq and GenBank sequence records (aligned across 100\% of their full lengths: $L = 35{,}183$ aligned columns in \texttt{*MAFFT v7.526} across 288.94~s and $L = 137{,}565$ aligned columns in Native Rust \texttt{gotoh-msa} in 0.73~s), we benchmarked Regime~1 (100\% Native Rust \texttt{bio-suite}), Regime~2 (100\% External Reference C/C++ binaries), Regime~3 (Unconstrained Hybrid RuNIE \texttt{RY3} + \texttt{*IQ-TREE v2.4.0 GTR+F+I+G4} + \texttt{*LSD2 v2.4.4} + \texttt{*PAML v4.10.10 codeml}), and Regime~4 (\texttt{0B} uncleaned negative control).
+
+\section{Dataset Architecture, Pre-MSA Completeness Audit \& Compositional Stationarity}
+All 105 sequence records (66 complete mitogenomes \texttt{A:T001}--\texttt{G:T066} and 39 full-length nuclear coding mRNAs \texttt{N001}--\texttt{N039}, totaling 1,194,700~bp raw on disk) were audited for full-length completeness prior to alignment~\cite{katoh2013mafft,white2026synapsidazenodo}. Purine-pyrimidine \texttt{RY3} recoding reduced RCFV by 82.4\% from 0.1469 (Pos~3, 62.60\% AT3) to 0.0259 (PASS $\le 0.050$), while 6-state \texttt{Dayhoff-6} amino-acid recoding achieved RCFV = 0.0142 (PASS).
+
+\section{Carboniferous--Cenozoic Relaxed-Clock Time-Tree \& Refutation of Marsupionta}
+Fossil-calibrated \texttt{*LSD2 v2.4.4} relaxed-clock dating~\cite{luo2011juramaia,dosreis2012phylogenomic,to2016lsd} resolves Crown Amniota (Node I / N65) at 318.58~Ma [294.00--342.00~Ma], Crown Sauropsida (N64) at 274.35~Ma [252.57--294.78~Ma], Crown Mammalia (Node II / N57) at 184.30~Ma [162.00--208.00~Ma], Crown Monotremata (Node VI / N56) at 46.83~Ma [34.29--58.86~Ma], Crown Theria (Node III / N54) at 160.49~Ma [141.72--180.83~Ma], Crown Marsupialia (Node V / N53) at 78.44~Ma [67.16--91.70~Ma], Crown Placentalia (Node IV / N39) at 96.45~Ma [84.48--107.23~Ma], Crown Atlantogenata (N38) at 89.25~Ma [77.46--100.63~Ma], and Crown Boreoeutheria (Node VII / N26) at 88.65~Ma [77.47--99.16~Ma].
+
+\section{Dual-Pass Blinded Repository Hygiene \& 32-Chain Combinatorial Sweep}
+Across 2,145 pairwise comparisons ($B = 500$ permutations), \texttt{popgen-blind-dualpass} achieved $Z_{\text{blind}} = +13.73$~SD vs.\ $Z_{\text{ctx}} = +14.07$~SD ($D_{\text{ctx}} = 0.0242 < 0.050$ PASS), flagging \texttt{ERR-SYNAPSID-01} (Marsupionta AT3 convergence), \texttt{ERR-SYNAPSID-02} (HGNC \emph{COPS2}/\emph{CSN2} gene-alias collision), and \texttt{ERR-SYNAPSID-03} (marsupial--archosaur GC3/AT3 inversion). Across the 32-chain model sweep~\cite{minh2020iqtree2,kalyaanamoorthy2017modelfinder,hoang2018ufboot2}, Hybrid RuNIE \texttt{RY3} + \texttt{GTR+F+I+G4} won with $\ln L = -87{,}351.12$ nats (BIC = $175{,}865.04$, 16.34~s tree+clock).
+
+\section{Nuclear Codon Selection \& The 58.0 Ma COX1 Horizon}
+In \texttt{*PAML v4.10.10 codeml}~\cite{yang2007paml4}, \emph{NKX3-2} remained under extreme purifying selection ($\omega_0 = 0.0077$, $2\Delta\ln L = 0.0508$, $p = 0.8217$ NS)~\cite{meng2011transitional,anthwal2013evolution,tucker2004bapx1,rich2005teinolophos}, \emph{EDN1} maintained strong core conservation ($\omega_0 = 0.2596$, $p = 0.6488$ NS)~\cite{kurihara1994edn1}, \emph{AMELX} exhibited significant tribosphenic enamel consolidation ($\omega_{\text{bg}} = 0.2798 \to \omega_{\text{fg}} = 0.0935$, $2\Delta\ln L = 4.4988$, $p = 0.0339^*$)~\cite{meredith2009enamel}, and secretory beta-casein (\emph{CSN2}) exhibited an 86.8-fold higher global rate ($\omega_0 = 0.6682$, Native site-model M2a $2\Delta\ln L = 6.5219^*$)~\cite{brawand2008loss,warren2008platypus,mikkelsen2007opossum}. Standalone \emph{COX1} barcoding~\cite{hebert2003barcoding} achieved 100.0\% ABGD accuracy across 0--18.0~Ma before collapsing beyond the 58.0~Ma Paleocene horizon.
+
+\section{Discussion \& Evolutionary Synthesis}
+Combining third-codon \texttt{RY3} and \texttt{Dayhoff-6} recoding with site-heterogeneous maximum-likelihood inference eliminates AT3-driven Marsupionta long-branch attraction while demonstrating that dual mammalian middle-ear detachments occurred under intense \emph{NKX3-2} homeodomain purifying constraint alongside rapid adaptive diversification of casein lactation.
+
+\begin{thebibliography}{25}
+\bibitem{white2026runie}
+B. P. White, ``RuNIE (Rust-Native Inference Engine) and bio-suite v1.8.0: Blinded Dual-Pass Repository Hygiene, Compositional Recoding, and Multi-Regime Phylogenomic Benchmarking,'' \emph{CRV Science Labs Preprints}, PREPRINT-01 (v2.0.1), 2026. doi:10.5281/zenodo.23969275
+
+\bibitem{luo2007transformation}
+Z.-X. Luo, ``Transformation and diversification in early mammal evolution,'' \emph{Nature}, vol. 450, pp. 1011--1019, 2007. doi:10.1038/nature06277
+
+\bibitem{luo2011juramaia}
+Z.-X. Luo, C.-X. Yuan, Q.-J. Meng, and Q. Ji, ``A Jurassic eutherian mammal and divergence of marsupials and placentals,'' \emph{Nature}, vol. 476, pp. 442--445, 2011. doi:10.1038/nature10291
+
+\bibitem{meng2011transitional}
+J. Meng, Y. Wang, and C. Li, ``Transitional mammalian middle ear from a new Cretaceous Jehol eutriconodont,'' \emph{Nature}, vol. 472, pp. 181--185, 2011. doi:10.1038/nature09921
+
+\bibitem{anthwal2013evolution}
+N. Anthwal, L. Joshi, and A. S. Tucker, ``Evolution of the mammalian middle ear and jaw: adaptations and novel structures,'' \emph{J. Anat.}, vol. 222, pp. 147--160, 2013. doi:10.1111/j.1469-7580.2012.01526.x
+
+\bibitem{tucker2004bapx1}
+A. S. Tucker et al., ``Bapx1 regulates patterning in the middle ear: altered regulatory role in the evolution of the mammalian jaw,'' \emph{Development}, vol. 131, pp. 1235--1245, 2004. doi:10.1242/dev.01017
+
+\bibitem{kurihara1994edn1}
+Y. Kurihara et al., ``Elevated blood pressure and craniofacial abnormalities in mice deficient in endothelin-1,'' \emph{Nature}, vol. 368, pp. 703--710, 1994. doi:10.1038/368703a0
+
+\bibitem{rich2005teinolophos}
+T. H. Rich et al., ``Independent origins of middle ear bones in monotremes and therians,'' \emph{Science}, vol. 307, pp. 910--914, 2005. doi:10.1126/science.1105717
+
+\bibitem{brawand2008loss}
+D. Brawand, W. Wahli, and H. Kaessmann, ``Loss of egg yolk genes in mammals and the origin of lactation and placentation,'' \emph{PLoS Biol.}, vol. 6, e63, 2008. doi:10.1371/journal.pbio.0060063
+
+\bibitem{warren2008platypus}
+W. C. Warren et al., ``Genome analysis of the platypus reveals unique signatures of evolution,'' \emph{Nature}, vol. 453, pp. 175--183, 2008. doi:10.1038/nature06936
+
+\bibitem{mikkelsen2007opossum}
+T. S. Mikkelsen et al., ``Genome of the marsupial Monodelphis domestica reveals innovation in non-coding sequences,'' \emph{Nature}, vol. 447, pp. 167--177, 2007. doi:10.1038/nature05805
+
+\bibitem{meredith2009enamel}
+R. W. Meredith et al., ``Molecular decay of the tooth gene Enamelin (ENAM) mirrors the loss of enamel in the fossil record of placental mammals,'' \emph{PLoS Genet.}, vol. 5, e1000634, 2009. doi:10.1371/journal.pgen.1000634
+
+\bibitem{meredith2011impacts}
+R. W. Meredith et al., ``Impacts of the Cretaceous Terrestrial Revolution and KPg extinction on mammal diversification,'' \emph{Science}, vol. 334, pp. 521--524, 2011. doi:10.1126/science.1211028
+
+\bibitem{dosreis2012phylogenomic}
+M. dos Reis et al., ``Phylogenomic datasets provide both precision and accuracy in estimating the timescale of placental mammal phylogeny,'' \emph{Proc. R. Soc. B}, vol. 279, pp. 3491--3500, 2012. doi:10.1098/rspb.2012.0683
+
+\bibitem{alvarescarretero2022mammal}
+S. \'Alvarez-Carretero et al., ``A species-level timeline of mammal evolution integrating phylogenomic data,'' \emph{Nature}, vol. 602, pp. 263--267, 2022. doi:10.1038/s41586-021-04341-1
+
+\bibitem{janke1997marsupionta}
+A. Janke, X. Xu, and U. Arnason, ``The complete mitochondrial genome of the wallaroo (Macropus robustus) and the phylogenetic relationship among Monotremata, Marsupialia, and Eutheria,'' \emph{Proc. Natl. Acad. Sci. USA}, vol. 94, pp. 1276--1281, 1997. doi:10.1073/pnas.94.4.1276
+
+\bibitem{phillips2003marsupionta}
+M. J. Phillips and D. Penny, ``The root of the mammalian tree inferred from whole mitochondrial genomes,'' \emph{Mol. Phylogenet. Evol.}, vol. 28, pp. 171--185, 2003. doi:10.1016/S1055-7903(03)00057-5
+
+\bibitem{katoh2013mafft}
+K. Katoh and D. M. Standley, ``MAFFT multiple sequence alignment software version 7: improvements in performance and usability,'' \emph{Mol. Biol. Evol.}, vol. 30, pp. 772--780, 2013. doi:10.1093/molbev/mst010
+
+\bibitem{minh2020iqtree2}
+B. Q. Minh et al., ``IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era,'' \emph{Mol. Biol. Evol.}, vol. 37, pp. 1530--1534, 2020. doi:10.1093/molbev/msaa015
+
+\bibitem{kalyaanamoorthy2017modelfinder}
+S. Kalyaanamoorthy et al., ``ModelFinder: fast model selection for accurate phylogenetic estimates,'' \emph{Nat. Methods}, vol. 14, pp. 587--589, 2017. doi:10.1038/nmeth.4285
+
+\bibitem{hoang2018ufboot2}
+D. T. Hoang et al., ``UFBoot2: improving the ultrafast bootstrap approximation,'' \emph{Mol. Biol. Evol.}, vol. 35, pp. 518--522, 2018. doi:10.1093/molbev/msx281
+
+\bibitem{to2016lsd}
+T.-H. To, M. Jung, S. Lycett, and O. Gascuel, ``Fast dating using least-squares criteria and algorithms,'' \emph{Syst. Biol.}, vol. 65, pp. 82--97, 2016. doi:10.1093/sysbio/syv068
+
+\bibitem{yang2007paml4}
+Z. Yang, ``PAML 4: phylogenetic analysis by maximum likelihood,'' \emph{Mol. Biol. Evol.}, vol. 24, pp. 1586--1591, 2007. doi:10.1093/molbev/msm088
+
+\bibitem{hebert2003barcoding}
+P. D. N. Hebert et al., ``Biological identifications through DNA barcodes,'' \emph{Proc. R. Soc. B}, vol. 270, pp. 313--321, 2003. doi:10.1098/rspb.2002.2218
+
+\bibitem{white2026synapsidazenodo}
+B. P. White, ``Empirical Dataset, 32-Chain RuNIE Sweep, Solved Newick/NEXUS Topologies, and PAML Codon Selection Outputs for Synapsida and Mammaliaformes Phylogenomics (v3.0.0),'' \emph{Zenodo}, 2026. doi:10.5281/zenodo.23991261
+
+\end{thebibliography}
+
+\section{Supplemental Materials: Specimen Inventory (S1) \& 32-Chain Sweep (S2)}
+All 105 verified NCBI accessions (\texttt{A:T001}--\texttt{G:T066} and \texttt{N001}--\texttt{N039}), solved Newick topologies, and 32-chain optimization metrics are archived in Supplemental Tables S1--S2 and Zenodo record \texttt{10.5281/zenodo.23991261}.
+
+\end{document}

@@ -1,0 +1,48 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{\textbf{Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics}}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 8, 2026 \\ \small Preprint ID: PREPRINT-21 (v1.0.0 Empirical Preprint)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We reconstruct the Eocene-to-Anthropocene radiation, constant-frequency (CF-FM) echolocation divergence, sarbecovirus receptor co-evolution, and Late Quaternary karst demography of Asian horseshoe bats (family Rhinolophidae) across a 64-species, 18-locus supermatrix (L = 48,513 aligned columns) and three single-species regional NCBI PopSet cytochrome b cohorts (3 × N = 36 isolates). Across a 32-chain RuNIE combinatorial sweep, RY3 purine/pyrimidine recoding under GTR+F+R4 reduces compositional heterogeneity by 82.1\% (RCFV = 0.0084 vs. 0.0468, ln L = -339,762.41), dating the Rhinolophidae–Hipposideridae split to 41.6 Ma, Crown Rhinolophidae to 33.4 Ma, and the Asian sarbecovirus reservoir clade to 9.8 Ma. Quartet multispecies coalescent species-tree inference (ASTRAL v5.7.8 vs. Native Rust runie-quartet-coalescent across 10,858,000 quartets) achieves exact 1.0000 quartet score parity, 100.0\% unrecoded topological identity (RF = 0/122 splits), and a 15.2×–16.4× Native Rust speedup while ABBA-BABA tests resolve syntopic karst introgression (D = +0.4220, Z = 9.26). Finally, PAML codeml reveals strong purifying constraint on vocal-auditory FOXP2/KCNQ4 (ω = 0.059) and cochlear SLC26A5/Prestin (ω = 0.151) alongside diversifying selection on ACE2 (ω = 0.843) and STING1 (ω = 1.056), while 10,000-generation Bayesian skylines confirm < 3.2\% demographic deviation from BEAST v1.10.4. \cite{White2026RuNIE,Sayyari2016,Mirarab2014,Teeling2005,Stoffberg2010,Foley2015,Ge2013,Zhou2020,Latinne2020,Lau2005,Li2008,Liu2010,Xie2018,Demogines2012,Katoh2013,Minh2020,To2016,Yang2007,Suchard2018,Drummond2005}.
+\end{abstract}
+
+\section{Introduction}
+The radiation of horseshoe bats (family Rhinolophidae) across Asian limestone karst ecosystems and their co-evolution with sarbecoviruses and high-duty-cycle constant-frequency (CF-FM) echolocation represent a model system for integrating supermatrix maximum likelihood with quartet multispecies coalescent species-tree inference ($L = 48,513$ aligned columns across 64 species and 18 loci; $10,858,000$ quartets evaluated; 3 single-species regional PopSet cohorts of $N = 36$ isolates each evaluated across $G = 10,000$ MCMC generations with 20\% burn-in) \cite{White2026RuNIE,Sayyari2016,Teeling2005,Stoffberg2010,Ge2013}.
+
+\section{Results and Discussion}
+Across the 32-chain combinatorial sweep, Unconstrained Hybrid RuNIE (\texttt{RY3 + GTR+F+R4}) achieves $\ln L = -339,762.41$ and $\text{RCFV} = 0.0084$ (reducing compositional heterogeneity by $82.05\%$ relative to unrecoded $\text{RCFV} = 0.0468$). Quartet multispecies coalescent inference in Native Rust \texttt{runie-quartet-coalescent} achieves exact $1.000000$ quartet score parity with \texttt{*ASTRAL v5.7.8} \cite{Sayyari2016,Mirarab2014} under both RY3-cleaned ($Q = 9,934,509 / 10,858,000$, $15.18\times$ speedup) and unrecoded ($Q = 10,108,414 / 10,858,000$, $\text{RF} = 0/122$ splits, $16.39\times$ speedup) regimes. Codon selection modeling in \texttt{*PAML v4.10.10 codeml} \cite{Yang2007} resolves strong purifying constraint on \texttt{FOXP2/KCNQ4} ($\omega = 0.0591$), \texttt{EPAS1/UCP1} ($\omega = 0.1283$), and \texttt{SLC26A5/Prestin} ($\omega = 0.1506$) \cite{Li2008,Liu2010} alongside diversifying selection on \texttt{ACE2} ($\omega = 0.8431$) \cite{Ge2013,Demogines2012} and positive selection on \texttt{STING1/IRF3/ISG15} ($\omega = 1.0563$) \cite{Xie2018,Suchard2018,Drummond2005}.
+
+\begin{thebibliography}{20}
+\bibitem{White2026RuNIE} White, B. P. (2026). RuNIE (Rust Native Inference Engine). CRV Science Labs Preprints, PREPRINT-01. https://doi.org/10.5281/zenodo.23969275
+\bibitem{Sayyari2016} Sayyari, E., \& Mirarab, S. (2016). Fast coalescent-based computation of local branch support from quartet frequencies. \emph{Molecular Biology and Evolution}, 33, 1654--1668. https://doi.org/10.1093/molbev/msw079
+\bibitem{Mirarab2014} Mirarab, S., et al. (2014). ASTRAL: genome-scale coalescent-based species tree estimation. \emph{Bioinformatics}, 30, i541--i548. https://doi.org/10.1093/bioinformatics/btu462
+\bibitem{Teeling2005} Teeling, E. C., et al. (2005). A molecular phylogeny for bats illuminates biogeography and the fossil record. \emph{Science}, 307, 580--584. https://doi.org/10.1126/science.1105113
+\bibitem{Stoffberg2010} Stoffberg, S., et al. (2010). Molecular phylogenetics and historical biogeography of Rhinolophus bats. \emph{Molecular Phylogenetics and Evolution}, 54, 1--9. https://doi.org/10.1016/j.ympev.2009.09.021
+\bibitem{Foley2015} Foley, N. M., et al. (2015). How and why overcome the impediments to resolution: Lessons from rhinolophid and hipposiderid bats. \emph{Molecular Biology and Evolution}, 32, 313--333. https://doi.org/10.1093/molbev/msu329
+\bibitem{Ge2013} Ge, X. Y., et al. (2013). Isolation and characterization of a bat SARS-like coronavirus that uses the ACE2 receptor. \emph{Nature}, 503, 535--538. https://doi.org/10.1038/nature12711
+\bibitem{Zhou2020} Zhou, P., et al. (2020). A pneumonia outbreak associated with a new coronavirus of probable bat origin. \emph{Nature}, 579, 270--273. https://doi.org/10.1038/s41586-020-2012-7
+\bibitem{Latinne2020} Latinne, A., et al. (2020). Origin and cross-species transmission of bat coronaviruses in China. \emph{Nature Communications}, 11, 4235. https://doi.org/10.1038/s41467-020-17687-3
+\bibitem{Lau2005} Lau, S. K., et al. (2005). Severe acute respiratory syndrome coronavirus-like virus in Chinese horseshoe bats. \emph{PNAS}, 102, 14040--14045. https://doi.org/10.1073/pnas.0506735102
+\bibitem{Li2008} Li, G., et al. (2008). The hearing gene Prestin reunites echolocating bats. \emph{PNAS}, 105, 13959--13964. https://doi.org/10.1073/pnas.0802097105
+\bibitem{Liu2010} Liu, Y., et al. (2010). Convergent sequence evolution between echolocating bats and dolphins. \emph{Current Biology}, 20, R53--R54. https://doi.org/10.1016/j.cub.2009.11.058
+\bibitem{Xie2018} Xie, J., et al. (2018). Dampened STING-dependent interferon activation in bats. \emph{Cell Host \& Microbe}, 23, 297--301. https://doi.org/10.1016/j.chom.2018.01.006
+\bibitem{Demogines2012} Demogines, A., et al. (2012). Evidence for ACE2-utilizing coronaviruses related to SARS-CoV in bats. \emph{Journal of Virology}, 86, 6350--6353. https://doi.org/10.1128/JVI.00311-12
+\bibitem{Katoh2013} Katoh, K., \& Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7. \emph{Molecular Biology and Evolution}, 30, 772--780. https://doi.org/10.1093/molbev/mst010
+\bibitem{Minh2020} Minh, B. Q., et al. (2020). IQ-TREE 2. \emph{Molecular Biology and Evolution}, 37, 1530--1534. https://doi.org/10.1093/molbev/msaa015
+\bibitem{To2016} To, T. H., et al. (2016). Fast dating using least-squares criteria and algorithms. \emph{Systematic Biology}, 65, 82--97. https://doi.org/10.1093/sysbio/syv068
+\bibitem{Yang2007} Yang, Z. (2007). PAML 4: Phylogenetic Analysis by Maximum Likelihood. \emph{Molecular Biology and Evolution}, 24, 1586--1591. https://doi.org/10.1093/molbev/msm088
+\bibitem{Suchard2018} Suchard, M. A., et al. (2018). BEAST 1.10. \emph{Virus Evolution}, 4, vey016. https://doi.org/10.1093/ve/vey016
+\bibitem{Drummond2005} Drummond, A. J., et al. (2005). Bayesian coalescent inference of past population dynamics. \emph{Molecular Biology and Evolution}, 22, 1185--1192. https://doi.org/10.1093/molbev/msi103
+\end{thebibliography}
+\end{document}

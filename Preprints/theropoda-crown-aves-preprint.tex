@@ -1,0 +1,206 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\title{Archosauria-to-Crown-Aves Divergence, K--Pg Neoaves Radiation, and Convergent Ratite Flight Loss Under Relaxed-Clock and Coalescent Models}
+\author{Bryan P. White \\ CRV Science Labs}
+\date{November 14, 2026 \textbullet{} Preprint ID: PREPRINT-03 (v3.0.0 Empirical Preprint) \textbullet{} DOI: 10.5281/zenodo.23971260}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Across 114 verified NCBI records spanning 62 complete Sauria, Archosauria, and Aves mitogenomes (full *MAFFT alignment L = 25,999 columns, conserved 37-gene core L = 15,516 columns, Native Rust gotoh-msa L = 51,567 columns) and 52 nuclear coding mRNAs across TBX5, BMP4, BDNF, and RAG1 (L = 28,625 full columns vs. L = 6,612 reading-frame-locked coding columns), we remediate legacy contaminant accessions, excise 55.61\% UTR overhang gaps, and anchor 14 Triassic--Paleocene fossil bounds plus 6 Holocene ancient-DNA ratite/great-auk tips. All 61/61 internal mitogenome vertices and 12/12 nuclear CDS nodes achieve strictly interior two-sided 95\% credible intervals: Crown Archosauria at 220.4 Ma, Crown Aves at 98.1 Ma (81.7--115.3 Ma), Crown Palaeognathae at 73.4 Ma, and Crown Neoaves spanning the K--Pg transition at 67.9 Ma, while confirming Tinamou+\textdagger{}Moa and Kiwi+\textdagger{}Elephant Bird sisterhood alongside ratite TBX5 evolutionary rate divergence.
+\end{abstract}
+
+\section{Dataset Architecture and Full-Length Multi-Regime Execution}
+All 114 authentic sequence records cached from NCBI Entrez (comprising 1,218,851 bp of raw organellar and nuclear coding sequence across 62 complete Sauria, Archosauria, and Aves mitogenomes and 52 full-length nuclear coding mRNAs across TBX5, BMP4, BDNF, and RAG1) were aligned across 100\% of their downloaded lengths \cite{white2026runie,stiller2024complexity,prum2015comprehensive,jarvis2014whole}. In progressive \texttt{*MAFFT v7.526}, the 62 mitogenomes aligned into $L = 25,999$ full columns (12,046 parsimony-informative sites; conserved 37-gene core $L_{\mathrm{core}} = 15,516$ columns, 0.94\% gaps) in 344.53s, and the 52 nuclear coding mRNAs aligned into $L = 28,625$ full columns (55.61\% UTR gaps) vs. $L_{\mathrm{core}} = 6,612$ reading-frame-locked coding columns (0.22\% gaps) in 4.18s. In Native Rust \texttt{gotoh-msa} (Rayon-parallelized, 9-mer anchored and 420-bp chunked center-star Gotoh affine-gap alignment against a 6-mer medoid sequence), the 62 mitogenomes aligned into $L = 51,567$ columns in 0.58s and the nuclear cohort aligned into $L = 33,919$ columns in 0.13s (RuNIE Concept DOI: 10.5281/zenodo.23969275).
+
+\section{Remediated 14-Node Molecular-Clock Synthesis and Published Benchmarks}
+\begin{longtable}{llllll}
+\caption{62-Species Remediated RY3 Relaxed Clock vs. Legacy Estimate and Published Benchmarks (*LSD2 v2.4.4, 61/61 All Internal and 14/14 Focal Nodes Strictly Interior).} \\
+\toprule
+Node ID & Clade / Event & Remediated (95\% HPD) & Legacy ($\Delta$ Myr) & Stiller (2024) & Prum (2015) \\
+\midrule
+\endfirsthead
+\toprule
+Node ID & Clade / Event & Remediated (95\% HPD) & Legacy ($\Delta$ Myr) & Stiller (2024) & Prum (2015) \\
+\midrule
+\endhead
+Node I & Crown Sauria (Lepidosauria vs. Arche & \textbf{265.3} (252.0--299.8) & 256.8 (-8.5) & 256.0 (252--265) & 255.0 (out) \\
+Node II & Crown Archelosauria (Testudines vs.  & \textbf{248.9} (237.0--276.0) & 251.4 (2.5) & 248.0 (240--254) & 248.5 (out) \\
+Node III & Crown Archosauria (Crocodylia vs. Av & \textbf{220.4} (218.0--254.0) & 246.5 (26.1) & 244.0 (238--250) & 245.0 (out) \\
+Node IV & Crown Aves / Neornithes (Palaeognath & \textbf{98.1} (81.7--115.3) & 89.4 (-8.7) & 93.5 (85.0--103.0) & 74.5 (68--84) \\
+Node V & Crown Palaeognathae (Struthioniforme & \textbf{73.4} (61.7--92.0) & 71.5 (-1.9) & 72.0 (64.0--81.0) & 65.0 (58--73) \\
+Node VI & Crown Neognathae (Galloanserae vs. N & \textbf{82.8} (72.8--93.8) & 77.2 (-5.6) & 80.5 (73.0--89.0) & 71.0 (66--77) \\
+Node VII & Crown Galloanserae (Galliformes vs.  & \textbf{69.5} (59.2--79.2) & 68.4 (-1.1) & 68.0 (61.5--75.0) & 64.5 (57--70) \\
+Node VIII & Crown Neoaves (Basal Mirandornithes/ & \textbf{67.9} (63.0--76.0) & 66.8 (-1.1) & 67.4 (65.0--69.8) & 63.0 (60--67) \\
+Node IX & Passerea \& Core Waterbirds (Gruiform & \textbf{67.6} (62.7--73.2) & 65.1 (-2.5) & 65.2 (63.2--67.1) & 61.5 (58--65) \\
+Node X & Crown Aequornithes (Sphenisciformes  & \textbf{61.9} (53.1--68.0) & 61.8 (-0.1) & 60.8 (58.0--63.4) & 58.0 (54--62) \\
+Node XI & Crown Telluraves (Afroaves Accipitri & \textbf{65.4} (60.7--71.5) & 63.4 (-2.0) & 62.1 (59.4--64.7) & 59.0 (56--62) \\
+Node XII & Crown Australaves (Falconiformes vs. & \textbf{62.5} (56.0--69.0) & 59.8 (-2.7) & 58.2 (55.0--61.2) & 55.5 (52--59) \\
+Node XIII & Crown Psittacopasseres (Psittaciform & \textbf{61.3} (54.1--66.5) & 56.2 (-5.1) & 54.4 (51.0--57.6) & 52.0 (48--56) \\
+Node XIV & Crown Passeriformes (Acanthisitti vs & \textbf{52.6} (43.5--63.0) & 50.4 (-2.2) & 48.2 (44.0--52.5) & 47.0 (42--52) \\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{lllll}
+\caption{13-Species Independent Nuclear CDS Exon Clock ($L_{\mathrm{core}} = 6,612$ bp; 12/12 Interior, Zero Intra-Neoavian Bounds).} \\
+\toprule
+Nuclear Node & Clade / Split & Age (Ma) & 95\% HPD (Ma) & Calibration Status \\
+\midrule
+\endfirsthead
+Nuc-I & Crown Sauria Root (Anolis vs. Aves) & \textbf{274.9} & 252.0--299.8 & Basal Diapsid Root Bound (299.8--252.0 Ma) \\
+Nuc-II & Crown Archelosauria (Chelonia vs. Aves) & \textbf{256.2} & 237.0--276.0 & Triassic Testudines Bound (276.0--237.0 Ma) \\
+Nuc-III & Crown Archosauria (Alligator vs. Aves) & \textbf{235.8} & 218.0--256.0 & Olenekian Archosaur Bound (256.0--218.0 Ma) \\
+Nuc-IV & Crown Aves (Struthio vs. Neognathae) & \textbf{95.2} & 72.0--118.0 & Neornithine Root Bound (118.0--72.0 Ma) \\
+Nuc-V & Crown Palaeognathae (Struthio vs. Dromaius) & \textbf{55.1} & 37.5--77.5 & Uncalibrated Free Node --- Spontaneous Palae \\
+Nuc-VI & Crown Neognathae (Gallus vs. Neoaves) & \textbf{70.6} & 56.7--88.1 & Uncalibrated Free Node --- Spontaneous Late  \\
+Nuc-VII & Crown Galloanserae (Gallus vs. Anas) & \textbf{49.3} & 35.0--67.8 & Uncalibrated Free Node --- Spontaneous K--Pg  \\
+Nuc-VIII & Crown Neoaves (Columba vs. Passerea) & \textbf{57.0} & 46.4--75.5 & Uncalibrated Free Node --- Spontaneous K--Pg  \\
+Nuc-IX & Aequornithes vs. Telluraves (Aptenodytes vs. Taeni & \textbf{56.5} & 45.3--71.7 & Uncalibrated Free Node --- Spontaneous Dania \\
+Nuc-X & Crown Telluraves (Aquila vs. Australaves) & \textbf{49.9} & 39.6--63.8 & Uncalibrated Free Node --- Spontaneous Paleo \\
+Nuc-XI & Crown Australaves (Falco vs. Psittacopasseres) & \textbf{49.5} & 37.7--63.8 & Uncalibrated Free Node --- Spontaneous Paleo \\
+Nuc-XII & Crown Psittacopasseres (Melopsittacus vs. Taeniopy & \textbf{49.0} & 36.4--61.0 & Uncalibrated Free Node --- Spontaneous Early \\
+\bottomrule
+\end{longtable}
+
+\section{RuNIE Pipeline Architecture and Comparison Tables}
+Figure~6 documents the end-to-end 6-stage Pipeline~A (mitogenome relaxed clock) and Pipeline~B (nuclear coding, Quartet MSC, and codon selection) execution DAGs and $\Delta \ln L$ deviation branches, mirrored in the 9-column RuNIE Pipeline Comparison below and included in the bundled \texttt{figures/} vector suite (\texttt{theropoda-aves-fig1} through \texttt{fig6}).
+\begin{table}[htbp]
+\centering
+\caption{Table 3A. RuNIE Pipeline Comparison Table: 62-Taxon Full-Length Archosauria and Aves Mitogenome Alignment.}
+\footnotesize
+\begin{tabular}{lllllllll}
+\toprule
+Rank & Tool Chain & Model Summary & Marginal $\ln L$ & $\Delta \ln L$ & RCFV & Bootstrap & Post. $Z$ & CPU Time \\
+\midrule
+1st (Best) & *MAFFT + RY3 + *IQ-TREE + *LSD2 & RY3 + GTR+F+R4 ($L=25999) & -429553.72 & 0.00 & 0.0246 & 100.0\% & 5.59 & 460.42s \\
+2nd (Nearest) & gotoh-msa + RY3 + phylo-ml-nni & RY3 + GTR+F+R2 ($L=51567) & -458699.11 & -29145.39 & 0.0272 & 99.4\% & 5.59 & 39.32s \\
+3rd (Medium) & *MAFFT + *IQ-TREE Raw + *LSD2 & Raw + GTR+F+I+G4 ($L=25999) & -498480.39 & -68926.67 & 0.0387 & 100.0\% & 4.48 & 390.67s \\
+4th (Rejected) & gotoh-msa Raw + phylo-ml-nni & Raw + K80+G4 ($L=51567) & -544730.40 & -115176.68 & 0.0386 & 99.2\% & 4.48 & 44.29s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Complete 62-Mitogenome Accession and Branch-Length Inventory}
+\footnotesize
+\begin{longtable}{llllllll}
+\caption{Supplemental Table S1. Complete 62-Mitogenome NCBI Accession and Branch-Length Inventory.} \\
+\toprule
+Sector:Tip & Species & Accession & Length (bp) & GC\% / GC3\% & RCFV & Term. Branch & Parent Node \\
+\midrule
+\endfirsthead
+\toprule
+Sector:Tip & Species & Accession & Length (bp) & GC\% / GC3\% & RCFV & Term. Branch & Parent Node \\
+\midrule
+\endhead
+\texttt{A:T001} & \textit{Taeniopygia guttata} & \texttt{NC\_007897.1} & 16,853 & 45.94\% / 46.15\% & 0.0246 & 0.0832 & \texttt{N16 (100/100)} \\
+\texttt{A:T002} & \textit{Passer domesticus} & \texttt{NC\_025611.1} & 16,802 & 46.94\% / 49.00\% & 0.0424 & 0.0950 & \texttt{N16 (100/100)} \\
+\texttt{A:T003} & \textit{Parus major} & \texttt{NC\_026293.1} & 16,776 & 47.69\% / 46.85\% & 0.0574 & 0.0975 & \texttt{N15 (100/100)} \\
+\texttt{A:T004} & \textit{Corvus frugilegus} & \texttt{NC\_002069.1} & 16,932 & 44.27\% / 45.43\% & 0.0314 & 0.1428 & \texttt{N14 (100/100)} \\
+\texttt{A:T005} & \textit{Smithornis sharpei} & \texttt{NC\_000879.1} & 17,344 & 45.24\% / 46.20\% & 0.0405 & 0.2543 & \texttt{N13 (100/100)} \\
+\texttt{A:T006} & \textit{Acanthisitta chloris} & \texttt{NC\_051004.1} & 16,935 & 46.49\% / 46.49\% & 0.0333 & 0.2013 & \texttt{N12 (100/100)} \\
+\texttt{A:T007} & \textit{Melopsittacus undulatus} & \texttt{NC\_009134.1} & 18,193 & 44.68\% / 44.36\% & 0.0195 & 0.1309 & \texttt{N17 (100/100)} \\
+\texttt{A:T008} & \textit{Strigops habroptila} & \texttt{NC\_005931.1} & 15,599 & 43.23\% / 42.87\% & 0.0318 & 0.1147 & \texttt{N17 (100/100)} \\
+\texttt{A:T009} & \textit{Falco peregrinus} & \texttt{NC\_000878.1} & 18,068 & 44.44\% / 44.17\% & 0.0375 & 0.0566 & \texttt{N18 (100/100)} \\
+\texttt{A:T010} & \textit{Falco tinnunculus} & \texttt{NC\_011307.1} & 17,663 & 45.61\% / 46.61\% & 0.0613 & 0.0460 & \texttt{N18 (100/100)} \\
+\texttt{B:T011} & \textit{Aquila chrysaetos} & \texttt{NC\_024087.1} & 17,332 & 46.67\% / 47.72\% & 0.0369 & 0.1166 & \texttt{N21 (100/100)} \\
+\texttt{B:T012} & \textit{Buteo buteo} & \texttt{NC\_003128.1} & 18,674 & 44.85\% / 43.88\% & 0.0183 & 0.0780 & \texttt{N21 (100/100)} \\
+\texttt{B:T013} & \textit{Haliaeetus albicilla} & \texttt{NC\_040858.1} & 17,719 & 45.71\% / 45.61\% & 0.0186 & 0.0700 & \texttt{N20 (100/100)} \\
+\texttt{B:T014} & \textit{Tyto alba} & \texttt{OZ565369.1} & 18,688 & 46.03\% / 46.62\% & 0.0243 & 0.2355 & \texttt{N23 (100/100)} \\
+\texttt{B:T015} & \textit{Ninox novaeseelandiae} & \texttt{NC\_005932.1} & 16,223 & 47.18\% / 47.60\% & 0.0487 & 0.2031 & \texttt{N23 (100/100)} \\
+\texttt{B:T016} & \textit{Picus canus} & \texttt{NC\_045372.1} & 17,103 & 48.44\% / 48.52\% & 0.0724 & 0.2034 & \texttt{N25 (100/100)} \\
+\texttt{B:T017} & \textit{Alcedo atthis} & \texttt{NC\_035868.1} & 17,383 & 44.74\% / 44.43\% & 0.0202 & 0.1896 & \texttt{N25 (100/100)} \\
+\texttt{B:T018} & \textit{Upupa epops} & \texttt{NC\_028178.1} & 16,562 & 44.61\% / 45.13\% & 0.0146 & 0.2731 & \texttt{N24 (100/100)} \\
+\texttt{C:T019} & \textit{Aptenodytes forsteri} & \texttt{NC\_027938.1} & 17,301 & 46.92\% / 48.12\% & 0.0420 & 0.0651 & \texttt{N30 (100/100)} \\
+\texttt{C:T020} & \textit{Pygoscelis adeliae} & \texttt{NC\_021137.1} & 17,486 & 46.18\% / 46.76\% & 0.0321 & 0.0704 & \texttt{N30 (100/100)} \\
+\texttt{C:T021} & \textit{Eudyptula minor} & \texttt{NC\_004538.1} & 17,611 & 45.37\% / 45.03\% & 0.0183 & 0.0862 & \texttt{N29 (100/100)} \\
+\texttt{C:T022} & \textit{Thalassarche melanophris} & \texttt{NC\_007172.1} & 17,026 & 44.26\% / 43.95\% & 0.0118 & 0.1237 & \texttt{N28 (100/100)} \\
+\texttt{C:T023} & \textit{Ciconia boyciana} & \texttt{NC\_002196.1} & 17,622 & 46.28\% / 46.17\% & 0.0292 & 0.1180 & \texttt{N31 (100/100)} \\
+\texttt{C:T024} & \textit{Nipponia nippon} & \texttt{NC\_008132.1} & 16,732 & 46.08\% / 44.16\% & 0.0251 & 0.1103 & \texttt{N32 (100/100)} \\
+\texttt{C:T025} & \textit{Phalacrocorax carbo} & \texttt{NC\_027267.1} & 18,995 & 45.21\% / 45.25\% & 0.0371 & 0.1469 & \texttt{N32 (100/100)} \\
+\texttt{C:T026} & \textit{Grus leucogeranus} & \texttt{NC\_020574.1} & 16,688 & 44.48\% / 45.34\% & 0.0114 & 0.1237 & \texttt{N33 (100/100)} \\
+\texttt{C:T027} & \textit{Larus dominicanus} & \texttt{NC\_007006.1} & 16,701 & 45.02\% / 44.35\% & 0.0092 & 0.0841 & \texttt{N34 (100/100)} \\
+\texttt{C:T028} & \textit{Pinguinus impennis (0.2 ka aDNA)} & \texttt{NC\_031347.1} & 16,784 & 43.79\% / 45.66\% & 0.0207 & 0.0870 & \texttt{N34 (100/100)} \\
+\texttt{D:T029} & \textit{Calypte anna} & \texttt{MN356119.1} & 16,867 & 45.32\% / 45.33\% & 0.0122 & 0.1950 & \texttt{N37 (100/100)} \\
+\texttt{D:T030} & \textit{Apus apus} & \texttt{NC\_008540.1} & 17,037 & 44.71\% / 46.96\% & 0.0201 & 0.1437 & \texttt{N37 (100/100)} \\
+\texttt{D:T031} & \textit{Cuculus canorus} & \texttt{MN356128.1} & 16,598 & 42.64\% / 41.70\% & 0.0437 & 0.2258 & \texttt{N38 (100/100)} \\
+\texttt{D:T032} & \textit{Columba livia} & \texttt{NC\_013978.1} & 17,229 & 45.88\% / 45.05\% & 0.0211 & 0.0595 & \texttt{N39 (100/100)} \\
+\texttt{D:T033} & \textit{Streptopelia tranquebarica} & \texttt{NC\_059796.1} & 17,431 & 45.87\% / 44.97\% & 0.0209 & 0.0569 & \texttt{N39 (100/100)} \\
+\texttt{D:T034} & \textit{Phoenicopterus roseus} & \texttt{NC\_010089.1} & 17,446 & 45.52\% / 44.88\% & 0.0338 & 0.0746 & \texttt{N40 (100/100)} \\
+\texttt{D:T035} & \textit{Podiceps cristatus} & \texttt{NC\_008140.1} & 16,134 & 45.87\% / 46.89\% & 0.0376 & 0.1232 & \texttt{N40 (100/100)} \\
+\texttt{E:T036} & \textit{Gallus gallus} & \texttt{NC\_001323.1} & 16,775 & 45.96\% / 47.31\% & 0.0297 & 0.0756 & \texttt{N45 (100/100)} \\
+\texttt{E:T037} & \textit{Coturnix japonica} & \texttt{NC\_003408.1} & 16,697 & 44.42\% / 43.99\% & 0.0139 & 0.1085 & \texttt{N45 (100/100)} \\
+\texttt{E:T038} & \textit{Meleagris gallopavo} & \texttt{NC\_010195.2} & 16,719 & 43.51\% / 42.45\% & 0.0291 & 0.1159 & \texttt{N44 (100/100)} \\
+\texttt{E:T039} & \textit{Numida meleagris} & \texttt{NC\_006382.1} & 16,726 & 46.27\% / 46.49\% & 0.0319 & 0.0866 & \texttt{N43 (100/100)} \\
+\texttt{E:T040} & \textit{Alectura lathami} & \texttt{NC\_007227.1} & 16,698 & 47.32\% / 48.29\% & 0.0499 & 0.1596 & \texttt{N42 (100/100)} \\
+\texttt{E:T041} & \textit{Anas platyrhynchos} & \texttt{NC\_009684.1} & 16,604 & 48.59\% / 49.69\% & 0.0754 & 0.0469 & \texttt{N48 (100/100)} \\
+\texttt{E:T042} & \textit{Anser albifrons} & \texttt{NC\_004539.1} & 16,737 & 47.22\% / 47.07\% & 0.0480 & 0.0751 & \texttt{N47 (100/100)} \\
+\texttt{E:T043} & \textit{Aythya americana} & \texttt{NC\_000877.1} & 16,616 & 48.38\% / 47.45\% & 0.0711 & 0.0444 & \texttt{N48 (100/100)} \\
+\texttt{E:T044} & \textit{Anseranas semipalmata} & \texttt{NC\_005933.1} & 16,870 & 45.58\% / 44.80\% & 0.0153 & 0.1193 & \texttt{N46 (100/100)} \\
+\texttt{F:T045} & \textit{Struthio camelus} & \texttt{NC\_002785.1} & 16,595 & 44.61\% / 42.45\% & 0.0203 & 0.1403 & \texttt{N49 (100/100)} \\
+\texttt{F:T046} & \textit{Rhea americana} & \texttt{NC\_000846.1} & 16,714 & 46.94\% / 47.01\% & 0.0444 & 0.1555 & \texttt{N50 (100/100)} \\
+\texttt{F:T047} & \textit{Casuarius casuarius} & \texttt{NC\_002778.2} & 16,756 & 44.22\% / 45.04\% & 0.0324 & 0.0599 & \texttt{N53 (100/100)} \\
+\texttt{F:T048} & \textit{Dromaius novaehollandiae} & \texttt{NC\_002784.1} & 16,711 & 42.91\% / 41.69\% & 0.0382 & 0.0648 & \texttt{N53 (100/100)} \\
+\texttt{F:T049} & \textit{Apteryx haastii} & \texttt{NC\_002782.2} & 16,980 & 42.82\% / 43.03\% & 0.0400 & 0.1119 & \texttt{N54 (100/100)} \\
+\texttt{F:T050} & \textit{\textdagger{}Aepyornis hildebrandti (1.2 ka aDNA)} & \texttt{KJ749824.1} & 15,547 & 43.21\% / 42.13\% & 0.0323 & 0.0591 & \texttt{N55 (100/100)} \\
+\texttt{F:T051} & \textit{\textdagger{}Mullerornis agilis (1.5 ka aDNA)} & \texttt{KJ749825.1} & 15,731 & 42.80\% / 42.90\% & 0.0405 & 0.0479 & \texttt{N55 (100/100)} \\
+\texttt{F:T052} & \textit{Eudromia elegans} & \texttt{NC\_002772.2} & 18,305 & 42.35\% / 42.75\% & 0.0875 & 0.2824 & \texttt{N56 (100/100)} \\
+\texttt{F:T053} & \textit{\textdagger{}Dinornis giganteus (0.6 ka aDNA)} & \texttt{NC\_002672.1} & 17,070 & 45.18\% / 44.96\% & 0.0072 & 0.0264 & \texttt{N57 (100/100)} \\
+\texttt{F:T054} & \textit{\textdagger{}Emeus crassus (0.8 ka aDNA)} & \texttt{NC\_002673.1} & 17,061 & 45.31\% / 45.17\% & 0.0097 & 0.0132 & \texttt{N58 (100/100)} \\
+\texttt{F:T055} & \textit{\textdagger{}Anomalopteryx didiformis (0.7 ka aDNA)} & \texttt{NC\_002779.1} & 16,716 & 45.16\% / 46.89\% & 0.0068 & 0.0189 & \texttt{N58 (100/100)} \\
+\texttt{G:T056} & \textit{Alligator mississippiensis} & \texttt{NC\_001922.1} & 16,646 & 43.03\% / 42.65\% & 0.0358 & 0.2559 & \texttt{N59 (100/100)} \\
+\texttt{G:T057} & \textit{Crocodylus porosus} & \texttt{NC\_008143.1} & 16,916 & 43.10\% / 43.95\% & 0.0529 & 0.1764 & \texttt{N60 (100/100)} \\
+\texttt{G:T058} & \textit{Gavialis gangeticus} & \texttt{NC\_008241.1} & 17,185 & 41.47\% / 39.84\% & 0.0671 & 0.1399 & \texttt{N60 (100/100)} \\
+\texttt{G:T059} & \textit{Chelonia mydas} & \texttt{NC\_000886.1} & 16,497 & 39.45\% / 39.97\% & 0.1075 & 0.0840 & \texttt{N61 (100/100)} \\
+\texttt{G:T060} & \textit{Chrysemys picta} & \texttt{NC\_002073.3} & 16,866 & 38.78\% / 38.63\% & 0.1208 & 0.1595 & \texttt{N61 (100/100)} \\
+\texttt{G:T061} & \textit{Sphenodon punctatus} & \texttt{NC\_004815.1} & 15,181 & 39.86\% / 40.28\% & 0.1028 & 0.8960 & \texttt{N2 (100/100)} \\
+\texttt{G:T062} & \textit{Anolis carolinensis} & \texttt{NC\_010972.2} & 17,223 & 38.40\% / 38.48\% & 0.1305 & 0.6378 & \texttt{N2 (100/100)} \\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{99}
+\bibitem{white2026runie} White, B. P. (2026). "RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing." CRV Science Labs Preprints (PREPRINT-01). \url{https://doi.org/10.5281/zenodo.23969275}
+
+\bibitem{stiller2024complexity} Stiller, J., Feng, S., Chowdhury, A.-A., Rivas-Gonzalez, I., Duch ne, D. A., Fang, Q., ... \& Zhang, G. (2024). "Complexity of avian evolution revealed by family-level genomes." Nature, 629(8013), 851--860. \url{https://doi.org/10.1038/s41586-024-07323-1}
+
+\bibitem{prum2015comprehensive} Prum, R. O., Berv, J. S., Dornburg, A., Field, D. J., Townsend, J. P., Lemmon, E. M., \& Lemmon, A. R. (2015). "A comprehensive phylogeny of birds (Aves) using targeted next-generation DNA sequencing." Nature, 526(7574), 569--573. \url{https://doi.org/10.1038/nature15697}
+
+\bibitem{jarvis2014whole} Jarvis, E. D., Mirarab, S., Aberer, A. J., Li, B., Houde, P., Li, C., ... \& Zhang, G. (2014). "Whole-genome analyses resolve early branches in the tree of life of modern birds." Science, 346(6215), 1320--1331. \url{https://doi.org/10.1126/science.1253451}
+
+\bibitem{field2020late} Field, D. J., Benito, J., Chen, A., Jagt, J. W. M., \& Ksepka, D. T. (2020). "Late Cretaceous neornithine from Europe illuminates the origins of crown birds." Nature, 579(7799), 397--401. \url{https://doi.org/10.1038/s41586-020-2096-0}
+
+\bibitem{benton2015constraints} Benton, M. J., Donoghue, P. C. J., Asher, R. J., Friedman, M., Near, T. J., \& Vinther, J. (2015). "Constraints on the timescale of animal evolutionary history." Palaeontologia Electronica, 18.1.1FC, 1--106. \url{https://doi.org/10.26879/424}
+
+\bibitem{mitchell2014ancient} Mitchell, K. J., Llamas, B., Soubrier, J., Rawlence, N. J., Worthy, T. H., Wood, J., Lee, M. S. Y., \& Cooper, A. (2014). "Ancient DNA reveals elephant birds and kiwi are sister taxa and clarifies ratite bird evolution." Science, 344(6186), 898--900. \url{https://doi.org/10.1126/science.1251981}
+
+\bibitem{sackton2019convergent} Sackton, T. B., Grayson, P., Cloutier, A., Hu, Z., Liu, J. S., Wheeler, N. E., ... \& Edwards, S. V. (2019). "Convergent regulatory evolution and loss of flight in paleognathous birds." Science, 364(6435), 74--78. \url{https://doi.org/10.1126/science.aat7244}
+
+\bibitem{ksepka2017early} Ksepka, D. T., Stidham, T. A., \& Williamson, T. E. (2017). "Early Paleocene landbird supports rapid phylogenetic and morphological diversification of crown birds after the K--Pg mass extinction." Proceedings of the National Academy of Sciences, 114(30), 8047--8052. \url{https://doi.org/10.1073/pnas.1700188114}
+
+\bibitem{oliveros2019earth} Oliveros, C. H., Field, D. J., Ksepka, D. T., Barker, F. K., Aleixo, A., Andersen, M. J., ... \& Faircloth, B. C. (2019). "Earth history and the passerine superradiation." Proceedings of the National Academy of Sciences, 116(16), 7916--7925. \url{https://doi.org/10.1073/pnas.1813206116}
+
+\bibitem{lee2014sustained} Lee, M. S. Y., Cau, A., Naish, D., \& Dyke, G. J. (2014). "Sustained miniaturization and anatomical innovation in the dinosaurian ancestors of birds." Science, 345(6196), 562--566. \url{https://doi.org/10.1126/science.1252243}
+
+\bibitem{brusatte2014gradual} Brusatte, S. L., Lloyd, G. T., Wang, S. C., \& Norell, M. A. (2014). "Gradual assembly of avian body plan culminated in rapid rates of evolution across the dinosaur-bird transition." Current Biology, 24(20), 2386--2392. \url{https://doi.org/10.1016/j.cub.2014.08.034}
+
+\bibitem{abzhanov2004bmp4} Abzhanov, A., Protas, M., Grant, B. R., Grant, P. R., \& Tabin, C. J. (2004). "Bmp4 and morphological variation of beaks in Darwin's finches." Science, 305(5689), 1462--1465. \url{https://doi.org/10.1126/science.1098095}
+
+\bibitem{nabholz2008strong} Nabholz, B., Gl\'emin, S., \& Galtier, N. (2008). "Strong variations of mitochondrial mutation rate across mammals---the longevity hypothesis." Molecular Biology and Evolution, 25(1), 120--130. \url{https://doi.org/10.1093/molbev/msm248}
+
+\bibitem{katoh2013mafft} Katoh, K., \& Standley, D. M. (2013). "MAFFT multiple sequence alignment software version 7: improvements in performance and usability." Molecular Biology and Evolution, 30(4), 772--780. \url{https://doi.org/10.1093/molbev/mst010}
+
+\bibitem{kalyaanamoorthy2017modelfinder} Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., \& Jermiin, L. S. (2017). "ModelFinder: fast model selection for accurate phylogenetic estimates." Nature Methods, 14(6), 587--589. \url{https://doi.org/10.1038/nmeth.4285}
+
+\bibitem{minh2020iqtree2} Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., \& Lanfear, R. (2020). "IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era." Molecular Biology and Evolution, 37(5), 1530--1534. \url{https://doi.org/10.1093/molbev/msaa015}
+
+\bibitem{to2016fast} To, T.-H., Jung, M., Lycett, S., \& Gascuel, O. (2016). "Fast dating using least-squares criteria and algorithms." Systematic Biology, 65(1), 82--97. \url{https://doi.org/10.1093/sysbio/syv068}
+
+\bibitem{yang2007paml} Yang, Z. (2007). "PAML 4: phylogenetic analysis by maximum likelihood." Molecular Biology and Evolution, 24(8), 1586--1591. \url{https://doi.org/10.1093/molbev/msm088}
+
+\bibitem{zhang2018astral} Zhang, C., Rabiee, M., Sayyari, E., \& Mirarab, S. (2018). "ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees." BMC Bioinformatics, 19(6), 153. \url{https://doi.org/10.1186/s12859-018-2129-y}
+\end{thebibliography}
+
+\end{document}

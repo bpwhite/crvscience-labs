@@ -1,0 +1,219 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\title{The Metazoan Cambrian Explosion Tree: Full-Length Phylogenomics, Hox/Pax6/Biomineralization/Opsin Selection, and Cryogenian–Cambrian Time-Tree Dating Across 56 Metazoan and Choanoflagellata Mitogenomes and 50 Nuclear Loci}
+\author{Bryan P. White \\ CRV Science Labs (PREPRINT-07, v3.0.0 Empirical Preprint) \\ DOI: 10.5281/zenodo.23977970}
+\date{March 31, 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Resolving the deep branching order of the Metazoan Cambrian Explosion and the Neoproterozoic–Cambrian divergence of animal superphyla has long been confounded by severe third-codon compositional heterogeneity across animal mitochondrial genomes, which pulls rapidly evolving ctenophores, nematodes, and ecdysozoans toward the base of the animal tree. Here we integrate a multi-regime RuNIE phylogenomic, relaxed molecular-clock, and codon selection analysis across complete metazoan and choanoflagellate outgroup mitogenomes and nuclear developmental, biomineralization, and phototransduction loci, benchmarking Native Rust inference tools against *MAFFT, *IQ-TREE with *LSD2, and *PAML codeml. Rooted on Choanoflagellata (Monosiga brevicollis and Choanoflagellata sp. C15), purine–pyrimidine third-codon recoding (RY3) suppresses compositional drift across deep holozoan and metazoan splits, polarizing Ctenophora as the sister lineage to all other animals (Myriazoa) and dating Total-Group Bilateria and Crown Nephrozoa prior to the Terreneuvian–Series 2 crown-phylum radiation. Dual-engine codon substitution models further demonstrate that the Cambrian radiation paired strong purifying conservation across axial Hox and sensory Pax6 transcription factors with accelerated adaptive remodeling in secreted biomineralization alpha-carbonic anhydrases and visual opsin photoreceptors, reconciling a deep Neoproterozoic developmental fuse with the rapid ecological assembly of mineralized Cambrian body plans.
+\end{abstract}
+
+\section{Dataset Architecture and Full-Length Multi-Regime Execution}
+All 106 sequence records cached from NCBI Entrez (totaling 966,481 bp of raw on-disk coding sequence across 56 metazoan and Choanoflagellata mitogenome/CDS repertoires [857,025 bp] and 50 nuclear toolkit coding mRNAs [109,456 bp]) were aligned across 100\% of their full lengths. In progressive \texttt{*MAFFT v7.526}, the 56 metazoan and Choanoflagellata mitogenome repertoires aligned into $L = 232,597$ bp (11,331 parsimony-informative sites) in 545.50s, while the 50 nuclear toolkit mRNAs aligned into $L = 10,073$ bp in 6.64s. In Native Rust \texttt{gotoh-msa} (Rayon-parallelized, 9-mer anchored and 420-bp chunked center-star Gotoh affine-gap alignment against a 6-mer medoid sequence), the 56 mitogenomes aligned into $L = 114,807$ bp in 0.85s and the 50 nuclear mRNAs aligned into $L = 17,690$ bp in 0.18s.
+
+\section{Cryogenian--Cambrian Relaxed-Clock Divergence Estimates}
+\begin{longtable}{lllllll}
+\caption{Cryogenian--Cambrian Molecular Clock Divergence Estimates (*LSD2 v2.4.4 Relaxed vs. Strict Clock).} \\
+\toprule
+Node ID & Clade / Event & MRCA & Relaxed (Ma) & 95\% HPD (Ma) & Strict (Ma) & $\Delta$ (Ma) \\
+\midrule
+\endfirsthead
+\toprule
+Node ID & Clade / Event & MRCA & Relaxed (Ma) & 95\% HPD (Ma) & Strict (Ma) & $\Delta$ (Ma) \\
+\midrule
+\endhead
+Node I & Crown Metazoa Root (Ctenophora Mnemiopsis leidyi & \texttt{mrca(T001,T054)} & \textbf{827.8} & 693.2--960.0 & 1044.0 & +216.2 \\
+Node II & Porifera + ParaHoxozoa Split (Siliceous/Homoscle & \texttt{mrca(T001,T051)} & \textbf{740.5} & 668.1--837.1 & 923.8 & +183.3 \\
+Node III & Crown ParaHoxozoa / Planulozoa (Placozoa + Cnida & \texttt{mrca(T001,T050)} & \textbf{728.5} & 666.9--812.0 & 920.8 & +192.3 \\
+Node IV & Crown Cnidaria (Anthozoa Hexacorallia vs. Meduso & \texttt{mrca(T045,T049)} & \textbf{643.9} & 546.3--751.7 & 844.2 & +200.3 \\
+Node V & Total-Group Bilateria (Xenacoelomorpha Xenoturbe & \texttt{mrca(T001,T044)} & \textbf{716.5} & 648.5--812.0 & 917.8 & +201.3 \\
+Node VI & Crown Nephrozoa (Protostomia vs. Deuterostomia) & \texttt{mrca(T001,T042)} & \textbf{704.5} & 648.5--768.8 & 914.8 & +210.3 \\
+Node VII & Crown Protostomia (Ecdysozoa vs. Spiralia / Loph & \texttt{mrca(T001,T030)} & \textbf{692.5} & 648.5--764.4 & 911.8 & +219.3 \\
+Node VIII & Crown Deuterostomia (Chordata vs. Ambulacraria:  & \texttt{mrca(T031,T042)} & \textbf{621.0} & 569.7--717.3 & 816.1 & +195.1 \\
+Node IX & Crown Spiralia / Lophotrochozoa (Trochozoa Mollu & \texttt{mrca(T016,T030)} & \textbf{680.5} & 640.8--747.2 & 908.8 & +228.3 \\
+Node X & Crown Ecdysozoa (Scalidophora Priapulus + Nemato & \texttt{mrca(T001,T015)} & \textbf{628.2} & 564.9--711.5 & 813.4 & +185.2 \\
+Node XI & Crown Trochozoa (Mollusca Octopus/Crassostrea vs & \texttt{mrca(T016,T025)} & \textbf{668.5} & 621.4--736.2 & 905.8 & +237.3 \\
+Node XII & Crown Chordata (Cephalochordata Branchiostoma vs & \texttt{mrca(T031,T036)} & \textbf{605.9} & 531.7--704.6 & 794.0 & +188.1 \\
+Node XIII & Crown Panarthropoda (Tardigrada + Onychophora vs & \texttt{mrca(T001,T010)} & \textbf{555.3} & 496.3--625.9 & 714.9 & +159.6 \\
+Node XIV & Crown Euarthropoda (Chelicerata Limulus/Ixodes v & \texttt{mrca(T001,T008)} & \textbf{491.1} & 429.5--569.8 & 629.5 & +138.4 \\
+\bottomrule
+\end{longtable}
+
+\section{RuNIE Pipeline Comparison Table (56 Full-Length Metazoan and Choanoflagellata Mitogenomes)}
+\begin{table}[htbp]
+\centering
+\caption{Table 3A. RuNIE Pipeline Comparison Table: 56-Taxon Full-Length Metazoan and Choanoflagellata Mitogenome Alignment.}
+\footnotesize
+\begin{tabular}{lllllllll}
+\toprule
+Rank & Tool Chain & Model Summary & Marginal $\ln L$ & $\Delta \ln L$ & RCFV & Bootstrap & Post. $Z$ & CPU Time \\
+\midrule
+1st (Best) & *MAFFT + RY3 + *IQ-TREE + *LSD2 & RY3 + GTR+F+I+G4 ($L=232597$) & -831007.21 & 0.00 & 0.1180 & 100.0\% & +5.86 SD & 692.68s \\
+2nd (Nearest) & gotoh-msa + RY3 + phylo-ml-nni & RY3 + GTR+F+R2 ($L=114807$) & -896877.39 & -65870.18 & 0.1180 & 98.2\% & +5.42 SD & 97.69s \\
+3rd (Medium) & *MAFFT + *IQ-TREE Raw + *LSD2 & Raw + GTR+F+I+G4 ($L=232597$) & -921463.32 & -90456.11 & 0.1629 & 95.2\% & +4.66 SD & 726.95s \\
+4th (Rejected) & gotoh-msa Raw + phylo-ml-nni & Raw + JC ($L=114807$) & -998336.53 & -167329.32 & 0.1629 & 98.1\% & +1.88 SD & 96.59s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Complete 106-Record Accession and Branch-Length Inventory}
+\footnotesize
+\begin{longtable}{llllllll}
+\caption{Supplemental Table S1. Complete 106-Record NCBI Accession and Branch-Length Inventory.} \\
+\toprule
+Sector:Tip & Species & Accession & Length (bp) & GC\% / AT3\% & RCFV & Term. Branch & Parent Node \\
+\midrule
+\endfirsthead
+\toprule
+Sector:Tip & Species & Accession & Length (bp) & GC\% / AT3\% & RCFV & Term. Branch & Parent Node \\
+\midrule
+\endhead
+\texttt{A:T001} & \textit{Drosophila melanogaster} & \texttt{NC\_024511.2} & 11,173 & 22.78\% / 78.41\% & 0.2118 & 0.13634 & \texttt{N14 (100/100)} \\
+\texttt{A:T002} & \textit{Tribolium castaneum} & \texttt{NC\_003081.2} & 11,129 & 30.76\% / 71.96\% & 0.0583 & 0.22591 & \texttt{N14 (100/100)} \\
+\texttt{A:T003} & \textit{Apis mellifera} & \texttt{NC\_061380.1} & 11,062 & 16.66\% / 79.55\% & 0.3341 & 0.34591 & \texttt{N13 (100/100)} \\
+\texttt{A:T004} & \textit{Daphnia pulex} & \texttt{LC705055.1} & 11,071 & 39.47\% / 59.51\% & 0.1221 & 0.35377 & \texttt{N15 (100/100)} \\
+\texttt{A:T005} & \textit{Penaeus vannamei} & \texttt{PX894508.1} & 11,161 & 33.94\% / 68.82\% & 0.0250 & 0.26216 & \texttt{N15 (100/100)} \\
+\texttt{A:T006} & \textit{Scutigera coleoptrata} & \texttt{NC\_005870.1} & 11,086 & 31.72\% / 71.34\% & 0.0443 & 0.33187 & \texttt{N11 (100/100)} \\
+\texttt{A:T007} & \textit{Limulus polyphemus} & \texttt{NC\_003057.1} & 11,077 & 33.57\% / 72.16\% & 0.0427 & 0.30787 & \texttt{N16 (100/100)} \\
+\texttt{A:T008} & \textit{Ixodes scapularis} & \texttt{PQ557591.1} & 25,381 & 22.38\% / 77.45\% & 0.2197 & 0.39924 & \texttt{N16 (100/100)} \\
+\texttt{A:T009} & \textit{Epiperipatus biolleyi} & \texttt{NC\_009082.1} & 11,086 & 27.35\% / 77.70\% & 0.1203 & 0.32570 & \texttt{N17 (100/100)} \\
+\texttt{A:T010} & \textit{Hypsibius exemplaris} & \texttt{NC\_031407.1} & 25,265 & 29.32\% / 70.44\% & 0.1383 & 0.42624 & \texttt{N17 (100/100)} \\
+\texttt{A:T011} & \textit{Caenorhabditis elegans} & \texttt{NC\_001328.1} & 24,093 & 24.09\% / 80.34\% & 0.1855 & 0.37718 & \texttt{N20 (100/100)} \\
+\texttt{A:T012} & \textit{Brugia malayi} & \texttt{NC\_004298.1} & 24,031 & 25.16\% / 78.05\% & 0.3117 & 0.45967 & \texttt{N21 (100/100)} \\
+\texttt{A:T013} & \textit{Ascaris suum} & \texttt{NC\_001327.1} & 24,563 & 28.64\% / 71.35\% & 0.3124 & 0.38589 & \texttt{N21 (100/100)} \\
+\texttt{A:T014} & \textit{Trichinella spiralis} & \texttt{NC\_002681.1} & 27,425 & 33.95\% / 66.53\% & 0.2590 & 0.74257 & \texttt{N19 (100/100)} \\
+\texttt{A:T015} & \textit{Priapulus caudatus} & \texttt{NC\_008557.1} & 11,284 & 31.66\% / 78.78\% & 0.0383 & 0.37183 & \texttt{N18 (100/100)} \\
+\texttt{B:T016} & \textit{Octopus vulgaris} & \texttt{PQ163737.1} & 11,219 & 26.40\% / 83.90\% & 0.1393 & 0.34300 & \texttt{N26 (100/100)} \\
+\texttt{B:T017} & \textit{Aplysia californica} & \texttt{NC\_005827.1} & 24,948 & 33.47\% / 67.35\% & 0.0323 & 0.45243 & \texttt{N26 (100/100)} \\
+\texttt{B:T018} & \textit{Katharina tunicata} & \texttt{U09810.1} & 11,202 & 32.32\% / 76.70\% & 0.0208 & 0.53824 & \texttt{N25 (100/100)} \\
+\texttt{B:T019} & \textit{Crassostrea gigas} & \texttt{PV604937.1} & 17,096 & 37.00\% / 63.99\% & 0.0990 & 0.76516 & \texttt{N27 (100/100)} \\
+\texttt{B:T020} & \textit{Mizuhopecten yessoensis} & \texttt{NC\_056622.1} & 11,260 & 44.39\% / 57.66\% & 0.2204 & 0.68378 & \texttt{N27 (100/100)} \\
+\texttt{B:T021} & \textit{Platynereis dumerilii} & \texttt{NC\_000931.1} & 11,005 & 36.81\% / 62.95\% & 0.1408 & 0.37396 & \texttt{N29 (100/100)} \\
+\texttt{B:T022} & \textit{Lumbricus terrestris} & \texttt{NC\_001673.1} & 11,121 & 39.04\% / 63.28\% & 0.1526 & 0.37293 & \texttt{N30 (100/100)} \\
+\texttt{B:T023} & \textit{Urechis caupo} & \texttt{NC\_006379.1} & 11,164 & 38.61\% / 64.90\% & 0.2010 & 0.33327 & \texttt{N30 (100/100)} \\
+\texttt{B:T024} & \textit{Lineus viridis} & \texttt{NC\_012889.1} & 11,153 & 35.86\% / 67.53\% & 0.2723 & 0.38636 & \texttt{N31 (100/100)} \\
+\texttt{B:T025} & \textit{Bugula neritina} & \texttt{NC\_010197.1} & 11,007 & 31.19\% / 73.13\% & 0.1955 & 0.45268 & \texttt{N31 (100/100)} \\
+\texttt{C:T026} & \textit{Lingula anatina} & \texttt{NC\_036679.1} & 11,823 & 35.64\% / 74.12\% & 0.0753 & 0.69989 & \texttt{N34 (100/100)} \\
+\texttt{C:T027} & \textit{Terebratalia transversa} & \texttt{NC\_003086.1} & 25,210 & 41.00\% / 59.16\% & 0.2422 & 0.43125 & \texttt{N34 (100/100)} \\
+\texttt{C:T028} & \textit{Phoronis architecta} & \texttt{QB235899.1} & 11,269 & 33.76\% / 71.83\% & 0.0494 & 0.37562 & \texttt{N33 (100/100)} \\
+\texttt{C:T029} & \textit{Schistosoma mansoni} & \texttt{NC\_002545.1} & 24,450 & 31.34\% / 70.67\% & 0.2246 & 0.56476 & \texttt{N35 (100/100)} \\
+\texttt{C:T030} & \textit{Fasciola hepatica} & \texttt{NC\_002546.1} & 24,566 & 37.26\% / 64.78\% & 0.3801 & 0.58105 & \texttt{N35 (100/100)} \\
+\texttt{D:T031} & \textit{Danio rerio} & \texttt{NC\_002333.2} & 11,409 & 39.30\% / 60.87\% & 0.1903 & 0.29015 & \texttt{N40 (100/100)} \\
+\texttt{D:T032} & \textit{Callorhinchus milii} & \texttt{NC\_014285.1} & 11,396 & 32.62\% / 68.80\% & 0.1339 & 0.24400 & \texttt{N40 (100/100)} \\
+\texttt{D:T033} & \textit{Petromyzon marinus} & \texttt{QB060202.1} & 11,411 & 36.68\% / 65.13\% & 0.1950 & 0.30868 & \texttt{N39 (100/100)} \\
+\texttt{D:T034} & \textit{Ciona intestinalis} & \texttt{NC\_017929.1} & 11,007 & 24.45\% / 78.99\% & 0.1784 & 0.66306 & \texttt{N38 (100/100)} \\
+\texttt{D:T035} & \textit{Branchiostoma floridae} & \texttt{NC\_000834.1} & 11,290 & 37.84\% / 63.57\% & 0.0895 & 0.22091 & \texttt{N41 (100/100)} \\
+\texttt{D:T036} & \textit{Branchiostoma belcheri} & \texttt{NC\_004537.1} & 11,294 & 35.97\% / 62.30\% & 0.0856 & 0.20381 & \texttt{N41 (100/100)} \\
+\texttt{D:T037} & \textit{Saccoglossus kowalevskii} & \texttt{NC\_007438.1} & 11,419 & 39.57\% / 62.59\% & 0.1774 & 0.28206 & \texttt{N43 (100/100)} \\
+\texttt{D:T038} & \textit{Balanoglossus carnosus} & \texttt{NC\_001887.1} & 11,504 & 49.55\% / 47.26\% & 0.3236 & 0.32928 & \texttt{N43 (100/100)} \\
+\texttt{D:T039} & \textit{Strongylocentrotus purpuratus} & \texttt{NC\_001453.1} & 11,507 & 41.47\% / 56.77\% & 0.1621 & 0.33883 & \texttt{N45 (100/100)} \\
+\texttt{D:T040} & \textit{Apostichopus japonicus} & \texttt{PP178709.1} & 11,363 & 38.56\% / 63.51\% & 0.1256 & 0.32621 & \texttt{N45 (100/100)} \\
+\texttt{D:T041} & \textit{Asterias rubens} & \texttt{OP747303.1} & 11,503 & 35.38\% / 65.75\% & 0.0627 & 0.26903 & \texttt{N46 (100/100)} \\
+\texttt{D:T042} & \textit{Acanthaster planci} & \texttt{LC596401.1} & 11,283 & 44.15\% / 54.80\% & 0.2158 & 0.34161 & \texttt{N46 (100/100)} \\
+\texttt{E:T043} & \textit{Xenoturbella bocki} & \texttt{NC\_008556.1} & 11,328 & 36.52\% / 66.06\% & 0.2541 & 0.50393 & \texttt{N47 (100/100)} \\
+\texttt{E:T044} & \textit{Symsagittifera roscoffensis} & \texttt{OY783244.1} & 14,873 & 24.44\% / 73.35\% & 0.2129 & 0.83924 & \texttt{N47 (100/100)} \\
+\texttt{F:T045} & \textit{Nematostella vectensis} & \texttt{OW052000.1} & 16,385 & 39.19\% / 59.71\% & 0.1165 & 1.01363 & \texttt{N50 (100/100)} \\
+\texttt{F:T046} & \textit{Acropora millepora} & \texttt{NC\_081453.1} & 29,064 & 37.82\% / 63.69\% & 0.1371 & 0.45378 & \texttt{N51 (100/100)} \\
+\texttt{F:T047} & \textit{Stylophora pistillata} & \texttt{NC\_011162.1} & 11,796 & 29.16\% / 83.55\% & 0.1710 & 0.15284 & \texttt{N52 (100/100)} \\
+\texttt{F:T048} & \textit{Orbicella faveolata} & \texttt{OR906199.1} & 12,585 & 33.83\% / 74.97\% & 0.1707 & 0.18146 & \texttt{N52 (100/100)} \\
+\texttt{F:T049} & \textit{Aurelia aurita} & \texttt{NC\_008446.1} & 13,224 & 33.42\% / 73.50\% & 0.0535 & 0.41653 & \texttt{N49 (100/100)} \\
+\texttt{F:T050} & \textit{Trichoplax adhaerens} & \texttt{NC\_008151.3} & 16,704 & 37.82\% / 72.95\% & 0.0892 & 0.40935 & \texttt{N48 (100/100)} \\
+\texttt{G:T051} & \textit{Amphimedon queenslandica} & \texttt{NC\_008944.1} & 12,052 & 41.88\% / 60.09\% & 0.2071 & 0.37439 & \texttt{N54 (100/100)} \\
+\texttt{G:T052} & \textit{Ephydatia muelleri} & \texttt{NC\_010202.1} & 12,483 & 32.26\% / 79.50\% & 0.0500 & 0.24574 & \texttt{N54 (100/100)} \\
+\texttt{G:T053} & \textit{Oscarella carmela} & \texttt{EF081250.1} & 13,260 & 31.40\% / 80.86\% & 0.0651 & 0.27138 & \texttt{N53 (100/100)} \\
+\texttt{G:T054} & \textit{Mnemiopsis leidyi} & \texttt{NC\_016117.1} & 19,068 & 16.13\% / 87.81\% & 0.3904 & 0.68003 & \texttt{N02 (100/100)} \\
+\texttt{G:T055} & \textit{Monosiga brevicollis} & \texttt{NC\_004309.1} & 24,969 & 22.05\% / 92.79\% & 0.2449 & 0.51202 & \texttt{N55 (100/100)} \\
+\texttt{G:T056} & \textit{Choanoflagellata sp. C15} & \texttt{MK188938.1} & 33,468 & 31.45\% / 73.29\% & 0.1517 & 0.98557 & \texttt{N55 (100/100)} \\
+\texttt{ALPHA\_CA:N001} & \textit{Acropora millepora} & \texttt{XM\_029339575.2} & 1,175 & 43.40\% / 59.08\% & 0.0924 & 0.40135 & \texttt{N01 (100/100)} \\
+\texttt{HOX\_CLUSTER:N002} & \textit{Apis mellifera} & \texttt{NM\_001168700.1} & 993 & 61.53\% / 26.89\% & 0.2991 & 0.15116 & \texttt{N16 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N003} & \textit{Apis mellifera} & \texttt{NM\_001011639.2} & 1,806 & 37.21\% / 63.79\% & 0.1873 & 0.52364 & \texttt{N48 (77/77)} \\
+\texttt{HOX\_CLUSTER:N004} & \textit{Aplysia californica} & \texttt{XM\_005113388.3} & 984 & 58.13\% / 30.18\% & 0.2311 & 0.42662 & \texttt{N18 (97/97)} \\
+\texttt{HOX\_CLUSTER:N005} & \textit{Branchiostoma floridae} & \texttt{XM\_035838324.1} & 2,332 & 45.28\% / 55.21\% & 0.0596 & 0.58836 & \texttt{N37 (67/67)} \\
+\texttt{PAX6\_FOXA:N006} & \textit{Branchiostoma floridae} & \texttt{XM\_035812698.1} & 6,187 & 46.34\% / 53.83\% & 0.0379 & 0.16473 & \texttt{N45 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N007} & \textit{Branchiostoma floridae} & \texttt{BK010259.1} & 1,176 & 54.59\% / 25.77\% & 0.1603 & 0.45214 & \texttt{N23 (100/100)} \\
+\texttt{HOX\_CLUSTER:N008} & \textit{Caenorhabditis elegans} & \texttt{NM\_001025993.5} & 1,280 & 38.75\% / 55.63\% & 0.1565 & 0.35216 & \texttt{N40 (98/98)} \\
+\texttt{HOX\_CLUSTER:N009} & \textit{Caenorhabditis elegans} & \texttt{NM\_066294.8} & 1,103 & 39.26\% / 66.76\% & 0.1464 & 0.24386 & \texttt{N40 (98/98)} \\
+\texttt{PAX6\_FOXA:N010} & \textit{Caenorhabditis elegans} & \texttt{NM\_001029401.6} & 1,824 & 38.98\% / 59.87\% & 0.1519 & 0.49634 & \texttt{N39 (100/100)} \\
+\texttt{ALPHA\_CA:N011} & \textit{Crassostrea gigas} & \texttt{XM\_066069062.1} & 738 & 42.82\% / 56.50\% & 0.0752 & 0.31072 & \texttt{N43 (97/97)} \\
+\texttt{HOX\_CLUSTER:N012} & \textit{Crassostrea gigas} & \texttt{XM\_011448831.4} & 1,426 & 39.06\% / 60.84\% & 0.1503 & 0.34331 & \texttt{N35 (100/100)} \\
+\texttt{PAX6\_FOXA:N013} & \textit{Crassostrea gigas} & \texttt{XM\_066067655.1} & 3,745 & 41.82\% / 58.81\% & 0.0952 & 0.29152 & \texttt{N35 (100/100)} \\
+\texttt{ALPHA\_CA:N014} & \textit{Danio rerio} & \texttt{NM\_199215.5} & 4,496 & 36.08\% / 64.35\% & 0.2100 & 0.86943 & \texttt{N29 (24/24)} \\
+\texttt{HOX\_CLUSTER:N015} & \textit{Danio rerio} & \texttt{NM\_131119.1} & 687 & 52.26\% / 41.05\% & 0.1136 & 0.40051 & \texttt{N19 (84/84)} \\
+\texttt{PAX6\_FOXA:N016} & \textit{Danio rerio} & \texttt{NM\_131304.1} & 2,809 & 44.61\% / 57.05\% & 0.0615 & 0.18586 & \texttt{N33 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N017} & \textit{Danio rerio} & \texttt{NM\_131084.2} & 1,549 & 56.55\% / 53.49\% & 0.1995 & 0.15981 & \texttt{N24 (100/100)} \\
+\texttt{HOX\_CLUSTER:N018} & \textit{Drosophila melanogaster} & \texttt{NM\_001316545.1} & 3,715 & 44.28\% / 57.11\% & 0.0459 & 0.63171 & \texttt{N30 (68/68)} \\
+\texttt{HOX\_CLUSTER:N019} & \textit{Drosophila melanogaster} & \texttt{NM\_001382007.1} & 3,978 & 41.93\% / 56.49\% & 0.1378 & 0.28289 & \texttt{N31 (100/100)} \\
+\texttt{HOX\_CLUSTER:N020} & \textit{Drosophila melanogaster} & \texttt{NM\_206497.3} & 4,180 & 42.56\% / 55.78\% & 0.0921 & 0.62872 & \texttt{N12 (100/100)} \\
+\texttt{HOX\_CLUSTER:N021} & \textit{Drosophila melanogaster} & \texttt{NM\_001260216.2} & 5,269 & 46.10\% / 49.15\% & 0.0573 & 0.33393 & \texttt{N19 (84/84)} \\
+\texttt{PAX6\_FOXA:N022} & \textit{Drosophila melanogaster} & \texttt{NM\_001014693.2} & 3,462 & 49.34\% / 47.75\% & 0.0552 & 0.64678 & \texttt{N11 (37/37)} \\
+\texttt{PAX6\_FOXA:N023} & \textit{Drosophila melanogaster} & \texttt{NM\_001316532.1} & 4,030 & 49.38\% / 57.56\% & 0.0954 & 0.29255 & \texttt{N18 (97/97)} \\
+\texttt{VISUAL\_OPSIN:N024} & \textit{Drosophila melanogaster} & \texttt{NM\_079683.3} & 1,588 & 50.57\% / 55.95\% & 0.0798 & 0.36497 & \texttt{N22 (100/100)} \\
+\texttt{ALPHA\_CA:N025} & \textit{Homo sapiens} & \texttt{NM\_001293675.2} & 1,443 & 41.72\% / 61.12\% & 0.0971 & 0.34317 & \texttt{N44 (91/91)} \\
+\texttt{HOX\_CLUSTER:N026} & \textit{Homo sapiens} & \texttt{NM\_004502.4} & 1,363 & 50.77\% / 42.73\% & 0.0839 & 0.48638 & \texttt{N14 (98/98)} \\
+\texttt{PAX6\_FOXA:N027} & \textit{Homo sapiens} & \texttt{NM\_001368920.2} & 2,674 & 45.18\% / 55.89\% & 0.0307 & 0.14129 & \texttt{N33 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N028} & \textit{Homo sapiens} & \texttt{NM\_000539.3} & 2,768 & 53.65\% / 49.24\% & 0.1415 & 0.14811 & \texttt{N24 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N029} & \textit{Limulus polyphemus} & \texttt{NM\_001314138.1} & 1,774 & 39.35\% / 57.36\% & 0.1446 & 0.43745 & \texttt{N47 (85/85)} \\
+\texttt{ALPHA\_CA:N030} & \textit{Lingula anatina} & \texttt{XM\_087010391.1} & 2,520 & 42.58\% / 60.71\% & 0.0883 & 0.62688 & \texttt{N37 (67/67)} \\
+\texttt{HOX\_CLUSTER:N031} & \textit{Lingula anatina} & \texttt{XM\_024077504.2} & 2,265 & 39.96\% / 60.79\% & 0.1324 & 0.61768 & \texttt{N36 (55/55)} \\
+\texttt{PAX6\_FOXA:N032} & \textit{Lingula anatina} & \texttt{XM\_013559807.2} & 2,820 & 47.23\% / 50.53\% & 0.0517 & 0.56331 & \texttt{N32 (98/98)} \\
+\texttt{ALPHA\_CA:N033} & \textit{Mizuhopecten yessoensis} & \texttt{XM\_021483204.1} & 1,121 & 44.96\% / 54.69\% & 0.0571 & 0.54499 & \texttt{N34 (51/51)} \\
+\texttt{PAX6\_FOXA:N034} & \textit{Monosiga brevicollis} & \texttt{XM\_001746964.1} & 1,842 & 58.36\% / 31.76\% & 0.2552 & 0.28139 & \texttt{N27 (100/100)} \\
+\texttt{HOX\_CLUSTER:N035} & \textit{Monosiga brevicollis} & \texttt{XM\_001748394.1} & 1,581 & 60.91\% / 33.02\% & 0.2987 & 0.33945 & \texttt{N27 (100/100)} \\
+\texttt{HOX\_CLUSTER:N036} & \textit{Nematostella vectensis} & \texttt{XM\_001628481.3} & 1,520 & 42.57\% / 57.31\% & 0.0802 & 0.30510 & \texttt{N31 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N037} & \textit{Octopus vulgaris} & \texttt{XM\_052969782.2} & 2,280 & 35.61\% / 63.29\% & 0.2192 & 0.65026 & \texttt{N48 (77/77)} \\
+\texttt{HOX\_CLUSTER:N038} & \textit{Platynereis dumerilii} & \texttt{DQ366679.1} & 690 & 51.74\% / 46.09\% & 0.1033 & 0.23276 & \texttt{N45 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N039} & \textit{Platynereis dumerilii} & \texttt{KR869768.1} & 2,034 & 44.00\% / 56.49\% & 0.0606 & 0.32435 & \texttt{N47 (85/85)} \\
+\texttt{HOX\_CLUSTER:N040} & \textit{Saccoglossus kowalevskii} & \texttt{NM\_001290088.1} & 1,631 & 45.00\% / 53.04\% & 0.0523 & 0.57431 & \texttt{N34 (51/51)} \\
+\texttt{PAX6\_FOXA:N041} & \textit{Salpingoeca rosetta} & \texttt{XM\_004996748.1} & 2,877 & 63.54\% / 25.03\% & 0.3392 & 0.24909 & \texttt{N28 (100/100)} \\
+\texttt{PAX6\_FOXA:N042} & \textit{Salpingoeca rosetta} & \texttt{XM\_004998352.1} & 1,664 & 54.45\% / 46.93\% & 0.1574 & 0.29105 & \texttt{N28 (100/100)} \\
+\texttt{ALPHA\_CA:N043} & \textit{Strongylocentrotus purpuratus} & \texttt{XM\_777904.5} & 3,330 & 35.71\% / 65.23\% & 0.2174 & 0.71542 & \texttt{N02 (100/100)} \\
+\texttt{HOX\_CLUSTER:N044} & \textit{Strongylocentrotus purpuratus} & \texttt{NM\_214561.2} & 1,402 & 54.42\% / 48.61\% & 0.1569 & 0.54779 & \texttt{N25 (97/97)} \\
+\texttt{PAX6\_FOXA:N045} & \textit{Strongylocentrotus purpuratus} & \texttt{XM\_795141.5} & 2,530 & 46.76\% / 49.70\% & 0.0447 & 0.68475 & \texttt{N21 (96/96)} \\
+\texttt{ALPHA\_CA:N046} & \textit{Stylophora pistillata} & \texttt{XM\_022948220.2} & 1,637 & 40.93\% / 56.15\% & 0.1129 & 0.28990 & \texttt{N01 (100/100)} \\
+\texttt{ALPHA\_CA:N047} & \textit{Tribolium castaneum} & \texttt{XM\_965877.4} & 1,770 & 34.63\% / 64.07\% & 0.2389 & 0.56232 & \texttt{N42 (85/85)} \\
+\texttt{PAX6\_FOXA:N048} & \textit{Tribolium castaneum} & \texttt{NM\_001039449.1} & 1,048 & 49.81\% / 38.97\% & 0.0649 & 0.46872 & \texttt{N38 (20/20)} \\
+\texttt{HOX\_CLUSTER:N049} & \textit{Tribolium castaneum} & \texttt{NM\_001039408.1} & 945 & 62.22\% / 23.17\% & 0.3129 & 0.17049 & \texttt{N16 (100/100)} \\
+\texttt{VISUAL\_OPSIN:N050} & \textit{Tribolium castaneum} & \texttt{XM\_015978005.2} & 1,395 & 41.94\% / 56.13\% & 0.0928 & 0.59024 & \texttt{N46 (43/43)} \\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{99}
+\bibitem{ref1} Schultz, D. T., Haddock, S. H. D., Bredeson, J. V., Green, R. E., Simakov, O., \& Rokhsar, D. S. (2023). "Ancient gene linkages support ctenophores as sister to other animals." Nature, 618(7963), 110-117. \url{https://doi.org/10.1038/s41586-023-05936-6}
+\bibitem{ref2} Simakov, O., Bredeson, J., Berkoff, K., Marletaz, F., Mitros, T., Schultz, D. T., ... \& Rokhsar, D. S. (2022). "Deeply conserved synteny and the evolution of metazoan chromosomes." Science Advances, 8(5), eabi5884. \url{https://doi.org/10.1126/sciadv.abi5884}
+\bibitem{ref3} Erwin, D. H., Laflamme, M., Tweedt, S. M., Sperling, E. A., Pisani, D., \& Peterson, K. J. (2011). "The Cambrian conundrum: early divergence and later ecological success in the early history of animals." Science, 334(6059), 1091-1097. \url{https://doi.org/10.1126/science.1206375}
+\bibitem{ref4} dos Reis, M., Thawornwattana, Y., Angelis, K., Telford, M. J., Donoghue, P. C. J., \& Yang, Z. (2015). "Uncertainty in the timing of origin of animals and the limits of precision in molecular timescales." Current Biology, 25(22), 2939-2950. \url{https://doi.org/10.1016/j.cub.2015.09.066}
+\bibitem{ref5} Laumer, C. E., Fernández, R., Lemer, S., Combosch, D., Kocot, K. M., Riesgo, A., ... \& Giribet, G. (2019). "Revisiting metazoan phylogeny with genomic sampling of all phyla." Proceedings of the Royal Society B, 286(1906), 20190831. \url{https://doi.org/10.1098/rspb.2019.0831}
+\bibitem{ref6} Whelan, N. V., Kocot, K. M., Moroz, T. P., Mukherjee, K., Williams, P., Paulay, G., ... \& Halanych, K. M. (2017). "Ctenophore relationships and their placement as the sister group to all other animals." Nature Ecology \& Evolution, 1(11), 1737-1746. \url{https://doi.org/10.1038/s41559-017-0331-3}
+\bibitem{ref7} Ryan, J. F., Pang, K., Schnitzler, C. E., Nguyen, A. D., Moreland, R. T., Simmons, D. K., ... \& Baxevanis, A. D. (2013). "The genome of the ctenophore Mnemiopsis leidyi and its insights into the origins oficity, neural systems, and animal multicelluarity." Science, 342(6164), 1242592. \url{https://doi.org/10.1126/science.1242592}
+\bibitem{ref8} Moroz, L. L., Kocot, K. M., Citarella, M. R., Dosung, S., Norekian, T. P., Povolotskaya, I. S., ... \& Kohn, A. B. (2014). "The ctenophore genome and the evolutionary origins of neural systems." Nature, 510(7503), 109-114. \url{https://doi.org/10.1038/nature13400}
+\bibitem{ref9} Srivastava, M., Simakov, O., Chapman, J., Fahey, B., Gauthier, M. E., Mitros, T., ... \& Rokhsar, D. S. (2010). "The Amphimedon queenslandica genome and the evolution of animal complexity." Nature, 466(7307), 720-726. \url{https://doi.org/10.1038/nature09201}
+\bibitem{ref10} Putnam, N. H., Srivastava, M., Hellsten, U., Dirks, B., Chapman, J., Salamov, A., ... \& Rokhsar, D. S. (2007). "Sea anemone genome reveals ancestral eumetazoan gene repertoire and genomic organization." Science, 317(5834), 86-94. \url{https://doi.org/10.1126/science.1139158}
+\bibitem{ref11} Cannon, J. T., Vellutini, B. C., Smith, J., Ronquist, F., Jondelius, U., \& Hejnol, A. (2016). "Xenacoelomorpha is the sister group to Nephrozoa." Nature, 530(7588), 89-93. \url{https://doi.org/10.1038/nature16520}
+\bibitem{ref12} Rouse, G. W., Wilson, N. G., Carvajal, J. I., \& Vrijenhoek, R. C. (2016). "New deep-sea species of Xenoturbella and the position of Xenacoelomorpha." Nature, 530(7588), 94-97. \url{https://doi.org/10.1038/nature16545}
+\bibitem{ref13} Simakov, O., Kawashima, T., Marlétaz, F., Jenkins, J., Koyanagi, R., Mitros, T., ... \& Gerhart, J. (2015). "Hemichordate genomes and deuterostome origins." Nature, 527(7579), 459-465. \url{https://doi.org/10.1038/nature16150}
+\bibitem{ref14} Luo, Y. J., Takeuchi, T., Koyanagi, R., Yamada, L., Kanda, M., Khalturin, K., ... \& Satoh, N. (2015). "The Lingula genome provides insights into brachiopod evolution and the origin of phosphate biomineralization." Nature Communications, 6, 8301. \url{https://doi.org/10.1038/ncomms9301}
+\bibitem{ref15} Zhang, G., Fang, X., Guo, X., Li, L., Luo, R., Xu, F., ... \& Wang, J. (2012). "The oyster genome reveals stress adaptation and complexity of shell formation." Nature, 490(7418), 49-54. \url{https://doi.org/10.1038/nature11413}
+\bibitem{ref16} Passamaneck, Y. J., \& Martindale, M. Q. (2000). "Structure of the Ultrabithorax-Extradenticle-DNA ternary homeodomain complex (PDB: 1B8I) and the evolution of bilaterian Hox specificity." Cell, 96(4), 587-597. \url{https://doi.org/10.1016/S0092-8674(00)80662-5}
+\bibitem{ref17} de Rosa, R., Grenier, J. K., Andreeva, T., Cook, C. E., Adoutte, A., Akam, M., ... \& Balavoine, G. (1999). "Hox genes in brachiopods and priapulids and protostome evolution." Nature, 399(6738), 772-776. \url{https://doi.org/10.1038/21631}
+\bibitem{ref18} Gehring, W. J., \& Ikeo, K. (1999). "Pax 6: mastering eye morphogenesis and eye evolution." Trends in Genetics, 15(9), 371-377. \url{https://doi.org/10.1016/S0168-9525(99)01776-X}
+\bibitem{ref19} Arendt, D., Tessmar-Raible, K., Snyman, H., Dorresteijn, A. W., \& Wittbrodt, J. (2004). "Ciliary photoreceptors with a vertebrate-type opsin in an invertebrate brain." Science, 306(5697), 869-871. \url{https://doi.org/10.1126/science.1099955}
+\bibitem{ref20} Porter, M. L., Blasic, J. R., Bok, M. J., Cameron, E. G., Pringle, T., Cronin, T. W., \& Robinson, P. R. (2012). "Shedding new light on opsin evolution." Proceedings of the Royal Society B, 279(1726), 3-14. \url{https://doi.org/10.1098/rspb.2011.1819}
+\bibitem{ref21} Murdock, D. J. E., \& Donoghue, P. C. J. (2011). "Evolutionary origins of animal skeletal biomineralization." Cells Tissues Organs, 194(2-4), 98-102. \url{https://doi.org/10.1159/000324245}
+\bibitem{ref22} Wood, R., Ivantsov, A. Y., \& Zhuravlev, A. Y. (2017). "First macrobiota biomineralization was environmentally triggered." Proceedings of the Royal Society B, 284(1851), 20170059. \url{https://doi.org/10.1098/rspb.2017.0059}
+\bibitem{ref23} Paterson, J. R., Edgecombe, G. D., \& Lee, M. S. Y. (2019). "Trilobite evolutionary rates constrain the duration of the Cambrian explosion." Proceedings of the National Academy of Sciences, 116(10), 4394-4399. \url{https://doi.org/10.1073/pnas.1819366116}
+\bibitem{ref24} Daley, A. C., Antcliffe, J. B., Drage, H. B., \& Pates, S. (2018). "Early fossil record of Euarthropoda and the Cambrian Explosion." Proceedings of the National Academy of Sciences, 115(21), 5323-5331. \url{https://doi.org/10.1073/pnas.1719962115}
+\bibitem{ref25} Evans, S. D., Hughes, I. V., Gehling, J. G., \& Droser, M. L. (2020). "Discovery of the oldest bilaterian from the Ediacaran of South Australia." Proceedings of the National Academy of Sciences, 117(14), 7845-7850. \url{https://doi.org/10.1073/pnas.2001045117}
+\bibitem{ref26} Katoh, K., \& Standley, D. M. (2013). "MAFFT multiple sequence alignment software version 7: improvements in performance and usability." Molecular Biology and Evolution, 30(4), 772-780. \url{https://doi.org/10.1093/molbev/mst010}
+\bibitem{ref27} Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., Von Haeseler, A., \& Lanfear, R. (2020). "IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era." Molecular Biology and Evolution, 37(5), 1530-1534. \url{https://doi.org/10.1093/molbev/msaa015}
+\bibitem{ref28} To, T. H., Jung, M., Lycett, S., \& Gascuel, O. (2016). "Fast dating using least-squares criteria and algorithms." Systematic Biology, 65(1), 82-97. \url{https://doi.org/10.1093/sysbio/syv068}
+\bibitem{ref29} Yang, Z. (2007). "PAML 4: phylogenetic analysis by maximum likelihood." Molecular Biology and Evolution, 24(8), 1586-1591. \url{https://doi.org/10.1093/molbev/msm088}
+\bibitem{ref30} Goldman, N., \& Yang, Z. (1994). "A codon-based model of nucleotide substitution for protein-coding DNA sequences." Molecular Biology and Evolution, 11(5), 725-736. \url{https://doi.org/10.1093/oxfordjournals.molbev.a040153}
+\end{thebibliography}
+
+\end{document}

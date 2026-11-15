@@ -1,0 +1,122 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=0.65in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{\textbf{Hymenoptera Phylogenomics: Permian--Cenozoic Time-Tree (281.23 Ma), Single Parasitoid Origin, Eusocial Caste Selection, and COX1 Horizon}}
+\author{\textbf{Bryan P. White}\\CRV Science Labs}
+\date{November 5, 2026 $\cdot$ Preprint ID: PREPRINT-11 (v3.0.0 Empirical Preprint) $\cdot$ DOI: 10.5281/zenodo.23992890}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Reconstructing the evolutionary timescale of Hymenoptera---spanning basal phytophagous sawflies, woodwasps, hyper-diverse parasitoid wasps, stinging aculeates, and eusocial ants, bees, and vespid wasps---is confounded by severe mitochondrial third-codon adenine-thymine compositional bias and rapid substitution saturation across miniature parasitoid lineages. Here we execute a three-way benchmark comparing a Native Rust phylogenomic engine, an External Reference C/C++ workflow, and an Unconstrained Hybrid RuNIE architecture across complete hymenopteran and holometabolan outgroup mitochondrial genomes, standalone cytochrome c oxidase subunit I barcoding vouchers, and nuclear coding transcripts for the odorant receptor co-receptor (\emph{Orco}), vitellogenin (\emph{Vg}), and the vitellogenin receptor (\emph{Vg-R} / \emph{yolkless}). Applying purine-pyrimidine third-codon recoding and six-state Dayhoff amino-acid recoding restores compositional stationarity across third codon positions, resolving Crown Hymenoptera in the Early Permian at 281.23 Ma and confirming a single Late Triassic origin of the parasitoid lifestyle in Vespina (uniting ectoparasitoid Orussidae woodwasps with Apocrita at 226.26 Ma) prior to the Jurassic radiation of stinging Aculeata and the sisterhood of ants and apoidean bees. Codon-level maximum-likelihood selection models demonstrate that while the transmembrane ion-channel gate of \emph{Orco} remains under extreme purifying constraint across solitary and social lineages alike, both \emph{Vg} and \emph{Vg-R} underwent highly significant evolutionary rate acceleration along eusocial branches, supporting convergent pleiotropic co-option of ancestral oogenesis lipid-transport networks into queen-worker caste differentiation alongside a sharp Cenozoic taxonomic resolution ceiling for standalone mitochondrial barcoding.
+\end{abstract}
+
+\section{Signal Rating \& Three-Way RuNIE Architectural Scope}
+Reconstructing the deep divergence timeline and social evolution of Hymenoptera presents severe compositional and rate-heterogeneity challenges~\cite{white2026runie,peters2017hymenoptera,branstetter2017phylogenomic,blaimer2023key}. Across our 105 verified NCBI RefSeq and GenBank sequence records (aligned across 100\% of their full lengths: $L = 91{,}393$ total aligned columns in \texttt{*MAFFT v7.526} across 775.43~s and $L = 52{,}811$ mitogenome columns in Native Rust \texttt{gotoh-msa} in 0.34~s), we benchmarked Regime~1 (100\% Native Rust \texttt{bio-suite}), Regime~2 (100\% External Reference C/C++ binaries), Regime~3 (Unconstrained Hybrid RuNIE \texttt{RY3} + \texttt{*IQ-TREE v2.4.0 GTR+F+I+G4} + \texttt{*LSD2 v2.4.4} + \texttt{*PAML v4.10.10 codeml}), and Regime~4 (\texttt{0B} uncleaned negative control).
+
+\section{Dataset Architecture, Pre-MSA Completeness Audit \& Compositional Stationarity}
+All 105 sequence records (85 complete mitogenomes \texttt{A:T001}--\texttt{J:T085}, 5 \emph{COX1} barcoding vouchers \texttt{COX086}--\texttt{COX090}, and 15 full-length nuclear coding transcripts \texttt{NUC091}--\texttt{NUC105}) were audited for full-length completeness prior to alignment~\cite{katoh2013mafft,white2026hymenopterazenodo}. Purine-pyrimidine \texttt{RY3} recoding reduced RCFV from 0.1201 (Pos~3, 89.52\% AT3) and 0.0845 (raw whole mitogenomes) to 0.0368 (PASS $\le 0.050$), while \texttt{Dayhoff-6} amino-acid recoding achieved RCFV = 0.0389 (PASS).
+
+\section{Permian--Cenozoic Relaxed-Clock Time-Tree \& Single Origin of Parasitoidism}
+Fossil-calibrated \texttt{*LSD2 v2.4.4} relaxed-clock dating~\cite{ronquist2012total,vilhelmsen2010orussidae,misof2014phylogenomics,to2016lsd} resolves Holometabola Root (Node N84) at 324.00~Ma [296.00--352.00~Ma], Crown Hymenoptera (Node N82) at 281.23~Ma [255.75--309.81~Ma], Unicalcarida (Node N75) at 247.65~Ma [222.11--273.07~Ma], Crown Vespina (Node N70, Orussidae + Apocrita) at 226.26~Ma [200.09--252.00~Ma], Crown Apocrita (Node N69) at 204.47~Ma [182.51--226.88~Ma], Crown Aculeata (Node N49) at 164.10~Ma [145.47--185.15~Ma], Formicoidea + Apoidea (Node N37) at 148.11~Ma [130.70--166.64~Ma], Crown Vespidae (Node N44) at 118.33~Ma [101.52--137.16~Ma], Crown Formicidae (Node N36) at 114.53~Ma [99.70--134.35~Ma], Crown Halictidae (Node N18) at 82.55~Ma [69.51--103.39~Ma], and Crown Corbiculata (Node N13) at 78.35~Ma [68.26--91.92~Ma]~\cite{moreau2006ants,cardinal2013bees,piekarski2018vespidae,werren2010nasonia}.
+
+\section{Dual-Pass Blinded Repository Hygiene \& Combinatorial Model Sweep}
+Across 3,570 pairwise comparisons ($B = 500$ permutations), \texttt{popgen-blind-dualpass} achieved $Z_{\text{blind}} = +17.34$~SD vs.\ $Z_{\text{ctx}} = +16.87$~SD ($D_{\text{ctx}} = 0.0279 < 0.050$ PASS), flagging \texttt{ERR-HYMEN-01} (\emph{Nasonia} AT3 outlier), \texttt{ERR-HYMEN-02} (\emph{Apis cerana} duplicate submission), and \texttt{ERR-HYMEN-03} (\emph{Xenos moutoni} strepsipteran endoparasite outlier). Across the 24-chain model sweep~\cite{minh2020iqtree2,kalyaanamoorthy2017modelfinder,hoang2018ufboot2}, Hybrid RuNIE \texttt{RY3} + \texttt{GTR+F+I+G4} won with $\ln L = -172{,}503.05$ nats (BIC = $346{,}483.03$, 31.29~s tree search).
+
+\section{Nuclear Codon Selection \& The 42.0 Ma COX1 Barcode Horizon}
+In \texttt{*PAML v4.10.10 codeml}~\cite{yang2007paml4}, \emph{Orco} remained under strong purifying selection ($\omega_0 = 0.0328$, $2\Delta\ln L = 2.9802$, $p = 0.0843$ NS)~\cite{butterwick2018orco,zhou2015chemosensory}, whereas eusocial foreground branches accelerated 14.4-fold in \emph{Vitellogenin} ($\omega_{\text{bg}} = 0.0044 \to \omega_{\text{fg}} = 0.0635$, $2\Delta\ln L = 10.6584$, $p = 0.0011^{**}$) and 30.1-fold in \emph{Vitellogenin Receptor} ($\omega_{\text{bg}} = 0.0042 \to \omega_{\text{fg}} = 0.1263$, $2\Delta\ln L = 23.4764$, $p = 1.26\times 10^{-6***}$)~\cite{amdam2003vitellogenin,nelson2007vitellogenin,kapheim2015genomic}. Standalone \emph{COX1} barcoding~\cite{hebert2003barcoding,puillandre2012abgd} maintained 100.0\%--85.7\% ABGD accuracy across 0--42.0~Ma before collapsing to 1.5\%--0.0\% beyond 42.0~Ma.
+
+\section{Discussion \& Evolutionary Synthesis}
+Combining third-codon \texttt{RY3} and \texttt{Dayhoff-6} recoding with site-heterogeneous maximum-likelihood inference eliminates AT3-driven long-branch attraction across Hymenoptera while confirming convergent pleiotropic co-option of the \emph{Vg}--\emph{Vg-R} oogenesis axis across independent Cretaceous origins of eusociality.
+
+\begin{thebibliography}{25}
+\bibitem{white2026runie}
+B.~P. White, "Registry-Driven Unconstrained Network Inference Engine (RuNIE): Bayesian Step-Up Calibration, Dual-Pass Blinded Repository Hygiene, and Combinatorial Pipeline Optimization in Phylogenomics," \emph{CRV Science Labs Preprints}, PREPRINT-01, v2.0.0, 2026. doi:10.5281/zenodo.23969275.
+
+\bibitem{peters2017hymenoptera}
+R.~S. Peters et al., "Evolutionary history of the Hymenoptera," \emph{Current Biology}, vol.~27, no.~7, pp.~1013--1018, 2017. doi:10.1016/j.cub.2017.01.027.
+
+\bibitem{branstetter2017phylogenomic}
+M.~G. Branstetter et al., "Phylogenomic insights into the evolution of stinging wasps and the origins of ants and bees," \emph{Current Biology}, vol.~27, no.~7, pp.~1019--1025, 2017. doi:10.1016/j.cub.2017.03.027.
+
+\bibitem{blaimer2023key}
+B.~B. Blaimer et al., "Key innovations and the diversification in Hymenoptera," \emph{Nature Communications}, vol.~14, p.~1212, 2023. doi:10.1038/s41467-023-36868-4.
+
+\bibitem{ronquist2012total}
+F. Ronquist et al., "A total-evidence approach to dating with fossils, applied to the early radiation of the Hymenoptera," \emph{Systematic Biology}, vol.~61, no.~6, pp.~973--999, 2012. doi:10.1093/sysbio/sys058.
+
+\bibitem{vilhelmsen2010orussidae}
+L. Vilhelmsen, I. Mik\'o, and L. Krogmann, "Beyond the wasp-waist: structural diversity and phylogenetic significance of the mesosoma in apocritan wasps," \emph{Zoological Journal of the Linnean Society}, vol.~159, no.~1, pp.~22--194, 2010. doi:10.1111/j.1096-3642.2009.00576.x.
+
+\bibitem{misof2014phylogenomics}
+B. Misof et al., "Phylogenomics resolves the timing and pattern of insect evolution," \emph{Science}, vol.~346, no.~6210, pp.~763--767, 2014. doi:10.1126/science.1257570.
+
+\bibitem{katoh2013mafft}
+K. Katoh and D.~M. Standley, "MAFFT multiple sequence alignment software version 7: improvements in performance and usability," \emph{Molecular Biology and Evolution}, vol.~30, no.~4, pp.~772--780, 2013. doi:10.1093/molbev/mst010.
+
+\bibitem{minh2020iqtree2}
+B.~Q. Minh et al., "IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era," \emph{Molecular Biology and Evolution}, vol.~37, no.~5, pp.~1530--1534, 2020. doi:10.1093/molbev/msaa015.
+
+\bibitem{to2016lsd}
+T.~H. To, M. Jung, S. Lycett, and O. Gascuel, "Fast dating using least-squares criteria and algorithms," \emph{Systematic Biology}, vol.~65, no.~1, pp.~82--97, 2016. doi:10.1093/sysbio/syv068.
+
+\bibitem{yang2007paml4}
+Z. Yang, "PAML 4: phylogenetic analysis by maximum likelihood," \emph{Molecular Biology and Evolution}, vol.~24, no.~8, pp.~1586--1591, 2007. doi:10.1093/molbev/msm088.
+
+\bibitem{amdam2003vitellogenin}
+G.~V. Amdam, K. Norberg, A. Hagen, and S.~W. Omholt, "Social exploitation of vitellogenin," \emph{Proceedings of the National Academy of Sciences}, vol.~100, no.~4, pp.~1799--1802, 2003. doi:10.1073/pnas.0333979100.
+
+\bibitem{nelson2007vitellogenin}
+C.~M. Nelson et al., "The gene vitellogenin has multiple coordinating effects on social organization," \emph{PLoS Biology}, vol.~5, no.~3, p.~e62, 2007. doi:10.1371/journal.pbio.0050062.
+
+\bibitem{butterwick2018orco}
+J.~A. Butterwick et al., "Cryo-EM structure of the insect olfactory receptor Orco," \emph{Nature}, vol.~560, no.~7719, pp.~447--452, 2018. doi:10.1038/s41586-018-0420-8.
+
+\bibitem{zhou2015chemosensory}
+X. Zhou et al., "Chemoreceptor evolution in Hymenoptera and its implications for the evolution of eusociality," \emph{Genome Biology and Evolution}, vol.~7, no.~8, pp.~2407--2416, 2015. doi:10.1093/gbe/evv149.
+
+\bibitem{kapheim2015genomic}
+K.~M. Kapheim et al., "Genomic signatures of evolutionary transitions from solitary to group living," \emph{Science}, vol.~348, no.~6239, pp.~1139--1143, 2015. doi:10.1126/science.aaa4788.
+
+\bibitem{moreau2006ants}
+C.~S. Moreau et al., "Phylogeny of the ants: diversification in the age of angiosperms," \emph{Science}, vol.~312, no.~5770, pp.~101--104, 2006. doi:10.1126/science.1124891.
+
+\bibitem{cardinal2013bees}
+S. Cardinal and B.~N. Danforth, "Bees diversified in the light of angiosperm radiation," \emph{Proceedings of the Royal Society B}, vol.~280, no.~1755, p.~20122686, 2013. doi:10.1098/rspb.2012.2686.
+
+\bibitem{piekarski2018vespidae}
+P.~K. Piekarski et al., "Phylogenomic evidence overturns current conceptions of social evolution in wasps (Vespidae)," \emph{Molecular Biology and Evolution}, vol.~35, no.~9, pp.~2097--2109, 2018. doi:10.1093/molbev/msy124.
+
+\bibitem{werren2010nasonia}
+J.~H. Werren et al., "Functional and evolutionary insights from the genomes of three parasitoid Nasonia species," \emph{Science}, vol.~327, no.~5963, pp.~343--348, 2010. doi:10.1126/science.1178028.
+
+\bibitem{hebert2003barcoding}
+P.~D.~N. Hebert, A. Cywinska, S.~L. Ball, and J.~R. deWaard, "Biological identifications through DNA barcodes," \emph{Proceedings of the Royal Society B}, vol.~270, no.~1512, pp.~313--321, 2003. doi:10.1098/rspb.2002.2218.
+
+\bibitem{puillandre2012abgd}
+N. Puillandre, A. Lambert, S. Brouillet, and G. Achaz, "ABGD, Automatic Barcode Gap Discovery for primary species delimitation," \emph{Molecular Ecology}, vol.~21, no.~8, pp.~1864--1877, 2012. doi:10.1111/j.1365-294X.2011.05239.x.
+
+\bibitem{kalyaanamoorthy2017modelfinder}
+S. Kalyaanamoorthy et al., "ModelFinder: fast model selection for accurate phylogenetic estimates," \emph{Nature Methods}, vol.~14, no.~6, pp.~587--589, 2017. doi:10.1038/nmeth.4285.
+
+\bibitem{hoang2018ufboot2}
+D.~T. Hoang et al., "UFBoot2: improving the ultrafast bootstrap approximation," \emph{Molecular Biology and Evolution}, vol.~35, no.~2, pp.~518--522, 2018. doi:10.1093/molbev/msx281.
+
+\bibitem{white2026hymenopterazenodo}
+B.~P. White, "Dataset and Solved Newick/LSD2 Time-Tree Archive for: Hymenoptera Phylogenomics (v3.0.0)," \emph{Zenodo}, 2026. doi:10.5281/zenodo.23992890.
+
+\end{thebibliography}
+
+\section{Supplemental Materials: Specimen Inventory (S1) \& 24-Chain Sweep (S2)}
+All 105 verified NCBI accessions (\texttt{A:T001}--\texttt{J:T085}, \texttt{COX086}--\texttt{COX090}, and \texttt{NUC091}--\texttt{NUC105}), solved Newick topologies, and 24-chain optimization metrics are archived in Supplemental Tables S1--S2 and Zenodo record \texttt{10.5281/zenodo.23992890}.
+
+\end{document}

@@ -409,6 +409,46 @@ pub fn align_sequences_center_star_gotoh(
     (method_str, aligned)
 }
 
+/// Unphased center-star Gotoh affine-gap aligner WITHOUT circular origin rotation or strand
+/// normalization, used to benchmark circular-phasing impact before vs. after `COX1` origin rotation.
+pub fn align_sequences_raw_unphased_gotoh(records: &[FastaRecord]) -> (String, Vec<AlignedSequence>) {
+    let raw_cleaned_seqs: Vec<Vec<u8>> = records
+        .iter()
+        .map(|r| {
+            r.sequence
+                .bytes()
+                .filter(|&b| b != b'-' && !b.is_ascii_whitespace())
+                .map(|b| b.to_ascii_uppercase())
+                .collect()
+        })
+        .collect();
+    if raw_cleaned_seqs.is_empty() {
+        return ("none".to_string(), Vec::new());
+    }
+    let center_idx = select_kmer_medoid_index(&raw_cleaned_seqs);
+    let ref_seq = &raw_cleaned_seqs[center_idx];
+    let ref_len = ref_seq.len();
+
+    let pairwise_alignments: Vec<(Vec<u8>, Vec<u8>)> = raw_cleaned_seqs
+        .par_iter()
+        .enumerate()
+        .map(|(idx, qry)| {
+            if idx == center_idx {
+                (ref_seq.clone(), ref_seq.clone())
+            } else {
+                gotoh_anchored_pairwise_align_ext(ref_seq, qry, true, true)
+            }
+        })
+        .collect();
+
+    let aligned = merge_center_star_pairwise_alignments(records, ref_len, &pairwise_alignments);
+    (
+        "bio-suite native Rust (Unphased Raw Center-Star Gotoh Affine-Gap MSA, No Circular Rotation)"
+            .to_string(),
+        aligned,
+    )
+}
+
 /// Merge pairwise `(aln_ref, aln_qry)` center-star alignments into a consistent multi-sequence alignment matrix.
 fn merge_center_star_pairwise_alignments(
     records: &[FastaRecord],

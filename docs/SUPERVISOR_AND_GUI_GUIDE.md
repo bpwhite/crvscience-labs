@@ -46,8 +46,7 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
   --title "Autonomous 3-Way Multifactorial Audit of Custom Culicidae Mitogenomes" `
   --design 3way-multifactorial `
   --accessions NC_002084.1,MK628480.1,NC_028212.1,NC_028215.1,NC_038158.1,PQ585799.1,KU551299.1 `
-  --threads 16 `
-  --bootstrap 1000
+  --generations 25000
 
 # 4. Run from a local FASTA sequence file in Bio-Suite Native Only mode
 .\target\release\bio-suite-supervisor.exe run `
@@ -97,10 +96,10 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 | `--accessions <A,B,C>` | Comma-separated NCBI Entrez accession list | Empty (uses preset) |
 | `--fasta <path>` | Path to an input FASTA sequence file | `None` |
 | `--runs-dir <dir>` | Root directory storing managed run units | `runs` |
-| `--cache-dir <dir>` | Local SHA-256 verified NCBI sequence cache directory | `cache` |
-| `--threads <N>` | Number of Rayon worker threads (`0` = all logical CPU cores) | `0` (all cores) |
-| `--bootstrap <B>` | Ultrafast bootstrap replicates for ML tree inference | `1000` |
+| `--generations <N>` | MCMC generations (`-g`) for Bayesian coalescent skylines | `10000` (`25000` for Preprint 23–29 presets) |
 | `--no-loopback` | Disable autonomous replacement pull during `Super-BLAST` hygiene | Loop-back enabled |
+| `--no-haplotype-clusters` | Disable haplotype cluster computation | Enabled where supported |
+| `--no-figures` | Skip `.svg`/`.png`/`.pdf` figure & LaTeX manuscript generation | Enabled |
 | `--gui` | Open the interactive 5-tab Win32 desktop GUI | `false` |
 | `--gui-snapshot-png <path>` | Render headless high-DPI PNG snapshots of all 5 GUI tabs to disk | `None` |
 
@@ -141,38 +140,38 @@ runs/runie-3way-multifactorial-anopheles-mosquitos/
 
 ## 4. Autonomous `Super-BLAST` Hygiene & NCBI Error Reporting
 
-During Stage 1, `bio-suite-supervisor` automatically detects, repairs, or quarantines 6 classes of sequence and repository anomalies and records them in `audit/super_blast_audit_and_anomalies.json` and `Table 2` of `manuscript/main.tex`:
+During Stage 1, `bio-suite-supervisor` automatically detects, repairs, or quarantines 6 classes of sequence and repository anomalies and records them in `audit/super_blast_audit_and_anomalies.json` and `Table 2` of `manuscript/main.tex` (note: in the `anopheles-3way` demo preset in `src/supervisor.rs`, `PQ585799.1`, `KU551299.1`, `MT890412.1`, and `KP891004.1` are used as synthetic anomaly-test fixtures—on live NCBI Entrez, `PQ585799.1` is *Toxorhynchites rutilus*, `KU551299.1` is *Ophiostoma kryptum*, `MT890412.1` is *Brachycephalus alipioi*, and `KP891004.1` is an uncultured fungus clone):
 
-1. **`NCBI_SAMPLE_SWAP_DISCOVERED`** *(e.g., `PQ585799.1` labeled as Anopheles cruzii but matching Culex quinquefasciatus)*:
-   - Quarantined into the `0🧪` Uncleaned Negative Control cohort and automatically replaced from the reserve pool (`NC_024740.1`).
-2. **`NCBI_NUMT_NUCLEAR_PSEUDOGENE`** *(e.g., `KU551299.1` carrying internal frame-disrupting premature stop codons)*:
-   - Quarantined into the `0🧪` control track and replaced with verified full-length mitogenome `NC_028223.1`.
-3. **`NCBI_REVERSE_COMPLEMENT_STRAND`** *(e.g., `NC_028215.1` deposited in antisense orientation)*:
+1. **`NCBI_SAMPLE_SWAP_DISCOVERED`** *(demonstrated in `anopheles-3way` using `PQ585799.1` as a sample-swap fixture)*:
+   - Quarantined into the `0🧪` Uncleaned Negative Control cohort and automatically replaced from the reserve pool (`NC_024740.1`, *Anopheles cruzii*).
+2. **`NCBI_NUMT_NUCLEAR_PSEUDOGENE`** *(demonstrated in `anopheles-3way` using `KU551299.1` as a premature-stop-codon fixture)*:
+   - Quarantined into the `0🧪` control track and replaced with verified full-length mitogenome `NC_028223.1` (*Anopheles stephensi*).
+3. **`NCBI_REVERSE_COMPLEMENT_STRAND`** *(e.g., `NC_028215.1` simulated in antisense orientation)*:
    - Automatically reverse-complemented in Rust prior to MSA and retained in the `5🧪` cleaned cohort.
-4. **`TERMINAL_ADNA_DEAMINATION_MASKED`** *(e.g., `MT890412.1` carrying `5' C->T` and `3' G->A` post-mortem deamination overhangs)*:
+4. **`TERMINAL_ADNA_DEAMINATION_MASKED`** *(demonstrated in `anopheles-3way` using `MT890412.1` as a `5' C->T` / `3' G->A` deamination fixture)*:
    - Terminal deaminated bases are masked to `N` in the `5🧪` cohort while preserving the unmasked sequence in the `0🧪` control track.
-5. **`NCBI_PARTIAL_FRAGMENT_REJECTED`** *(e.g., `KP891004.1` `412-bp` COI barcoding fragment mixed into a full-organelle cohort)*:
-   - Excluded prior to alignment to prevent gap-inflation artifacts; replaced with full-length `NC_028217.1`.
-6. **`NCBI_ENTREZ_FETCH_FAILURE_OR_WITHDRAWN`** *(e.g., `NC_999999.1` withdrawn/unreachable record)*:
-   - Logged as an NCBI fetch failure and automatically substituted with verified replacement `NC_028218.1`.
+5. **`NCBI_PARTIAL_FRAGMENT_REJECTED`** *(demonstrated in `anopheles-3way` using `KP891004.1` as a truncated-fragment fixture)*:
+   - Excluded prior to alignment to prevent gap-inflation artifacts; replaced with full-length `NC_028217.1` (*Anopheles epiroticus*).
+6. **`NCBI_ENTREZ_FETCH_FAILURE_OR_WITHDRAWN`** *(e.g., `NC_999999.1` unreachable/invalid ID)*:
+   - Logged as an NCBI fetch failure and automatically substituted with verified replacement `NC_028218.1` (*Anopheles maculatus*).
 
 ---
 
 ## 5. Multi-Tab `bio-suite` Desktop GUI Controls
 
-The interactive Win32 GUI (`bio-suite-supervisor gui`) provides 5 specialized workspaces controllable via mouse clicks or keyboard shortcuts:
+The interactive Win32 GUI (`bio-suite-supervisor gui`) provides 5 specialized workspaces switchable via mouse clicks or `F1`–`F5` keyboard shortcuts (plus mouse scroll-wheel panning on `[F3]` AlignView):
 
 - **`F1` — `[F1] Runs & Visual Pipeline DAG`**:
-  - Left sidebar lists all managed runs in `runs/<run-id>/` and one-click Preset launchers (`Anopheles 3-Way`, `Coleoptera Preprint 18`, `Rhinolophus Preprint 21`).
-  - Top bar switches Model Design (`3-Way Multifactorial`, `Bio-Suite Native Only`, `External Reference Only (*)`, `Tool Calibration`) and triggers **`>> EXECUTE AUTONOMOUS RUN <<`** (`R` key).
+  - Left sidebar lists all managed runs in `runs/<run-id>/` and one-click Preset launchers (`Anopheles 3-Way`, `Coleoptera Preprint 18`, `Rhinolophus Preprint 21`, `Bemisia Preprint 23`).
+  - Top bar switches Model Design (`3-Way Multifactorial`, `Bio-Suite Native Only`, `External Reference Only (*)`, `Tool Calibration`) and clicks **`>> EXECUTE AUTONOMOUS RUN <<`**.
   - Center canvas displays the 7-stage **Visual Pipeline DAG** with live stage runtimes, loop-back iteration logs, and the 9-column **RuNIE Pipeline Comparison Table**.
 - **`F2` — `[F2] Super-BLAST & NCBI Audit`**:
-  - Displays all flagged NCBI repository anomalies with color-coded severity badges and the full per-accession `Super-BLAST` audit table (`Tip`, `Accession`, `Taxon`, `Source`, `Length`, `Strand`, `Identity %`, `Internal Stops`, `Verdict`). Use `Up`/`Down` arrows to scroll.
+  - Displays all flagged NCBI repository anomalies with color-coded severity badges and the full per-accession `Super-BLAST` audit table (`Tip`, `Accession`, `Taxon`, `Source`, `Length`, `Strand`, `Identity %`, `Internal Stops`, `Verdict`).
 - **`F3` — `[F3] AlignView Sequence Inspector`**:
-  - Full interactive multiple sequence alignment viewer with global locus minimap, Shannon entropy/conservation sparkline, clickable feature annotation sidebar, nucleotide/translated amino-acid color schemes (`1`–`6`), zoom (`+`/`-`), bird's-eye view (`0`), and focal window jump (`F`).
+  - Full interactive multiple sequence alignment viewer with global locus minimap, Shannon entropy/conservation sparkline, clickable feature annotation sidebar, nucleotide/translated amino-acid color schemes, and mouse scroll-wheel horizontal panning. (For standalone keyboard-driven zoom/palette inspection, use `runie-align-view`).
 - **`F4` — `[F4] Chronogram, MSC & Skylines`**:
   - Left panel renders the calibrated divergence chronogram (`Node I`–`Node VII` with two-sided 95% HPD bars) and Quartet MSC `[q1/q2/q3]` support bars.
-  - Right panel renders the 3 single-species NCBI `PopSet` Bayesian coalescent skyline trajectories (`RuNIE MCMC` solid curve, `*BEAST v1.10.4` dashed amber curve with `-6.5 px` visual offset, and `0🧪 Uncleaned Control` crimson dotted curve).
+  - Right panel renders the 3 single-species NCBI `PopSet` Bayesian coalescent skyline trajectories (`RuNIE MCMC` solid curve, `*BEAST v1.10.4` dashed amber curve, and `0🧪 Uncleaned Control` crimson dotted curve).
 - **`F5` — `[F5] 3D PDB & Figure/Preprint Studio`**:
-  - Left panel provides an interactive 3D Cα wireframe & catalytic pocket viewer for the run's `.pdb` homology model (`J`/`L` or `Left`/`Right` to yaw, `I`/`K` to pitch, `0` to reset view).
-  - Right panel lists all 6 locked-format figures (`.svg` + `.png` + `.pdf`) and `manuscript/main.tex` with a one-click **`>> REGENERATE ALL 6 FIGURES & PREPRINT <<`** button (`G` or `F12`).
+  - Left panel provides an interactive 3D Cα wireframe & catalytic pocket viewer for the run's `.pdb` homology model.
+  - Right panel lists all 6 locked-format figures (`.svg` + `.png` + `.pdf`) and `manuscript/main.tex` with a one-click **`>> REGENERATE ALL 6 FIGURES & PREPRINT <<`** button.

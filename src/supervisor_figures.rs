@@ -1950,7 +1950,8 @@ fn render_bemisia_fig3_quartet_msc(
     svg.push_str(r##"<rect x="18" y="16" width="884" height="1328" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>"##);
     svg.push_str(r##"<rect x="18" y="16" width="884" height="36" rx="8" fill="#0f172a"/>"##);
     svg.push_str(&format!(
-        r##"<text x="34" y="39" font-size="11.6" font-weight="800" fill="#f8fafc">Panel A | 64-Species ASTRAL-Equivalent Quartet Coalescent Species Tree (18 Loci; {} Quartets; CU Scale)</text>"##,
+        r##"<text x="34" y="39" font-size="11.6" font-weight="800" fill="#f8fafc">Panel A | 64-Species ASTRAL-Equivalent Quartet Coalescent Species Tree ({} Loci; {} Quartets; CU Scale)</text>"##,
+        study.msc_regime1_ry3.gene_tree_count,
         study.msc_regime1_ry3.total_quartets_evaluated
     ));
     svg.push_str(&format!(
@@ -1964,7 +1965,10 @@ fn render_bemisia_fig3_quartet_msc(
     fb.draw_text(
         32,
         28,
-        "Panel A | 64-Species ASTRAL-Equivalent Quartet Coalescent Tree (18 Loci; CU Scale)",
+        &format!(
+            "Panel A | 64-Species ASTRAL-Equivalent Quartet Coalescent Tree ({} Loci; CU Scale)",
+            study.msc_regime1_ry3.gene_tree_count
+        ),
         (56, 189, 248),
         1,
         Some(850),
@@ -3415,6 +3419,25 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         })
         .unwrap_or(2.85);
 
+    let r0 = manifest.runie_9col_comparison_table.first();
+    let r1 = manifest.runie_9col_comparison_table.get(1);
+    let r2 = manifest.runie_9col_comparison_table.get(2);
+    let r3 = manifest.runie_9col_comparison_table.get(3);
+    let msc_loci = study.msc_regime1_ry3.gene_tree_count.max(1);
+    let msc_q_tot = study.msc_regime1_ry3.total_quartets_evaluated as usize;
+    let msc_q_short = if msc_q_tot >= 1_000_000 {
+        format!("{:.2}M Quartets", (msc_q_tot as f64) / 1_000_000.0)
+    } else {
+        format!("{:.1}k Quartets", (msc_q_tot as f64) / 1_000.0)
+    };
+    let r0_model = r0.map(|r| r.model_summary.as_str()).unwrap_or("RY3 + GTR+F+R4");
+    let r0_lnl = r0.map(|r| r.marginal_ln_l).unwrap_or(study.regime1_ry3_marginal_ln_l);
+    let r1_model = r1.map(|r| r.model_summary.as_str()).unwrap_or("Codon-12 / Dayhoff-6");
+    let r1_lnl = r1.map(|r| r.marginal_ln_l).unwrap_or(study.regime2_codon12_marginal_ln_l);
+    let r2_model = r2.map(|r| r.model_summary.as_str()).unwrap_or("Unrecoded 4-State");
+    let r2_lnl = r2.map(|r| r.marginal_ln_l).unwrap_or(study.regime3_unrec4_marginal_ln_l);
+    let r3_lnl = r3.map(|r| r.marginal_ln_l).unwrap_or(study.regime4_raw0_marginal_ln_l);
+
     svg.push_str(&format!(
         r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {} {}" width="100%" height="100%" style="background:#ffffff;font-family:'Inter','Segoe UI',system-ui,sans-serif;">
   <defs>
@@ -3435,9 +3458,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         r##"  <rect x="16" y="14" width="888" height="232" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
   <rect x="16" y="14" width="888" height="26" rx="8" fill="#ecfdf5"/>
   <line x1="16" y1="40" x2="904" y2="40" stroke="#a7f3d0" stroke-width="1.2"/>
-  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A: 64-TAXON, 18-LOCUS SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
+  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A: 64-TAXON, {}-LOCUS SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
 "##,
-        study.supermatrix_aligned_cols, study.regime1_ry3_marginal_ln_l
+        msc_loci, study.supermatrix_aligned_cols, r0_lnl
     ));
     fb.stroke_rect(16, 14, 888, 232, (16, 185, 129));
     fb.fill_rect(17, 15, 886, 25, (236, 253, 245));
@@ -3445,8 +3468,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         28,
         22,
         &format!(
-            "PANEL A | PIPELINE A: 64-TAXON 18-LOCUS SUPERMATRIX (L = {} COLS | ln L = {:.2})",
-            study.supermatrix_aligned_cols, study.regime1_ry3_marginal_ln_l
+            "PANEL A | PIPELINE A: 64-TAXON {}-LOCUS SUPERMATRIX (L = {} COLS | ln L = {:.2})",
+            msc_loci, study.supermatrix_aligned_cols, r0_lnl
         ),
         (6, 95, 70),
         1,
@@ -3486,8 +3509,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "A4. BIONJ + NNI ML Tree",
-            format!("• Winner: RY3 + GTR+F+R4"),
-            format!("• ln L = {:.2}", study.regime1_ry3_marginal_ln_l),
+            format!("• {}", r0_model.split('[').next().unwrap_or(r0_model).trim()),
+            format!("• ln L = {:.2}", r0_lnl),
             format!("• BIC = {:.2}", bic_r1),
             format!("• B = {} UFBoot ({:.2} s)", b_lbl, ml_s),
             "#eff6ff",
@@ -3496,7 +3519,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "A5. Quartet MSC + dN/dS",
-            format!("• 18 Loci (11.44M Quartets)"),
+            format!("• {} Loci ({})", msc_loci, msc_q_short),
             format!("• Q = {:.4} ({:.1} ms)", study.msc_regime1_ry3.normalized_quartet_score, msc_ms),
             format!("• 61-Codon Goldman-Yang"),
             format!("• {} ω2 = {:.2}", theme.fig6_p450_label.split('/').next().unwrap_or("CYP"), f4_w2),
@@ -3566,20 +3589,24 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
 
     svg.push_str(&format!(
         r##"  <text x="28" y="164" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene &amp; Full-Length Alignment: Quarantines {} defective GenBank UNVERIFIED mitogenomes in Iteration 1 and aligns L = {} supermatrix columns ({} PI sites) in {:.2} s.</text>
-  <text x="28" y="180" font-size="7.8" font-weight="700" fill="#065f46">• 32-Chain Combinatorial Sweep (Table 3A/3C): 1st Native RY3 GTR+F+R4 (ln L = {:.2}, BIC = {:.2}) beats 2nd Codon-12 ({:.2}) and 3rd Unrecoded 4-State ({:.2}) by {:+.2} nats.</text>
-  <text x="28" y="196" font-size="7.8" font-weight="600" fill="#047857">• Quartet Multispecies Coalescent &amp; Relaxed Clock: Satisfies {} / 11,436,768 quartets (Q = {:.4}, LPP = {:.4}) and resolves all 63 internal chronogram nodes with strictly interior two-sided 95% HPDs.</text>
+  <text x="28" y="180" font-size="7.8" font-weight="700" fill="#065f46">• 32-Chain Combinatorial Sweep (Table 3A/3C): 1st {} (ln L = {:.2}, BIC = {:.2}) beats 2nd {} ({:.2}) and 3rd {} ({:.2}) by {:+.2} nats.</text>
+  <text x="28" y="196" font-size="7.8" font-weight="600" fill="#047857">• Quartet Multispecies Coalescent &amp; Relaxed Clock: Satisfies {} / {} quartets (Q = {:.4}, LPP = {:.4}) and resolves all 63 internal chronogram nodes with strictly interior two-sided 95% HPDs.</text>
   <text x="28" y="212" font-size="7.8" font-weight="600" fill="#334155">• 61-State Codon Selection &amp; 1TQN Structural Threading: Identifies diversifying selection on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.05 Å crystal template 1TQN_A.</text>
 "##,
         study.quarantined_records_on_disk,
         study.supermatrix_aligned_cols,
         study.parsimony_informative_ry3,
         msa_s,
-        study.regime1_ry3_marginal_ln_l,
+        xml_esc(r0_model.split('[').next().unwrap_or(r0_model).trim()),
+        r0_lnl,
         bic_r1,
-        study.regime2_codon12_marginal_ln_l,
-        study.regime3_unrec4_marginal_ln_l,
-        study.regime1_ry3_marginal_ln_l - study.regime3_unrec4_marginal_ln_l,
+        xml_esc(r1_model.split('[').next().unwrap_or(r1_model).trim()),
+        r1_lnl,
+        xml_esc(r2_model.split('[').next().unwrap_or(r2_model).trim()),
+        r2_lnl,
+        r0_lnl - r1_lnl,
         study.msc_regime1_ry3.satisfied_quartet_score as usize,
+        msc_q_tot,
         study.msc_regime1_ry3.normalized_quartet_score,
         study.msc_regime1_ry3.mean_local_posterior_pp1,
         xml_esc(theme.fig6_p450_label),
@@ -3765,11 +3792,6 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         Some(860),
     );
 
-    let r0 = manifest.runie_9col_comparison_table.first();
-    let r1 = manifest.runie_9col_comparison_table.get(1);
-    let r2 = manifest.runie_9col_comparison_table.get(2);
-    let r3 = manifest.runie_9col_comparison_table.get(3);
-
     let fmt_fig6_boot = |opt_r: Option<&RunieComparisonRow>, fallback_pct: f64| -> String {
         match opt_r {
             Some(r) => r
@@ -3779,9 +3801,31 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             None => format!("{:.1}% (B={})", fallback_pct, b_lbl),
         }
     };
+    let short_model = |opt_r: Option<&RunieComparisonRow>, def_lbl: &str| -> String {
+        match opt_r {
+            Some(r) => {
+                let s = r.model_summary.trim();
+                if s.len() > 26 {
+                    if let Some(p) = s.find('[') {
+                        return s[..p].trim().to_string();
+                    }
+                }
+                s.to_string()
+            }
+            None => def_lbl.to_string(),
+        }
+    };
+    let bic_for_row = |opt_r: Option<&RunieComparisonRow>, fallback_lnl: f64, fallback_bic: f64| -> f64 {
+        match opt_r {
+            Some(r) if r.model_summary.contains("Unrecoded") => -2.0 * r.marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols.max(2) as f64).ln(),
+            Some(r) if r.model_summary.contains("Codon-12") => -2.0 * r.marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols.max(2) as f64).ln(),
+            Some(r) => -2.0 * r.marginal_ln_l + 132.0 * (study.supermatrix_aligned_cols.max(2) as f64).ln(),
+            None => if fallback_bic != 0.0 { fallback_bic } else { -2.0 * fallback_lnl },
+        }
+    };
     let c_rows: [(
         &str,
-        &str,
+        String,
         String,
         String,
         String,
@@ -3796,15 +3840,15 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     ); 8] = [
         (
             "Chain A • 1st (Best)",
-            "RY3 + GTR+F+R4",
-            format!("super-blast → gotoh-msa (18 Loci) → RY3 Gate → ModelTest → BIONJ-NNI → TimeTreeLSD2"),
+            short_model(r0, "RY3 + GTR+F+R4"),
+            format!("super-blast → gotoh-msa ({} Loci) → RY3/4-St → ModelTest → ML+UFBoot2 → TimeTreeLSD2", msc_loci),
             format!(
                 "64-taxon {} supermatrix (L = {} cols); cuts RCFV by {:.1}%; Nodes I–VIII ({:.1}–{:.1} Ma)",
                 theme.fig6_clade_label, study.supermatrix_aligned_cols, rcfv_drop_pct, n1_age, n8_age
             ),
-            format!("{:.2}", study.regime1_ry3_marginal_ln_l),
-            format!("{:.2}", bic_r1),
-            format!("{:.4}", study.rcfv_ry3),
+            format!("{:.2}", r0_lnl),
+            format!("{:.2}", bic_for_row(r0, r0_lnl, bic_r1)),
+            format!("{:.4}", r0.map(|r| r.rcfv).unwrap_or(study.rcfv_ry3)),
             fmt_fig6_boot(r0, 99.6),
             format!("+{:.2} SD", r0.map(|r| r.posterior_z).unwrap_or(5.42)),
             format!("{:.2} s", msa_s + mt_s + ml_s),
@@ -3814,16 +3858,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain A • 2nd (Nearest)",
-            "Codon-12 / Dayhoff-6",
-            format!("super-blast → gotoh-msa → Codon-12 Gate → ModelTest (GTR+F+R4) → BIONJ-NNI → LSD2"),
+            short_model(r1, "Codon-12 / Dayhoff-6"),
+            format!("super-blast -> gotoh-msa ({} Loci) -> {} -> ModelTest -> ML+UFBoot2 -> LSD2", msc_loci, if r1_model.contains("Unrecoded") { "Unrecoded-4" } else { "Codon-12" }),
             format!(
-                "Degenerate 1st+2nd codon partitioning; Δln L = {:.2} nats vs. Rank 1; Quartet MSC Q = {:.4}",
-                study.regime2_codon12_marginal_ln_l - study.regime1_ry3_marginal_ln_l,
-                study.msc_regime2_codon12.normalized_quartet_score
+                "Empirical ModelTest carryover; Δln L = {:.2} nats vs. Rank 1; Quartet MSC Q = {:.4}",
+                r1_lnl - r0_lnl,
+                study.msc_regime1_ry3.normalized_quartet_score
             ),
-            format!("{:.2}", study.regime2_codon12_marginal_ln_l),
-            format!("{:.2}", bic_r2),
-            format!("{:.4}", study.rcfv_codon12),
+            format!("{:.2}", r1_lnl),
+            format!("{:.2}", bic_for_row(r1, r1_lnl, bic_r2)),
+            format!("{:.4}", r1.map(|r| r.rcfv).unwrap_or(study.rcfv_codon12)),
             fmt_fig6_boot(r1, 98.8),
             format!("+{:.2} SD", r1.map(|r| r.posterior_z).unwrap_or(4.86)),
             format!("{:.2} s", msa_s + mt_s + ml_s),
@@ -3833,16 +3877,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain A • 3rd (Medium)",
-            "Unrecoded 4-State GTR",
-            format!("super-blast → gotoh-msa → Unrecoded 4-State Matrix → ModelTest (GTR+F+R4) → BIONJ-NNI"),
+            short_model(r2, "Unrecoded 4-State"),
+            format!("super-blast -> gotoh-msa ({} Loci) -> {} -> ModelTest -> ML+UFBoot2 -> LSD2", msc_loci, if r2_model.contains("Unrecoded") { "Unrecoded-4" } else { "Codon-12" }),
             format!(
-                "Retains 3rd-codon AT/GC skew (RCFV = {:.4}); Δln L = {:.2} nats vs. Rank 1",
-                study.rcfv_unrec4,
-                study.regime3_unrec4_marginal_ln_l - study.regime1_ry3_marginal_ln_l
+                "Retains compositional skew (RCFV = {:.4}); Δln L = {:.2} nats vs. Rank 1",
+                r2.map(|r| r.rcfv).unwrap_or(study.rcfv_unrec4),
+                r2_lnl - r0_lnl
             ),
-            format!("{:.2}", study.regime3_unrec4_marginal_ln_l),
-            format!("{:.2}", bic_r3),
-            format!("{:.4}", study.rcfv_unrec4),
+            format!("{:.2}", r2_lnl),
+            format!("{:.2}", bic_for_row(r2, r2_lnl, bic_r3)),
+            format!("{:.4}", r2.map(|r| r.rcfv).unwrap_or(study.rcfv_unrec4)),
             fmt_fig6_boot(r2, 93.2),
             format!("+{:.2} SD", r2.map(|r| r.posterior_z).unwrap_or(3.58)),
             format!("{:.2} s", msa_s + ml_s),
@@ -3852,16 +3896,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain A • 4th (Rejected)",
-            "0-Beaker Raw Control",
+            short_model(r3, "0-Beaker Raw Control"),
             format!("Raw Unphased Alignment ({} UNVERIFIED Anomalies + AT Skew) → ModelTest → BIONJ-NNI", study.quarantined_records_on_disk),
             format!(
                 "Loses {:.2} nats vs. Rank 1; Quartet MSC Q drops to {:.4}; logged to 0-Beaker dump",
-                study.regime4_raw0_marginal_ln_l - study.regime1_ry3_marginal_ln_l,
+                r3_lnl - r0_lnl,
                 study.msc_regime4_raw0.normalized_quartet_score
             ),
-            format!("{:.2}", study.regime4_raw0_marginal_ln_l),
-            format!("{:.2}", bic_r4),
-            format!("{:.4}", study.rcfv_raw0),
+            format!("{:.2}", r3_lnl),
+            format!("{:.2}", bic_for_row(r3, r3_lnl, bic_r4)),
+            format!("{:.4}", r3.map(|r| r.rcfv).unwrap_or(study.rcfv_raw0)),
             fmt_fig6_boot(r3, 58.4),
             format!("+{:.2} SD", r3.map(|r| r.posterior_z).unwrap_or(0.41)),
             format!("{:.2} s", msa_s + ml_s * 0.85),
@@ -3871,7 +3915,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain B • 1st (Best)",
-            "RY3 + Katoh E-INS-i",
+            "RY3 + Katoh E-INS-i".to_string(),
             format!("super-blast → gotoh-msa + mafft-native (E-INS-i ITS) → RY3 (1Ne/4Ne) → 25k Skyline MCMC"),
             format!(
                 "432 conspecific isolates (R1–R6 & L1–L6); ESS > 480, R-hat = 1.000; resolves regional vs. sweep Ne"
@@ -3888,7 +3932,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain B • 2nd (Nearest)",
-            "Codon-12 Skyline",
+            "Codon-12 Skyline".to_string(),
             format!("super-blast → gotoh-msa + mafft-native → Codon-12 + TN+F+I+G4 → 25k Skyline MCMC"),
             format!(
                 "Matches *BEAST v1.10.4 MCC trajectories within 3.1% across all 6 epochs; Δln L = {:.2} nats",
@@ -3906,7 +3950,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain B • 3rd (Medium)",
-            "Unrecoded 4-State",
+            "Unrecoded 4-State".to_string(),
             format!("super-blast → gotoh-msa + mafft-native → Unrecoded 4-State GTR+G4 → 25k Skyline MCMC"),
             format!(
                 "3rd-codon transition saturation mildly inflates terminal E6 Ne (+8–12%); Δln L = {:.2} nats",
@@ -3924,7 +3968,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "Chain B • 4th (Rejected)",
-            "0-Beaker Unfiltered",
+            "0-Beaker Unfiltered".to_string(),
             format!("gotoh-msa (No Super-BLAST Filter, No Katoh E-INS-i ITS Anchor) → 0-Beaker Skyline MCMC"),
             format!(
                 "Singleton errors and ITS gap wandering create +66% phantom modern Ne spike; Δln L = {:.2} nats",

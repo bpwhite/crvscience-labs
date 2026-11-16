@@ -4471,8 +4471,8 @@ pub fn run_acanthochitonidae_supermatrix_viz_diagnostic(
         "[supermatrix-viz] Aligning {} Polyplacophora mitogenomes unphased vs Table-5 COX1-rotated (gotoh-msa)...",
         unphased_mitos.len()
     );
-    let ((_, aln_unphased, _), (_, aln_phased, _)) = rayon::join(
-        || align_sequences_with_mode(&unphased_mitos, AlignerMode::Native),
+    let ((_, aln_unphased), (_, aln_phased, _)) = rayon::join(
+        || crate::phylo::align_sequences_raw_unphased_gotoh(&unphased_mitos),
         || align_sequences_with_mode(&phased_mitos, AlignerMode::Native),
     );
     let unphased_cols = aln_unphased.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
@@ -4719,6 +4719,22 @@ pub fn run_acanthochitonidae_supermatrix_viz_diagnostic(
         ));
     }
 
+    let mut mito33_strs: Vec<String> = Vec::with_capacity(phased_mito_by_tip.len());
+    let mut mito33_labels: Vec<String> = Vec::with_capacity(phased_mito_by_tip.len());
+    for (lbl, seq) in sup_labels.iter().zip(sup_ry3_strs.iter()) {
+        if phased_mito_by_tip.contains_key(lbl) {
+            mito33_labels.push(lbl.clone());
+            mito33_strs.push(seq.clone());
+        }
+    }
+    let mito33_ufboot_pct = if mito33_labels.len() >= 12 {
+        infer_native_ml_tree_with_bootstrap(&mito33_strs, &mito33_labels, sup_win_rm, 150, 20261130)
+            .map(|(_, rep)| rep.mean_split_support_pct)
+            .unwrap_or(0.0)
+    } else {
+        0.0
+    };
+
     let raw_seqnet_cols = fs::read_to_string(run_dir.join("seqnet_acanthochitonidae_supermatrix.nex"))
         .ok()
         .and_then(|txt| {
@@ -4753,10 +4769,8 @@ pub fn run_acanthochitonidae_supermatrix_viz_diagnostic(
 
     let svg_str = render_supermatrix_positional_coverage_svg(
         &format!(
-            "64 Polyplacophora Species (PREPRINT-28 Diagnostic: {} Mitogenomes + COX1 Cohort) • {} Loci • L = {} Aligned Columns",
+            "64 Polyplacophora (P28 Diag: {} Mitogenomes + COX1)",
             unphased_mitos.len(),
-            spans.len(),
-            fmt_commas_usize(total_sup_cols)
         ),
         &spans,
         &viz_rows,
@@ -4780,6 +4794,8 @@ pub fn run_acanthochitonidae_supermatrix_viz_diagnostic(
         "single_gene_cox1_cols": cox64_cols_bp,
         "single_gene_ufboot_pct": single_gene_ufboot_pct,
         "supermatrix_ufboot_pct": sup_boot_rep.mean_split_support_pct,
+        "complete_mitogenome_33taxa_n": mito33_labels.len(),
+        "complete_mitogenome_33taxa_ufboot_pct": mito33_ufboot_pct,
         "winning_model_label": sup_win_name,
         "estimator_self_consistent": sup_boot_rep.estimator_self_consistent,
         "identity_replicate_concordance_pct": sup_boot_rep.identity_replicate_concordance_pct,

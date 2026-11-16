@@ -196,14 +196,21 @@ pub fn render_supermatrix_positional_coverage_svg(
     ));
 
     // ================= PANEL A =================
+    let sub_short: String = if study_subtitle.chars().count() > 64 {
+        let mut s: String = study_subtitle.chars().take(61).collect();
+        s.push_str("...");
+        s
+    } else {
+        study_subtitle.to_string()
+    };
     out.push_str("<rect x=\"16\" y=\"12\" width=\"1448\" height=\"306\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");
     out.push_str(&format!(
-        "<text x=\"28\" y=\"32\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel A | Supermatrix Partition Architecture, Positional Base Occupancy &amp; Parsimony-Informative Density (L = {} bp)</text>\n",
+        "<text x=\"28\" y=\"31\" font-size=\"12.5\" font-weight=\"700\" fill=\"#0f172a\">Panel A | Partition Architecture &amp; Positional Occupancy (L = {} bp)</text>\n",
         total_cols
     ));
     out.push_str(&format!(
-        "<text x=\"1452\" y=\"32\" text-anchor=\"end\" font-size=\"11\" fill=\"#334155\">{} | {} Loci | Mean Occ: {:.1}% | PI Sites: {} ({:.1}%)</text>\n",
-        xml_escape(study_subtitle),
+        "<text x=\"1452\" y=\"31\" text-anchor=\"end\" font-size=\"10.5\" fill=\"#334155\">{} | {} Loci | Mean Occ: {:.1}% | PI: {} ({:.1}%)</text>\n",
+        xml_escape(&sub_short),
         partitions.len(),
         mean_occ_pct,
         total_pi_sites,

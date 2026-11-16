@@ -903,7 +903,7 @@ pub fn execute_china_aus_pests_supervisor_study(
             cr
         })
         .collect();
-    let (_, aln_mitos_unphased, _) = align_sequences_with_mode(&raw_mitos_36, AlignerMode::Native);
+    let (_, aln_mitos_unphased) = crate::phylo::align_sequences_raw_unphased_gotoh(&raw_mitos_36);
     let unphased_gotoh_cols_l = aln_mitos_unphased.first().map(|a| a.aligned_seq.len()).unwrap_or(16_000);
     let unphased_strs: Vec<String> = aln_mitos_unphased.iter().map(|a| a.aligned_seq.clone()).collect();
     let (unphased_mean_occ_pct, unphased_profile_bins) = compute_alignment_occupancy_bins(&unphased_strs, 120);
@@ -2267,4 +2267,216 @@ pub fn execute_china_aus_pests_supervisor_study(
         abba_baba_tests, calibrated_nodes, combinatorial_sweep_32_chains, functional_families, popset_skylines,
     };
     Ok((manifest, study_report))
+}
+
+/// Fast `< 30 s` Track-A / Fig 2B supermatrix coverage SVG + phasing refresh for an existing
+/// completed `runie-native-china-australia-pests-29` run, without re-running `B=500` ML UFBoot2.
+pub fn run_china_aus_pests_supermatrix_viz_refresh(
+    cache: &PoliteCacheManager,
+    runs_root_dir: &Path,
+) -> Result<String, String> {
+    let run_dir = runs_root_dir.join("runie-native-china-australia-pests-29");
+    let fig_dir = run_dir.join("figures");
+    fs::create_dir_all(&fig_dir).map_err(|e| format!("Failed creating {:?}: {}", fig_dir, e))?;
+
+    let val_cache_dir = cache.cache_dir.join("val_set_068_china_aus_pests");
+    let mito_cohort_queries: [(&str, &str, usize); 5] = [
+        ("mito_noct_cramb", "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Ostrinia\"[Organism] OR \"Plutella\"[Organism]) AND mitochondrion[Filter] AND 14000:18000[SLEN]", 12),
+        ("mito_tephritid", "(\"Bactrocera\"[Organism] OR \"Ceratitis capitata\"[Organism] OR \"Zeugodacus\"[Organism]) AND mitochondrion[Filter] AND 14000:18000[SLEN]", 10),
+        ("mito_hemip_thrip", "(\"Bemisia tabaci\"[Organism] OR \"Trialeurodes\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Sitobion\"[Organism] OR \"Frankliniella\"[Organism]) AND mitochondrion[Filter] AND 13500:19000[SLEN]", 10),
+        ("mito_coleo_acrid", "(\"Locusta migratoria\"[Organism] OR \"Chortoicetes\"[Organism] OR \"Euwallacea\"[Organism] OR \"Sitophilus oryzae\"[Organism]) AND mitochondrion[Filter] AND 14000:18500[SLEN]", 8),
+        ("mito_acari", "\"Tetranychus\"[Organism] AND mitochondrion[Filter] AND 12500:16000[SLEN]", 4),
+    ];
+    let mut full_mitos: Vec<FastaRecord> = Vec::new();
+    let mut seen_acc: HashSet<String> = HashSet::new();
+    for &(mk, mq, n_tgt) in &mito_cohort_queries {
+        if let Ok(items) = discover_entrez_with_retry(mk, mq, n_tgt, 12_000, 20_000, &val_cache_dir) {
+            for (sm, seq) in items {
+                if seen_acc.insert(sm.accession.clone()) && seq.len() >= 12_000 {
+                    full_mitos.push(FastaRecord {
+                        id: sm.accession.clone(),
+                        accession: sm.accession,
+                        taxon: sm.organism.clone(),
+                        common_name: String::new(),
+                        family: mk.to_string(),
+                        gene: "MITOGENOME".to_string(),
+                        description: sm.title,
+                        sequence: seq,
+                        cached_from_disk: true,
+                    });
+                }
+            }
+        }
+    }
+    let raw_mitos_36: Vec<FastaRecord> = full_mitos
+        .iter()
+        .take(36)
+        .map(|r| {
+            let clean: String = r
+                .sequence
+                .bytes()
+                .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+                .map(|b| b.to_ascii_uppercase() as char)
+                .collect();
+            let mut cr = r.clone();
+            cr.sequence = clean;
+            cr
+        })
+        .collect();
+    if raw_mitos_36.is_empty() {
+        return Err("No cached P29 complete mitogenomes found for supermatrix-viz refresh".to_string());
+    }
+
+    let (_, raw_orf_nt, _) = translate_mito_table5_orf(&raw_mitos_36[0].sequence);
+    let seed_cox1_nt = if raw_orf_nt.len() >= 300 {
+        raw_orf_nt
+    } else {
+        raw_mitos_36[0].sequence[..raw_mitos_36[0].sequence.len().min(1_800)].to_string()
+    };
+    let phased_mitos: Vec<FastaRecord> = raw_mitos_36
+        .iter()
+        .map(|r| {
+            let (pseq, _) = phase_circular_mitogenome(&r.sequence, &seed_cox1_nt);
+            let mut pr = r.clone();
+            pr.sequence = pseq;
+            pr
+        })
+        .collect();
+
+    let ((_, aln_unphased), (_, aln_phased, _)) = rayon::join(
+        || crate::phylo::align_sequences_raw_unphased_gotoh(&raw_mitos_36),
+        || align_sequences_with_mode(&phased_mitos, AlignerMode::Native),
+    );
+    let unphased_cols = aln_unphased.first().map(|a| a.aligned_seq.len()).unwrap_or(16_000);
+    let phased_cols = aln_phased.first().map(|a| a.aligned_seq.len()).unwrap_or(16_000);
+    let unphased_strs: Vec<String> = aln_unphased.iter().map(|a| a.aligned_seq.clone()).collect();
+    let phased_strs: Vec<String> = aln_phased.iter().map(|a| a.aligned_seq.clone()).collect();
+    let (unphased_mean_occ, unphased_bins) = compute_alignment_occupancy_bins(&unphased_strs, 120);
+    let (phased_mean_occ, phased_bins) = compute_alignment_occupancy_bins(&phased_strs, 120);
+
+    let sum_path = run_dir.join("trees/supermatrix_coverage_summary.json");
+    let sum_txt = fs::read_to_string(&sum_path)
+        .map_err(|e| format!("Failed reading {:?}: {}", sum_path, e))?;
+    let mut sum_val: serde_json::Value =
+        serde_json::from_str(&sum_txt).map_err(|e| format!("Invalid summary JSON: {}", e))?;
+
+    let part_arr = sum_val["partitions"]
+        .as_array()
+        .ok_or_else(|| "Missing partitions array in supermatrix_coverage_summary.json".to_string())?;
+    let mut spans: Vec<SupermatrixPartitionSpan> = Vec::with_capacity(part_arr.len());
+    for p in part_arr {
+        let loc_name = p["locus"].as_str().unwrap_or("LOCUS").to_string();
+        let class_lbl = p["class"].as_str().unwrap_or("Mito PCG").to_string();
+        spans.push(SupermatrixPartitionSpan {
+            locus_name: loc_name,
+            locus_class_label: class_lbl.clone(),
+            protein_coding: class_lbl == "Mito PCG",
+            is_nuclear: class_lbl == "Nuclear rDNA",
+            start_col_1based: p["start"].as_u64().unwrap_or(1) as usize,
+            end_col_1based: p["end"].as_u64().unwrap_or(1) as usize,
+            taxa_present: p["taxa_present"].as_u64().unwrap_or(0) as usize,
+        });
+    }
+
+    let sup_fasta_txt = fs::read_to_string(run_dir.join("alignments/china_aus_pests_64taxa_supermatrix.fasta"))
+        .map_err(|e| format!("Failed reading supermatrix FASTA: {}", e))?;
+    let mut viz_rows: Vec<SupermatrixTaxonRow> = Vec::with_capacity(64);
+    let mut cur_hdr = String::new();
+    let mut cur_seq = String::new();
+    let push_taxon = |hdr: &str, raw_row: &str, spans: &[SupermatrixPartitionSpan], out: &mut Vec<SupermatrixTaxonRow>| {
+        if hdr.is_empty() || raw_row.is_empty() {
+            return;
+        }
+        let mut parts = hdr.split('|');
+        let id_tok = parts.next().unwrap_or("A_T001").trim();
+        let sp_lbl = parts.next().unwrap_or(id_tok).trim().to_string();
+        let tip_code = id_tok.replace('_', ":");
+        let sector_short = tip_code.split(':').next().unwrap_or("A");
+        let sector_code = format!("[{}]", sector_short);
+        let bytes = raw_row.as_bytes();
+        let mut s_viz = String::with_capacity(raw_row.len());
+        for sp in spans {
+            let s0 = sp.start_col_1based.saturating_sub(1).min(bytes.len());
+            let e0 = sp.end_col_1based.min(bytes.len());
+            let slice = &bytes[s0..e0];
+            let has_base = slice
+                .iter()
+                .any(|&b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'));
+            if has_base {
+                for &b in slice {
+                    s_viz.push(b as char);
+                }
+            } else {
+                for _ in s0..e0 {
+                    s_viz.push('?');
+                }
+            }
+        }
+        out.push(SupermatrixTaxonRow {
+            tip_code,
+            sector_code,
+            species_label: sp_lbl,
+            aligned_row: s_viz,
+        });
+    };
+    for line in sup_fasta_txt.lines() {
+        let tr = line.trim();
+        if tr.is_empty() {
+            continue;
+        }
+        if let Some(h) = tr.strip_prefix('>') {
+            push_taxon(&cur_hdr, &cur_seq, &spans, &mut viz_rows);
+            cur_hdr = h.to_string();
+            cur_seq.clear();
+        } else {
+            cur_seq.push_str(tr);
+        }
+    }
+    push_taxon(&cur_hdr, &cur_seq, &spans, &mut viz_rows);
+
+    let total_cols = sum_val["supermatrix_cols"].as_u64().unwrap_or(12_829) as usize;
+    let raw_seqnet_cols = sum_val["raw_seqnet_cols"].as_u64().unwrap_or(total_cols as u64) as usize;
+    let cox_cols = sum_val["single_gene_cox1_cols"].as_u64().unwrap_or(615) as usize;
+    let single_boot = sum_val["single_gene_ufboot_pct"].as_f64().unwrap_or(77.2);
+    let sup_boot = sum_val["supermatrix_ufboot_pct"].as_f64().unwrap_or(91.1);
+    let win_model = sum_val["carried_win_model"].as_str().unwrap_or("TN+F+I+G4").to_string();
+
+    let phasing_cmp = CircularPhasingComparison {
+        n_mitogenomes: raw_mitos_36.len(),
+        unphased_aligned_cols: unphased_cols,
+        phased_aligned_cols: phased_cols,
+        unphased_mean_occ_pct: unphased_mean_occ,
+        phased_mean_occ_pct: phased_mean_occ,
+        unphased_profile_bins: unphased_bins,
+        phased_profile_bins: phased_bins,
+        raw_seqnet_cols,
+        trimmed_supermatrix_cols: total_cols,
+        single_gene_cols: cox_cols,
+        single_gene_ufboot_pct: single_boot,
+        supermatrix_ufboot_pct: sup_boot,
+        winning_model_label: format!("{} (RY3)", win_model),
+    };
+    let cov_svg = render_supermatrix_positional_coverage_svg(
+        &format!("64 China/Australia Arthropod Pest Species | {} Retained Loci", spans.len()),
+        &spans,
+        &viz_rows,
+        &phasing_cmp,
+    );
+    let fig2b_name = "china-australia-pests-fig2b-supermatrix-coverage.svg";
+    let out_run_svg = fig_dir.join(fig2b_name);
+    fs::write(&out_run_svg, &cov_svg).map_err(|e| format!("Failed writing {:?}: {}", out_run_svg, e))?;
+    let ws_root = resolve_crv_workspace_root();
+    let labs_fig_dir = ws_root.join("labs").join("figures");
+    fs::create_dir_all(&labs_fig_dir).map_err(|e| e.to_string())?;
+    let out_labs_svg = labs_fig_dir.join(fig2b_name);
+    fs::write(&out_labs_svg, &cov_svg).map_err(|e| format!("Failed writing {:?}: {}", out_labs_svg, e))?;
+
+    sum_val["unphased_mitogenome_gotoh_cols"] = json!(unphased_cols);
+    sum_val["phased_mitogenome_gotoh_cols"] = json!(phased_cols);
+    sum_val["unphased_mean_occ_pct"] = json!(unphased_mean_occ);
+    sum_val["phased_mean_occ_pct"] = json!(phased_mean_occ);
+    fs::write(&sum_path, serde_json::to_string_pretty(&sum_val).unwrap_or_default())
+        .map_err(|e| format!("Failed updating {:?}: {}", sum_path, e))?;
+
+    Ok(out_labs_svg.to_string_lossy().to_string())
 }

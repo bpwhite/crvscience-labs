@@ -3457,6 +3457,16 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             )?;
             println!("[bio-suite-supervisor] Generated P28 supermatrix diagnostic SVG: {}", out_svg);
             return Ok(());
+        } else if crate::supervisor_china_aus_pests::is_china_aus_pests_study_target(
+            spec.preset_name.as_deref(),
+            &spec.run_id,
+        ) {
+            let out_svg = crate::supervisor_china_aus_pests::run_china_aus_pests_supermatrix_viz_refresh(
+                &cache,
+                &runs_root,
+            )?;
+            println!("[bio-suite-supervisor] Refreshed P29 supermatrix coverage SVG: {}", out_svg);
+            return Ok(());
         }
         return Err(format!(
             "supermatrix-viz preset '{}' is not supported directly via this command",

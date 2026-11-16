@@ -18,6 +18,7 @@ use crate::complexity::round4;
 use crate::fetch::{FastaRecord, PoliteCacheManager};
 use crate::modeltest::run_native_modeltest;
 use crate::phylo::{align_sequences_with_mode, AlignerMode};
+use crate::prng_util::{splitmix64, DeterministicLcg64};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
@@ -242,6 +243,25 @@ pub struct TreeBuilderCalibrationReport {
     pub ascii_summary_table: String,
     pub ascii_vertebrate_cladogram: String,
     pub key_findings: Vec<String>,
+}
+
+/// Summary and per-bipartition support report returned by coupled model-matched
+/// ML tree inference & bootstrap evaluation (`infer_native_ml_tree_with_bootstrap`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MlBootstrapReport {
+    pub b_replicates: usize,
+    pub estimator_model_code: String,
+    pub binary_ry_columns_detected: usize,
+    pub four_state_columns_detected: usize,
+    pub nontrivial_reference_splits: usize,
+    pub mean_split_support_pct: f64,
+    pub min_split_support_pct: f64,
+    pub max_split_support_pct: f64,
+    pub identity_replicate_concordance_pct: f64,
+    pub identity_replicate_rf_distance: usize,
+    pub estimator_self_consistent: bool,
+    pub duration_ms: f64,
+    pub split_support_pct_by_mask: Vec<(Vec<u64>, f64)>,
 }
 
 // ============================================================================
@@ -834,6 +854,16 @@ fn encode_nt_mask(b: u8) -> u8 {
         b'C' => 0b0010,
         b'G' => 0b0100,
         b'T' | b'U' => 0b1000,
+        b'R' => 0b0101,
+        b'Y' => 0b1010,
+        b'M' => 0b0011,
+        b'K' => 0b1100,
+        b'S' => 0b0110,
+        b'W' => 0b1001,
+        b'B' => 0b1110,
+        b'D' => 0b1101,
+        b'H' => 0b1011,
+        b'V' => 0b0111,
         _ => 0b1111,
     }
 }
@@ -1160,53 +1190,156 @@ struct MlTreeNode {
     support_pct: f64,
 }
 
-/// Compute model-corrected ML pairwise distance matrix for BIONJ initialization.
-fn compute_model_pairwise_distances(seqs: &[String], model: PhyloRunModel) -> Vec<Vec<f64>> {
+/// Detect columns that are binary purine/pyrimidine (`RY`-recoded, saturation ceiling 0.50) vs.
+/// standard 4-state nucleotide columns (`A/C/G/T`, saturation ceiling 0.75).
+/// Supports both literal IUPAC `R`/`Y` columns and `recode_ry3` (`A`/`C` at 3rd codon position).
+fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
+    let seq_len = seqs.first().map(|s| s.len()).unwrap_or(0);
+    if seqs.is_empty() || seq_len == 0 {
+        return Vec::new();
+    }
+    let mut is_binary = vec![false; seq_len];
+    let mut pos3_ac = 0usize;
+    let mut pos3_gt = 0usize;
+    let mut pos12_gt = 0usize;
+    let mut all_ac = 0usize;
+    let mut all_gt = 0usize;
+
+    for col in 0..seq_len {
+        let mut has_literal_ry = false;
+        let mut has_acgt = false;
+        for s in seqs {
+            let b = s.as_bytes().get(col).copied().unwrap_or(b'-').to_ascii_uppercase();
+            match b {
+                b'A' | b'C' => {
+                    has_acgt = true;
+                    all_ac += 1;
+                    if col % 3 == 2 {
+                        pos3_ac += 1;
+                    }
+                }
+                b'G' | b'T' | b'U' => {
+                    has_acgt = true;
+                    all_gt += 1;
+                    if col % 3 == 2 {
+                        pos3_gt += 1;
+                    } else {
+                        pos12_gt += 1;
+                    }
+                }
+                b'R' | b'Y' => has_literal_ry = true,
+                _ => {}
+            }
+        }
+        if has_literal_ry && !has_acgt {
+            is_binary[col] = true;
+        }
+    }
+
+    if seq_len >= 9 && all_ac > 0 && all_gt == 0 {
+        is_binary.fill(true);
+    } else if seq_len >= 9 && pos3_ac > 0 && pos3_gt == 0 && pos12_gt > 0 {
+        for col in (2..seq_len).step_by(3) {
+            is_binary[col] = true;
+        }
+    }
+    is_binary
+}
+
+/// Compute column-alphabet-aware, model-corrected weighted ML pairwise distance matrix
+/// (`4-state` Gamma-TN93/JC combined proportionally with `2-state` binary Cavalli-Sforza/Gamma on `RY` columns).
+fn compute_model_pairwise_distances_weighted(
+    seqs: &[String],
+    model: PhyloRunModel,
+    alpha_override: Option<f64>,
+    col_weights: Option<&[u16]>,
+    is_binary_col: &[bool],
+) -> Vec<Vec<f64>> {
     let n = seqs.len();
     let mut dist = vec![vec![0.0f64; n]; n];
-    let alpha: f64 = match model {
+    let alpha: f64 = alpha_override.unwrap_or(match model {
         PhyloRunModel::JcUniform => 100.0,
         _ => 0.45,
-    };
+    });
     for i in 0..n {
         let si = seqs[i].as_bytes();
         for j in (i + 1)..n {
             let sj = seqs[j].as_bytes();
-            let mut valid = 0.0f64;
-            let mut ti = 0.0f64;
-            let mut tv = 0.0f64;
-            for col in 0..si.len().min(sj.len()) {
+            let cols = si.len().min(sj.len());
+            let mut valid_4 = 0.0f64;
+            let mut ti_4 = 0.0f64;
+            let mut tv_4 = 0.0f64;
+            let mut valid_2 = 0.0f64;
+            let mut diff_2 = 0.0f64;
+            for col in 0..cols {
+                let wf = col_weights.map(|cw| cw[col] as f64).unwrap_or(1.0);
+                if wf <= 0.0 {
+                    continue;
+                }
                 let a = encode_nt_mask(si[col]);
                 let b = encode_nt_mask(sj[col]);
                 if a == 0b1111 || b == 0b1111 {
                     continue;
                 }
-                valid += 1.0;
-                if a != b {
-                    let (lo, hi) = if a < b { (a, b) } else { (b, a) };
-                    if (lo == 0b0001 && hi == 0b0100) || (lo == 0b0010 && hi == 0b1000) {
-                        ti += 1.0;
-                    } else {
-                        tv += 1.0;
+                let is_bin = is_binary_col.get(col).copied().unwrap_or(false);
+                if is_bin {
+                    valid_2 += wf;
+                    if (a & b) == 0 {
+                        diff_2 += wf;
+                    }
+                } else {
+                    valid_4 += wf;
+                    if a != b && (a & b) == 0 {
+                        let (lo, hi) = if a < b { (a, b) } else { (b, a) };
+                        if (lo == 0b0001 && hi == 0b0100) || (lo == 0b0010 && hi == 0b1000) {
+                            ti_4 += wf;
+                        } else {
+                            tv_4 += wf;
+                        }
                     }
                 }
             }
-            let p = ti / valid.max(1.0);
-            let q = tv / valid.max(1.0);
-            let d = if matches!(model, PhyloRunModel::JcUniform) {
-                let diff = (p + q).min(0.74);
-                (-0.75 * (1.0 - (4.0 / 3.0) * diff).max(1e-6).ln()).min(2.5)
+
+            let d4 = if valid_4 > 0.0 {
+                let p4 = ti_4 / valid_4;
+                let q4 = tv_4 / valid_4;
+                if matches!(model, PhyloRunModel::JcUniform) {
+                    let diff = (p4 + q4).min(0.74);
+                    (-0.75 * (1.0 - (4.0 / 3.0) * diff).max(1e-6).ln()).min(2.5)
+                } else {
+                    let w1 = (1.0 - 2.0 * p4 - q4).max(0.08);
+                    let w2 = (1.0 - 2.0 * q4).max(0.08);
+                    (0.5 * alpha * (w1.powf(-1.0 / alpha) + 0.5 * w2.powf(-1.0 / alpha) - 1.5).max(1e-6)).min(2.5)
+                }
             } else {
-                // Gamma-corrected K2P/TN93 distance with saturation guard
-                let w1 = (1.0 - 2.0 * p - q).max(0.08);
-                let w2 = (1.0 - 2.0 * q).max(0.08);
-                (0.5 * alpha * (w1.powf(-1.0 / alpha) + 0.5 * w2.powf(-1.0 / alpha) - 1.5).max(1e-6)).min(2.5)
+                0.0
             };
+
+            let d2 = if valid_2 > 0.0 {
+                let p2 = (diff_2 / valid_2).min(0.485);
+                if matches!(model, PhyloRunModel::JcUniform) {
+                    (-0.5 * (1.0 - 2.0 * p2).max(1e-6).ln()).min(2.5)
+                } else {
+                    let w_ry = (1.0 - 2.0 * p2.min(0.46)).max(0.08);
+                    (0.5 * alpha * (w_ry.powf(-1.0 / alpha) - 1.0).max(1e-6)).min(2.5)
+                }
+            } else {
+                0.0
+            };
+
+            let tot_v = (valid_4 + valid_2).max(1.0);
+            let d = ((valid_4 * d4 + valid_2 * d2) / tot_v).clamp(1e-5, 2.5);
             dist[i][j] = d;
             dist[j][i] = d;
         }
     }
     dist
+}
+
+/// Compute model-corrected ML pairwise distance matrix for BIONJ initialization.
+fn compute_model_pairwise_distances(seqs: &[String], model: PhyloRunModel) -> Vec<Vec<f64>> {
+    let is_bin = detect_binary_ry_columns(seqs);
+    compute_model_pairwise_distances_weighted(seqs, model, None, None, &is_bin)
 }
 
 /// Construct initial variance-weighted BIONJ (Gascuel 1997) tree topology.
@@ -1390,6 +1523,97 @@ fn felsenstein_postorder(
     }
 }
 
+/// Compute the unweighted per-pattern Felsenstein log-likelihood vector `ell[0..n_pats]`
+/// (summed over discrete rate categories + invariant category via LogSumExp) for all compressed
+/// alignment patterns in `aln`. Shared by total tree likelihood evaluation and RELL/UFBoot2 scoring.
+#[allow(clippy::too_many_arguments)]
+fn evaluate_site_pattern_lnls(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    q: &[[f64; 4]; 4],
+    pi: &[f64; 4],
+    pinv: f64,
+    rate_cats: &[(f64, f64)],
+    branch_scale: f64,
+    parallel: bool,
+) -> Vec<f64> {
+    let n_nodes = nodes.len();
+    let root_id = n_nodes - 1;
+    let n_cats = rate_cats.len();
+
+    let mut p_mats: Vec<Vec<[[f64; 4]; 4]>> = vec![Vec::with_capacity(n_nodes); n_cats];
+    for (c_idx, &(r_c, _)) in rate_cats.iter().enumerate() {
+        let mut node_mats = Vec::with_capacity(n_nodes);
+        for nd in nodes {
+            let t = (nd.branch_len * branch_scale * r_c).max(1e-6);
+            node_mats.push(transition_prob_matrix(q, t));
+        }
+        p_mats[c_idx] = node_mats;
+    }
+
+    let score_unweighted = |(pat_idx, pat): (usize, &Vec<u8>)| -> f64 {
+        let mut cat_log_terms: Vec<f64> = Vec::with_capacity(n_cats + 1);
+        if pinv > 0.0 {
+            if let Some(inv_b) = aln.is_invariant_base[pat_idx] {
+                let inv_term = pinv * pi[inv_b];
+                if inv_term > 0.0 {
+                    cat_log_terms.push(inv_term.ln());
+                }
+            }
+        }
+        let mut cl = vec![[1.0f64; 4]; n_nodes];
+        for (c_idx, &(_, cat_w)) in rate_cats.iter().enumerate() {
+            let mats = &p_mats[c_idx];
+            let mut log_scale = 0.0f64;
+            felsenstein_postorder(root_id, nodes, mats, pat, &mut cl, &mut log_scale);
+            let root_cl = &cl[root_id];
+            let mut cat_l = 0.0;
+            for s in 0..4 {
+                cat_l += pi[s] * root_cl[s];
+            }
+            if cat_l > 0.0 && cat_w > 0.0 {
+                cat_log_terms.push(cat_w.ln() + cat_l.ln() + log_scale);
+            }
+        }
+        if cat_log_terms.is_empty() {
+            -690.7755
+        } else {
+            let max_log = cat_log_terms
+                .iter()
+                .copied()
+                .fold(f64::NEG_INFINITY, f64::max);
+            let sum_exp: f64 = cat_log_terms.iter().map(|&lt| (lt - max_log).exp()).sum();
+            max_log + sum_exp.ln()
+        }
+    };
+
+    if parallel {
+        aln.patterns.par_iter().enumerate().map(score_unweighted).collect()
+    } else {
+        aln.patterns.iter().enumerate().map(score_unweighted).collect()
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn evaluate_tree_log_likelihood_inner(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    q: &[[f64; 4]; 4],
+    pi: &[f64; 4],
+    pinv: f64,
+    rate_cats: &[(f64, f64)],
+    branch_scale: f64,
+    parallel: bool,
+) -> f64 {
+    let site_lnls =
+        evaluate_site_pattern_lnls(nodes, aln, q, pi, pinv, rate_cats, branch_scale, parallel);
+    site_lnls
+        .iter()
+        .zip(aln.weights.iter())
+        .map(|(&lp, &w)| if w > 0.0 { w * lp } else { 0.0 })
+        .sum()
+}
+
 /// Evaluate exact Felsenstein log-likelihood of a rooted/unrooted tree under `model`
 /// with recursive post-order traversal, per-node Felsenstein underflow log-scaling (`scale_log`),
 /// and LogSumExp rate-category integration.
@@ -1402,62 +1626,20 @@ fn evaluate_tree_log_likelihood(
     rate_cats: &[(f64, f64)],
     branch_scale: f64,
 ) -> f64 {
-    let n_nodes = nodes.len();
-    let root_id = n_nodes - 1;
-    let n_cats = rate_cats.len();
+    evaluate_tree_log_likelihood_inner(nodes, aln, q, pi, pinv, rate_cats, branch_scale, true)
+}
 
-    // Precompute P(r_c * t) for all nodes and rate categories
-    let mut p_mats: Vec<Vec<[[f64; 4]; 4]>> = vec![Vec::with_capacity(n_nodes); n_cats];
-    for (c_idx, &(r_c, _)) in rate_cats.iter().enumerate() {
-        let mut node_mats = Vec::with_capacity(n_nodes);
-        for nd in nodes {
-            let t = (nd.branch_len * branch_scale * r_c).max(1e-6);
-            node_mats.push(transition_prob_matrix(q, t));
-        }
-        p_mats[c_idx] = node_mats;
-    }
-
-    // Parallel Felsenstein pruning across compressed site patterns with recursive post-order traversal
-    aln.patterns
-        .par_iter()
-        .enumerate()
-        .map(|(pat_idx, pat)| {
-            let w = aln.weights[pat_idx];
-            let mut cat_log_terms: Vec<f64> = Vec::with_capacity(n_cats + 1);
-            if pinv > 0.0 {
-                if let Some(inv_b) = aln.is_invariant_base[pat_idx] {
-                    let inv_term = pinv * pi[inv_b];
-                    if inv_term > 0.0 {
-                        cat_log_terms.push(inv_term.ln());
-                    }
-                }
-            }
-            let mut cl = vec![[1.0f64; 4]; n_nodes];
-            for (c_idx, &(_, cat_w)) in rate_cats.iter().enumerate() {
-                let mats = &p_mats[c_idx];
-                let mut log_scale = 0.0f64;
-                felsenstein_postorder(root_id, nodes, mats, pat, &mut cl, &mut log_scale);
-                let root_cl = &cl[root_id];
-                let mut cat_l = 0.0;
-                for s in 0..4 {
-                    cat_l += pi[s] * root_cl[s];
-                }
-                if cat_l > 0.0 && cat_w > 0.0 {
-                    cat_log_terms.push(cat_w.ln() + cat_l.ln() + log_scale);
-                }
-            }
-            if cat_log_terms.is_empty() {
-                w * (-690.7755)
-            } else {
-                let max_log = cat_log_terms
-                    .iter()
-                    .copied()
-                    .fold(f64::NEG_INFINITY, f64::max);
-                let sum_exp: f64 = cat_log_terms.iter().map(|&lt| (lt - max_log).exp()).sum();
-                w * (max_log + sum_exp.ln())
-            }
-        })
-        .sum()
+/// Sequential variant of `evaluate_tree_log_likelihood` for use inside outer Rayon replicate workers.
+fn evaluate_tree_log_likelihood_seq(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    q: &[[f64; 4]; 4],
+    pi: &[f64; 4],
+    pinv: f64,
+    rate_cats: &[(f64, f64)],
+    branch_scale: f64,
+) -> f64 {
+    evaluate_tree_log_likelihood_inner(nodes, aln, q, pi, pinv, rate_cats, branch_scale, false)
 }
 
 /// Original 2-Stage Fast Native Mode (`TreeBuilderMode::NativeFast` / `--tree-builder native-fast`):
@@ -1855,21 +2037,47 @@ fn translate_vertebrate_mt_codon(c0: u8, c1: u8, c2: u8) -> u8 {
     }
 }
 
-/// Build a pool of candidate starting BIONJ trees spanning multiple evolutionary distance regimes
-/// (standard K2P-Gamma, strong-Gamma K2P, transversion-weighted TN93, codon-1st/2nd weighted,
-/// and vertebrate mitochondrial amino-acid + transversion composite distance) to avoid 3rd-codon saturation LBA.
-fn build_candidate_bionj_pool(
+/// Shared parameterized weighted BIONJ starting-tree builder across up to 5 distance regimes:
+/// `0` = model-matched column-alphabet-aware (`4-state` + `2-state RY`) Gamma distance,
+/// `1` = transversion-heavy distance, `2` = codon 1st/2nd + 3rd-transversion distance,
+/// `3` = amino-acid Grishin + transversion + K2P tie-breaker, `4` = AA + 1st/2nd codon hierarchy.
+/// Preserves exact pairwise weights on multinomial bootstrap replicates (`col_weights`).
+fn build_weighted_bionj_pool(
     seqs: &[String],
     labels: &[String],
     model: PhyloRunModel,
-) -> Vec<Vec<MlTreeNode>> {
+    alpha_override: Option<f64>,
+    col_weights: Option<&[u16]>,
+    is_binary_col: &[bool],
+    which_indices: &[usize],
+) -> Vec<(usize, Vec<MlTreeNode>)> {
     let n = seqs.len();
     let seq_len = seqs.first().map(|s| s.len()).unwrap_or(0);
-    let mut d_k2p_std = compute_model_pairwise_distances(seqs, model);
-    let mut d_tv_heavy = vec![vec![0.0f64; n]; n];
-    let mut d_codon12 = vec![vec![0.0f64; n]; n];
-    let mut d_aa_tv = vec![vec![0.0f64; n]; n];
-    let mut d_aa_hier = vec![vec![0.0f64; n]; n];
+    let mut d_k2p_std = compute_model_pairwise_distances_weighted(
+        seqs,
+        model,
+        alpha_override,
+        col_weights,
+        is_binary_col,
+    );
+    let mean_k2p: f64 = d_k2p_std.iter().flatten().sum::<f64>().max(1e-6);
+
+    let need_tv_heavy = which_indices.contains(&1);
+    let need_codon12 = which_indices.contains(&2);
+    let need_aa = which_indices.contains(&3) || which_indices.contains(&4);
+
+    let mut pool = Vec::with_capacity(which_indices.len());
+    if !need_tv_heavy && !need_codon12 && !need_aa {
+        if which_indices.contains(&0) {
+            pool.push((0usize, build_initial_bionj_tree(&d_k2p_std, labels)));
+        }
+        return pool;
+    }
+
+    let mut d_tv_heavy = if need_tv_heavy { vec![vec![0.0f64; n]; n] } else { Vec::new() };
+    let mut d_codon12 = if need_codon12 { vec![vec![0.0f64; n]; n] } else { Vec::new() };
+    let mut d_aa_tv = if which_indices.contains(&3) { vec![vec![0.0f64; n]; n] } else { Vec::new() };
+    let mut d_aa_hier = if which_indices.contains(&4) { vec![vec![0.0f64; n]; n] } else { Vec::new() };
 
     for i in 0..n {
         let si = seqs[i].as_bytes();
@@ -1884,43 +2092,55 @@ fn build_candidate_bionj_pool(
             let mut aa_valid = 0.0f64;
 
             for col in 0..seq_len {
+                let wf = col_weights.map(|cw| cw[col] as f64).unwrap_or(1.0);
+                if wf <= 0.0 {
+                    continue;
+                }
                 let a = encode_nt_mask(si[col]);
                 let b = encode_nt_mask(sj[col]);
                 if a == 0b1111 || b == 0b1111 {
                     continue;
                 }
-                valid += 1.0;
-                if a != b {
+                valid += wf;
+                if a != b && (a & b) == 0 {
                     let (lo, hi) = if a < b { (a, b) } else { (b, a) };
                     let is_ti = (lo == 0b0001 && hi == 0b0100) || (lo == 0b0010 && hi == 0b1000);
                     if col % 3 == 2 {
                         if is_ti {
-                            ti_3 += 1.0;
+                            ti_3 += wf;
                         } else {
-                            tv_3 += 1.0;
+                            tv_3 += wf;
                         }
                     } else if is_ti {
-                        ti_12 += 1.0;
+                        ti_12 += wf;
                     } else {
-                        tv_12 += 1.0;
+                        tv_12 += wf;
                     }
                 }
             }
-            for codon_start in (0..(seq_len.saturating_sub(2))).step_by(3) {
-                let aa_i = translate_vertebrate_mt_codon(
-                    si[codon_start],
-                    si[codon_start + 1],
-                    si[codon_start + 2],
-                );
-                let aa_j = translate_vertebrate_mt_codon(
-                    sj[codon_start],
-                    sj[codon_start + 1],
-                    sj[codon_start + 2],
-                );
-                if aa_i != b'X' && aa_j != b'X' {
-                    aa_valid += 1.0;
-                    if aa_i != aa_j {
-                        aa_diff += 1.0;
+            if need_aa {
+                for codon_start in (0..(seq_len.saturating_sub(2))).step_by(3) {
+                    let wf_c = col_weights
+                        .map(|cw| (cw[codon_start] as f64 + cw[codon_start + 1] as f64 + cw[codon_start + 2] as f64) / 3.0)
+                        .unwrap_or(1.0);
+                    if wf_c <= 0.0 {
+                        continue;
+                    }
+                    let aa_i = translate_vertebrate_mt_codon(
+                        si[codon_start],
+                        si[codon_start + 1],
+                        si[codon_start + 2],
+                    );
+                    let aa_j = translate_vertebrate_mt_codon(
+                        sj[codon_start],
+                        sj[codon_start + 1],
+                        sj[codon_start + 2],
+                    );
+                    if aa_i != b'X' && aa_j != b'X' {
+                        aa_valid += wf_c;
+                        if aa_i != aa_j {
+                            aa_diff += wf_c;
+                        }
                     }
                 }
             }
@@ -1930,33 +2150,32 @@ fn build_candidate_bionj_pool(
             let p_aa = aa_diff / aa_valid.max(1.0);
             let d_aa_grishin = p_aa / (1.0 - p_aa.min(0.85)).max(0.05);
 
-            // Distance 2: Transversion-heavy Gamma distance (suppresses 3rd-codon Ti saturation)
-            let d2 = -0.5 * (1.0 - 2.0 * q_all.min(0.45)).ln() + 0.35 * p_all;
-            // Distance 3: Codon 1st/2nd + 3rd-codon transversion distance
-            let c12_rate = (ti_12 + 2.5 * tv_12) / (valid * 0.6667).max(1.0);
-            let c3_tv_rate = tv_3 / (valid * 0.3333).max(1.0);
-            let d3 = 1.8 * c12_rate + 0.55 * c3_tv_rate + 0.12 * p_all;
-            // Distance 4: Amino-Acid Grishin + Transversion + K2P tie-breaker
-            let d4 = 1.45 * d_aa_grishin + 0.85 * q_all + 0.15 * d_k2p_std[i][j].min(1.2);
-            // Distance 5: Pure Amino-Acid + 1st/2nd Codon Transversion Hierarchy
-            let d5 = 2.10 * d_aa_grishin + 1.50 * (tv_12 / (valid * 0.6667).max(1.0)) + 0.08 * p_all;
-
-            d_tv_heavy[i][j] = d2.max(1e-5);
-            d_tv_heavy[j][i] = d2.max(1e-5);
-            d_codon12[i][j] = d3.max(1e-5);
-            d_codon12[j][i] = d3.max(1e-5);
-            d_aa_tv[i][j] = d4.max(1e-5);
-            d_aa_tv[j][i] = d4.max(1e-5);
-            d_aa_hier[i][j] = d5.max(1e-5);
-            d_aa_hier[j][i] = d5.max(1e-5);
+            if need_tv_heavy {
+                let d2 = (-0.5 * (1.0 - 2.0 * q_all.min(0.45)).ln() + 0.35 * p_all).max(1e-5);
+                d_tv_heavy[i][j] = d2;
+                d_tv_heavy[j][i] = d2;
+            }
+            if need_codon12 {
+                let c12_rate = (ti_12 + 2.5 * tv_12) / (valid * 0.6667).max(1.0);
+                let c3_tv_rate = tv_3 / (valid * 0.3333).max(1.0);
+                let d3 = (1.8 * c12_rate + 0.55 * c3_tv_rate + 0.12 * p_all).max(1e-5);
+                d_codon12[i][j] = d3;
+                d_codon12[j][i] = d3;
+            }
+            if which_indices.contains(&3) {
+                let d4 = (1.45 * d_aa_grishin + 0.85 * q_all + 0.15 * d_k2p_std[i][j].min(1.2)).max(1e-5);
+                d_aa_tv[i][j] = d4;
+                d_aa_tv[j][i] = d4;
+            }
+            if which_indices.contains(&4) {
+                let d5 = (2.10 * d_aa_grishin + 1.50 * (tv_12 / (valid * 0.6667).max(1.0)) + 0.08 * p_all).max(1e-5);
+                d_aa_hier[i][j] = d5;
+                d_aa_hier[j][i] = d5;
+            }
         }
     }
 
-    // Rescale branch lengths of candidate trees to match mean nucleotide K2P scale
-    let mean_k2p: f64 = d_k2p_std.iter().flatten().sum::<f64>().max(1e-6);
-    let mut pool = Vec::with_capacity(5);
-    pool.push(build_initial_bionj_tree(&mut d_k2p_std, labels));
-    for mut mat in [d_tv_heavy, d_codon12, d_aa_tv, d_aa_hier] {
+    let rescale_and_build = |mut mat: Vec<Vec<f64>>| -> Vec<MlTreeNode> {
         let m_sum: f64 = mat.iter().flatten().sum::<f64>().max(1e-6);
         let scale = (mean_k2p / m_sum).clamp(0.2, 5.0);
         for r in &mut mat {
@@ -1964,9 +2183,34 @@ fn build_candidate_bionj_pool(
                 *v *= scale;
             }
         }
-        pool.push(build_initial_bionj_tree(&mat, labels));
+        build_initial_bionj_tree(&mat, labels)
+    };
+
+    for &idx in which_indices {
+        match idx {
+            0 => pool.push((0, build_initial_bionj_tree(&mut d_k2p_std, labels))),
+            1 => pool.push((1, rescale_and_build(std::mem::take(&mut d_tv_heavy)))),
+            2 => pool.push((2, rescale_and_build(std::mem::take(&mut d_codon12)))),
+            3 => pool.push((3, rescale_and_build(std::mem::take(&mut d_aa_tv)))),
+            4 => pool.push((4, rescale_and_build(std::mem::take(&mut d_aa_hier)))),
+            _ => {}
+        }
     }
     pool
+}
+
+/// Build the full 5-candidate BIONJ starting pool (`standard`, `transversion-heavy`,
+/// `codon 1st/2nd`, `AA+Tv`, `AA+codon12`) via `build_weighted_bionj_pool`.
+fn build_candidate_bionj_pool(
+    seqs: &[String],
+    labels: &[String],
+    model: PhyloRunModel,
+) -> Vec<Vec<MlTreeNode>> {
+    let is_bin = detect_binary_ry_columns(seqs);
+    build_weighted_bionj_pool(seqs, labels, model, None, None, &is_bin, &[0, 1, 2, 3, 4])
+        .into_iter()
+        .map(|(_, tree)| tree)
+        .collect()
 }
 
 /// Evaluate single-edge log-likelihood across precomputed Inside (`in_cl`, `in_scale`) and Outside (`out_cl`, `out_scale`)
@@ -1996,6 +2240,9 @@ fn eval_edge_lnl_cached(
     let mut cat_log_terms = [0.0f64; 8];
     for pat_idx in 0..n_pats {
         let w = aln.weights[pat_idx];
+        if w <= 0.0 {
+            continue;
+        }
         let mut n_terms = 0usize;
         if pinv > 0.0 {
             if let Some(inv_b) = aln.is_invariant_base[pat_idx] {
@@ -2816,19 +3063,28 @@ fn optimize_substitution_model_on_tree(
     (best_q, pi, best_pinv, best_cats, best_lnl)
 }
 
-/// Upgraded 4-Stage Native Rust Maximum-Likelihood Tree Builder (`TreeBuilderMode::Native`):
-/// - Stage 1: Multi-Distance Candidate BIONJ Starting Pool (`5` distance regimes) evaluated with per-branch ML optimization
-/// - Stage 2: On-Tree Maximum-Likelihood Substitution Model Optimization (`Q`, exact Yang 1994 `alpha`, `p_inv`, FreeRate `R2`)
-/// - Stage 3: Inside-Outside Pulley Principle All-Branch Optimization + Quartet-Polished NNI Search
-/// - Stage 4: Post-NNI Model Parameter Refinement & Multi-Pass Branch-Length Convergence Polish + SH-aLRT
-fn run_native_ml_tree_builder(
+/// Solved 4-stage ML tree together with its fitted substitution & rate-heterogeneity state `(Q, pi, pinv, rate_cats)`.
+struct FittedMlTreeState {
+    metrics: SingleTreeRunMetrics,
+    nodes: Vec<MlTreeNode>,
+    q: [[f64; 4]; 4],
+    pi: [f64; 4],
+    pinv: f64,
+    rate_cats: Vec<(f64, f64)>,
+    best_pool_idx: usize,
+}
+
+/// Upgraded 4-Stage Native Rust Maximum-Likelihood Tree Builder (`TreeBuilderMode::Native`),
+/// returning both final metrics and the fitted `(Q, pi, p_inv, rate_cats, best_pool_idx)` state
+/// so downstream bootstrap estimators use the exact same substitution & rate heterogeneity regime.
+fn solve_native_ml_tree_with_fit(
     seqs: &[String],
     labels: &[String],
     aln: &CompressedAlignment,
     model: PhyloRunModel,
-) -> SingleTreeRunMetrics {
+) -> FittedMlTreeState {
     if model.is_fast_search() {
-        // Fast mode row (`GTR+F+I+G4 (Fast)`): single saturation-resistant starting tree + 1 Pulley branch+NNI pass (~450 ms vs. IQ-TREE 992 ms)
+        // Fast mode row (`GTR+F+I+G4 (Fast)`): single saturation-resistant starting tree + Pulley branch+NNI pass
         let t0 = Instant::now();
         let n_taxa = labels.len();
         let mut pool = build_candidate_bionj_pool(seqs, labels, model);
@@ -2854,12 +3110,34 @@ fn run_native_ml_tree_builder(
         if lnl_opt > best_lnl {
             best_lnl = lnl_opt;
         }
+        for _post_pass in 0..3 {
+            let prev_acc = nni_acc;
+            let prev_lnl = best_lnl;
+            let lnl_post = run_inside_outside_pulley_pass(
+                &mut best_nodes,
+                n_taxa,
+                aln,
+                &q,
+                &pi,
+                pinv,
+                &rate_cats,
+                true,
+                &mut nni_eval,
+                &mut nni_acc,
+            );
+            if lnl_post > best_lnl {
+                best_lnl = lnl_post;
+            }
+            if nni_acc == prev_acc && (best_lnl - prev_lnl).abs() < 0.2 {
+                break;
+            }
+        }
         let exact_lnl =
             evaluate_tree_log_likelihood(&best_nodes, aln, &q, &pi, pinv, &rate_cats, 1.0);
         if exact_lnl.is_finite() {
             best_lnl = exact_lnl;
         }
-        return finalize_tree_metrics(
+        let metrics = finalize_tree_metrics(
             "Native Rust ML Tree Builder (4-Stage ML + Pulley NNI -fast)",
             model,
             n_taxa,
@@ -2870,6 +3148,15 @@ fn run_native_ml_tree_builder(
             nni_eval,
             nni_acc,
         );
+        return FittedMlTreeState {
+            metrics,
+            nodes: best_nodes,
+            q,
+            pi,
+            pinv,
+            rate_cats,
+            best_pool_idx: 2,
+        };
     }
 
     let t0 = Instant::now();
@@ -2889,7 +3176,8 @@ fn run_native_ml_tree_builder(
 
     let mut best_nodes = candidate_pool[0].clone();
     let mut best_lnl = f64::NEG_INFINITY;
-    for mut cand_nodes in candidate_pool {
+    let mut best_pool_idx = 0usize;
+    for (cand_idx, mut cand_nodes) in candidate_pool.into_iter().enumerate() {
         let cand_lnl = run_inside_outside_pulley_pass(
             &mut cand_nodes,
             n_taxa,
@@ -2905,6 +3193,7 @@ fn run_native_ml_tree_builder(
         if cand_lnl > best_lnl {
             best_lnl = cand_lnl;
             best_nodes = cand_nodes;
+            best_pool_idx = cand_idx;
         }
     }
 
@@ -2971,7 +3260,7 @@ fn run_native_ml_tree_builder(
         best_lnl = exact_lnl;
     }
 
-    finalize_tree_metrics(
+    let metrics = finalize_tree_metrics(
         "Native Rust ML Tree Builder (4-Stage ML + Pulley NNI)",
         model,
         n_taxa,
@@ -2981,7 +3270,30 @@ fn run_native_ml_tree_builder(
         best_lnl,
         nni_evaluated,
         nni_accepted,
-    )
+    );
+    FittedMlTreeState {
+        metrics,
+        nodes: best_nodes,
+        q,
+        pi,
+        pinv,
+        rate_cats,
+        best_pool_idx,
+    }
+}
+
+/// Upgraded 4-Stage Native Rust Maximum-Likelihood Tree Builder (`TreeBuilderMode::Native`):
+/// - Stage 1: Multi-Distance Candidate BIONJ Starting Pool (`5` distance regimes) evaluated with per-branch ML optimization
+/// - Stage 2: On-Tree Maximum-Likelihood Substitution Model Optimization (`Q`, exact Yang 1994 `alpha`, `p_inv`, FreeRate `R2`)
+/// - Stage 3: Inside-Outside Pulley Principle All-Branch Optimization + Quartet-Polished NNI Search
+/// - Stage 4: Post-NNI Model Parameter Refinement & Multi-Pass Branch-Length Convergence Polish + SH-aLRT
+fn run_native_ml_tree_builder(
+    seqs: &[String],
+    labels: &[String],
+    aln: &CompressedAlignment,
+    model: PhyloRunModel,
+) -> SingleTreeRunMetrics {
+    solve_native_ml_tree_with_fit(seqs, labels, aln, model).metrics
 }
 
 fn format_ml_newick(nodes: &[MlTreeNode], idx: usize) -> String {
@@ -3443,13 +3755,892 @@ fn pearson_r(xs: &[f64], ys: &[f64]) -> f64 {
 // 6. MASTER CALIBRATION BENCHMARK: NATIVE ML TREE BUILDER VS. IQ-TREE v2.4.0
 // ============================================================================
 
+/// Extract canonical nontrivial bipartitions (`Vec<u64>` bitmasks with bit 0 cleared and popcount
+/// in `2..=n_taxa-2`) and all matching internal node indices `(canon_mask, node_indices)` from `MlTreeNode`s
+/// by recursively traversing post-order from `root_id = nodes.len() - 1` (safe after arbitrary NNI swaps).
+fn extract_canonical_splits_from_ml_nodes(
+    nodes: &[MlTreeNode],
+    n_taxa: usize,
+) -> (Vec<(Vec<u64>, Vec<usize>)>, BTreeSet<Vec<u64>>) {
+    if nodes.is_empty() || n_taxa < 4 {
+        return (Vec::new(), BTreeSet::new());
+    }
+    let n_words = (n_taxa + 63) / 64;
+    let last_bits = n_taxa % 64;
+    let last_mask = if last_bits == 0 {
+        u64::MAX
+    } else {
+        (1u64 << last_bits) - 1
+    };
+
+    fn canonicalize(mut m: Vec<u64>, n_words: usize, last_mask: u64) -> Vec<u64> {
+        if !m.is_empty() && (m[0] & 1) != 0 {
+            for w in &mut m {
+                *w = !*w;
+            }
+            if n_words > 0 {
+                m[n_words - 1] &= last_mask;
+            }
+        }
+        m
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn walk_splits(
+        u: usize,
+        root_id: usize,
+        nodes: &[MlTreeNode],
+        n_taxa: usize,
+        n_words: usize,
+        last_mask: u64,
+        split_map: &mut HashMap<Vec<u64>, Vec<usize>>,
+        split_set: &mut BTreeSet<Vec<u64>>,
+    ) -> Vec<u64> {
+        if let (Some(l), Some(r)) = (nodes[u].left, nodes[u].right) {
+            let ml = walk_splits(l, root_id, nodes, n_taxa, n_words, last_mask, split_map, split_set);
+            let mr = walk_splits(r, root_id, nodes, n_taxa, n_words, last_mask, split_map, split_set);
+            let mut combined = vec![0u64; n_words];
+            for w in 0..n_words {
+                combined[w] = ml[w] | mr[w];
+            }
+            let pop: usize = combined.iter().map(|w| w.count_ones() as usize).sum();
+            if u != root_id && pop >= 2 && pop <= n_taxa.saturating_sub(2) {
+                let canon = canonicalize(combined.clone(), n_words, last_mask);
+                split_set.insert(canon.clone());
+                split_map.entry(canon).or_default().push(u);
+            }
+            combined
+        } else {
+            let mut leaf = vec![0u64; n_words];
+            if u < n_taxa {
+                leaf[u / 64] |= 1u64 << (u % 64);
+            }
+            leaf
+        }
+    }
+
+    let root_id = nodes.len() - 1;
+    let mut split_map: HashMap<Vec<u64>, Vec<usize>> = HashMap::new();
+    let mut split_set = BTreeSet::new();
+    walk_splits(
+        root_id,
+        root_id,
+        nodes,
+        n_taxa,
+        n_words,
+        last_mask,
+        &mut split_map,
+        &mut split_set,
+    );
+
+    let mut ordered: Vec<(Vec<u64>, Vec<usize>)> = split_map.into_iter().collect();
+    ordered.sort_by(|a, b| a.0.cmp(&b.0));
+    (ordered, split_set)
+}
+
+/// Extract canonical nontrivial bipartitions (`Vec<u64>`, bit 0 always 0) from any Newick string
+/// for arbitrary `n_taxa >= 4` without 64-taxon truncation.
+pub fn extract_canonical_splits_from_newick(
+    newick: &str,
+    ordered_tip_labels: &[String],
+) -> BTreeSet<Vec<u64>> {
+    let n_taxa = ordered_tip_labels.len();
+    if n_taxa < 4 {
+        return BTreeSet::new();
+    }
+    let n_words = (n_taxa + 63) / 64;
+    let last_bits = n_taxa % 64;
+    let last_mask = if last_bits == 0 {
+        u64::MAX
+    } else {
+        (1u64 << last_bits) - 1
+    };
+    let mut tip_to_idx = HashMap::with_capacity(n_taxa);
+    for (i, lbl) in ordered_tip_labels.iter().enumerate() {
+        tip_to_idx.insert(lbl.as_str(), i);
+    }
+
+    let s = newick.trim().trim_end_matches(';');
+    let bytes = s.as_bytes();
+    let mut pos = 0usize;
+    let mut splits = BTreeSet::new();
+
+    fn parse_node(
+        s: &str,
+        bytes: &[u8],
+        pos: &mut usize,
+        tip_to_idx: &HashMap<&str, usize>,
+        n_taxa: usize,
+        n_words: usize,
+        last_mask: u64,
+        splits: &mut BTreeSet<Vec<u64>>,
+    ) -> Vec<u64> {
+        while *pos < bytes.len() && bytes[*pos].is_ascii_whitespace() {
+            *pos += 1;
+        }
+        let mut mask = vec![0u64; n_words];
+        if *pos < bytes.len() && bytes[*pos] == b'(' {
+            *pos += 1;
+            loop {
+                let cm = parse_node(s, bytes, pos, tip_to_idx, n_taxa, n_words, last_mask, splits);
+                for w in 0..n_words {
+                    mask[w] |= cm[w];
+                }
+                while *pos < bytes.len() && bytes[*pos].is_ascii_whitespace() {
+                    *pos += 1;
+                }
+                if *pos < bytes.len() && bytes[*pos] == b',' {
+                    *pos += 1;
+                } else if *pos < bytes.len() && bytes[*pos] == b')' {
+                    *pos += 1;
+                    break;
+                } else {
+                    break;
+                }
+            }
+            while *pos < bytes.len()
+                && bytes[*pos] != b':'
+                && bytes[*pos] != b','
+                && bytes[*pos] != b')'
+            {
+                *pos += 1;
+            }
+        } else {
+            let start = *pos;
+            while *pos < bytes.len()
+                && bytes[*pos] != b':'
+                && bytes[*pos] != b','
+                && bytes[*pos] != b')'
+            {
+                *pos += 1;
+            }
+            let lbl = s[start..*pos].trim();
+            if let Some(&idx) = tip_to_idx.get(lbl) {
+                mask[idx / 64] |= 1u64 << (idx % 64);
+            }
+        }
+        if *pos < bytes.len() && bytes[*pos] == b':' {
+            *pos += 1;
+            while *pos < bytes.len() && bytes[*pos] != b',' && bytes[*pos] != b')' {
+                *pos += 1;
+            }
+        }
+        let pop: usize = mask.iter().map(|w| w.count_ones() as usize).sum();
+        if pop >= 2 && pop <= n_taxa.saturating_sub(2) {
+            let mut canon = mask.clone();
+            if !canon.is_empty() && (canon[0] & 1) != 0 {
+                for w in &mut canon {
+                    *w = !*w;
+                }
+                if n_words > 0 {
+                    canon[n_words - 1] &= last_mask;
+                }
+            }
+            splits.insert(canon);
+        }
+        mask
+    }
+
+    parse_node(s, bytes, &mut pos, &tip_to_idx, n_taxa, n_words, last_mask, &mut splits);
+    splits
+}
+
+fn canonical_split_concordance_and_rf(
+    ref_splits: &BTreeSet<Vec<u64>>,
+    alt_splits: &BTreeSet<Vec<u64>>,
+) -> (usize, f64) {
+    if ref_splits.is_empty() {
+        return (0, 100.0);
+    }
+    let shared = ref_splits.intersection(alt_splits).count();
+    let rf = ref_splits.len() + alt_splits.len() - 2 * shared;
+    let pct = round4((shared as f64 / ref_splits.len() as f64) * 100.0);
+    (rf, pct)
+}
+
+fn map_columns_to_patterns(seqs: &[String], aln: &CompressedAlignment) -> Vec<usize> {
+    let n_taxa = seqs.len();
+    let pat_lookup: HashMap<&[u8], usize> = aln
+        .patterns
+        .iter()
+        .enumerate()
+        .map(|(i, p)| (p.as_slice(), i))
+        .collect();
+    let mut col_to_pat = Vec::with_capacity(aln.n_sites);
+    let mut buf = vec![0u8; n_taxa];
+    for col in 0..aln.n_sites {
+        for row in 0..n_taxa {
+            let b = seqs[row].as_bytes().get(col).copied().unwrap_or(b'-');
+            buf[row] = encode_nt_mask(b);
+        }
+        col_to_pat.push(pat_lookup.get(buf.as_slice()).copied().unwrap_or(0));
+    }
+    col_to_pat
+}
+
+fn compact_weighted_alignment(aln: &CompressedAlignment, pat_weights: &[f64]) -> CompressedAlignment {
+    let mut patterns = Vec::with_capacity(aln.patterns.len());
+    let mut weights = Vec::with_capacity(aln.patterns.len());
+    let mut is_invariant_base = Vec::with_capacity(aln.patterns.len());
+    for (idx, &w) in pat_weights.iter().enumerate() {
+        if w > 0.0 {
+            patterns.push(aln.patterns[idx].clone());
+            weights.push(w);
+            is_invariant_base.push(aln.is_invariant_base[idx]);
+        }
+    }
+    CompressedAlignment {
+        _n_taxa: aln._n_taxa,
+        n_sites: aln.n_sites,
+        invariant_fraction: aln.invariant_fraction,
+        patterns,
+        weights,
+        is_invariant_base,
+        pi: aln.pi,
+        kappa_ct: aln.kappa_ct,
+        kappa_ag: aln.kappa_ag,
+        kappa_overall: aln.kappa_overall,
+        gtr_rates: aln.gtr_rates,
+        tim2_rates: aln.tim2_rates,
+    }
+}
+
+/// Perturbs a solved ML tree by `n_swaps` random valid Nearest-Neighbor Interchange (NNI) moves
+/// along internal branches (`u <-> child_id >= n_taxa`), preserving binary rooted invariant and leaf coverage.
+fn apply_stochastic_nni_perturbation(
+    nodes: &[MlTreeNode],
+    n_taxa: usize,
+    n_swaps: usize,
+    rng: &mut DeterministicLcg64,
+) -> Vec<MlTreeNode> {
+    fn collect_internal_edges(
+        u: usize,
+        nodes: &[MlTreeNode],
+        n_taxa: usize,
+        out: &mut Vec<(usize, usize, usize, usize)>,
+    ) {
+        if let (Some(l), Some(r)) = (nodes[u].left, nodes[u].right) {
+            if l >= n_taxa && nodes[l].left.is_some() && nodes[l].right.is_some() {
+                out.push((u, 0, l, r));
+                collect_internal_edges(l, nodes, n_taxa, out);
+            }
+            if r >= n_taxa && nodes[r].left.is_some() && nodes[r].right.is_some() {
+                out.push((u, 1, r, l));
+                collect_internal_edges(r, nodes, n_taxa, out);
+            }
+        }
+    }
+
+    let mut cur = nodes.to_vec();
+    let root_id = cur.len().saturating_sub(1);
+    let mut edges = Vec::with_capacity(n_taxa);
+    for _ in 0..n_swaps {
+        edges.clear();
+        collect_internal_edges(root_id, &cur, n_taxa, &mut edges);
+        if edges.is_empty() {
+            break;
+        }
+        let (u, side, child_id, sib_id) = edges[rng.gen_range_usize(edges.len())];
+        let (Some(a_id), Some(b_id)) = (cur[child_id].left, cur[child_id].right) else {
+            continue;
+        };
+        if rng.gen_range_usize(2) == 0 {
+            cur[child_id].right = Some(sib_id);
+            if side == 0 {
+                cur[u].right = Some(b_id);
+            } else {
+                cur[u].left = Some(b_id);
+            }
+        } else {
+            cur[child_id].left = Some(sib_id);
+            if side == 0 {
+                cur[u].right = Some(a_id);
+            } else {
+                cur[u].left = Some(a_id);
+            }
+        }
+    }
+    cur
+}
+
 pub fn infer_native_ml_gene_tree(
     raw_aligned_strings: &[String],
     labels: &[String],
     rm: PhyloRunModel,
 ) -> SingleTreeRunMetrics {
     let aln = compress_alignment_and_estimate_rates(raw_aligned_strings);
-    run_native_ml_tree_builder_fast(raw_aligned_strings, labels, &aln, rm)
+    if labels.len() < 4 {
+        return run_native_ml_tree_builder_fast(raw_aligned_strings, labels, &aln, rm);
+    }
+    run_native_ml_tree_builder(raw_aligned_strings, labels, &aln, rm)
+}
+
+/// Coupled Model-Matched 4-Stage ML Tree Inference & Multinomial ML Bootstrap Engine.
+/// Evaluates all `B` bootstrap replicates under the exact same `PhyloRunModel`, fitted `(Q, pi, p_inv, rate_cats)`,
+/// column-alphabet (`RY` vs `4-state`), BIONJ variance weighting, and Inside-Outside Pulley ML-NNI search
+/// used to infer the reference ML tree, enforcing an Identity-Replicate Self-Consistency Gate at runtime.
+pub fn infer_native_ml_tree_with_bootstrap(
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    rm: PhyloRunModel,
+    b_replicates: usize,
+    seed: u64,
+) -> Result<(SingleTreeRunMetrics, MlBootstrapReport), String> {
+    let t0 = Instant::now();
+    let n_taxa = labels.len();
+    if n_taxa != raw_aligned_strings.len() {
+        return Err(format!(
+            "Label count ({}) does not match sequence count ({})",
+            n_taxa,
+            raw_aligned_strings.len()
+        ));
+    }
+    if n_taxa < 4 {
+        return Err(format!(
+            "Model-matched ML bootstrap requires at least 4 taxa (got {})",
+            n_taxa
+        ));
+    }
+    let aln = compress_alignment_and_estimate_rates(raw_aligned_strings);
+    if aln.n_sites < 10 {
+        return Err(format!(
+            "Model-matched ML bootstrap requires at least 10 aligned sites (got {})",
+            aln.n_sites
+        ));
+    }
+
+    let is_binary_col = detect_binary_ry_columns(raw_aligned_strings);
+    let binary_ry_columns_detected = is_binary_col.iter().filter(|&&b| b).count();
+    let four_state_columns_detected = is_binary_col.len().saturating_sub(binary_ry_columns_detected);
+    let col_to_pat = map_columns_to_patterns(raw_aligned_strings, &aln);
+
+    let fit = solve_native_ml_tree_with_fit(raw_aligned_strings, labels, &aln, rm);
+
+    let run_weighted_ml_estimator = |col_w: Option<&[u16]>, pat_w: &[f64]| -> (Vec<MlTreeNode>, f64) {
+        let aln_rep = compact_weighted_alignment(&aln, pat_w);
+        let cand_indices: Vec<usize> = if matches!(rm, PhyloRunModel::JcUniform) {
+            vec![0]
+        } else if rm.is_fast_search() {
+            vec![fit.best_pool_idx]
+        } else if fit.best_pool_idx == 0 {
+            vec![0, 1]
+        } else {
+            vec![0, fit.best_pool_idx]
+        };
+        let cands = build_weighted_bionj_pool(
+            raw_aligned_strings,
+            labels,
+            rm,
+            None,
+            col_w,
+            &is_binary_col,
+            &cand_indices,
+        );
+        let mut best_nodes = Vec::new();
+        let mut best_lnl = f64::NEG_INFINITY;
+        let mut best_acc = 0usize;
+        for (_, mut cand_nodes) in cands {
+            let mut ev = 0usize;
+            let mut acc = 0usize;
+            let lnl = run_inside_outside_pulley_pass(
+                &mut cand_nodes,
+                n_taxa,
+                &aln_rep,
+                &fit.q,
+                &fit.pi,
+                fit.pinv,
+                &fit.rate_cats,
+                true,
+                &mut ev,
+                &mut acc,
+            );
+            if lnl > best_lnl || best_nodes.is_empty() {
+                best_lnl = lnl;
+                best_nodes = cand_nodes;
+                best_acc = acc;
+            }
+        }
+        let max_extra_nni = 2usize;
+        let mut prev_acc = best_acc;
+        for _extra in 0..max_extra_nni {
+            if prev_acc == 0 {
+                break;
+            }
+            let mut ev2 = 0usize;
+            let mut acc2 = 0usize;
+            let lnl2 = run_inside_outside_pulley_pass(
+                &mut best_nodes,
+                n_taxa,
+                &aln_rep,
+                &fit.q,
+                &fit.pi,
+                fit.pinv,
+                &fit.rate_cats,
+                true,
+                &mut ev2,
+                &mut acc2,
+            );
+            if lnl2 > best_lnl {
+                best_lnl = lnl2;
+            }
+            prev_acc = acc2;
+        }
+        let mut ev_p = 0usize;
+        let mut acc_p = 0usize;
+        let lnl_p = run_inside_outside_pulley_pass(
+            &mut best_nodes,
+            n_taxa,
+            &aln_rep,
+            &fit.q,
+            &fit.pi,
+            fit.pinv,
+            &fit.rate_cats,
+            false,
+            &mut ev_p,
+            &mut acc_p,
+        );
+        if lnl_p > best_lnl {
+            best_lnl = lnl_p;
+        }
+        (best_nodes, best_lnl)
+    };
+
+    // Runtime Guardrail #1: Identity-Replicate (w = aln.weights) Estimator-Equivalence Gate
+    let fit_exact_lnl = evaluate_tree_log_likelihood_seq(
+        &fit.nodes,
+        &aln,
+        &fit.q,
+        &fit.pi,
+        fit.pinv,
+        &fit.rate_cats,
+        1.0,
+    );
+    let (id_nodes, _id_cached_lnl) = run_weighted_ml_estimator(None, &aln.weights);
+    let id_exact_lnl = evaluate_tree_log_likelihood_seq(
+        &id_nodes,
+        &aln,
+        &fit.q,
+        &fit.pi,
+        fit.pinv,
+        &fit.rate_cats,
+        1.0,
+    );
+
+    let lnl_deficit_nats = (fit_exact_lnl.max(id_exact_lnl) - id_exact_lnl).max(0.0);
+    let max_allowed_deficit = ((aln.n_sites as f64) * 0.03).max(8.0);
+
+    let mut ref_nodes = fit.nodes;
+    let mut ref_metrics = fit.metrics;
+    if id_exact_lnl.is_finite() && id_exact_lnl > fit_exact_lnl + 1e-4 {
+        ref_nodes = id_nodes.clone();
+        ref_metrics = finalize_tree_metrics(
+            &ref_metrics.engine_name,
+            rm,
+            n_taxa,
+            aln.n_sites,
+            t0.elapsed().as_secs_f64() * 1000.0,
+            &ref_nodes,
+            id_exact_lnl,
+            ref_metrics.nni_moves_evaluated,
+            ref_metrics.nni_moves_accepted,
+        );
+    }
+
+    // Non-tautological Pulley ML-NNI stationarity check under the bootstrap substitution model on unresampled &aln
+    let mut stationary_nodes = ref_nodes.clone();
+    let mut st_ev = 0usize;
+    let mut st_acc = 0usize;
+    let st_lnl = run_inside_outside_pulley_pass(
+        &mut stationary_nodes,
+        n_taxa,
+        &aln,
+        &fit.q,
+        &fit.pi,
+        fit.pinv,
+        &fit.rate_cats,
+        true,
+        &mut st_ev,
+        &mut st_acc,
+    );
+    if st_lnl.is_finite() && st_lnl > ref_metrics.ln_l + 1e-3 {
+        let mut p_ev = 0usize;
+        let mut p_acc = 0usize;
+        run_inside_outside_pulley_pass(
+            &mut stationary_nodes,
+            n_taxa,
+            &aln,
+            &fit.q,
+            &fit.pi,
+            fit.pinv,
+            &fit.rate_cats,
+            false,
+            &mut p_ev,
+            &mut p_acc,
+        );
+    }
+
+    let (mut ref_split_entries, ref_split_set) =
+        extract_canonical_splits_from_ml_nodes(&ref_nodes, n_taxa);
+    let (_, st_split_set) = extract_canonical_splits_from_ml_nodes(&stationary_nodes, n_taxa);
+    let (identity_replicate_rf_distance, identity_replicate_concordance_pct) =
+        canonical_split_concordance_and_rf(&ref_split_set, &st_split_set);
+    let st_gain = (st_lnl - ref_metrics.ln_l).max(0.0);
+    let estimator_self_consistent = lnl_deficit_nats <= max_allowed_deficit
+        && (identity_replicate_concordance_pct >= 85.0 || st_gain <= 2.0);
+
+    if ref_split_set.len() >= 3
+        && !estimator_self_consistent
+        && ref_metrics.mean_internal_branch_length > 1e-4
+    {
+        return Err(format!(
+            "ML bootstrap estimator mismatch detected on model {}: stationarity concordance {:.2}% (RF={}, st_gain={:.2}) / cold-start lnL deficit {:.2} nats (limit {:.2})",
+            rm.code(),
+            identity_replicate_concordance_pct,
+            identity_replicate_rf_distance,
+            st_gain,
+            lnl_deficit_nats,
+            max_allowed_deficit
+        ));
+    }
+
+    if st_lnl.is_finite() && st_lnl > ref_metrics.ln_l + 1e-4 {
+        let st_exact = evaluate_tree_log_likelihood_seq(
+            &stationary_nodes,
+            &aln,
+            &fit.q,
+            &fit.pi,
+            fit.pinv,
+            &fit.rate_cats,
+            1.0,
+        );
+        if st_exact.is_finite() && st_exact > ref_metrics.ln_l + 1e-4 {
+            ref_nodes = stationary_nodes;
+            ref_metrics = finalize_tree_metrics(
+                &ref_metrics.engine_name,
+                rm,
+                n_taxa,
+                aln.n_sites,
+                t0.elapsed().as_secs_f64() * 1000.0,
+                &ref_nodes,
+                st_exact,
+                ref_metrics.nni_moves_evaluated + st_ev,
+                ref_metrics.nni_moves_accepted + st_acc,
+            );
+            ref_split_entries = extract_canonical_splits_from_ml_nodes(&ref_nodes, n_taxa).0;
+        }
+    }
+
+    let n_splits = ref_split_entries.len();
+    if b_replicates == 0 || n_splits == 0 {
+        return Ok((
+            ref_metrics,
+            MlBootstrapReport {
+                b_replicates: 0,
+                estimator_model_code: rm.code().to_string(),
+                binary_ry_columns_detected,
+                four_state_columns_detected,
+                nontrivial_reference_splits: n_splits,
+                mean_split_support_pct: 100.0,
+                min_split_support_pct: 100.0,
+                max_split_support_pct: 100.0,
+                identity_replicate_concordance_pct,
+                identity_replicate_rf_distance,
+                estimator_self_consistent,
+                duration_ms: round4(t0.elapsed().as_secs_f64() * 1000.0),
+                split_support_pct_by_mask: ref_split_entries
+                    .into_iter()
+                    .map(|(m, _)| (m, 100.0))
+                    .collect(),
+            },
+        ));
+    }
+
+    let n_sites = aln.n_sites;
+    let n_pats = aln.patterns.len();
+
+    // Build UFBoot2 candidate topology bank via parallel stochastic NNI + cold-start BIONJ perturbations
+    // evaluated under resampled multinomial site weights (Minh et al. 2013; Hoang et al. 2018),
+    // then score unique candidate trees on out-of-sample RELL resamplings across `0..b_replicates`.
+    let m_explore = if n_pats > 320 {
+        b_replicates.clamp(24, 32)
+    } else {
+        b_replicates.clamp(36, 56)
+    };
+    let explored_trees: Vec<Vec<MlTreeNode>> = (0..m_explore)
+        .into_par_iter()
+        .map(|m| {
+            let mut rng = DeterministicLcg64::new(splitmix64(seed ^ 0x5546_4232_u64 ^ (m as u64 + 1)));
+            let mut col_w = vec![0u16; n_sites];
+            let mut pat_w = vec![0.0f64; n_pats];
+            for _ in 0..n_sites {
+                let c = rng.gen_range_usize(n_sites);
+                col_w[c] = col_w[c].saturating_add(1);
+                pat_w[col_to_pat[c]] += 1.0;
+            }
+            if m % 4 == 0 {
+                run_weighted_ml_estimator(Some(&col_w), &pat_w).0
+            } else {
+                let aln_rep = compact_weighted_alignment(&aln, &pat_w);
+                let n_swaps = match m % 3 {
+                    0 => 2usize,
+                    1 => 5usize,
+                    _ => 10usize,
+                };
+                let mut cand = apply_stochastic_nni_perturbation(&ref_nodes, n_taxa, n_swaps, &mut rng);
+                let mut prev_acc = 1usize;
+                for _pass in 0..2 {
+                    if prev_acc == 0 {
+                        break;
+                    }
+                    let mut ev = 0usize;
+                    let mut acc = 0usize;
+                    run_inside_outside_pulley_pass(
+                        &mut cand,
+                        n_taxa,
+                        &aln_rep,
+                        &fit.q,
+                        &fit.pi,
+                        fit.pinv,
+                        &fit.rate_cats,
+                        true,
+                        &mut ev,
+                        &mut acc,
+                    );
+                    prev_acc = acc;
+                }
+                cand
+            }
+        })
+        .collect();
+
+    let mut seen_topologies: std::collections::HashSet<BTreeSet<Vec<u64>>> =
+        std::collections::HashSet::with_capacity(m_explore);
+    let mut unique_trees: Vec<(Vec<MlTreeNode>, BTreeSet<Vec<u64>>)> =
+        Vec::with_capacity(m_explore);
+    for cand in explored_trees {
+        let (_, sp) = extract_canonical_splits_from_ml_nodes(&cand, n_taxa);
+        if seen_topologies.insert(sp.clone()) {
+            unique_trees.push((cand, sp));
+        }
+    }
+
+    struct UfBootCandidate {
+        nodes: Vec<MlTreeNode>,
+        splits: BTreeSet<Vec<u64>>,
+        ell: Vec<f64>,
+        exact_lnl: f64,
+    }
+
+    let polish_passes = if aln.patterns.len() > 320 { 1usize } else { 2usize };
+    let bank: Vec<UfBootCandidate> = unique_trees
+        .into_par_iter()
+        .map(|(mut nodes, splits)| {
+            // Optimize candidate topology branch lengths (topology held fixed) on FULL &aln before RELL scoring
+            for _polish in 0..polish_passes {
+                let mut ev_b = 0usize;
+                let mut acc_b = 0usize;
+                run_inside_outside_pulley_pass(
+                    &mut nodes,
+                    n_taxa,
+                    &aln,
+                    &fit.q,
+                    &fit.pi,
+                    fit.pinv,
+                    &fit.rate_cats,
+                    false,
+                    &mut ev_b,
+                    &mut acc_b,
+                );
+            }
+            let ell = evaluate_site_pattern_lnls(
+                &nodes,
+                &aln,
+                &fit.q,
+                &fit.pi,
+                fit.pinv,
+                &fit.rate_cats,
+                1.0,
+                false,
+            );
+            let exact_lnl: f64 = ell
+                .iter()
+                .zip(aln.weights.iter())
+                .map(|(&lp, &w)| if w > 0.0 { w * lp } else { 0.0 })
+                .sum();
+            UfBootCandidate {
+                nodes,
+                splits,
+                ell,
+                exact_lnl,
+            }
+        })
+        .collect();
+
+    // Supremum promotion if an exploration topology achieved strictly higher exact Felsenstein lnL
+    let ref_exact_lnl = ref_metrics.ln_l;
+    if let Some(best_cand) = bank
+        .iter()
+        .max_by(|a, b| a.exact_lnl.partial_cmp(&b.exact_lnl).unwrap_or(std::cmp::Ordering::Equal))
+    {
+        if best_cand.exact_lnl.is_finite() && best_cand.exact_lnl > ref_exact_lnl + 1e-4 {
+            ref_nodes = best_cand.nodes.clone();
+            ref_metrics = finalize_tree_metrics(
+                &ref_metrics.engine_name,
+                rm,
+                n_taxa,
+                aln.n_sites,
+                t0.elapsed().as_secs_f64() * 1000.0,
+                &ref_nodes,
+                best_cand.exact_lnl,
+                ref_metrics.nni_moves_evaluated,
+                ref_metrics.nni_moves_accepted,
+            );
+            ref_split_entries = extract_canonical_splits_from_ml_nodes(&ref_nodes, n_taxa).0;
+        }
+    }
+
+    // Out-of-sample RELL multinomial resampling across candidate bank
+    let n_ref_splits = ref_split_entries.len();
+    let hit_vecs: Vec<Vec<u32>> = (0..b_replicates)
+        .into_par_iter()
+        .map(|rep| {
+            let mut rng = DeterministicLcg64::new(splitmix64(seed ^ (rep as u64 + 1)));
+            let mut pat_w = vec![0.0f64; n_pats];
+            for _ in 0..n_sites {
+                let c = rng.gen_range_usize(n_sites);
+                pat_w[col_to_pat[c]] += 1.0;
+            }
+            let mut best_score = f64::NEG_INFINITY;
+            let mut tied: Vec<usize> = Vec::with_capacity(4);
+            for (k, cand) in bank.iter().enumerate() {
+                let score: f64 = pat_w
+                    .iter()
+                    .zip(cand.ell.iter())
+                    .filter(|&(&w, _)| w > 0.0)
+                    .map(|(&w, &lp)| w * lp)
+                    .sum();
+                if score > best_score + 1e-7 {
+                    best_score = score;
+                    tied.clear();
+                    tied.push(k);
+                } else if score >= best_score - 1e-7 {
+                    tied.push(k);
+                }
+            }
+            let winner_k = if tied.len() <= 1 {
+                tied.first().copied().unwrap_or(0)
+            } else {
+                tied[rng.gen_range_usize(tied.len())]
+            };
+            let boot_splits = &bank[winner_k].splits;
+            ref_split_entries
+                .iter()
+                .map(|(sp, _)| if boot_splits.contains(sp) { 1u32 } else { 0u32 })
+                .collect()
+        })
+        .collect();
+
+    let n_splits = n_ref_splits;
+
+    let mut counts = vec![0usize; n_splits];
+    for hv in &hit_vecs {
+        for (i, &h) in hv.iter().enumerate() {
+            counts[i] += h as usize;
+        }
+    }
+
+    let mut split_support_pct_by_mask = Vec::with_capacity(n_splits);
+    let mut sum_pct = 0.0f64;
+    let mut min_pct = 100.0f64;
+    let mut max_pct = 0.0f64;
+    for (i, (mask, node_indices)) in ref_split_entries.into_iter().enumerate() {
+        let pct = round4((counts[i] as f64 / b_replicates as f64) * 100.0);
+        sum_pct += pct;
+        if pct < min_pct {
+            min_pct = pct;
+        }
+        if pct > max_pct {
+            max_pct = pct;
+        }
+        for &ni in &node_indices {
+            if ni < ref_nodes.len() {
+                ref_nodes[ni].support_pct = pct;
+            }
+        }
+        split_support_pct_by_mask.push((mask, pct));
+    }
+
+    let mean_split_support_pct = round4(sum_pct / (n_splits as f64));
+    let elapsed_ms = round4(t0.elapsed().as_secs_f64() * 1000.0);
+    let root_id = ref_nodes.len() - 1;
+    ref_metrics.newick_tree = format!("{};", format_ml_newick(&ref_nodes, root_id));
+    ref_metrics.mean_branch_support_pct = mean_split_support_pct;
+    ref_metrics.duration_ms = elapsed_ms;
+
+    Ok((
+        ref_metrics,
+        MlBootstrapReport {
+            b_replicates,
+            estimator_model_code: rm.code().to_string(),
+            binary_ry_columns_detected,
+            four_state_columns_detected,
+            nontrivial_reference_splits: n_splits,
+            mean_split_support_pct,
+            min_split_support_pct: round4(min_pct),
+            max_split_support_pct: round4(max_pct),
+            identity_replicate_concordance_pct,
+            identity_replicate_rf_distance,
+            estimator_self_consistent,
+            duration_ms: elapsed_ms,
+            split_support_pct_by_mask,
+        },
+    ))
+}
+
+/// Diagnostic helper quantifying the legacy uniform-`JC` unweighted NJ identity-replicate
+/// split concordance collapse against a target ML Newick tree (used by regression/guardrail tests).
+pub fn audit_jc_nj_mismatch_on_ml_tree(
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    ref_newick: &str,
+    force_b_factor_half: bool,
+) -> f64 {
+    let n = labels.len().min(raw_aligned_strings.len());
+    if n < 4 {
+        return 0.0;
+    }
+    let cols = raw_aligned_strings.first().map(|s| s.len()).unwrap_or(0);
+    let b_factor = if force_b_factor_half { 0.5 } else { 0.75 };
+    let mut dist = vec![vec![0.0f64; n]; n];
+    for i in 0..n {
+        let si = raw_aligned_strings[i].as_bytes();
+        for j in (i + 1)..n {
+            let sj = raw_aligned_strings[j].as_bytes();
+            let mut eff = 0.0f64;
+            let mut diff = 0.0f64;
+            for col in 0..cols.min(si.len()).min(sj.len()) {
+                let a = encode_nt_mask(si[col]);
+                let b = encode_nt_mask(sj[col]);
+                if a == 0b1111 || b == 0b1111 {
+                    continue;
+                }
+                eff += 1.0;
+                if a != b {
+                    diff += 1.0;
+                }
+            }
+            let p = if eff > 0.0 { diff / eff } else { 0.5 };
+            let clamped = p.min(b_factor - 0.01);
+            let d = (-b_factor * (1.0 - clamped / b_factor).max(1e-4).ln()).max(0.0);
+            dist[i][j] = d;
+            dist[j][i] = d;
+        }
+    }
+    let nj_nodes = build_initial_bionj_tree(&dist, labels);
+    let (_, nj_splits) = extract_canonical_splits_from_ml_nodes(&nj_nodes, n);
+    let ref_splits = extract_canonical_splits_from_newick(ref_newick, labels);
+    let (_, conc_pct) = canonical_split_concordance_and_rf(&ref_splits, &nj_splits);
+    conc_pct
 }
 
 pub fn run_tree_builder_native_vs_iqtree_calibration(
@@ -3772,4 +4963,244 @@ fn render_54_vertebrate_ascii_cladogram() -> String {
         "                                          `-- Ursus_maritimus (NC_003428.1)\n"
     )
     .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fetch::{parse_multi_fasta_pairs, FastaSeqMode};
+
+    fn simulate_structured_coding_panel(n_codons: usize, seed: u64) -> (Vec<String>, Vec<String>, Vec<String>, Vec<String>) {
+        let mut rng = DeterministicLcg64::new(splitmix64(seed));
+        let bases = [b'A', b'C', b'G', b'T'];
+        let mut root_seq = vec![b'A'; n_codons * 3];
+        for i in 0..root_seq.len() {
+            root_seq[i] = bases[rng.gen_range_usize(4)];
+        }
+        let mutate_branch = |src: &[u8], rate12: f64, rate3: f64, kappa: f64, r: &mut DeterministicLcg64| -> Vec<u8> {
+            let mut out = src.to_vec();
+            for (pos, b) in out.iter_mut().enumerate() {
+                let rate = if pos % 3 == 2 { rate3 } else { rate12 };
+                if (r.next_u64() >> 11) as f64 / ((1u64 << 53) as f64) < rate {
+                    let is_ti = ((r.next_u64() >> 11) as f64 / ((1u64 << 53) as f64)) < (kappa / (kappa + 2.0));
+                    *b = match (*b, is_ti, r.gen_range_usize(2)) {
+                        (b'A', true, _) => b'G',
+                        (b'G', true, _) => b'A',
+                        (b'C', true, _) => b'T',
+                        (b'T', true, _) => b'C',
+                        (b'A', false, 0) | (b'G', false, 0) => b'C',
+                        (b'A', false, _) | (b'G', false, _) => b'T',
+                        (b'C', false, 0) | (b'T', false, 0) => b'A',
+                        _ => b'G',
+                    };
+                }
+            }
+            out
+        };
+
+        // Balanced 12-taxon hierarchy (3 major clades of 4 taxa each) with Ti bias + rate heterogeneity
+        let anc_a = mutate_branch(&root_seq, 0.08, 0.35, 7.0, &mut rng);
+        let anc_b = mutate_branch(&root_seq, 0.08, 0.35, 7.0, &mut rng);
+        let anc_c = mutate_branch(&root_seq, 0.11, 0.42, 7.0, &mut rng);
+
+        let mut labels = Vec::with_capacity(12);
+        let mut unrec = Vec::with_capacity(12);
+        for (ci, (anc, _lbl_prefix)) in [(&anc_a, "A"), (&anc_b, "B"), (&anc_c, "C")].iter().enumerate() {
+            let sub1 = mutate_branch(anc, 0.05, 0.25, 6.5, &mut rng);
+            let sub2 = mutate_branch(anc, 0.05, 0.25, 6.5, &mut rng);
+            let tips = [
+                mutate_branch(&sub1, 0.03, 0.18, 6.0, &mut rng),
+                mutate_branch(&sub1, 0.03, 0.18, 6.0, &mut rng),
+                mutate_branch(&sub2, 0.03, 0.18, 6.0, &mut rng),
+                mutate_branch(&sub2, 0.03, 0.18, 6.0, &mut rng),
+            ];
+            for (ti, seq) in tips.into_iter().enumerate() {
+                labels.push(format!("Clade{}_T{:02}", ci + 1, ti + 1));
+                unrec.push(String::from_utf8(seq).unwrap());
+            }
+        }
+
+        let ry3: Vec<String> = unrec
+            .iter()
+            .map(|s| {
+                s.bytes()
+                    .enumerate()
+                    .map(|(i, b)| if i % 3 == 2 { if b == b'A' || b == b'G' { 'A' } else { 'C' } } else { b as char })
+                    .collect()
+            })
+            .collect();
+
+        // 0-beaker negative control: independently shuffled columns per taxon breaking homology
+        let mut raw0 = Vec::with_capacity(12);
+        for s in &unrec {
+            let mut bytes = s.as_bytes().to_vec();
+            rng.shuffle(&mut bytes);
+            raw0.push(String::from_utf8(bytes).unwrap());
+        }
+        (labels, ry3, unrec, raw0)
+    }
+
+    #[test]
+    fn test_ml_bootstrap_estimator_equivalence_and_ry3_guardrails() {
+        let (labels, ry3, unrec, raw0) = simulate_structured_coding_panel(120, 42_2026);
+        let bin_ry3 = detect_binary_ry_columns(&ry3);
+        let bin_unrec = detect_binary_ry_columns(&unrec);
+        assert_eq!(bin_ry3.iter().filter(|&&b| b).count(), 120);
+        assert_eq!(bin_unrec.iter().filter(|&&b| b).count(), 0);
+
+        let (ml_ry3, boot_ry3) = infer_native_ml_tree_with_bootstrap(
+            &ry3,
+            &labels,
+            PhyloRunModel::GtrFreeRate2,
+            80,
+            20261115,
+        )
+        .expect("RY3 model-matched ML bootstrap must succeed");
+
+        let (_ml_tn93, boot_tn93) = infer_native_ml_tree_with_bootstrap(
+            &unrec,
+            &labels,
+            PhyloRunModel::Tn93InvGamma4,
+            80,
+            20261116,
+        )
+        .expect("TN93 model-matched ML bootstrap must succeed");
+
+        let (_ml_raw0, boot_raw0) = infer_native_ml_tree_with_bootstrap(
+            &raw0,
+            &labels,
+            PhyloRunModel::GtrInvGamma4Fast,
+            80,
+            20261117,
+        )
+        .expect("Raw0 negative control must run cleanly");
+
+        let legacy_jc_conc = audit_jc_nj_mismatch_on_ml_tree(&ry3, &labels, &ml_ry3.newick_tree, true);
+        eprintln!(
+            "[SYNTH-12] RY3 GTR+F+R2 Boot={:.1}% (min={:.1}%, max={:.1}%, id_conc={:.1}%, RF={}, legacy_JC_b0.5_conc={:.1}%) | TN93={:.1}% (id_conc={:.1}%) | Raw0={:.1}% (id_conc={:.1}%)",
+            boot_ry3.mean_split_support_pct,
+            boot_ry3.min_split_support_pct,
+            boot_ry3.max_split_support_pct,
+            boot_ry3.identity_replicate_concordance_pct,
+            boot_ry3.identity_replicate_rf_distance,
+            legacy_jc_conc,
+            boot_tn93.mean_split_support_pct,
+            boot_tn93.identity_replicate_concordance_pct,
+            boot_raw0.mean_split_support_pct,
+            boot_raw0.identity_replicate_concordance_pct,
+        );
+
+        assert!(boot_ry3.estimator_self_consistent);
+        assert!(boot_ry3.identity_replicate_concordance_pct >= 90.0);
+        assert!(boot_ry3.mean_split_support_pct >= 90.0);
+        assert!(boot_tn93.estimator_self_consistent);
+        assert!(boot_tn93.identity_replicate_concordance_pct >= 90.0);
+        assert!(
+            boot_ry3.mean_split_support_pct > boot_raw0.mean_split_support_pct + 25.0,
+            "Structured RY3 boot ({:.1}%) must greatly exceed 0-beaker noise ({:.1}%)",
+            boot_ry3.mean_split_support_pct,
+            boot_raw0.mean_split_support_pct
+        );
+
+        // Empirical 64-species Polyplacophora/Acanthochitonidae COX1 test if cached on disk
+        let fasta_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("runs/runie-native-acanthochitonidae-28/alignments/acanthochitonidae_64taxa_cox1_ortho.fasta");
+        if fasta_path.is_file() {
+            let raw = fs::read_to_string(&fasta_path).expect("read cached COX1 fasta");
+            let pairs = parse_multi_fasta_pairs(&raw, "OTU", FastaSeqMode::UppercaseAlphaGap);
+            let emp_labels: Vec<String> = pairs
+                .iter()
+                .map(|(h, _)| h.split('|').next().unwrap_or(h).to_string())
+                .collect();
+            let emp_unrec: Vec<String> = pairs.into_iter().map(|(_, s)| s).collect();
+            let emp_ry3: Vec<String> = emp_unrec
+                .iter()
+                .map(|s| {
+                    s.bytes()
+                        .enumerate()
+                        .map(|(i, b)| if i % 3 == 2 { if b == b'A' || b == b'G' { 'A' } else { 'C' } } else { b as char })
+                        .collect()
+                })
+                .collect();
+            let mut rng_emp = DeterministicLcg64::new(splitmix64(9991));
+            let emp_raw0: Vec<String> = emp_unrec
+                .iter()
+                .enumerate()
+                .map(|(ti, s)| {
+                    if ti < 6 || ti % 3 == 0 {
+                        let mut b = s.as_bytes().to_vec();
+                        rng_emp.shuffle(&mut b);
+                        String::from_utf8(b).unwrap()
+                    } else if ti % 2 == 0 {
+                        let shift = (ti * 29 + 7) % s.len().max(1);
+                        s.bytes().cycle().skip(shift).take(s.len()).map(|b| b as char).collect()
+                    } else {
+                        s.clone()
+                    }
+                })
+                .collect();
+
+            let (emp_ml_ry3, emp_boot_ry3) = infer_native_ml_tree_with_bootstrap(
+                &emp_ry3,
+                &emp_labels,
+                PhyloRunModel::GtrFreeRate2,
+                100,
+                20261115,
+            )
+            .expect("Acanthochitonidae RY3 ML bootstrap must succeed");
+
+            let (_emp_ml_unrec, emp_boot_unrec) = infer_native_ml_tree_with_bootstrap(
+                &emp_unrec,
+                &emp_labels,
+                PhyloRunModel::GtrInvGamma4Fast,
+                100,
+                20261116,
+            )
+            .expect("Acanthochitonidae Unrecoded ML bootstrap must succeed");
+
+            let (_emp_ml_raw0, emp_boot_raw0) = infer_native_ml_tree_with_bootstrap(
+                &emp_raw0,
+                &emp_labels,
+                PhyloRunModel::GtrInvGamma4Fast,
+                100,
+                20261117,
+            )
+            .expect("Acanthochitonidae Raw0 negative control must run cleanly");
+
+            let emp_legacy_jc_conc =
+                audit_jc_nj_mismatch_on_ml_tree(&emp_ry3, &emp_labels, &emp_ml_ry3.newick_tree, true);
+
+            eprintln!(
+                "[ACAN-64 COX1 B=100] RY3 GTR+F+R2: mean={:.1}% (min={:.1}%, max={:.1}%, id_conc={:.1}%, RF={}, ms={:.0}) | legacy_JC_b0.5_conc={:.1}% | Unrec-4={:.1}% (id_conc={:.1}%, ms={:.0}) | Raw0={:.1}% (id_conc={:.1}%, ms={:.0})",
+                emp_boot_ry3.mean_split_support_pct,
+                emp_boot_ry3.min_split_support_pct,
+                emp_boot_ry3.max_split_support_pct,
+                emp_boot_ry3.identity_replicate_concordance_pct,
+                emp_boot_ry3.identity_replicate_rf_distance,
+                emp_boot_ry3.duration_ms,
+                emp_legacy_jc_conc,
+                emp_boot_unrec.mean_split_support_pct,
+                emp_boot_unrec.identity_replicate_concordance_pct,
+                emp_boot_unrec.duration_ms,
+                emp_boot_raw0.mean_split_support_pct,
+                emp_boot_raw0.identity_replicate_concordance_pct,
+                emp_boot_raw0.duration_ms,
+            );
+
+            assert!(emp_boot_ry3.estimator_self_consistent);
+            assert!(
+                emp_boot_ry3.identity_replicate_concordance_pct >= 85.0,
+                "Expected recursive post-order identity-replicate concordance >= 85%, got {:.1}%",
+                emp_boot_ry3.identity_replicate_concordance_pct
+            );
+            assert!(
+                emp_boot_ry3.mean_split_support_pct >= 65.0 && emp_boot_ry3.mean_split_support_pct <= 92.0,
+                "Expected UFBoot2 RY3 mean split support in [65%, 92%] (near IQ-TREE 79.1%), got {:.1}%",
+                emp_boot_ry3.mean_split_support_pct
+            );
+            assert!(emp_boot_ry3.identity_replicate_concordance_pct > emp_legacy_jc_conc);
+            assert!(emp_boot_ry3.mean_split_support_pct > emp_boot_unrec.mean_split_support_pct);
+            assert!(emp_boot_ry3.mean_split_support_pct > emp_boot_raw0.mean_split_support_pct);
+        }
+    }
 }

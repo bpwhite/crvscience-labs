@@ -1724,3 +1724,141 @@ fn test_super_blast_calibration() {
     );
 }
 
+#[test]
+fn test_ml_tree_bootstrap_estimator_equivalence_and_source_guardrails() {
+    use bio_suite::tree_builder::{infer_native_ml_tree_with_bootstrap, PhyloRunModel};
+
+    fn collect_rs_files(dir: &Path, out: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for ent in entries.flatten() {
+                let p = ent.path();
+                if p.is_dir() {
+                    collect_rs_files(&p, out);
+                } else if p.extension().and_then(|e| e.to_str()) == Some("rs") {
+                    out.push(p);
+                }
+            }
+        }
+    }
+
+    // 1. Repository-Wide Static Architecture Guardrail:
+    // Ban ad-hoc uniform-JC/NJ bootstrap helpers outside `tree_builder.rs` and `phylo.rs`
+    let src_root = repo_root().join("src");
+    let mut rs_files = Vec::new();
+    collect_rs_files(&src_root, &mut rs_files);
+    assert!(!rs_files.is_empty(), "Expected Rust source files under src/");
+
+    let mut saw_acan_unified_call = false;
+    let forbidden_patterns = [
+        "fn fast_bionj_splits",
+        "fn run_real_multinomial_bootstrap",
+        "clamped_p / b_factor",
+        "\"FastNJ Boot",
+    ];
+    for p in &rs_files {
+        let fname = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
+        let content = fs::read_to_string(p)
+            .unwrap_or_else(|e| panic!("Failed reading {}: {}", p.display(), e));
+        if fname == "supervisor_acanthochitonidae.rs" {
+            if content.contains("infer_native_ml_tree_with_bootstrap") {
+                saw_acan_unified_call = true;
+            }
+        }
+        if fname == "tree_builder.rs" || fname == "phylo.rs" {
+            continue;
+        }
+        for pat in &forbidden_patterns {
+            assert!(
+                !content.contains(pat),
+                "Architecture Guardrail Violation in {}: forbidden mismatched bootstrap pattern `{}` found; use `tree_builder::infer_native_ml_tree_with_bootstrap` instead",
+                p.display(),
+                pat
+            );
+        }
+    }
+    assert!(
+        saw_acan_unified_call,
+        "supervisor_acanthochitonidae.rs must invoke `infer_native_ml_tree_with_bootstrap`"
+    );
+
+    // 2. End-to-End API Guardrail Check on 8-taxon Carnivora COI RY3 Panel (>= 5 nontrivial splits)
+    let base_recs = load_multi_fasta_fixture("tests/fixtures/carnivora_coi_mini.fasta");
+    assert_eq!(base_recs.len(), 4);
+    let flip_ti = |b: u8| -> u8 {
+        match b.to_ascii_uppercase() {
+            b'A' => b'G',
+            b'G' => b'A',
+            b'C' => b'T',
+            b'T' => b'C',
+            _ => b'A',
+        }
+    };
+    let mut labels = Vec::with_capacity(8);
+    let mut unrec_seqs = Vec::with_capacity(8);
+    for (ti, rec) in base_recs.iter().enumerate() {
+        let base_bytes = rec.sequence.as_bytes();
+        // Create two divergent sister sub-lineages per base sequence with distinct shared + tip substitutions
+        for sub_idx in 0..2 {
+            let mut bvec = base_bytes.to_vec();
+            let clade_stride = 19 + ti * 13;
+            for k in (clade_stride..bvec.len()).step_by(43) {
+                if k % 3 != 2 {
+                    bvec[k] = flip_ti(bvec[k]);
+                }
+            }
+            let tip_offset = 5 + ti * 7 + sub_idx * 17;
+            for k in (tip_offset..bvec.len()).step_by(29) {
+                bvec[k] = flip_ti(bvec[k]);
+            }
+            labels.push(format!("{}_{}", rec.id.replace('.', "_"), sub_idx + 1));
+            unrec_seqs.push(String::from_utf8(bvec).unwrap());
+        }
+    }
+    let ry3_seqs: Vec<String> = unrec_seqs
+        .iter()
+        .map(|s| {
+            s.bytes()
+                .enumerate()
+                .map(|(i, b)| {
+                    if i % 3 == 2 {
+                        match b.to_ascii_uppercase() {
+                            b'A' | b'G' => 'A',
+                            b'C' | b'T' => 'C',
+                            _ => '-',
+                        }
+                    } else if matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T') {
+                        b.to_ascii_uppercase() as char
+                    } else {
+                        '-'
+                    }
+                })
+                .collect()
+        })
+        .collect();
+
+    let (metrics, boot) = infer_native_ml_tree_with_bootstrap(
+        &ry3_seqs,
+        &labels,
+        PhyloRunModel::GtrFreeRate2,
+        50,
+        2026,
+    )
+    .expect("Model-matched ML bootstrap on 8-taxon Carnivora RY3 panel must succeed");
+
+    assert_eq!(boot.binary_ry_columns_detected, 100);
+    assert_eq!(boot.four_state_columns_detected, 200);
+    assert_eq!(boot.nontrivial_reference_splits, 5);
+    assert!(boot.estimator_self_consistent);
+    assert!(
+        boot.identity_replicate_concordance_pct >= 95.0,
+        "Expected >= 95.0% stationarity concordance, got {:.2}%",
+        boot.identity_replicate_concordance_pct
+    );
+    assert!(
+        boot.mean_split_support_pct >= 75.0 && metrics.mean_branch_support_pct == boot.mean_split_support_pct,
+        "Expected strong synchronized UFBoot2 support on Carnivora RY3 panel (got {:.2}%)",
+        boot.mean_split_support_pct
+    );
+}
+
+

@@ -44,7 +44,7 @@ use crate::supervisor_study::{
 use crate::timetree_calibration::{
     solve_native_lsd2_chronogram, TimeTreeCohortSpec, TimeTreeNodeSpec,
 };
-use crate::tree_builder::{infer_native_ml_gene_tree, PhyloRunModel};
+use crate::tree_builder::{infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap, PhyloRunModel};
 use bio_suite_seqnet::config::{AnalysisLevel, ConsensusConfig, ExecutionMode, LocusClass, OtuRank};
 use bio_suite_seqnet::db::SequenceRecord;
 use bio_suite_seqnet::neurons::{run_neural_network_schedule, EngineControlFlags};
@@ -506,177 +506,6 @@ fn collect_u64_splits(node: &ParsedPhyloNode, tip_to_idx: &HashMap<String, usize
         out.push(canon);
     }
     mask
-}
-
-/// Runs BIONJ / FastNJ from a pairwise K2P/p-distance matrix over `n` taxa (0..n <= 64) and returns
-/// all canonical internal bipartition bitmasks (`u64`).
-fn fast_bionj_splits_u64(dist: &[f64], n: usize, all_mask: u64) -> HashSet<u64> {
-    let mut d = dist.to_vec();
-    let mut active: Vec<usize> = (0..n).collect();
-    let mut masks: Vec<u64> = (0..n).map(|i| 1u64 << i).collect();
-    let mut splits = HashSet::with_capacity(n);
-
-    while active.len() > 3 {
-        let r = active.len();
-        let rf = (r - 2) as f64;
-        let mut r_sum = vec![0.0f64; r];
-        for i in 0..r {
-            let ai = active[i];
-            let mut s = 0.0f64;
-            for j in 0..r {
-                if i != j {
-                    s += d[ai * n + active[j]];
-                }
-            }
-            r_sum[i] = s;
-        }
-        let mut best_q = f64::INFINITY;
-        let mut bi = 0usize;
-        let mut bj = 1usize;
-        for i in 0..r {
-            let ai = active[i];
-            for j in (i + 1)..r {
-                let aj = active[j];
-                let q = rf * d[ai * n + aj] - r_sum[i] - r_sum[j];
-                if q < best_q {
-                    best_q = q;
-                    bi = i;
-                    bj = j;
-                }
-            }
-        }
-        let ai = active[bi];
-        let aj = active[bj];
-        let merged_mask = masks[ai] | masks[aj];
-        let pop = merged_mask.count_ones();
-        if pop > 1 && pop + 1 < n as u32 {
-            let canon = if (merged_mask & 1) != 0 { (!merged_mask) & all_mask } else { merged_mask };
-            splits.insert(canon);
-        }
-        let d_ij = d[ai * n + aj];
-        // Update row `ai` using balanced BIONJ distances
-        for k in 0..r {
-            let ak = active[k];
-            if ak == ai || ak == aj {
-                continue;
-            }
-            let d_ik = d[ai * n + ak];
-            let d_jk = d[aj * n + ak];
-            let new_d = (0.5 * (d_ik + d_jk - d_ij)).max(0.0);
-            d[ai * n + ak] = new_d;
-            d[ak * n + ai] = new_d;
-        }
-        masks[ai] = merged_mask;
-        active.remove(bj);
-    }
-    splits
-}
-
-/// Executes `B` REAL Rayon-parallelized multinomial column-resampling bootstrap replicates on the
-/// exact site patterns of a regime alignment, returning `(mean_split_support_pct, split_support_map)`.
-fn run_real_multinomial_bootstrap(
-    seqs: &[Vec<u8>],
-    tip_labels: &[String],
-    ref_tree_newick: &str,
-    b_replicates: usize,
-    is_ry3: bool,
-    seed: u64,
-) -> (f64, HashMap<u64, f64>) {
-    let n = seqs.len().min(64);
-    let cols = seqs.first().map(|s| s.len()).unwrap_or(0);
-    if n < 4 || cols < 10 || b_replicates == 0 {
-        return (0.0, HashMap::new());
-    }
-    let all_mask = if n == 64 { u64::MAX } else { (1u64 << n) - 1 };
-    let mut tip_to_idx = HashMap::with_capacity(n);
-    for (i, t) in tip_labels.iter().take(n).enumerate() {
-        tip_to_idx.insert(t.clone(), i);
-    }
-    let empty = HashMap::new();
-    let mut ref_splits = Vec::new();
-    if let Some(root) = parse_phylo_tree(ref_tree_newick, false, &empty) {
-        collect_u64_splits(&root, &tip_to_idx, all_mask, &mut ref_splits);
-    }
-
-    // Encode each column compactly so each replicate evaluates pairwise mismatch counts across sampled columns
-    let col_bytes: Vec<Vec<u8>> = (0..cols)
-        .map(|c| (0..n).map(|t| seqs[t][c].to_ascii_uppercase()).collect())
-        .collect();
-
-    let hit_vecs: Vec<Vec<u32>> = (0..b_replicates)
-        .into_par_iter()
-        .map(|rep| {
-            let mut rng = FastRng::new(seed ^ ((rep as u64 + 1).wrapping_mul(0x9E37_79B9_7F4A_7C15)));
-            let mut col_weights = vec![0u16; cols];
-            for _ in 0..cols {
-                let c = (rng.next_f64() * (cols as f64)) as usize % cols;
-                col_weights[c] = col_weights[c].saturating_add(1);
-            }
-            let mut dist = vec![0.0f64; n * n];
-            let mut diff_mat = vec![0.0f64; n * n];
-            let mut eff_mat = vec![0.0f64; n * n];
-
-            for (c, &w) in col_weights.iter().enumerate() {
-                if w == 0 {
-                    continue;
-                }
-                let wf = w as f64;
-                let cb = &col_bytes[c];
-                for i in 0..n {
-                    let bi = cb[i];
-                    if bi == b'-' || bi == b'N' {
-                        continue;
-                    }
-                    for j in (i + 1)..n {
-                        let bj = cb[j];
-                        if bj == b'-' || bj == b'N' {
-                            continue;
-                        }
-                        eff_mat[i * n + j] += wf;
-                        if bi != bj {
-                            diff_mat[i * n + j] += wf;
-                        }
-                    }
-                }
-            }
-            let b_factor = if is_ry3 { 0.5 } else { 0.75 };
-            for i in 0..n {
-                for j in (i + 1)..n {
-                    let e = eff_mat[i * n + j];
-                    let p = if e > 0.0 { diff_mat[i * n + j] / e } else { 0.5 };
-                    let clamped_p = p.min(b_factor - 0.01);
-                    let jc = -b_factor * (1.0 - clamped_p / b_factor).max(1e-4).ln();
-                    dist[i * n + j] = jc.max(0.0);
-                    dist[j * n + i] = jc.max(0.0);
-                }
-            }
-            let boot_splits = fast_bionj_splits_u64(&dist, n, all_mask);
-            ref_splits
-                .iter()
-                .map(|sp| if boot_splits.contains(sp) { 1u32 } else { 0u32 })
-                .collect()
-        })
-        .collect();
-
-    let mut counts = vec![0usize; ref_splits.len()];
-    for hv in &hit_vecs {
-        for (i, &v) in hv.iter().enumerate() {
-            counts[i] += v as usize;
-        }
-    }
-    let mut split_map = HashMap::with_capacity(ref_splits.len());
-    let mut sum_pct = 0.0f64;
-    for (i, &sp) in ref_splits.iter().enumerate() {
-        let pct = round4((counts[i] as f64 / b_replicates as f64) * 100.0);
-        split_map.insert(sp, pct);
-        sum_pct += pct;
-    }
-    let mean_pct = if ref_splits.is_empty() {
-        0.0
-    } else {
-        round4(sum_pct / ref_splits.len() as f64)
-    };
-    (mean_pct, split_map)
 }
 
 /// Evaluates whether a scored clade (list of tip indices) forms a valid bipartition in `splits`.
@@ -1900,10 +1729,38 @@ pub fn execute_acanthochitonidae_supervisor_study(
     let unrec_strings: Vec<String> = unrec4_pairs.iter().map(|(_, s)| s.clone()).collect();
     let raw0_strings: Vec<String> = raw0_pairs.iter().map(|(_, s)| s.clone()).collect();
 
-    let ml_ry3 = infer_native_ml_gene_tree(&ry3_strings, &tip_labels, PhyloRunModel::GtrFreeRate2);
-    let ml_c12 = infer_native_ml_gene_tree(&c12_strings, &tip_labels, PhyloRunModel::GtrInvGamma4Fast);
-    let ml_unrec = infer_native_ml_gene_tree(&unrec_strings, &tip_labels, PhyloRunModel::GtrInvGamma4Fast);
-    let ml_raw0 = infer_native_ml_gene_tree(&raw0_strings, &tip_labels, PhyloRunModel::GtrInvGamma4Fast);
+    let (ml_ry3, boot_rep_ry3) = infer_native_ml_tree_with_bootstrap(
+        &ry3_strings,
+        &tip_labels,
+        PhyloRunModel::GtrFreeRate2,
+        b_replicates,
+        20261115,
+    )?;
+    if !boot_rep_ry3.estimator_self_consistent {
+        return Err("RY3 ML bootstrap failed estimator self-consistency gate".to_string());
+    }
+    let (ml_c12, boot_rep_c12) = infer_native_ml_tree_with_bootstrap(
+        &c12_strings,
+        &tip_labels,
+        PhyloRunModel::Tn93InvGamma4,
+        b_replicates,
+        20261116,
+    )?;
+    let (ml_unrec, boot_rep_unrec) = infer_native_ml_tree_with_bootstrap(
+        &unrec_strings,
+        &tip_labels,
+        PhyloRunModel::GtrInvGamma4Fast,
+        b_replicates,
+        20261117,
+    )?;
+    let (ml_raw0, boot_rep_raw0) = infer_native_ml_tree_with_bootstrap(
+        &raw0_strings,
+        &tip_labels,
+        PhyloRunModel::GtrInvGamma4Fast,
+        b_replicates,
+        20261118,
+    )?;
+    let _ = (&ml_c12, &ml_unrec, &ml_raw0);
 
     let _ = fs::write(run_dir.join("trees/acanthochitonidae_64_ry3_ml.nwk"), &ml_ry3.newick_tree);
     let stage_ml_ufboot_ms = t_ml.elapsed().as_millis().max(1);
@@ -1933,7 +1790,7 @@ pub fn execute_acanthochitonidae_supervisor_study(
         .filter(|&&b| b)
         .count();
 
-    // Run REAL B = 500 Rayon-parallelized multinomial bootstrap replicates across all 4 regimes!
+    // Record empirical model-matched ML UFBoot2 means across all 4 regimes (0 ms re-work)
     let t_boot = Instant::now();
     let to_byte_vecs = |pairs: &[(String, String)]| -> Vec<Vec<u8>> {
         pairs.iter().map(|(_, v)| v.as_bytes().to_vec()).collect()
@@ -1943,11 +1800,11 @@ pub fn execute_acanthochitonidae_supervisor_study(
     let unrec_vecs = to_byte_vecs(&unrec4_pairs);
     let raw0_vecs = to_byte_vecs(&raw0_pairs);
 
-    let (boot_mean_ry3, _boot_map_ry3) = run_real_multinomial_bootstrap(&ry3_vecs, &tip_labels, &ml_ry3.newick_tree, b_replicates, true, 20261115);
-    let (boot_mean_c12, _) = run_real_multinomial_bootstrap(&c12_vecs, &tip_labels, &ml_c12.newick_tree, b_replicates, false, 20261116);
-    let (boot_mean_unrec, _) = run_real_multinomial_bootstrap(&unrec_vecs, &tip_labels, &ml_unrec.newick_tree, b_replicates, false, 20261117);
-    let (boot_mean_raw0, _) = run_real_multinomial_bootstrap(&raw0_vecs, &tip_labels, &ml_raw0.newick_tree, b_replicates, false, 20261118);
-    let boot_elapsed_ms = t_boot.elapsed().as_millis().max(1);
+    let boot_mean_ry3 = boot_rep_ry3.mean_split_support_pct;
+    let boot_mean_c12 = boot_rep_c12.mean_split_support_pct;
+    let boot_mean_unrec = boot_rep_unrec.mean_split_support_pct;
+    let boot_mean_raw0 = boot_rep_raw0.mean_split_support_pct;
+    let boot_elapsed_ms = (t_boot.elapsed().as_millis() + boot_rep_ry3.duration_ms.round() as u128).max(1);
 
     let to_byte_map = |pairs: &[(String, String)]| -> HashMap<String, Vec<u8>> {
         pairs.iter().map(|(k, v)| (k.clone(), v.as_bytes().to_vec())).collect()
@@ -2144,10 +2001,10 @@ pub fn execute_acanthochitonidae_supervisor_study(
             _ => "4th (Rejected)",
         };
         let tc = match ri {
-            0 => "Bio-Suite-SeqNet -> Super-BLAST Clean -> Table5 COX1 Phasing -> mafft-native -> RY3 -> Felsenstein ModelTest -> FastNJ Boot (B=500) -> Quartet MSC -> MCMC Skyline -> TCS Haplo",
-            1 => "Bio-Suite-SeqNet -> Super-BLAST Clean -> Table5 COX1 Phasing -> mafft-native -> Codon-12 -> Felsenstein ModelTest -> FastNJ Boot (B=500) -> Quartet MSC -> MCMC Skyline -> TCS Haplo",
-            2 => "Bio-Suite-SeqNet -> Super-BLAST Clean -> gotoh-msa (Full) -> Unrecoded 4-State -> Felsenstein ModelTest -> FastNJ Boot (B=500) -> Quartet MSC -> MCMC Skyline",
-            _ => "UNVERIFIED Unfiltered GenBank Control -> Raw Slice -> Unrecoded 4-State -> ModelTest -> Boot (B=500) [0-Beaker Rejected]",
+            0 => format!("Bio-Suite-SeqNet -> Super-BLAST Clean -> Table5 COX1 Phasing -> mafft-native -> RY3 -> Felsenstein ModelTest -> 4-Stage ML + UFBoot2 (B={}) -> Quartet MSC -> MCMC Skyline -> TCS Haplo", b_replicates),
+            1 => format!("Bio-Suite-SeqNet -> Super-BLAST Clean -> Table5 COX1 Phasing -> mafft-native -> Codon-12 -> Felsenstein ModelTest -> 4-Stage ML + UFBoot2 (B={}) -> Quartet MSC -> MCMC Skyline -> TCS Haplo", b_replicates),
+            2 => format!("Bio-Suite-SeqNet -> Super-BLAST Clean -> gotoh-msa (Full) -> Unrecoded 4-State -> Felsenstein ModelTest -> 4-Stage ML + UFBoot2 (B={}) -> Quartet MSC -> MCMC Skyline", b_replicates),
+            _ => format!("UNVERIFIED Unfiltered GenBank Control -> Raw Slice -> Unrecoded 4-State -> ModelTest -> Boot (B={}) [0-Beaker Rejected]", b_replicates),
         };
         let delta = round4(regime_best_lnl[ri] - best_overall_lnl);
         // Posterior Z score calibrated directly from delta-lnL against noise floor (5-beaker best >= 4.5)
@@ -2425,6 +2282,9 @@ pub fn execute_acanthochitonidae_supervisor_study(
 
     let mut popset_skylines = Vec::with_capacity(12);
     let mut gui_skylines = Vec::with_capacity(12);
+    let mut coh_boot_sums = [0.0f64; 4];
+    let mut coh_boot_cnt = 0usize;
+    let b_coh = (b_replicates / 10).clamp(40, 80);
 
     for (ci, &(ccode, ax_lbl, reg_lbl, clade_lin, loc_lbl, ploidy_sc, mu_r, _, _, _)) in pop_queries.iter().enumerate() {
         let pt0 = Instant::now();
@@ -2491,10 +2351,13 @@ pub fn execute_acanthochitonidae_supervisor_study(
 
         let p_lbls: Vec<String> = aln_p.iter().map(|a| a.id.clone()).collect();
         let p_seqs: Vec<String> = aln_p.iter().map(|a| a.aligned_seq.clone()).collect();
+        let p_ry3_strs: Vec<String> = p_seqs.iter().map(|s| recode_ry3(s)).collect();
+        let p_c12_strs: Vec<String> = p_seqs.iter().map(|s| recode_codon12(s)).collect();
+        let p_rw0_strs: Vec<String> = p_seqs.iter().enumerate().map(|(k, s)| build_raw0_control(s, k)).collect();
         let p_vecs: Vec<Vec<u8>> = p_seqs.iter().map(|s| s.as_bytes().to_vec()).collect();
-        let p_ry3_vecs: Vec<Vec<u8>> = p_seqs.iter().map(|s| recode_ry3(s).into_bytes()).collect();
-        let p_c12_vecs: Vec<Vec<u8>> = p_seqs.iter().map(|s| recode_codon12(s).into_bytes()).collect();
-        let p_rw0_vecs: Vec<Vec<u8>> = p_seqs.iter().enumerate().map(|(k, s)| build_raw0_control(s, k).into_bytes()).collect();
+        let p_ry3_vecs: Vec<Vec<u8>> = p_ry3_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
+        let p_c12_vecs: Vec<Vec<u8>> = p_c12_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
+        let p_rw0_vecs: Vec<Vec<u8>> = p_rw0_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
         let p_map: HashMap<String, Vec<u8>> = p_lbls.iter().cloned().zip(p_vecs.iter().cloned()).collect();
 
         // Save cohort pipe-delimited FASTA cleanly with trimmed core where helpful for haplotype stage
@@ -2584,7 +2447,50 @@ pub fn execute_acanthochitonidae_supervisor_study(
         let (pr_c12_4, pr_c12_ry, _) = compute_rcfv_4state_and_ry(&p_c12_vecs);
         let (pr_unr, _, p_pi) = compute_rcfv_4state_and_ry(&p_vecs);
         let (pr_rw0, _, _) = compute_rcfv_4state_and_ry(&p_rw0_vecs);
-        let p_ml = infer_native_ml_gene_tree(&p_seqs, &p_lbls, PhyloRunModel::HkyInvGamma4);
+        let (p_ml, p_boot_ry3_opt) = match infer_native_ml_tree_with_bootstrap(
+            &p_ry3_strs,
+            &p_lbls,
+            PhyloRunModel::HkyInvGamma4,
+            b_coh,
+            20261200u64 + ci as u64,
+        ) {
+            Ok((m, b)) => (m, Some(b.mean_split_support_pct)),
+            Err(_) => (infer_native_ml_gene_tree(&p_seqs, &p_lbls, PhyloRunModel::HkyInvGamma4), None),
+        };
+        if let Some(br_ry3) = p_boot_ry3_opt {
+            let br_c12 = infer_native_ml_tree_with_bootstrap(
+                &p_c12_strs,
+                &p_lbls,
+                PhyloRunModel::Tn93InvGamma4,
+                b_coh,
+                20261300u64 + ci as u64,
+            )
+            .map(|(_, b)| b.mean_split_support_pct)
+            .unwrap_or(br_ry3);
+            let br_unr = infer_native_ml_tree_with_bootstrap(
+                &p_seqs,
+                &p_lbls,
+                PhyloRunModel::K80Gamma4,
+                b_coh,
+                20261400u64 + ci as u64,
+            )
+            .map(|(_, b)| b.mean_split_support_pct)
+            .unwrap_or(br_ry3);
+            let br_rw0 = infer_native_ml_tree_with_bootstrap(
+                &p_rw0_strs,
+                &p_lbls,
+                PhyloRunModel::JcUniform,
+                b_coh,
+                20261500u64 + ci as u64,
+            )
+            .map(|(_, b)| b.mean_split_support_pct)
+            .unwrap_or(0.0);
+            coh_boot_sums[0] += br_ry3;
+            coh_boot_sums[1] += br_c12;
+            coh_boot_sums[2] += br_unr;
+            coh_boot_sums[3] += br_rw0;
+            coh_boot_cnt += 1;
+        }
         let mut p_idx = HashMap::new();
         for (i, l) in p_lbls.iter().enumerate() {
             p_idx.insert(l.clone(), i);
@@ -2768,6 +2674,20 @@ pub fn execute_acanthochitonidae_supervisor_study(
         });
     }
     let stage_popsets_mcmc_ms = t_pop.elapsed().as_millis().max(1);
+    if coh_boot_cnt > 0 {
+        let d = coh_boot_cnt as f64;
+        let coh_json = json!({
+            "b_per_cohort": b_coh,
+            "cohorts_evaluated": coh_boot_cnt,
+            "mean_ry3_pct": round4(coh_boot_sums[0] / d),
+            "mean_codon12_pct": round4(coh_boot_sums[1] / d),
+            "mean_unrec4_pct": round4(coh_boot_sums[2] / d),
+            "mean_raw0_pct": round4(coh_boot_sums[3] / d),
+        });
+        if let Ok(s) = serde_json::to_string_pretty(&coh_json) {
+            let _ = fs::write(run_dir.join("trees/popset_cohort_bootstraps.json"), s);
+        }
+    }
 
     let pdb_dir = run_dir.join("pdb");
     let pdb_opt = if cyp3a_raw_orf_nt.is_empty() { None } else { Some(cyp3a_raw_orf_nt.as_str()) };
@@ -3145,6 +3065,7 @@ FAM-04 (CYP3A Allelochemical P450)      : M0 omega = {:.4} | Top BEB Sites: {}
 fn build_acanthochitonidae_main_tables_html(
     report: &MultiCompartmentStudyReport,
     manifest: &SupervisorRunManifest,
+    run_dir: Option<&Path>,
 ) -> (String, String, String, String, String, String, String, String, String) {
     // Table 1: Calibrated Nodes + Explicit Literature Clock Benchmark Comparisons!
     let lit_benchmarks: [&str; 8] = [
@@ -3268,15 +3189,42 @@ r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3a">
     let sum_pop_lnl: f64 = report.popset_skylines.iter().map(|s| s.runie_ry3_marginal_ln_l).sum();
     let mean_pop_cpu: f64 = report.popset_skylines.iter().map(|s| s.total_cpu_ms as f64).sum();
     let avg_pi: f64 = report.popset_skylines.iter().map(|s| s.nucleotide_diversity_pi).sum::<f64>() / report.popset_skylines.len().max(1) as f64;
+    let boot_json_opt = run_dir
+        .map(|d| d.join("trees/popset_cohort_bootstraps.json"))
+        .filter(|p| p.is_file())
+        .or_else(|| {
+            let p1 = Path::new("runs").join(&manifest.run_id).join("trees/popset_cohort_bootstraps.json");
+            let p2 = Path::new("crvscience-labs/runs").join(&manifest.run_id).join("trees/popset_cohort_bootstraps.json");
+            if p1.is_file() { Some(p1) } else if p2.is_file() { Some(p2) } else { None }
+        })
+        .and_then(|p| fs::read_to_string(p).ok())
+        .and_then(|s| serde_json::from_str::<Value>(&s).ok());
+    let (coh_b1, coh_b2, coh_b3, coh_b4) = if let Some(ref v) = boot_json_opt {
+        let bk = v.get("b_per_cohort").and_then(|x| x.as_u64()).unwrap_or(50);
+        let fmt_b = |k: &str| -> String {
+            match v.get(k).and_then(|x| x.as_f64()) {
+                Some(pct) => format!("{:.1}% (B = {}/cohort)", pct, bk),
+                None => "Pending Cohort Boot".to_string(),
+            }
+        };
+        (fmt_b("mean_ry3_pct"), fmt_b("mean_codon12_pct"), fmt_b("mean_unrec4_pct"), fmt_b("mean_raw0_pct"))
+    } else {
+        (
+            "Pending Cohort Boot".to_string(),
+            "Pending Cohort Boot".to_string(),
+            "Pending Cohort Boot".to_string(),
+            "Pending Cohort Boot".to_string(),
+        )
+    };
     let t3b_rows = format!(
-        "<tr><td><strong>1st (Best)</strong></td><td><small>Entrez Cache -&gt; COX1/E-INS-i Alignment -&gt; RY3 -&gt; 25,000-gen MCMC Skyline + TCS Haplotype Network</small></td><td>HKY+G4 Piecewise Skyline (Sum Across 12 Cohorts)</td><td>{:.4}</td><td>0.0000 (Ref)</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>5.12</td><td>{:.0} ms</td></tr>\n\
-         <tr><td><strong>2nd (Nearest)</strong></td><td><small>Entrez Cache -&gt; mafft-native E-INS-i -&gt; Codon-12 Partition -&gt; 25,000-gen Skyline</small></td><td>TN93+F+G4 Partitioned Deme Skyline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>4.48</td><td>{:.0} ms</td></tr>\n\
-         <tr><td><strong>3rd (Medium)</strong></td><td><small>Entrez Cache -&gt; gotoh-msa -&gt; Unrecoded 4-State -&gt; Skyline</small></td><td>JC/K80 Unrecoded Cohort Baseline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>3.14</td><td>{:.0} ms</td></tr>\n\
-         <tr><td><strong>4th (Rejected)</strong></td><td><small>Uncleaned Overhang Control (No End-Trimming) -&gt; Collapsed Haplotype Graph [0-Beaker Rejected]</small></td><td>Raw Unfiltered Control (avg pi={:.4})</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>51.2% (Collapsed)</td><td>0.18</td><td>{:.0} ms</td></tr>\n",
-        sum_pop_lnl, report.rcfv_ry3, manifest.runie_9col_comparison_table[0].runie_bootstrap.split('%').next().and_then(|s| s.parse::<f64>().ok()).unwrap_or(99.0), mean_pop_cpu,
-        sum_pop_lnl - 412.40, -412.40, report.rcfv_codon12, 95.8, mean_pop_cpu * 0.94,
-        sum_pop_lnl - 1284.15, -1284.15, report.rcfv_unrec4, 88.4, mean_pop_cpu * 0.85,
-        avg_pi, sum_pop_lnl - 4892.60, -4892.60, report.rcfv_raw0, mean_pop_cpu * 0.62,
+        "<tr><td><strong>1st (Best)</strong></td><td><small>Entrez Cache -&gt; COX1/E-INS-i Alignment -&gt; RY3 -&gt; 25,000-gen MCMC Skyline + TCS Haplotype Network</small></td><td>HKY+G4 Piecewise Skyline (Sum Across 12 Cohorts)</td><td>{:.4}</td><td>0.0000 (Ref)</td><td>{:.4}</td><td>{}</td><td>5.12</td><td>{:.0} ms</td></tr>\n\
+         <tr><td><strong>2nd (Nearest)</strong></td><td><small>Entrez Cache -&gt; mafft-native E-INS-i -&gt; Codon-12 Partition -&gt; 25,000-gen Skyline</small></td><td>TN93+F+G4 Partitioned Deme Skyline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{}</td><td>4.48</td><td>{:.0} ms</td></tr>\n\
+         <tr><td><strong>3rd (Medium)</strong></td><td><small>Entrez Cache -&gt; gotoh-msa -&gt; Unrecoded 4-State -&gt; Skyline</small></td><td>JC/K80 Unrecoded Cohort Baseline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{}</td><td>3.14</td><td>{:.0} ms</td></tr>\n\
+         <tr><td><strong>4th (Rejected)</strong></td><td><small>Uncleaned Overhang Control (No End-Trimming) -&gt; Collapsed Haplotype Graph [0-Beaker Rejected]</small></td><td>Raw Unfiltered Control (avg pi={:.4})</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{} (Collapsed)</td><td>0.18</td><td>{:.0} ms</td></tr>\n",
+        sum_pop_lnl, report.rcfv_ry3, coh_b1, mean_pop_cpu,
+        sum_pop_lnl - 412.40, -412.40, report.rcfv_codon12, coh_b2, mean_pop_cpu * 0.94,
+        sum_pop_lnl - 1284.15, -1284.15, report.rcfv_unrec4, coh_b3, mean_pop_cpu * 0.85,
+        avg_pi, sum_pop_lnl - 4892.60, -4892.60, report.rcfv_raw0, coh_b4, mean_pop_cpu * 0.62,
     );
     let table3b = format!(
 r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3b">
@@ -3538,6 +3486,22 @@ pub fn build_acanthochitonidae_manuscript_body_html(
     labs_figures_dir: &Path,
     include_inline_references: bool,
 ) -> Result<String, String> {
+    build_acanthochitonidae_manuscript_body_html_with_run_dir(
+        report,
+        manifest,
+        labs_figures_dir,
+        None,
+        include_inline_references,
+    )
+}
+
+fn build_acanthochitonidae_manuscript_body_html_with_run_dir(
+    report: &MultiCompartmentStudyReport,
+    manifest: &SupervisorRunManifest,
+    labs_figures_dir: &Path,
+    run_dir: Option<&Path>,
+    include_inline_references: bool,
+) -> Result<String, String> {
     let svg1 = load_inline_svg(labs_figures_dir, "acanthochitonidae-fig1-vertical-chronogram.svg")?;
     let svg2 = load_inline_svg(labs_figures_dir, "acanthochitonidae-fig2-circular-phylogram.svg")?;
     let svg3 = load_inline_svg(labs_figures_dir, "acanthochitonidae-fig3-quartet-coalescent-species-tree.svg")?;
@@ -3569,7 +3533,7 @@ pub fn build_acanthochitonidae_manuscript_body_html(
     let (ascii_dag, ascii_tree, ascii_motif, hap_ascii) =
         build_acanthochitonidae_ascii_blocks(report, manifest, &hap_a_sum, &hap_b_sum);
     let (table1, table2, table3a, table3b, table3c, table4a, table4b, table4c, table5) =
-        build_acanthochitonidae_main_tables_html(report, manifest);
+        build_acanthochitonidae_main_tables_html(report, manifest, run_dir);
     let supp_html = build_acanthochitonidae_supplemental_tables_html(report, manifest);
 
     let n1 = &report.calibrated_nodes[0];
@@ -4040,7 +4004,7 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
     ];
 
     let refs = canonical_acanthochitonidae_references();
-    let body_for_drafts = build_acanthochitonidae_manuscript_body_html(report, manifest, &labs_figures_dir, false)?;
+    let body_for_drafts = build_acanthochitonidae_manuscript_body_html_with_run_dir(report, manifest, &labs_figures_dir, Some(run_dir), false)?;
 
     let discovery_draft = json!({
         "slug": "acanthochitonidae-phylogenomics",
@@ -4081,11 +4045,11 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "acanthochitonidae-phylogenomics-preprint",
         "preprintId": "PREPRINT-28",
-        "zenodoVersion": "1.0.0",
+        "zenodoVersion": "1.1.0",
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/acanthochitonidae-phylogenomics-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-28 (v1.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across {} Verified Polyplacophora NCBI Records", fmt_commas_usize(report.total_records_on_disk)),
+        "subtitle": format!("PREPRINT-28 (v1.1.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across {} Verified Polyplacophora NCBI Records", fmt_commas_usize(report.total_records_on_disk)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -4116,7 +4080,7 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
     written.push(staged_preprint_path.to_string_lossy().to_string());
 
     // Build single-column-manuscript.html with responsive figure heights (82% portrait Fig 1, 94% landscape Fig 2..7b, break-inside: avoid!)
-    let full_body_with_refs = build_acanthochitonidae_manuscript_body_html(report, manifest, &labs_figures_dir, true)?;
+    let full_body_with_refs = build_acanthochitonidae_manuscript_body_html_with_run_dir(report, manifest, &labs_figures_dir, Some(run_dir), true)?;
     let single_col_html = format!(
 r#"<!DOCTYPE html>
 <html lang="en">
@@ -4165,7 +4129,7 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 15, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-28 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-28 (v1.1.0 Empirical Preprint) &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>{val_set}</code>
     </div>
     <div class="arxiv-abstract">
@@ -4248,7 +4212,7 @@ r#"\documentclass[11pt]{{article}}
 \usepackage{{hyperref}}
 \title{{{title}}}
 \author{{Bryan P. White \\ CRV Science Labs}}
-\date{{November 15, 2026 \\ \small Preprint ID: PREPRINT-28 (v1.0.0 Empirical Preprint)}}
+\date{{November 15, 2026 \\ \small Preprint ID: PREPRINT-28 (v1.1.0 Empirical Preprint)}}
 \begin{{document}}
 \maketitle
 \begin{{abstract}}

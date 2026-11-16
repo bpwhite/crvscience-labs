@@ -1071,8 +1071,842 @@ fn svg_pie_wedge_path(cx: f64, cy: f64, r: f64, a0: f64, a1: f64) -> String {
     )
 }
 
+fn point_to_segment_dist_and_proj(
+    px: f64,
+    py: f64,
+    ax: f64,
+    ay: f64,
+    bx: f64,
+    by: f64,
+) -> (f64, f64, f64) {
+    let dx = bx - ax;
+    let dy = by - ay;
+    let len2 = dx * dx + dy * dy;
+    if len2 < 1e-9 {
+        return ((px - ax).hypot(py - ay), ax, ay);
+    }
+    let t = (((px - ax) * dx + (py - ay) * dy) / len2).clamp(0.0, 1.0);
+    let qx = ax + t * dx;
+    let qy = ay + t * dy;
+    ((px - qx).hypot(py - qy), qx, qy)
+}
+
+fn orient_2d(a: (f64, f64), b: (f64, f64), c: (f64, f64)) -> f64 {
+    (b.0 - a.0) * (c.1 - a.1) - (b.1 - a.1) * (c.0 - a.0)
+}
+
+fn on_segment_2d(p: (f64, f64), a: (f64, f64), b: (f64, f64), eps: f64) -> bool {
+    p.0 >= a.0.min(b.0) - eps
+        && p.0 <= a.0.max(b.0) + eps
+        && p.1 >= a.1.min(b.1) - eps
+        && p.1 <= a.1.max(b.1) + eps
+}
+
+/// Returns `true` if two non-incident segments `(a, b)` and `(c, d)` cross properly,
+/// overlap collinearly, or pass within `clearance` pixels of each other's endpoints.
+fn segments_intersect_or_graze(
+    a: (f64, f64),
+    b: (f64, f64),
+    c: (f64, f64),
+    d: (f64, f64),
+    clearance: f64,
+) -> bool {
+    let max_ax = a.0.max(b.0);
+    let min_ax = a.0.min(b.0);
+    let max_cx = c.0.max(d.0);
+    let min_cx = c.0.min(d.0);
+    if max_ax + clearance < min_cx || max_cx + clearance < min_ax {
+        return false;
+    }
+    let max_ay = a.1.max(b.1);
+    let min_ay = a.1.min(b.1);
+    let max_cy = c.1.max(d.1);
+    let min_cy = c.1.min(d.1);
+    if max_ay + clearance < min_cy || max_cy + clearance < min_ay {
+        return false;
+    }
+
+    let o1 = orient_2d(a, b, c);
+    let o2 = orient_2d(a, b, d);
+    let o3 = orient_2d(c, d, a);
+    let o4 = orient_2d(c, d, b);
+    if (o1 > 1e-6 && o2 < -1e-6 || o1 < -1e-6 && o2 > 1e-6)
+        && (o3 > 1e-6 && o4 < -1e-6 || o3 < -1e-6 && o4 > 1e-6)
+    {
+        return true;
+    }
+    let eps = 1e-4;
+    if o1.abs() <= eps && on_segment_2d(c, a, b, 1e-2) {
+        return true;
+    }
+    if o2.abs() <= eps && on_segment_2d(d, a, b, 1e-2) {
+        return true;
+    }
+    if o3.abs() <= eps && on_segment_2d(a, c, d, 1e-2) {
+        return true;
+    }
+    if o4.abs() <= eps && on_segment_2d(b, c, d, 1e-2) {
+        return true;
+    }
+    if clearance > 0.0 {
+        let (d1, _, _) = point_to_segment_dist_and_proj(c.0, c.1, a.0, a.1, b.0, b.1);
+        let (d2, _, _) = point_to_segment_dist_and_proj(d.0, d.1, a.0, a.1, b.0, b.1);
+        let (d3, _, _) = point_to_segment_dist_and_proj(a.0, a.1, c.0, c.1, d.0, d.1);
+        let (d4, _, _) = point_to_segment_dist_and_proj(b.0, b.1, c.0, c.1, d.0, d.1);
+        if d1.min(d2).min(d3).min(d4) < clearance {
+            return true;
+        }
+    }
+    false
+}
+
+/// Deterministic 6-stage Radiative Forcing Haplotype Network layout engine:
+/// 1. Spanning-tree extraction (`edge_type != "reticulation-loop"` preferred + component stitching)
+/// 2. Weighted topological centroid selection (`root`)
+/// 3. Cluster-contiguous child ordering & non-overlapping angular wedge partitioning (`[0, 2*pi)`)
+/// 4. Crossing-free concentric radial shell initialization projected onto viewport ellipse
+/// 5. Outward radiative forcing + node/edge/hull repulsion with per-move crossing-guard line search
+/// 6. Positive affine viewport framing + crossing-guarded clearance polish
+fn layout_radiative_haplotype_network(
+    n_haps: usize,
+    radii: &[f64],
+    cluster_of_hap: &[usize],
+    num_c: usize,
+    msn_edges: &[HaplotypeNetworkEdge],
+    hap_idx_by_id: &BTreeMap<&str, usize>,
+    plot_bounds: (f64, f64, f64, f64),
+) -> (Vec<(f64, f64)>, (f64, f64)) {
+    let (plot_x0, plot_x1, plot_y0, plot_y1) = plot_bounds;
+    let cx0 = (plot_x0 + plot_x1) * 0.5;
+    let cy0 = (plot_y0 + plot_y1) * 0.5;
+    if n_haps == 0 {
+        return (Vec::new(), (cx0, cy0));
+    }
+    if n_haps == 1 {
+        return (vec![(cx0, cy0)], (cx0, cy0));
+    }
+
+    let rx_max = ((plot_x1 - plot_x0) * 0.5 - 38.0).max(60.0);
+    let ry_max = ((plot_y1 - plot_y0) * 0.5 - 38.0).max(60.0);
+
+    // Collect resolved edges `(u, v, steps, is_bridge, is_loop)` deduplicated by unordered pair
+    let mut all_edges: Vec<(usize, usize, usize, bool, bool)> = Vec::new();
+    let mut seen_pair: BTreeMap<(usize, usize), usize> = BTreeMap::new();
+    for e in msn_edges {
+        if let (Some(&u0), Some(&v0)) = (
+            hap_idx_by_id.get(e.source_haplotype.as_str()),
+            hap_idx_by_id.get(e.target_haplotype.as_str()),
+        ) {
+            if u0 == v0 {
+                continue;
+            }
+            let key = (u0.min(v0), u0.max(v0));
+            let is_bridge = e.edge_type == "inter-cluster-bridge";
+            let is_loop = e.edge_type == "reticulation-loop";
+            if let Some(&idx) = seen_pair.get(&key) {
+                if !is_loop && all_edges[idx].4 {
+                    all_edges[idx] = (u0, v0, e.mutational_steps_snps, is_bridge, is_loop);
+                }
+            } else {
+                seen_pair.insert(key, all_edges.len());
+                all_edges.push((u0, v0, e.mutational_steps_snps, is_bridge, is_loop));
+            }
+        }
+    }
+
+    // 1. Planar Spanning Tree Extraction via Union-Find
+    let mut uf_parent: Vec<usize> = (0..n_haps).collect();
+    fn uf_find(p: &mut [usize], mut x: usize) -> usize {
+        while p[x] != x {
+            p[x] = p[p[x]];
+            x = p[x];
+        }
+        x
+    }
+
+    let mut candidate_order: Vec<usize> = (0..all_edges.len()).collect();
+    candidate_order.sort_by_key(|&idx| {
+        let (u, v, steps, is_bridge, is_loop) = all_edges[idx];
+        (is_loop, is_bridge, steps, u.min(v), u.max(v))
+    });
+
+    // adjacency stores `(neighbor, steps, is_bridge)`
+    let mut tree_adj: Vec<Vec<(usize, usize, bool)>> = vec![Vec::new(); n_haps];
+    let mut tree_edges: Vec<(usize, usize)> = Vec::with_capacity(n_haps.saturating_sub(1));
+    for idx in candidate_order {
+        let (u, v, steps, is_bridge, _) = all_edges[idx];
+        let ru = uf_find(&mut uf_parent, u);
+        let rv = uf_find(&mut uf_parent, v);
+        if ru != rv {
+            uf_parent[rv] = ru;
+            tree_adj[u].push((v, steps, is_bridge));
+            tree_adj[v].push((u, steps, is_bridge));
+            tree_edges.push((u, v));
+        }
+    }
+
+    // Stitch any disconnected components onto component 0's highest-radius hub
+    if tree_edges.len() + 1 < n_haps {
+        let mut comp_rep: BTreeMap<usize, usize> = BTreeMap::new();
+        for i in 0..n_haps {
+            let ri = uf_find(&mut uf_parent, i);
+            comp_rep
+                .entry(ri)
+                .and_modify(|best| {
+                    if radii[i] > radii[*best] || (radii[i] == radii[*best] && i < *best) {
+                        *best = i;
+                    }
+                })
+                .or_insert(i);
+        }
+        let anchor_root = uf_find(&mut uf_parent, 0);
+        let main_hub = *comp_rep.get(&anchor_root).unwrap_or(&0);
+        for (ri, rep) in comp_rep {
+            if ri != anchor_root {
+                tree_adj[main_hub].push((rep, 12, true));
+                tree_adj[rep].push((main_hub, 12, true));
+                tree_edges.push((main_hub, rep));
+                let r_m = uf_find(&mut uf_parent, main_hub);
+                let r_r = uf_find(&mut uf_parent, rep);
+                if r_m != r_r {
+                    uf_parent[r_r] = r_m;
+                }
+            }
+        }
+    }
+
+    // 2. Weighted Topological Centroid (`root`) minimizing heaviest branch when rooted here
+    let node_wt: Vec<f64> = (0..n_haps).map(|i| 1.0 + radii[i] / 12.0).collect();
+    let total_wt: f64 = node_wt.iter().sum();
+    let mut parent0 = vec![usize::MAX; n_haps];
+    let mut bfs_order = Vec::with_capacity(n_haps);
+    let mut q = std::collections::VecDeque::new();
+    q.push_back(0usize);
+    parent0[0] = 0;
+    while let Some(u) = q.pop_front() {
+        bfs_order.push(u);
+        for &(v, _, _) in &tree_adj[u] {
+            if parent0[v] == usize::MAX {
+                parent0[v] = u;
+                q.push_back(v);
+            }
+        }
+    }
+    let mut sub_wt0 = node_wt.clone();
+    let mut max_child_wt = vec![0.0_f64; n_haps];
+    for &u in bfs_order.iter().rev() {
+        let p = parent0[u];
+        if u != 0 && p < n_haps {
+            sub_wt0[p] += sub_wt0[u];
+            if sub_wt0[u] > max_child_wt[p] {
+                max_child_wt[p] = sub_wt0[u];
+            }
+        }
+    }
+    let mut root = 0usize;
+    let mut best_root_key = (f64::INFINITY, usize::MAX, f64::NEG_INFINITY, usize::MAX);
+    for u in 0..n_haps {
+        let comp_above = (total_wt - sub_wt0[u]).max(0.0);
+        let max_branch = max_child_wt[u].max(comp_above);
+        let key = (max_branch, usize::MAX - tree_adj[u].len(), -radii[u], u);
+        if key.0 + 1e-7 < best_root_key.0
+            || ((key.0 - best_root_key.0).abs() <= 1e-7
+                && (key.1 < best_root_key.1
+                    || (key.1 == best_root_key.1
+                        && (key.2 < best_root_key.2 || (key.2 == best_root_key.2 && key.3 < best_root_key.3)))))
+        {
+            best_root_key = key;
+            root = u;
+        }
+    }
+
+    // Re-root spanning tree at topological centroid `root`
+    let mut parent = vec![usize::MAX; n_haps];
+    let mut children: Vec<Vec<(usize, usize, bool)>> = vec![Vec::new(); n_haps];
+    let mut hop_depth = vec![0usize; n_haps];
+    let mut cum_r = vec![0.0_f64; n_haps];
+    let mut top_branch = vec![root; n_haps];
+    let mut rooted_order = Vec::with_capacity(n_haps);
+    q.push_back(root);
+    parent[root] = root;
+    while let Some(u) = q.pop_front() {
+        rooted_order.push(u);
+        for &(v, steps, is_bridge) in &tree_adj[u] {
+            if parent[v] == usize::MAX {
+                parent[v] = u;
+                hop_depth[v] = hop_depth[u] + 1;
+                let step_inc = if is_bridge {
+                    1.05 + ((steps as f64).ln_1p() * 0.22)
+                } else {
+                    0.52 + (steps.min(6) as f64) * 0.06
+                };
+                cum_r[v] = cum_r[u] + step_inc;
+                top_branch[v] = if u == root { v } else { top_branch[u] };
+                children[u].push((v, steps, is_bridge));
+                q.push_back(v);
+            }
+        }
+    }
+
+    // 3. Bottom-up angular demand & cluster-contiguous child ordering
+    let mut ang_w = vec![0.0_f64; n_haps];
+    let mut max_sub_r = cum_r.clone();
+    for &u in rooted_order.iter().rev() {
+        if children[u].is_empty() {
+            ang_w[u] = (radii[u] * 2.0 + 28.0).max(40.0);
+        } else {
+            let sum_ch: f64 = children[u].iter().map(|&(c, _, _)| ang_w[c]).sum();
+            ang_w[u] = sum_ch.max(radii[u] * 2.0 + 36.0) + 6.0;
+            for &(c, _, _) in &children[u] {
+                if max_sub_r[c] > max_sub_r[u] {
+                    max_sub_r[u] = max_sub_r[c];
+                }
+            }
+        }
+    }
+
+    for u in 0..n_haps {
+        if children[u].len() <= 1 {
+            continue;
+        }
+        let cu = cluster_of_hap[u];
+        // Group children by cluster `(same_cluster_first, cluster_id)` to keep hulls contiguous
+        let mut same_ch: Vec<(usize, usize, bool)> = Vec::new();
+        let mut by_foreign: BTreeMap<usize, Vec<(usize, usize, bool)>> = BTreeMap::new();
+        for &item in &children[u] {
+            let cv = cluster_of_hap[item.0];
+            if cv == cu {
+                same_ch.push(item);
+            } else {
+                by_foreign.entry(cv).or_default().push(item);
+            }
+        }
+        same_ch.sort_by(|a, b| {
+            ang_w[b.0]
+                .partial_cmp(&ang_w[a.0])
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.0.cmp(&b.0))
+        });
+        let mut foreign_groups: Vec<Vec<(usize, usize, bool)>> = by_foreign.into_values().collect();
+        for g in &mut foreign_groups {
+            g.sort_by(|a, b| {
+                ang_w[b.0]
+                    .partial_cmp(&ang_w[a.0])
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| a.0.cmp(&b.0))
+            });
+        }
+        foreign_groups.sort_by(|a, b| {
+            let wa: f64 = a.iter().map(|x| ang_w[x.0]).sum();
+            let wb: f64 = b.iter().map(|x| ang_w[x.0]).sum();
+            wb.partial_cmp(&wa)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a[0].0.cmp(&b[0].0))
+        });
+
+        let mut ordered = Vec::with_capacity(children[u].len());
+        ordered.extend(same_ch);
+        if u == root && foreign_groups.len() >= 3 {
+            // Interleave largest and smallest distinct foreign cluster groups around 360 deg
+            let mut l = 0usize;
+            let mut r = foreign_groups.len() - 1;
+            while l <= r {
+                ordered.extend(foreign_groups[l].iter().copied());
+                if l < r {
+                    ordered.extend(foreign_groups[r].iter().copied());
+                }
+                if r == 0 {
+                    break;
+                }
+                l += 1;
+                r -= 1;
+            }
+        } else {
+            for g in foreign_groups {
+                ordered.extend(g);
+            }
+        }
+        children[u] = ordered;
+    }
+
+    // Partition disjoint wedges `[theta0[u], theta1[u]]` recursively from `root`
+    let mut theta0 = vec![0.0_f64; n_haps];
+    let mut theta1 = vec![std::f64::consts::TAU; n_haps];
+    let mut theta_target = vec![-std::f64::consts::FRAC_PI_2; n_haps];
+
+    if !children[root].is_empty() {
+        let deg_r = children[root].len();
+        let mut root_weights: Vec<f64> = children[root].iter().map(|&(c, _, _)| ang_w[c].max(1.0)).collect();
+        // Dampen extreme weight disparity at root so no single wedge exceeds pi when deg >= 3
+        let max_frac = if deg_r >= 3 { 0.44 } else if deg_r == 2 { 0.56 } else { 1.0 };
+        if deg_r >= 2 {
+            for _ in 0..4 {
+                let sw: f64 = root_weights.iter().sum::<f64>().max(1e-9);
+                let mut changed = false;
+                let cap_val = max_frac * sw;
+                for w in &mut root_weights {
+                    if *w > cap_val {
+                        *w = cap_val * 0.99;
+                        changed = true;
+                    }
+                }
+                if !changed {
+                    break;
+                }
+            }
+        }
+        let sw: f64 = root_weights.iter().sum::<f64>().max(1e-9);
+        let mut cur_a = -std::f64::consts::FRAC_PI_2;
+        for (idx, &(c, _, _)) in children[root].iter().enumerate() {
+            let span = (root_weights[idx] / sw) * std::f64::consts::TAU;
+            theta0[c] = cur_a;
+            theta1[c] = cur_a + span;
+            cur_a += span;
+        }
+        let mut stack: Vec<usize> = children[root].iter().map(|&(c, _, _)| c).collect();
+        while let Some(u) = stack.pop() {
+            let a0 = theta0[u];
+            let a1 = theta1[u];
+            let span_u = (a1 - a0).max(1e-5);
+            theta_target[u] = (a0 + a1) * 0.5;
+            if !children[u].is_empty() {
+                let sum_cw: f64 = children[u].iter().map(|&(c, _, _)| ang_w[c].max(1.0)).sum::<f64>().max(1e-9);
+                let mut ca = a0;
+                for &(c, _, _) in &children[u] {
+                    let cs = (ang_w[c].max(1.0) / sum_cw) * span_u;
+                    theta0[c] = ca;
+                    theta1[c] = ca + cs;
+                    ca += cs;
+                    stack.push(c);
+                }
+            }
+        }
+    }
+
+    // 4. Crossing-free concentric radial shell initialization + biologic step-weighted target shells
+    let max_hops = hop_depth.iter().copied().max().unwrap_or(1).max(1) as f64;
+    let global_max_r = max_sub_r[root].max(1e-4);
+    let r_scale = ((n_haps as f64 / 28.0).sqrt()).clamp(0.42, 1.0);
+
+    let mut rho_init = vec![0.0_f64; n_haps];
+    let mut rho_target = vec![0.0_f64; n_haps];
+    for u in 0..n_haps {
+        if u == root {
+            continue;
+        }
+        rho_init[u] = ((hop_depth[u] as f64 / max_hops) * 0.90 * r_scale).clamp(0.10, 0.94);
+        let b = top_branch[u];
+        let eff_max = (0.58 * global_max_r + 0.42 * max_sub_r[b].max(1e-4)).max(1e-4);
+        rho_target[u] = ((cum_r[u] / eff_max) * 0.93 * r_scale).clamp(0.14, 0.96);
+    }
+    // Slight deterministic shell stagger among >= 3 siblings to reduce arc crowding while staying strictly outside parent's shell
+    for u in 0..n_haps {
+        if children[u].len() >= 3 {
+            let n_ch = children[u].len();
+            for (k, &(c, _, _)) in children[u].iter().enumerate() {
+                if !children[c].is_empty() {
+                    continue;
+                }
+                let jitter = ((k % 3) as f64) * (0.045 / (max_hops + 1.0));
+                rho_init[c] = (rho_init[c] + jitter).min(0.95);
+                if n_ch >= 4 {
+                    rho_target[c] = (rho_target[c] + jitter * 0.8).min(0.96);
+                }
+            }
+        }
+    }
+
+    let mut pos: Vec<(f64, f64)> = (0..n_haps)
+        .map(|u| {
+            if u == root {
+                (cx0, cy0)
+            } else {
+                (
+                    cx0 + rx_max * rho_init[u] * theta_target[u].cos(),
+                    cy0 + ry_max * rho_init[u] * theta_target[u].sin(),
+                )
+            }
+        })
+        .collect();
+
+    let shares_endpoint = |e1: (usize, usize), e2: (usize, usize)| -> bool {
+        e1.0 == e2.0 || e1.0 == e2.1 || e1.1 == e2.0 || e1.1 == e2.1
+    };
+
+    let has_incident_tree_crossing = |node: usize, cand: (f64, f64), cur_pos: &[(f64, f64)]| -> bool {
+        for &(a, b) in &tree_edges {
+            if a != node && b != node {
+                continue;
+            }
+            let pa = if a == node { cand } else { cur_pos[a] };
+            let pb = if b == node { cand } else { cur_pos[b] };
+            for &(c, d) in &tree_edges {
+                if shares_endpoint((a, b), (c, d)) {
+                    continue;
+                }
+                if segments_intersect_or_graze(pa, pb, cur_pos[c], cur_pos[d], 1.5) {
+                    return true;
+                }
+            }
+        }
+        false
+    };
+
+    // Guarded radial stretch on init if wide sibling wedges caused any shallow chord touch
+    for _ in 0..8 {
+        let mut fixed_any = false;
+        for u in 0..n_haps {
+            if u == root {
+                continue;
+            }
+            if has_incident_tree_crossing(u, pos[u], &pos) {
+                rho_init[u] = (rho_init[u] + 0.04).min(0.96);
+                pos[u] = (
+                    cx0 + rx_max * rho_init[u] * theta_target[u].cos(),
+                    cy0 + ry_max * rho_init[u] * theta_target[u].sin(),
+                );
+                fixed_any = true;
+            }
+        }
+        if !fixed_any {
+            break;
+        }
+    }
+
+    // 5. Radiative Forcing Relaxation (240 iterations) with Crossing-Guard Line Search
+    let try_move_node = |node: usize,
+                         disp: (f64, f64),
+                         max_step: f64,
+                         cur_pos: &mut [(f64, f64)]| {
+        let len = disp.0.hypot(disp.1);
+        if len < 1e-6 {
+            return;
+        }
+        let mut dx = disp.0;
+        let mut dy = disp.1;
+        if len > max_step {
+            let s = max_step / len;
+            dx *= s;
+            dy *= s;
+        }
+        let was_crossed = has_incident_tree_crossing(node, cur_pos[node], cur_pos);
+        let pad = radii[node] + 22.0;
+        for &frac in &[1.0_f64, 0.5, 0.25, 0.1] {
+            let cand = (
+                (cur_pos[node].0 + dx * frac).clamp(plot_x0 + pad, plot_x1 - pad),
+                (cur_pos[node].1 + dy * frac).clamp(plot_y0 + pad, plot_y1 - pad),
+            );
+            if !was_crossed && has_incident_tree_crossing(node, cand, cur_pos) {
+                continue;
+            }
+            // Reject moves that worsen an existing hard circle overlap below `r_i + r_j + 3`
+            let mut bad_overlap = false;
+            for j in 0..n_haps {
+                if j == node {
+                    continue;
+                }
+                let min_hard = radii[node] + radii[j] + 3.0;
+                let d_new = (cand.0 - cur_pos[j].0).hypot(cand.1 - cur_pos[j].1);
+                if d_new < min_hard {
+                    let d_old = (cur_pos[node].0 - cur_pos[j].0).hypot(cur_pos[node].1 - cur_pos[j].1);
+                    if d_new + 0.15 < d_old {
+                        bad_overlap = true;
+                        break;
+                    }
+                }
+            }
+            if !bad_overlap {
+                cur_pos[node] = cand;
+                return;
+            }
+        }
+    };
+
+    for iter in 0..240 {
+        let temp = 1.0 - (iter as f64 / 240.0) * 0.78;
+        let mut disp = vec![(0.0_f64, 0.0_f64); n_haps];
+
+        // (a) Radiative outward shell pressure + gentle sector anchor + parent->child outward monotonicity
+        let r_origin = pos[root];
+        for i in 0..n_haps {
+            if i == root {
+                disp[i].0 += (cx0 - pos[i].0) * 0.04;
+                disp[i].1 += (cy0 - pos[i].1) * 0.04;
+                continue;
+            }
+            let rx_rel = (pos[i].0 - r_origin.0) / rx_max;
+            let ry_rel = (pos[i].1 - r_origin.1) / ry_max;
+            let nr = rx_rel.hypot(ry_rel).max(1e-4);
+            let ux = (pos[i].0 - r_origin.0) / ((pos[i].0 - r_origin.0).hypot(pos[i].1 - r_origin.1).max(1e-4));
+            let uy = (pos[i].1 - r_origin.1) / ((pos[i].0 - r_origin.0).hypot(pos[i].1 - r_origin.1).max(1e-4));
+            if nr < rho_target[i] {
+                let push = (rho_target[i] - nr) * 30.0;
+                disp[i].0 += ux * push;
+                disp[i].1 += uy * push;
+            } else if nr > rho_target[i] + 0.10 {
+                let pull = (nr - (rho_target[i] + 0.10)) * 12.0;
+                disp[i].0 -= ux * pull;
+                disp[i].1 -= uy * pull;
+            }
+            let gx = cx0 + rx_max * rho_target[i] * theta_target[i].cos();
+            let gy = cy0 + ry_max * rho_target[i] * theta_target[i].sin();
+            disp[i].0 += (gx - pos[i].0) * (0.045 * temp);
+            disp[i].1 += (gy - pos[i].1) * (0.045 * temp);
+
+            let p = parent[i];
+            if p < n_haps && p != root && p != i && cluster_of_hap[i] != cluster_of_hap[p] {
+                let dp = (pos[p].0 - r_origin.0).hypot(pos[p].1 - r_origin.1);
+                let di = (pos[i].0 - r_origin.0).hypot(pos[i].1 - r_origin.1);
+                if di < dp + radii[p] + radii[i] + 18.0 {
+                    let px_u = if dp > 1e-4 { (pos[p].0 - r_origin.0) / dp } else { ux };
+                    let py_u = if dp > 1e-4 { (pos[p].1 - r_origin.1) / dp } else { uy };
+                    disp[i].0 += px_u * 8.0;
+                    disp[i].1 += py_u * 8.0;
+                }
+            }
+        }
+
+        // (b) Pairwise electrostatic repulsion & strict hard non-overlap separation
+        for i in 0..n_haps {
+            for j in (i + 1)..n_haps {
+                let mut dx = pos[i].0 - pos[j].0;
+                let mut dy = pos[i].1 - pos[j].1;
+                let mut d2 = dx * dx + dy * dy;
+                if d2 < 1e-4 {
+                    dx = 0.5 + ((i % 5) as f64) * 0.1;
+                    dy = 0.5 - ((j % 5) as f64) * 0.1;
+                    d2 = dx * dx + dy * dy;
+                }
+                let d = d2.sqrt();
+                let same_cluster = cluster_of_hap[i] == cluster_of_hap[j];
+                let min_sep = radii[i] + radii[j] + if same_cluster { 18.0 } else { 36.0 };
+                let repulse = if same_cluster { 820.0 } else { 2200.0 } / (d2 + 100.0);
+                let overlap_push = if d < min_sep { (min_sep - d) * 0.75 } else { 0.0 };
+                let f = repulse + overlap_push;
+                let ux = dx / d;
+                let uy = dy / d;
+                disp[i].0 += ux * f;
+                disp[i].1 += uy * f;
+                disp[j].0 -= ux * f;
+                disp[j].1 -= uy * f;
+            }
+        }
+
+        // (c) MSN edge springs (asymmetric bridge springs preserve outward radiative extension)
+        for &(u, v, steps, is_bridge, _) in &all_edges {
+            let dx = pos[v].0 - pos[u].0;
+            let dy = pos[v].1 - pos[u].1;
+            let d = dx.hypot(dy).max(1e-4);
+            let target = radii[u]
+                + radii[v]
+                + if is_bridge {
+                    46.0 + (steps.min(16) as f64) * 2.0
+                } else {
+                    18.0 + (steps.min(6) as f64) * 4.2
+                };
+            let k_spring = if is_bridge {
+                if d < target { 0.18 } else { 0.06 }
+            } else {
+                0.22
+            };
+            let f = (d - target) * k_spring;
+            let ux = dx / d;
+            let uy = dy / d;
+            disp[u].0 += ux * f;
+            disp[u].1 += uy * f;
+            disp[v].0 -= ux * f;
+            disp[v].1 -= uy * f;
+        }
+
+        // (d) Cluster centroid cohesion, foreign-node hull exclusion, & hull-vs-unrelated-bridge clearance
+        let mut c_members: Vec<Vec<usize>> = vec![Vec::new(); num_c];
+        for (i, &ci) in cluster_of_hap.iter().enumerate() {
+            if ci < num_c {
+                c_members[ci].push(i);
+            }
+        }
+        for c_idx in 0..num_c {
+            let mem = &c_members[c_idx];
+            if mem.len() < 2 {
+                continue;
+            }
+            let ccx: f64 = mem.iter().map(|&i| pos[i].0).sum::<f64>() / mem.len() as f64;
+            let ccy: f64 = mem.iter().map(|&i| pos[i].1).sum::<f64>() / mem.len() as f64;
+            let mut ch_r = 18.0_f64;
+            for &i in mem {
+                disp[i].0 += (ccx - pos[i].0) * 0.045;
+                disp[i].1 += (ccy - pos[i].1) * 0.045;
+                let ext = (pos[i].0 - ccx).hypot(pos[i].1 - ccy) + radii[i];
+                if ext > ch_r {
+                    ch_r = ext;
+                }
+            }
+            ch_r += 14.0;
+            for j in 0..n_haps {
+                if cluster_of_hap[j] == c_idx {
+                    continue;
+                }
+                let dx = pos[j].0 - ccx;
+                let dy = pos[j].1 - ccy;
+                let d = dx.hypot(dy).max(1e-4);
+                let req = ch_r + radii[j] + 14.0;
+                if d < req {
+                    let push = (req - d) * 0.65;
+                    disp[j].0 += (dx / d) * push;
+                    disp[j].1 += (dy / d) * push;
+                }
+            }
+            for &(u, v, _, is_bridge, _) in &all_edges {
+                if !is_bridge || cluster_of_hap[u] == c_idx || cluster_of_hap[v] == c_idx {
+                    continue;
+                }
+                let (d_seg, qx, qy) = point_to_segment_dist_and_proj(ccx, ccy, pos[u].0, pos[u].1, pos[v].0, pos[v].1);
+                let req = ch_r + 14.0;
+                if d_seg < req {
+                    let dx = qx - ccx;
+                    let dy = qy - ccy;
+                    let d_len = dx.hypot(dy).max(1e-4);
+                    let push = (req - d_seg) * 0.45;
+                    disp[u].0 += (dx / d_len) * push;
+                    disp[u].1 += (dy / d_len) * push;
+                    disp[v].0 += (dx / d_len) * push;
+                    disp[v].1 += (dy / d_len) * push;
+                }
+            }
+        }
+
+        // (e) Node-to-edge segment electrostatic repulsion so nodes never sit behind non-incident edges
+        for &(u, v, _, _, is_loop) in &all_edges {
+            if is_loop {
+                continue;
+            }
+            let (ax, ay) = pos[u];
+            let (bx, by) = pos[v];
+            for w in 0..n_haps {
+                if w == u || w == v {
+                    continue;
+                }
+                let (d_seg, qx, qy) = point_to_segment_dist_and_proj(pos[w].0, pos[w].1, ax, ay, bx, by);
+                let min_clr = radii[w] + 20.0;
+                if d_seg < min_clr {
+                    let mut rx = pos[w].0 - qx;
+                    let mut ry = pos[w].1 - qy;
+                    let mut rl = rx.hypot(ry);
+                    if rl < 1e-4 {
+                        let ex = bx - ax;
+                        let ey = by - ay;
+                        let el = ex.hypot(ey).max(1e-4);
+                        rx = -ey / el;
+                        ry = ex / el;
+                        rl = 1.0;
+                    }
+                    let push = (min_clr - d_seg) * 0.65;
+                    let px_u = (rx / rl) * push;
+                    let py_u = (ry / rl) * push;
+                    disp[w].0 += px_u;
+                    disp[w].1 += py_u;
+                    disp[u].0 -= px_u * 0.18;
+                    disp[u].1 -= py_u * 0.18;
+                    disp[v].0 -= px_u * 0.18;
+                    disp[v].1 -= py_u * 0.18;
+                }
+            }
+        }
+
+        let max_step = 18.0 * temp;
+        for i in 0..n_haps {
+            try_move_node(i, disp[i], max_step, &mut pos);
+        }
+    }
+
+    // 6. Positive affine viewport framing (preserves 0 tree-edge crossings identically) + clearance polish
+    let mut min_bx = f64::MAX;
+    let mut max_bx = f64::MIN;
+    let mut min_by = f64::MAX;
+    let mut max_by = f64::MIN;
+    for i in 0..n_haps {
+        let pad = radii[i] + 24.0;
+        min_bx = min_bx.min(pos[i].0 - pad);
+        max_bx = max_bx.max(pos[i].0 + pad);
+        min_by = min_by.min(pos[i].1 - pad);
+        max_by = max_by.max(pos[i].1 + pad);
+    }
+    let span_x = (max_bx - min_bx).max(1.0);
+    let span_y = (max_by - min_by).max(1.0);
+    let avail_w = (plot_x1 - plot_x0 - 16.0).max(80.0);
+    let avail_h = (plot_y1 - plot_y0 - 20.0).max(80.0);
+    let fit_x = avail_w / span_x;
+    let fit_y = avail_h / span_y;
+    let (sx, sy) = if n_haps < 12 && fit_x >= 1.0 && fit_y >= 1.0 {
+        (1.0, 1.0)
+    } else {
+        let limit = if n_haps >= 20 { 1.32 } else { 1.08 };
+        let mut sx0 = fit_x.min(limit);
+        let mut sy0 = fit_y.min(limit);
+        // Keep aspect scaling harmonious without ever exceeding avail_w/avail_h fit
+        sx0 = sx0.min(sy0 * 1.28).min(fit_x);
+        sy0 = sy0.min(sx0 * 1.28).min(fit_y);
+        (sx0.max(0.25), sy0.max(0.25))
+    };
+    let box_cx = (min_bx + max_bx) * 0.5;
+    let box_cy = (min_by + max_by) * 0.5;
+    for i in 0..n_haps {
+        let pad = radii[i] + 22.0;
+        pos[i].0 = (cx0 + sx * (pos[i].0 - box_cx)).clamp(plot_x0 + pad, plot_x1 - pad);
+        pos[i].1 = (cy0 + sy * (pos[i].1 - box_cy)).clamp(plot_y0 + pad, plot_y1 - pad);
+    }
+
+    // Crossing-guarded polish pass (`45` iterations of pure separation)
+    for _ in 0..45 {
+        let mut disp = vec![(0.0_f64, 0.0_f64); n_haps];
+        for i in 0..n_haps {
+            for j in (i + 1)..n_haps {
+                let dx = pos[i].0 - pos[j].0;
+                let dy = pos[i].1 - pos[j].1;
+                let d = dx.hypot(dy).max(1e-4);
+                let min_sep = radii[i] + radii[j] + 12.0;
+                if d < min_sep {
+                    let push = (min_sep - d) * 0.65;
+                    disp[i].0 += (dx / d) * push;
+                    disp[i].1 += (dy / d) * push;
+                    disp[j].0 -= (dx / d) * push;
+                    disp[j].1 -= (dy / d) * push;
+                }
+            }
+        }
+        for &(u, v, _, _, is_loop) in &all_edges {
+            if is_loop {
+                continue;
+            }
+            let (ax, ay) = pos[u];
+            let (bx, by) = pos[v];
+            for w in 0..n_haps {
+                if w == u || w == v {
+                    continue;
+                }
+                let (d_seg, qx, qy) = point_to_segment_dist_and_proj(pos[w].0, pos[w].1, ax, ay, bx, by);
+                let min_clr = radii[w] + 16.0;
+                if d_seg < min_clr {
+                    let rx = pos[w].0 - qx;
+                    let ry = pos[w].1 - qy;
+                    let rl = rx.hypot(ry).max(1e-4);
+                    let push = (min_clr - d_seg) * 0.55;
+                    disp[w].0 += (rx / rl) * push;
+                    disp[w].1 += (ry / rl) * push;
+                }
+            }
+        }
+        for i in 0..n_haps {
+            try_move_node(i, disp[i], 8.0, &mut pos);
+        }
+    }
+
+    let root_pos = pos[root];
+    (pos, root_pos)
+}
+
 /// Renders a publication-grade vector SVG TCS/Minimum Spanning Haplotype Network with
-/// pie-chart subpopulation nodes (`r ∝ sqrt(n)`), force-directed collision-free layout,
+/// pie-chart subpopulation nodes (`r ∝ sqrt(n)`), radiative forcing crossing-free layout,
 /// dashed/cream cluster convex hulls (`I..IX`), inferred mutational step dots, and scale legends.
 fn render_standalone_svg_haplotype_network(
     title: &str,
@@ -1130,142 +1964,17 @@ fn render_standalone_svg_haplotype_network(
         })
         .collect();
 
-    // 2. Deterministic 2-level initial placement by cluster centroid + golden-angle radial layout
+    // 2-3. Deterministic 6-stage Radiative Forcing Crossing-Guarded Layout
     let num_c = clusters.len().max(1);
-    let cols_c = (num_c as f64).sqrt().ceil().max(1.0) as usize;
-    let rows_c = ((num_c + cols_c - 1) / cols_c).max(1);
-    let cell_w = (plot_x1 - plot_x0) / (cols_c as f64);
-    let cell_h = (plot_y1 - plot_y0) / (rows_c as f64);
-
-    let mut pos: Vec<(f64, f64)> = vec![((plot_x0 + plot_x1) * 0.5, (plot_y0 + plot_y1) * 0.5); n_haps];
-    let mut cluster_centers: Vec<(f64, f64)> = Vec::with_capacity(num_c);
-    for c_idx in 0..num_c {
-        let col = c_idx % cols_c;
-        let row = c_idx / cols_c;
-        let cx = plot_x0 + cell_w * (col as f64 + 0.5);
-        let cy = plot_y0 + cell_h * (row as f64 + 0.5);
-        cluster_centers.push((cx, cy));
-    }
-
-    for (c_idx, cl) in clusters.iter().enumerate() {
-        let (cx, cy) = cluster_centers[c_idx];
-        let mut member_idx = 0usize;
-        for hid in &cl.haplotype_ids {
-            if let Some(&hi) = hap_idx_by_id.get(hid.as_str()) {
-                if hid == &cl.hub_haplotype_id {
-                    pos[hi] = (cx, cy);
-                } else {
-                    let angle = (member_idx as f64) * 2.399_963_229_7; // golden angle
-                    let dist = 26.0 + radii[hi] + ((member_idx as f64).sqrt() * 20.0);
-                    pos[hi] = (
-                        (cx + dist * angle.cos()).clamp(plot_x0 + 30.0, plot_x1 - 30.0),
-                        (cy + dist * angle.sin()).clamp(plot_y0 + 30.0, plot_y1 - 30.0),
-                    );
-                    member_idx += 1;
-                }
-            }
-        }
-    }
-
-    // 3. Deterministic force-directed + hard collision-separation relaxation
-    let edge_pairs: Vec<(usize, usize, usize, bool)> = msn_edges
-        .iter()
-        .filter_map(|e| {
-            let u = *hap_idx_by_id.get(e.source_haplotype.as_str())?;
-            let v = *hap_idx_by_id.get(e.target_haplotype.as_str())?;
-            let is_bridge = e.edge_type == "inter-cluster-bridge";
-            Some((u, v, e.mutational_steps_snps, is_bridge))
-        })
-        .collect();
-
-    for iter in 0..180 {
-        let temp = 1.0 - (iter as f64 / 180.0) * 0.72;
-        let mut disp = vec![(0.0_f64, 0.0_f64); n_haps];
-
-        // Pairwise repulsion & strict non-overlap separation
-        for i in 0..n_haps {
-            for j in (i + 1)..n_haps {
-                let mut dx = pos[i].0 - pos[j].0;
-                let mut dy = pos[i].1 - pos[j].1;
-                let mut d2 = dx * dx + dy * dy;
-                if d2 < 1e-4 {
-                    dx = 0.5 + ((i % 5) as f64) * 0.1;
-                    dy = 0.5 - ((j % 5) as f64) * 0.1;
-                    d2 = dx * dx + dy * dy;
-                }
-                let d = d2.sqrt();
-                let same_cluster = cluster_of_hap[i] == cluster_of_hap[j];
-                let min_sep = radii[i] + radii[j] + if same_cluster { 16.0 } else { 40.0 };
-                let repulse = if same_cluster { 950.0 } else { 2400.0 } / (d2 + 80.0);
-                let overlap_push = if d < min_sep { (min_sep - d) * 0.65 } else { 0.0 };
-                let f = repulse + overlap_push;
-                let ux = dx / d;
-                let uy = dy / d;
-                disp[i].0 += ux * f;
-                disp[i].1 += uy * f;
-                disp[j].0 -= ux * f;
-                disp[j].1 -= uy * f;
-            }
-        }
-
-        // Edge spring attraction
-        for &(u, v, steps, is_bridge) in &edge_pairs {
-            let dx = pos[v].0 - pos[u].0;
-            let dy = pos[v].1 - pos[u].1;
-            let d = (dx * dx + dy * dy).sqrt().max(1e-4);
-            let target = radii[u]
-                + radii[v]
-                + if is_bridge {
-                    58.0 + (steps.min(12) as f64) * 4.5
-                } else {
-                    22.0 + (steps.min(6) as f64) * 5.0
-                };
-            let k_spring = if is_bridge { 0.14 } else { 0.24 };
-            let f = (d - target) * k_spring;
-            let ux = dx / d;
-            let uy = dy / d;
-            disp[u].0 += ux * f;
-            disp[u].1 += uy * f;
-            disp[v].0 -= ux * f;
-            disp[v].1 -= uy * f;
-        }
-
-        // Gentle cluster centroid cohesion
-        for c_idx in 0..num_c {
-            let mut sx = 0.0;
-            let mut sy = 0.0;
-            let mut cnt = 0usize;
-            for i in 0..n_haps {
-                if cluster_of_hap[i] == c_idx {
-                    sx += pos[i].0;
-                    sy += pos[i].1;
-                    cnt += 1;
-                }
-            }
-            if cnt > 0 {
-                let cx = sx / cnt as f64;
-                let cy = sy / cnt as f64;
-                for i in 0..n_haps {
-                    if cluster_of_hap[i] == c_idx {
-                        disp[i].0 += (cx - pos[i].0) * 0.035;
-                        disp[i].1 += (cy - pos[i].1) * 0.035;
-                    }
-                }
-            }
-        }
-
-        for i in 0..n_haps {
-            let step_len = (disp[i].0 * disp[i].0 + disp[i].1 * disp[i].1).sqrt();
-            let max_step = 18.0 * temp;
-            if step_len > max_step && step_len > 1e-6 {
-                disp[i].0 = disp[i].0 / step_len * max_step;
-                disp[i].1 = disp[i].1 / step_len * max_step;
-            }
-            let r = radii[i] + 22.0;
-            pos[i].0 = (pos[i].0 + disp[i].0).clamp(plot_x0 + r, plot_x1 - r);
-            pos[i].1 = (pos[i].1 + disp[i].1).clamp(plot_y0 + r, plot_y1 - r);
-        }
-    }
+    let (pos, root_pos) = layout_radiative_haplotype_network(
+        n_haps,
+        &radii,
+        &cluster_of_hap,
+        num_c,
+        msn_edges,
+        &hap_idx_by_id,
+        (plot_x0, plot_x1, plot_y0, plot_y1),
+    );
 
     // 4. Begin clean white publication SVG
     let mut svg = format!(
@@ -1282,8 +1991,8 @@ fn render_standalone_svg_haplotype_network(
 
     // 5. Render padded convex-hull polygons per multi-haplotype cluster (`I, II, III...`)
     let skip_singleton_hulls = clusters.len() > 10;
-    let plot_cy = (plot_y0 + plot_y1) * 0.5;
-    let mut cluster_labels: Vec<(f64, f64, String)> = Vec::new();
+    // Store `(min_x, max_x, min_y, max_y, mean_x, mean_y, half_w, line1, line2)` for post-edge label placement
+    let mut hull_specs: Vec<(f64, f64, f64, f64, f64, f64, f64, String, String)> = Vec::new();
     let mut drawn_hull_num = 0usize;
 
     for (c_idx, cl) in clusters.iter().enumerate() {
@@ -1291,30 +2000,28 @@ fn render_standalone_svg_haplotype_network(
             continue;
         }
         let mut ring_pts: Vec<(f64, f64)> = Vec::new();
+        let mut min_x = f64::MAX;
+        let mut max_x = f64::MIN;
         let mut min_y = f64::MAX;
         let mut max_y = f64::MIN;
-        let mut top_x = 0.0;
-        let mut bot_x = 0.0;
+        let mut sum_x = 0.0;
         let mut sum_y = 0.0;
         let mut cnt_c = 0usize;
         for (i, &ci) in cluster_of_hap.iter().enumerate() {
             if ci == c_idx {
                 let pad_r = radii[i] + 15.0;
+                sum_x += pos[i].0;
                 sum_y += pos[i].1;
                 cnt_c += 1;
+                min_x = min_x.min(pos[i].0 - pad_r);
+                max_x = max_x.max(pos[i].0 + pad_r);
+                min_y = min_y.min(pos[i].1 - pad_r);
+                max_y = max_y.max(pos[i].1 + pad_r);
                 for k in 0..12 {
                     let a = (k as f64 / 12.0) * std::f64::consts::TAU;
                     let px = pos[i].0 + pad_r * a.cos();
                     let py = pos[i].1 + pad_r * a.sin();
                     ring_pts.push((px, py));
-                    if py < min_y {
-                        min_y = py;
-                        top_x = pos[i].0;
-                    }
-                    if py > max_y {
-                        max_y = py;
-                        bot_x = pos[i].0;
-                    }
                 }
             }
         }
@@ -1332,116 +2039,138 @@ fn render_standalone_svg_haplotype_network(
             drawn_hull_num += 1;
             let rom = roman_numeral(drawn_hull_num);
             let dom = cl.dominant_population.chars().take(26).collect::<String>();
-            let mean_y = if cnt_c > 0 { sum_y / cnt_c as f64 } else { plot_cy };
-            let use_bottom = mean_y > plot_cy + 40.0 && max_y + 16.0 < height - 12.0;
-            let (lx, ly) = if use_bottom {
-                (bot_x, (max_y + 14.0).min(height - 10.0))
-            } else {
-                (top_x, (min_y - 6.0).max(plot_y0 - 2.0))
-            };
-            cluster_labels.push((
-                lx.clamp(plot_x0 + 72.0, plot_x1 - 72.0),
-                ly,
-                format!("Cluster {} ({})", rom, dom),
-            ));
+            let line1 = format!("Cluster {}", rom);
+            let line2 = format!("({})", dom);
+            let hw1 = (line1.chars().count() as f64) * 2.80 + 4.0;
+            let hw2 = (line2.chars().count() as f64) * 2.35 + 4.0;
+            let half_w = hw1.max(hw2);
+            let mean_x = if cnt_c > 0 { sum_x / cnt_c as f64 } else { root_pos.0 };
+            let mean_y = if cnt_c > 0 { sum_y / cnt_c as f64 } else { root_pos.1 };
+            hull_specs.push((min_x, max_x, min_y, max_y, mean_x, mean_y, half_w, line1, line2));
         }
     }
 
-    // 6. Render MSN edges + intermediate mutational-step dots / step badges
-    let mut placed_step_badges: Vec<(f64, f64)> = Vec::new();
+    // 6. Render MSN edges + intermediate mutational-step dots / segment-aware step badges
+    let mut resolved_edges: Vec<(usize, usize, usize, &str, &str)> = Vec::with_capacity(msn_edges.len());
     for edge in msn_edges {
         if let (Some(&ui), Some(&vi)) = (
             hap_idx_by_id.get(edge.source_haplotype.as_str()),
             hap_idx_by_id.get(edge.target_haplotype.as_str()),
         ) {
-            let (x1, y1) = pos[ui];
-            let (x2, y2) = pos[vi];
-            let dx = x2 - x1;
-            let dy = y2 - y1;
-            let dist = (dx * dx + dy * dy).sqrt().max(1e-4);
-            let ux = dx / dist;
-            let uy = dy / dist;
+            if ui != vi {
+                let is_loop = edge.edge_type == "reticulation-loop";
+                let is_bridge = edge.edge_type == "inter-cluster-bridge";
+                let stroke = if is_loop {
+                    "#64748b"
+                } else if is_bridge {
+                    "#1d4ed8"
+                } else {
+                    "#1e293b"
+                };
+                let dash = if is_loop { " stroke-dasharray=\"3,2.5\"" } else { "" };
+                resolved_edges.push((ui, vi, edge.mutational_steps_snps, stroke, dash));
+            }
+        }
+    }
 
-            let is_loop = edge.edge_type == "reticulation-loop";
-            let is_bridge = edge.edge_type == "inter-cluster-bridge";
-            let stroke = if is_loop {
-                "#64748b"
-            } else if is_bridge {
-                "#1d4ed8"
-            } else {
-                "#1e293b"
-            };
-            let dash = if is_loop { " stroke-dasharray=\"3,2.5\"" } else { "" };
-            svg.push_str(&format!(
-                "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{}\" stroke-width=\"{}\"{}/>\n",
-                x1,
-                y1,
-                x2,
-                y2,
-                stroke,
-                if is_bridge { "1.6" } else { "1.3" },
-                dash
-            ));
+    let mut placed_step_badges: Vec<(f64, f64)> = Vec::new();
+    for (edge_idx, &(ui, vi, steps, stroke, dash)) in resolved_edges.iter().enumerate() {
+        let (x1, y1) = pos[ui];
+        let (x2, y2) = pos[vi];
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let dist = dx.hypot(dy).max(1e-4);
+        let ux = dx / dist;
+        let uy = dy / dist;
+        let is_bridge = stroke == "#1d4ed8";
 
-            // Draw inferred median-step dots along visible segment between circle perimeters
-            let steps = edge.mutational_steps_snps;
-            let p_start = radii[ui] + 3.0;
-            let p_end = (dist - radii[vi] - 3.0).max(p_start + 2.0);
-            let seg_len = p_end - p_start;
-            if steps >= 2 && steps <= 6 && seg_len >= 10.0 {
-                let n_dots = steps - 1;
-                for d_idx in 1..=n_dots {
-                    let frac = d_idx as f64 / (n_dots as f64 + 1.0);
-                    let t = p_start + seg_len * frac;
-                    let mx = x1 + ux * t;
-                    let my = y1 + uy * t;
-                    svg.push_str(&format!(
-                        "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2.2\" fill=\"#0f172a\"/>\n",
-                        mx, my
-                    ));
-                }
-            } else if steps > 6 {
-                let mid = (p_start + p_end) * 0.5;
+        svg.push_str(&format!(
+            "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{}\" stroke-width=\"{}\"{}/>\n",
+            x1,
+            y1,
+            x2,
+            y2,
+            stroke,
+            if is_bridge { "1.6" } else { "1.3" },
+            dash
+        ));
+
+        // Draw inferred median-step dots along visible segment between circle perimeters
+        let p_start = radii[ui] + 3.0;
+        let p_end = (dist - radii[vi] - 3.0).max(p_start + 2.0);
+        let seg_len = p_end - p_start;
+        if steps >= 2 && steps <= 6 && seg_len >= 10.0 {
+            let n_dots = steps - 1;
+            for d_idx in 1..=n_dots {
+                let frac = d_idx as f64 / (n_dots as f64 + 1.0);
+                let t = p_start + seg_len * frac;
+                let mx = x1 + ux * t;
+                let my = y1 + uy * t;
+                svg.push_str(&format!(
+                    "  <circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2.2\" fill=\"#0f172a\"/>\n",
+                    mx, my
+                ));
+            }
+        } else if steps > 6 {
+            let nx_p = -uy;
+            let ny_p = ux;
+            let mut best_mx = (x1 + ux * ((p_start + p_end) * 0.5)).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
+            let mut best_my = (y1 + uy * ((p_start + p_end) * 0.5)).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
+            let mut best_score = f64::NEG_INFINITY;
+            for &t_frac in &[0.50_f64, 0.36, 0.64, 0.28, 0.72] {
+                let mid = p_start + seg_len * t_frac;
                 let base_mx = x1 + ux * mid;
                 let base_my = y1 + uy * mid;
-                let nx_p = -uy;
-                let ny_p = ux;
-                let mut best_mx = base_mx.clamp(plot_x0 + 18.0, plot_x1 - 18.0);
-                let mut best_my = base_my.clamp(plot_y0 + 10.0, plot_y1 - 10.0);
-                let mut best_score = f64::NEG_INFINITY;
-                for &off in &[0.0_f64, 11.0, -11.0, 19.0, -19.0] {
+                for &off in &[0.0_f64, 10.5, -10.5, 17.5, -17.5] {
                     let cx_p = (base_mx + nx_p * off).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
                     let cy_p = (base_my + ny_p * off).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
                     let node_clr = pos
                         .iter()
                         .enumerate()
-                        .map(|(k, &(px, py))| (cx_p - px).hypot(cy_p - py) - (radii[k] + 10.0))
+                        .map(|(k, &(px, py))| {
+                            let qx = px.clamp(cx_p - 13.0, cx_p + 13.0);
+                            let qy = py.clamp(cy_p - 6.5, cy_p + 6.5);
+                            (px - qx).hypot(py - qy) - (radii[k] + 5.0)
+                        })
+                        .fold(f64::MAX, f64::min);
+                    let seg_clr = resolved_edges
+                        .iter()
+                        .enumerate()
+                        .filter(|&(j, _)| j != edge_idx)
+                        .map(|(_, &(u2, v2, _, _, _))| {
+                            let (d_s, _, _) = point_to_segment_dist_and_proj(
+                                cx_p, cy_p, pos[u2].0, pos[u2].1, pos[v2].0, pos[v2].1,
+                            );
+                            d_s - 9.5
+                        })
                         .fold(f64::MAX, f64::min);
                     let badge_clr = placed_step_badges
                         .iter()
-                        .map(|&(bx, by)| ((cx_p - bx).abs() - 26.0).max((cy_p - by).abs() - 14.0))
+                        .map(|&(bx, by)| ((cx_p - bx).abs() - 28.0).max((cy_p - by).abs() - 15.0))
                         .fold(f64::MAX, f64::min);
-                    let sc = node_clr.min(badge_clr) - off.abs() * 0.05;
+                    let sc = node_clr.min(seg_clr).min(badge_clr)
+                        - (t_frac - 0.50).abs() * 6.0
+                        - off.abs() * 0.08;
                     if sc > best_score {
                         best_score = sc;
                         best_mx = cx_p;
                         best_my = cy_p;
                     }
-                    if node_clr >= 2.0 && badge_clr >= 2.0 {
+                    if node_clr >= 4.0 && seg_clr >= 2.5 && badge_clr >= 2.0 && off == 0.0 && (t_frac - 0.50).abs() < 0.01 {
                         break;
                     }
                 }
-                placed_step_badges.push((best_mx, best_my));
-                svg.push_str(&format!(
-                    "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"26\" height=\"13\" rx=\"3\" fill=\"#ffffff\" fill-opacity=\"0.92\" stroke=\"{}\" stroke-width=\"0.7\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\" font-weight=\"600\" text-anchor=\"middle\">({})</text>\n",
-                    best_mx - 13.0,
-                    best_my - 6.5,
-                    stroke,
-                    best_mx,
-                    best_my + 3.0,
-                    steps
-                ));
             }
+            placed_step_badges.push((best_mx, best_my));
+            svg.push_str(&format!(
+                "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"26\" height=\"13\" rx=\"3\" fill=\"#ffffff\" fill-opacity=\"0.94\" stroke=\"{}\" stroke-width=\"0.7\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\" font-weight=\"600\" text-anchor=\"middle\">({})</text>\n",
+                best_mx - 13.0,
+                best_my - 6.5,
+                stroke,
+                best_mx,
+                best_my + 3.0,
+                steps
+            ));
         }
     }
 
@@ -1538,16 +2267,162 @@ fn render_standalone_svg_haplotype_network(
         }
     }
 
-    // 7b. Collision-repel cluster labels against each other & haplotype nodes, then draw on top with white halo
-    for _ in 0..40 {
+    // 7b. Place compact 2-line cluster labels around hull perimeters using full node, step-badge, edge-segment & box clearance
+    let mut cluster_labels: Vec<(f64, f64, f64, usize, f64, String, String)> = Vec::with_capacity(hull_specs.len());
+    for (h_idx, &(min_x, max_x, min_y, max_y, mean_x, mean_y, half_w, ref line1, ref line2)) in hull_specs.iter().enumerate() {
+        let hull_cx = (min_x + max_x) * 0.5;
+        let hull_cy = (min_y + max_y) * 0.5;
+        let x_anchors = [
+            hull_cx,
+            hull_cx - half_w * 0.35,
+            hull_cx + half_w * 0.35,
+            hull_cx - half_w * 0.70,
+            hull_cx + half_w * 0.70,
+            min_x - half_w * 0.25,
+            max_x + half_w * 0.25,
+        ];
+        let mut candidates: Vec<(f64, f64, f64)> = Vec::with_capacity(96);
+        for &dy_top in &[17.0_f64, 24.0, 32.0, 42.0] {
+            let cy = (min_y - dy_top).max(plot_y0 + 6.0);
+            for (xi, &ax) in x_anchors.iter().enumerate() {
+                candidates.push((ax, cy, (xi as f64) * 1.1 + (dy_top - 17.0) * 0.45));
+            }
+        }
+        for &dy_bot in &[14.0_f64, 21.0, 29.0, 39.0] {
+            let cy = (max_y + dy_bot).min(height - 20.5);
+            for (xi, &ax) in x_anchors.iter().enumerate() {
+                candidates.push((ax, cy, (xi as f64) * 1.1 + (dy_bot - 14.0) * 0.45));
+            }
+        }
+        // Adjacent left/right/corner anchors tethered to own hull perimeter (with clean outer fallback)
+        for &dx_side in &[5.0_f64, 14.0, 26.0, 38.0] {
+            for &yc in &[hull_cy - 2.0, min_y + 8.0, max_y - 12.0, min_y - 8.0, max_y + 8.0] {
+                candidates.push((max_x + half_w + dx_side, yc, 3.0 + (dx_side - 5.0) * 0.4));
+                candidates.push((min_x - half_w - dx_side, yc, 3.0 + (dx_side - 5.0) * 0.4));
+            }
+        }
+
+        let min_lx = (plot_x0 + half_w).min((plot_x0 + plot_x1) * 0.5);
+        let max_lx = (plot_x1 - half_w).max((plot_x0 + plot_x1) * 0.5);
+        let mut best_lx = hull_cx.clamp(min_lx, max_lx);
+        let mut best_ly = (min_y - 17.0).clamp(plot_y0 + 6.0, height - 20.5);
+        let mut best_own_gap = 0.0_f64;
+        let mut best_score = f64::NEG_INFINITY;
+
+        for (raw_lx, raw_ly, offset_pen) in candidates {
+            let lx = raw_lx.clamp(min_lx, max_lx);
+            let ly = raw_ly.clamp(plot_y0 + 6.0, height - 20.5);
+            let top_y = ly - 10.0;
+            let bot_y = ly + 14.5;
+            let left_x = lx - half_w;
+            let right_x = lx + half_w;
+            let mid_y = ly + 2.25;
+
+            // Measure distance to OWN hull bbox: strongly prefer <=22px, allow <=48px only to escape dense congestion
+            let own_gap_x = (min_x - right_x).max(left_x - max_x).max(0.0);
+            let own_gap_y = (min_y - bot_y).max(top_y - max_y).max(0.0);
+            let own_gap = own_gap_x.hypot(own_gap_y);
+            if own_gap > 48.0 {
+                continue;
+            }
+
+            let node_clr = pos
+                .iter()
+                .enumerate()
+                .map(|(k, &(px, py))| {
+                    let qx = px.clamp(left_x, right_x);
+                    let qy = py.clamp(top_y, bot_y);
+                    (px - qx).hypot(py - qy) - (radii[k] + 4.5)
+                })
+                .fold(f64::MAX, f64::min);
+
+            let badge_clr = placed_step_badges
+                .iter()
+                .map(|&(bx, by)| ((lx - bx).abs() - (half_w + 15.0)).max((mid_y - by).abs() - 19.0))
+                .fold(f64::MAX, f64::min);
+
+            let prev_lbl_clr = cluster_labels
+                .iter()
+                .map(|&(ox, oy, ohw, _, _, _, _)| ((lx - ox).abs() - (half_w + ohw + 8.0)).max((ly - oy).abs() - 27.0))
+                .fold(f64::MAX, f64::min);
+
+            let other_hull_clr = hull_specs
+                .iter()
+                .enumerate()
+                .filter(|&(oi, _)| oi != h_idx)
+                .map(|(_, &(hx0, hx1, hy0, hy1, _, _, _, _, _))| {
+                    let pad = 4.0;
+                    let dx_h = (hx0 - pad - right_x).max(left_x - (hx1 + pad));
+                    let dy_h = (hy0 - pad - bot_y).max(top_y - (hy1 + pad));
+                    dx_h.max(dy_h)
+                })
+                .fold(f64::MAX, f64::min);
+
+            let seg_clr = resolved_edges
+                .iter()
+                .map(|&(u, v, _, _, _)| {
+                    let mut min_s = f64::MAX;
+                    for &sy in &[ly - 3.5, ly + 8.0] {
+                        for &sx in &[lx - half_w * 0.65, lx, lx + half_w * 0.65] {
+                            let (ds, _, _) = point_to_segment_dist_and_proj(
+                                sx, sy, pos[u].0, pos[u].1, pos[v].0, pos[v].1,
+                            );
+                            if ds < min_s {
+                                min_s = ds;
+                            }
+                        }
+                    }
+                    min_s - 6.0
+                })
+                .fold(f64::MAX, f64::min);
+
+            // Hard non-overlap feasibility against haplotype circles, foreign hulls, placed labels & step badges
+            let node_tier = if node_clr >= 1.5 { 260.0 } else { node_clr * 20.0 };
+            let lbl_tier = if prev_lbl_clr >= 1.0 { 260.0 } else { prev_lbl_clr * 20.0 };
+            let hull_tier = if other_hull_clr >= 1.0 { 220.0 } else { other_hull_clr * 16.0 };
+            let badge_tier = if badge_clr >= 1.0 { 210.0 } else { badge_clr.clamp(-40.0, 1.0) * 6.5 };
+            let seg_tier = if seg_clr >= 1.0 { 42.0 } else { seg_clr.clamp(-10.0, 1.0) * 2.5 };
+            let tether_tier = if own_gap <= 24.0 { 95.0 - own_gap * 0.85 } else if own_gap <= 38.0 { 55.0 - (own_gap - 24.0) * 1.4 } else { -own_gap * 1.6 };
+            let radial_pref = if (mean_y >= root_pos.1 && mid_y > hull_cy)
+                || (mean_y < root_pos.1 && mid_y < hull_cy)
+                || (mean_x - root_pos.0).signum() == (lx - hull_cx).signum()
+            {
+                2.0
+            } else {
+                0.0
+            };
+            let sc = node_tier
+                + lbl_tier
+                + hull_tier
+                + badge_tier
+                + seg_tier
+                + tether_tier
+                + node_clr.min(16.0) * 0.35
+                + seg_clr.min(16.0) * 0.35
+                + radial_pref
+                - offset_pen
+                - (lx - hull_cx).abs() * 0.08;
+            if sc > best_score {
+                best_score = sc;
+                best_lx = lx;
+                best_ly = ly;
+                best_own_gap = own_gap;
+            }
+        }
+        cluster_labels.push((best_lx, best_ly, half_w, h_idx, best_own_gap, line1.clone(), line2.clone()));
+    }
+
+    // Fine SDF box repulsion polish with own-hull tether & foreign-hull guard
+    for _ in 0..45 {
         let m = cluster_labels.len();
         for a in 0..m {
             for b in (a + 1)..m {
                 let dx = cluster_labels[a].0 - cluster_labels[b].0;
                 let dy = cluster_labels[a].1 - cluster_labels[b].1;
-                if dx.abs() < 125.0 && dy.abs() < 16.0 {
-                    let push_y = if dy >= 0.0 { 2.2 } else { -2.2 };
-                    let push_x = if dx >= 0.0 { 1.4 } else { -1.4 };
+                let req_x = cluster_labels[a].2 + cluster_labels[b].2 + 8.0;
+                if dx.abs() < req_x && dy.abs() < 27.0 {
+                    let push_y = if dy >= 0.0 { 2.0 } else { -2.0 };
+                    let push_x = if dx >= 0.0 { 1.2 } else { -1.2 };
                     cluster_labels[a].1 += push_y;
                     cluster_labels[b].1 -= push_y;
                     cluster_labels[a].0 += push_x;
@@ -1555,27 +2430,78 @@ fn render_standalone_svg_haplotype_network(
                 }
             }
         }
-        for lbl_pos in &mut cluster_labels {
-            for (k, &(px, py)) in pos.iter().enumerate() {
-                let dx = lbl_pos.0 - px;
-                let dy = lbl_pos.1 - py;
-                let d = dx.hypot(dy).max(1e-3);
-                let min_clr = radii[k] + 13.0;
-                if d < min_clr {
-                    lbl_pos.0 += (dx / d) * 2.4;
-                    lbl_pos.1 += (dy / d) * 2.4;
+        for lbl_entry in &mut cluster_labels {
+            let hw = lbl_entry.2;
+            let own_idx = lbl_entry.3;
+            let max_drift = if lbl_entry.4 <= 22.0 { 22.0 } else { (lbl_entry.4 + 12.0).min(54.0) };
+            for &(bx, by) in &placed_step_badges {
+                let dx = lbl_entry.0 - bx;
+                let dy = (lbl_entry.1 + 2.25) - by;
+                if dx.abs() < hw + 15.0 && dy.abs() < 19.0 {
+                    lbl_entry.1 += if dy >= 0.0 { 1.4 } else { -1.4 };
+                    lbl_entry.0 += if dx >= 0.0 { 1.0 } else { -1.0 };
                 }
             }
-            lbl_pos.0 = lbl_pos.0.clamp(plot_x0 + 72.0, plot_x1 - 72.0);
-            lbl_pos.1 = lbl_pos.1.clamp(plot_y0 - 4.0, height - 10.0);
+            for (oi, &(hx0, hx1, hy0, hy1, _, _, _, _, _)) in hull_specs.iter().enumerate() {
+                if oi == own_idx {
+                    continue;
+                }
+                let pad = 3.0;
+                let hcx = (hx0 + hx1) * 0.5;
+                let hcy = (hy0 + hy1) * 0.5;
+                let hhw = (hx1 - hx0) * 0.5 + pad;
+                let hhh = (hy1 - hy0) * 0.5 + pad;
+                let dx = lbl_entry.0 - hcx;
+                let dy = (lbl_entry.1 + 2.25) - hcy;
+                if dx.abs() < hw + hhw && dy.abs() < 12.25 + hhh {
+                    let overlap_x = hw + hhw - dx.abs();
+                    let overlap_y = 12.25 + hhh - dy.abs();
+                    if overlap_x < overlap_y {
+                        lbl_entry.0 += if dx >= 0.0 { 1.8 } else { -1.8 };
+                    } else {
+                        lbl_entry.1 += if dy >= 0.0 { 1.8 } else { -1.8 };
+                    }
+                }
+            }
+            for (k, &(px, py)) in pos.iter().enumerate() {
+                let qx = px.clamp(lbl_entry.0 - hw, lbl_entry.0 + hw);
+                let qy = py.clamp(lbl_entry.1 - 10.0, lbl_entry.1 + 14.5);
+                let dx = qx - px;
+                let dy = qy - py;
+                let d = dx.hypot(dy);
+                let min_clr = radii[k] + 5.5;
+                if d < min_clr {
+                    let (ux, uy) = if d > 1e-4 {
+                        (dx / d, dy / d)
+                    } else {
+                        let cdx = lbl_entry.0 - px;
+                        let cdy = (lbl_entry.1 + 2.25) - py;
+                        let cl = cdx.hypot(cdy).max(1e-3);
+                        (cdx / cl, cdy / cl)
+                    };
+                    let step = (min_clr - d).min(4.0);
+                    lbl_entry.0 += ux * step;
+                    lbl_entry.1 += uy * step;
+                }
+            }
+            let (own_x0, own_x1, own_y0, own_y1, _, _, _, _, _) = hull_specs[own_idx];
+            let min_lx = (plot_x0 + hw).max(own_x0 - hw - max_drift).min((plot_x0 + plot_x1) * 0.5);
+            let max_lx = (plot_x1 - hw).min(own_x1 + hw + max_drift).max((plot_x0 + plot_x1) * 0.5);
+            let min_ly = (plot_y0 + 6.0).max(own_y0 - 14.5 - max_drift);
+            let max_ly = (height - 20.5).min(own_y1 + 10.0 + max_drift);
+            lbl_entry.0 = lbl_entry.0.clamp(min_lx.min(max_lx), max_lx.max(min_lx));
+            lbl_entry.1 = lbl_entry.1.clamp(min_ly.min(max_ly), max_ly.max(min_ly));
         }
     }
-    for (lx, ly, lbl) in cluster_labels {
+    for (lx, ly, _, _, _, line1, line2) in cluster_labels {
         svg.push_str(&format!(
-            "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" stroke=\"#ffffff\" stroke-width=\"3.5\" paint-order=\"stroke\" font-size=\"11\" font-weight=\"700\" text-anchor=\"middle\">{}</text>\n",
+            "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" stroke=\"#ffffff\" stroke-width=\"3.5\" paint-order=\"stroke\" font-size=\"10.5\" font-weight=\"700\" text-anchor=\"middle\"><tspan x=\"{:.1}\" dy=\"0\">{}</tspan><tspan x=\"{:.1}\" dy=\"11.5\" font-size=\"9.0\" font-weight=\"600\" fill=\"#334155\">{}</tspan></text>\n",
             lx,
             ly,
-            xml_escape_haplo(&lbl)
+            lx,
+            xml_escape_haplo(&line1),
+            lx,
+            xml_escape_haplo(&line2)
         ));
     }
 
@@ -2015,5 +2941,274 @@ mod tests {
             compute_haplotype_kcore_and_betweenness(&report.haplotypes, &report.msn_edges);
         assert!(max_k_core >= 1);
         assert_eq!(hubs.len(), 3);
+    }
+
+    fn build_dense_multi_clade_records() -> Vec<FastaRecord> {
+        let pops = [
+            "NE-Atl-Med Acanth",
+            "Cryptoplacidae",
+            "E-Pac-Amer Acanth",
+            "Indo-WP Acantho",
+            "Craspedo-Leptoplax",
+            "NW-Pac Acantho",
+            "Notoplax-Cryptocon",
+            "W-Atl-Carib Acanth",
+        ];
+        let bases = [b'A', b'C', b'G', b'T'];
+        let mut records = Vec::new();
+        let len = 320usize;
+        let base_seq: Vec<u8> = (0..len).map(|k| bases[(k * 7 + 1) % 4]).collect();
+
+        // Create 8 biogeographic macro-clades (`15–32` SNPs apart) with rich intra-cluster diversity + singletons
+        let clade_sizes = [11usize, 10, 9, 8, 8, 8, 7, 7]; // 68 unique haplotypes total
+        let mut hap_counter = 0usize;
+        for (c_idx, &h_cnt) in clade_sizes.iter().enumerate() {
+            let mut clade_hub = base_seq.clone();
+            // Clade-defining deep substitutions (`18 + c_idx * 4` shared SNPs per clade block)
+            let n_deep = 18 + c_idx * 4;
+            for s in 0..n_deep {
+                let pos = (c_idx * 37 + s * 5) % len;
+                clade_hub[pos] = bases[(bases.iter().position(|&b| b == clade_hub[pos]).unwrap_or(0) + 1 + (s % 2)) % 4];
+            }
+            for k in 0..h_cnt {
+                hap_counter += 1;
+                let mut seq = clade_hub.clone();
+                // First 5 haplotypes form tight <=3 SNP cluster; remaining diverge into 4..11 SNP satellites
+                if k > 0 {
+                    let step_pos = if k <= 4 {
+                        vec![200 + (c_idx * 13 + k * 2) % 110]
+                    } else {
+                        (0..((k - 3).min(6)))
+                            .map(|m| (180 + c_idx * 17 + k * 7 + m * 11) % len)
+                            .collect()
+                    };
+                    for p in step_pos {
+                        seq[p] = bases[(bases.iter().position(|&b| b == seq[p]).unwrap_or(0) + 2) % 4];
+                    }
+                    // Extra cross-reticulation on k == 2 and k == 3
+                    if k == 2 || k == 3 {
+                        let p2 = (210 + c_idx * 13 + 3) % len;
+                        seq[p2] = bases[(bases.iter().position(|&b| b == seq[p2]).unwrap_or(0) + 1) % 4];
+                    }
+                }
+                let seq_str = String::from_utf8(seq).unwrap_or_default();
+                // Give hub haplotypes higher sample counts and multi-population pie sharing
+                let mult = if k == 0 {
+                    6 - (c_idx % 3)
+                } else if k == 1 {
+                    3
+                } else {
+                    1
+                };
+                for rep_m in 0..mult {
+                    let fam = if k == 0 && rep_m == mult - 1 && c_idx < 4 {
+                        pops[(c_idx + 1) % pops.len()]
+                    } else {
+                        pops[c_idx % pops.len()]
+                    };
+                    records.push(FastaRecord {
+                        id: format!("DENSE_{:03}_{}", hap_counter, rep_m),
+                        accession: format!("ACC{:03}_{}", hap_counter, rep_m),
+                        taxon: format!("Species_{}", c_idx + 1),
+                        common_name: String::new(),
+                        family: fam.to_string(),
+                        gene: "COX1".to_string(),
+                        sequence: seq_str.clone(),
+                        description: format!("{} hap{}", fam, hap_counter),
+                        cached_from_disk: true,
+                    });
+                }
+            }
+        }
+        records
+    }
+
+    fn verify_layout_invariants(report: &HaplotypeClusterCohortReport, label: &str) {
+        let n_haps = report.haplotypes.len();
+        let mut hap_idx = BTreeMap::new();
+        for (i, h) in report.haplotypes.iter().enumerate() {
+            hap_idx.insert(h.haplotype_id.as_str(), i);
+        }
+        let radii: Vec<f64> = report
+            .haplotypes
+            .iter()
+            .map(|h| (4.8 + (h.sample_count as f64).sqrt() * 5.0).clamp(6.0, 42.0))
+            .collect();
+        let cluster_of_hap: Vec<usize> = report
+            .haplotypes
+            .iter()
+            .map(|h| {
+                report
+                    .clusters
+                    .iter()
+                    .position(|c| c.cluster_id == h.cluster_id)
+                    .unwrap_or(0)
+            })
+            .collect();
+        let plot_bounds = (200.0, 1045.0, 64.0, 644.0);
+        let (pos, _) = layout_radiative_haplotype_network(
+            n_haps,
+            &radii,
+            &cluster_of_hap,
+            report.clusters.len().max(1),
+            &report.msn_edges,
+            &hap_idx,
+            plot_bounds,
+        );
+
+        let mut overlaps = 0usize;
+        let mut oob = 0usize;
+        for i in 0..n_haps {
+            let (x, y) = pos[i];
+            let r = radii[i];
+            if x - r < 200.0 || x + r > 1045.0 || y - r < 64.0 || y + r > 644.0 {
+                oob += 1;
+            }
+            for j in (i + 1)..n_haps {
+                let d = (pos[i].0 - pos[j].0).hypot(pos[i].1 - pos[j].1);
+                if d < radii[i] + radii[j] + 1.0 {
+                    overlaps += 1;
+                }
+            }
+        }
+        assert_eq!(overlaps, 0, "{}: expected 0 overlapping haplotype circles", label);
+        assert_eq!(oob, 0, "{}: expected 0 out-of-bounds haplotype circles", label);
+
+        // Verify zero non-loop spanning-tree edge crossings
+        let tree_pairs: Vec<(usize, usize)> = report
+            .msn_edges
+            .iter()
+            .filter(|e| e.edge_type != "reticulation-loop")
+            .filter_map(|e| {
+                Some((
+                    *hap_idx.get(e.source_haplotype.as_str())?,
+                    *hap_idx.get(e.target_haplotype.as_str())?,
+                ))
+            })
+            .collect();
+        let mut tree_crossings = 0usize;
+        for a in 0..tree_pairs.len() {
+            let (u1, v1) = tree_pairs[a];
+            for b in (a + 1)..tree_pairs.len() {
+                let (u2, v2) = tree_pairs[b];
+                if u1 == u2 || u1 == v2 || v1 == u2 || v1 == v2 {
+                    continue;
+                }
+                if segments_intersect_or_graze(pos[u1], pos[v1], pos[u2], pos[v2], 0.25) {
+                    tree_crossings += 1;
+                }
+            }
+        }
+        assert_eq!(tree_crossings, 0, "{}: expected 0 backbone tree edge crossings", label);
+        assert!(report.visualizations.svg_vector_network.contains("<svg"));
+    }
+
+    fn load_pipe_fasta_test(path: &std::path::Path) -> Option<Vec<FastaRecord>> {
+        let txt = std::fs::read_to_string(path).ok()?;
+        let mut recs = Vec::new();
+        let mut cid = String::new();
+        let mut csp = String::new();
+        let mut cpop = String::new();
+        let mut cseq = String::new();
+        for l in txt.lines() {
+            let t = l.trim();
+            if t.is_empty() {
+                continue;
+            }
+            if let Some(h) = t.strip_prefix('>') {
+                if !cid.is_empty() && !cseq.is_empty() {
+                    recs.push(FastaRecord {
+                        id: cid.clone(),
+                        accession: cid.clone(),
+                        taxon: csp.clone(),
+                        common_name: String::new(),
+                        family: cpop.clone(),
+                        gene: "COX1".to_string(),
+                        description: csp.clone(),
+                        sequence: cseq.clone(),
+                        cached_from_disk: true,
+                    });
+                }
+                let ps: Vec<&str> = h.split('|').collect();
+                cid = ps.first().map(|s| s.trim().to_string()).unwrap_or_default();
+                csp = ps.get(1).map(|s| s.trim().to_string()).unwrap_or_else(|| cid.clone());
+                cpop = ps.get(2).map(|s| s.trim().to_string()).unwrap_or_else(|| "Chiton".to_string());
+                cseq.clear();
+            } else {
+                cseq.push_str(t);
+            }
+        }
+        if !cid.is_empty() && !cseq.is_empty() {
+            recs.push(FastaRecord {
+                id: cid.clone(),
+                accession: cid,
+                taxon: csp.clone(),
+                common_name: String::new(),
+                family: cpop,
+                gene: "COX1".to_string(),
+                description: csp,
+                sequence: cseq,
+                cached_from_disk: true,
+            });
+        }
+        Some(recs)
+    }
+
+    #[test]
+    fn test_radiative_forcing_haplotype_layout_zero_crossings_and_overlaps() {
+        let dense_records = build_dense_multi_clade_records();
+        let dense_rep = analyze_haplotype_clusters_prealigned(
+            "calib-dense-pie",
+            "Dense Multi-Clade Shared Pie Radiative Network",
+            &dense_records,
+            3,
+        );
+        verify_layout_invariants(&dense_rep, "calib-dense-pie");
+
+        let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let fig7a_path = manifest_dir.join("runs/runie-native-acanthochitonidae-28/alignments/cohort_nwpacific_acanthochitona_cox1.fasta");
+        let fig7b_path = manifest_dir.join("runs/runie-native-acanthochitonidae-28/alignments/cohort_global_cryptoplacoidea_cox1.fasta");
+
+        let mut fig7a_svg: Option<String> = None;
+        let mut fig7b_svg: Option<String> = None;
+
+        if let Some(recs7a) = load_pipe_fasta_test(&fig7a_path) {
+            let rep7a = analyze_haplotype_clusters_prealigned(
+                "nwpacific_acanthochitona_cox1",
+                "Panel A | NW Pacific Acanthochitona & 2011 Tohoku Tsunami-Rafted A. achates (JTMD -> Hawaii)",
+                &recs7a,
+                3,
+            );
+            verify_layout_invariants(&rep7a, "acanthochitonidae-fig7a");
+            fig7a_svg = Some(rep7a.visualizations.svg_vector_network);
+        }
+        if let Some(recs7b) = load_pipe_fasta_test(&fig7b_path) {
+            let rep7b = analyze_haplotype_clusters_prealigned(
+                "global_cryptoplacoidea_cox1",
+                "Panel B | Global Cryptoplacoidea & Acanthochitonidae Biogeographic Haplotype Clusters",
+                &recs7b,
+                3,
+            );
+            verify_layout_invariants(&rep7b, "acanthochitonidae-fig7b");
+            fig7b_svg = Some(rep7b.visualizations.svg_vector_network);
+        }
+
+        if let Ok(out_dir_str) = std::env::var("CRV_CALIB_OUT_DIR") {
+            let out_dir = std::path::Path::new(&out_dir_str);
+            let _ = std::fs::create_dir_all(out_dir);
+            std::fs::write(
+                out_dir.join("calib-dense-pie-radiative.svg"),
+                &dense_rep.visualizations.svg_vector_network,
+            )
+            .expect("write calib-dense-pie-radiative.svg");
+            if let Some(svg) = fig7a_svg {
+                std::fs::write(out_dir.join("acanthochitonidae-fig7a-radiative.svg"), svg)
+                    .expect("write acanthochitonidae-fig7a-radiative.svg");
+            }
+            if let Some(svg) = fig7b_svg {
+                std::fs::write(out_dir.join("acanthochitonidae-fig7b-radiative.svg"), svg)
+                    .expect("write acanthochitonidae-fig7b-radiative.svg");
+            }
+        }
     }
 }

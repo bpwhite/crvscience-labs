@@ -802,6 +802,45 @@ pub fn execute_china_aus_pests_supervisor_study(
         });
     }
 
+    // Index verified multi-locus OTUs and complete mitogenomes by normalized binomial for Stage 1 & 2 recovery
+    let quar_set: HashSet<(String, String)> = active_quarantine
+        .iter()
+        .map(|q| (q.accession_version.clone(), q.locus_canonical.clone()))
+        .collect();
+    let norm_sp = |s: &str| -> String {
+        s.split_whitespace().take(2).collect::<Vec<_>>().join(" ").to_ascii_lowercase()
+    };
+    let mut otu_by_sp_low: HashMap<String, &AssembledSpeciesOtu> = HashMap::new();
+    for o in &seqnet_res.otus {
+        otu_by_sp_low.entry(norm_sp(&o.species_binomial)).or_insert(o);
+    }
+    let mut single_by_sp_loc: HashMap<(String, String), String> = HashMap::new();
+    let mut mito_by_sp_low: HashMap<String, String> = HashMap::new();
+    for (_, _, _, sp_name, _, _, _, raw_seq, from_seqnet) in &slot_entries {
+        if !*from_seqnet && raw_seq.len() >= 8_000 {
+            mito_by_sp_low.entry(norm_sp(sp_name)).or_insert_with(|| raw_seq.clone());
+        }
+    }
+    for r in &full_mitogenome_records {
+        if r.sequence.len() >= 8_000 {
+            mito_by_sp_low.entry(norm_sp(&r.taxon)).or_insert_with(|| r.sequence.clone());
+        }
+    }
+    for ((acc, loc), rec) in &seqnet_cached_map {
+        if quar_set.contains(&(acc.clone(), loc.clone())) {
+            continue;
+        }
+        let spk = norm_sp(&rec.species_binomial);
+        if rec.seq_length >= 8_000 {
+            mito_by_sp_low.entry(spk.clone()).or_insert_with(|| rec.sequence_raw.clone());
+        } else if (160..=3_200).contains(&rec.seq_length) {
+            let e = single_by_sp_loc.entry((spk, loc.clone())).or_default();
+            if rec.sequence_raw.len() > e.len() {
+                *e = rec.sequence_raw.clone();
+            }
+        }
+    }
+
     // Build all 64 verified species records & COX1 orthologous cores
     for (idx, (tip_code, sec_code, family, sp_name, sec_grp, _guild_desc, acc, raw_seq, from_seqnet)) in
         slot_entries.iter().enumerate()
@@ -822,7 +861,7 @@ pub fn execute_china_aus_pests_supervisor_study(
             .as_ref()
             .and_then(|o| o.locus_slots.get("COI").map(|s| s.sequence_raw.as_str()))
             .unwrap_or(&seq_upper);
-        let cox_nt = if coi_src.len() <= 2_400 {
+        let mut cox_nt = if coi_src.len() <= 2_400 {
             let clean_src: String = coi_src
                 .bytes()
                 .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
@@ -837,6 +876,14 @@ pub fn execute_china_aus_pests_supervisor_study(
         } else {
             extract_orthologous_cox1_nt(coi_src, &seed_cox1_aa).0
         };
+        if cox_nt.len() < 550 {
+            if let Some(mito_seq) = mito_by_sp_low.get(&norm_sp(sp_name)) {
+                let ext_cox = extract_orthologous_cox1_nt(mito_seq, &seed_cox1_aa).0;
+                if ext_cox.len() > cox_nt.len() {
+                    cox_nt = ext_cox;
+                }
+            }
+        }
         let (_, _, hsp) = super_blast_pair(
             acc,
             &cox_nt[..cox_nt.len().min(658)],
@@ -1080,45 +1127,6 @@ pub fn execute_china_aus_pests_supervisor_study(
     .unwrap_or(79.1);
 
     // Track B2: Assemble full 16-locus partitioned supermatrix across all 64 species (PCGs codon-locked, rRNAs 4-state)
-    let quar_set: HashSet<(String, String)> = active_quarantine
-        .iter()
-        .map(|q| (q.accession_version.clone(), q.locus_canonical.clone()))
-        .collect();
-    let norm_sp = |s: &str| -> String {
-        s.split_whitespace().take(2).collect::<Vec<_>>().join(" ").to_ascii_lowercase()
-    };
-    let mut otu_by_sp_low: HashMap<String, &AssembledSpeciesOtu> = HashMap::new();
-    for o in &seqnet_res.otus {
-        otu_by_sp_low.entry(norm_sp(&o.species_binomial)).or_insert(o);
-    }
-    let mut single_by_sp_loc: HashMap<(String, String), String> = HashMap::new();
-    let mut mito_by_sp_low: HashMap<String, String> = HashMap::new();
-    for (idx, (_, _, _, sp_name, _, _, _, raw_seq, from_seqnet)) in slot_entries.iter().enumerate() {
-        let _ = idx;
-        if !*from_seqnet && raw_seq.len() >= 8_000 {
-            mito_by_sp_low.entry(norm_sp(sp_name)).or_insert_with(|| raw_seq.clone());
-        }
-    }
-    for r in &full_mitogenome_records {
-        if r.sequence.len() >= 8_000 {
-            mito_by_sp_low.entry(norm_sp(&r.taxon)).or_insert_with(|| r.sequence.clone());
-        }
-    }
-    for ((acc, loc), rec) in &seqnet_cached_map {
-        if quar_set.contains(&(acc.clone(), loc.clone())) {
-            continue;
-        }
-        let spk = norm_sp(&rec.species_binomial);
-        if rec.seq_length >= 8_000 {
-            mito_by_sp_low.entry(spk.clone()).or_insert_with(|| rec.sequence_raw.clone());
-        } else if (160..=3_200).contains(&rec.seq_length) {
-            let e = single_by_sp_loc.entry((spk, loc.clone())).or_default();
-            if rec.sequence_raw.len() > e.len() {
-                *e = rec.sequence_raw.clone();
-            }
-        }
-    }
-
     let mut seed_by_locus: HashMap<String, String> = HashMap::new();
     seed_by_locus.insert("COI".to_string(), seed_cox1_nt.clone());
     for loc in &bench.loci {
@@ -1202,6 +1210,66 @@ pub fn execute_china_aus_pests_supervisor_study(
             kept_partitions.push((loc.clone(), true, false, cox64_cols_bp, pmap));
             continue;
         }
+        // Pass-2 secondary-seed retry for divergent lineages (e.g. [A] Tetranychidae mites)
+        // using up to 4 already-extracted lineage seeds from `loc_recs` ([A]..[D] prioritized).
+        if !is_nuc && !loc_recs.is_empty() && loc_recs.len() < 64 {
+            let have_ids: HashSet<String> = loc_recs.iter().map(|r| r.id.clone()).collect();
+            let mut sec_seeds: Vec<String> = Vec::with_capacity(4);
+            for sec_pfx in ["A_", "B_", "C_", "D_"] {
+                if sec_seeds.len() >= 4 {
+                    break;
+                }
+                if let Some(r) = loc_recs.iter().find(|r| r.id.starts_with(sec_pfx) && r.sequence.len() >= 180) {
+                    sec_seeds.push(r.sequence.clone());
+                }
+            }
+            for r in &loc_recs {
+                if sec_seeds.len() >= 4 {
+                    break;
+                }
+                if r.sequence.len() >= 180 && !sec_seeds.iter().any(|s| s == &r.sequence) {
+                    sec_seeds.push(r.sequence.clone());
+                }
+            }
+            if !sec_seeds.is_empty() {
+                for (tip_code, _, fam, sp_name, _, _, acc, _, _) in &slot_entries {
+                    let safe_id = tip_code.replace(':', "_");
+                    if have_ids.contains(&safe_id) {
+                        continue;
+                    }
+                    let spk = norm_sp(sp_name);
+                    if let Some(mito_s) = mito_by_sp_low.get(&spk) {
+                        let mut found: Option<String> = None;
+                        for s_seed in &sec_seeds {
+                            if let Some(ext) = extract_homologous_mito_locus_from_genome(mito_s, s_seed, is_pcg) {
+                                if ext.len() >= 160 {
+                                    found = Some(ext);
+                                    break;
+                                }
+                            }
+                        }
+                        if let Some(seq_str) = found {
+                            let capped = if is_pcg && seq_str.len() > 2_200 {
+                                seq_str[..2_200].to_string()
+                            } else {
+                                seq_str
+                            };
+                            loc_recs.push(FastaRecord {
+                                id: safe_id,
+                                accession: acc.clone(),
+                                taxon: sp_name.clone(),
+                                common_name: String::new(),
+                                family: fam.clone(),
+                                gene: loc.clone(),
+                                description: format!("{} {}", sp_name, loc),
+                                sequence: capped,
+                                cached_from_disk: true,
+                            });
+                        }
+                    }
+                }
+            }
+        }
         if loc_recs.len() < 8 {
             continue;
         }
@@ -1264,30 +1332,63 @@ pub fn execute_china_aus_pests_supervisor_study(
     let mut unrec4_pairs = Vec::with_capacity(64);
     let mut raw0_pairs = Vec::with_capacity(64);
 
-    let build_raw0_for = |idx: usize| -> String {
-        let mut raw_acgt = String::new();
-        if idx < raw0_control_records.len() {
-            raw_acgt.push_str(&raw0_control_records[idx].sequence);
+    let clean_acgt = |s: &str| -> String {
+        s.bytes()
+            .filter_map(|b| {
+                let u = b.to_ascii_uppercase();
+                matches!(u, b'A' | b'C' | b'G' | b'T').then_some(u as char)
+            })
+            .collect()
+    };
+    let append_rotated_acgt = |dst: &mut String, src: &str, rot_seed: usize| {
+        if dst.len() >= ortho64_cols_bp || src.is_empty() {
+            return;
         }
-        let raw_slot: String = slot_entries[idx]
-            .7
-            .bytes()
-            .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
-            .map(|b| b.to_ascii_uppercase() as char)
-            .collect();
+        let acgt = clean_acgt(src);
+        if acgt.is_empty() {
+            return;
+        }
+        let need = ortho64_cols_bp - dst.len();
+        let off = rot_seed % acgt.len();
+        let take1 = (acgt.len() - off).min(need);
+        dst.push_str(&acgt[off..off + take1]);
+        if take1 < need {
+            let take2 = (need - take1).min(off);
+            dst.push_str(&acgt[..take2]);
+        }
+    };
+    let build_raw0_for = |idx: usize| -> String {
+        let mut raw_acgt = String::with_capacity(ortho64_cols_bp);
+        if idx < raw0_control_records.len() {
+            raw_acgt.push_str(&clean_acgt(&raw0_control_records[idx].sequence));
+        }
         if raw_acgt.len() < ortho64_cols_bp {
+            let raw_slot = clean_acgt(&slot_entries[idx].7);
             if idx < sequences_manifest.len() && sequences_manifest[idx].strand_orientation == '-' {
                 raw_acgt.push_str(&revcomp_dna(&raw_slot));
             } else {
                 raw_acgt.push_str(&raw_slot);
             }
         }
-        raw_acgt = raw_acgt
-            .bytes()
-            .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
-            .map(|b| b.to_ascii_uppercase() as char)
-            .take(ortho64_cols_bp)
-            .collect();
+        if raw_acgt.len() < ortho64_cols_bp {
+            if let Some(mito_seq) = mito_by_sp_low.get(&norm_sp(&slot_entries[idx].3)) {
+                append_rotated_acgt(&mut raw_acgt, mito_seq, idx.saturating_mul(2311));
+            }
+        }
+        if !full_mitogenome_records.is_empty() {
+            let n_full = full_mitogenome_records.len();
+            let mut step = 0usize;
+            while raw_acgt.len() < ortho64_cols_bp && step < n_full * 2 {
+                let rec = &full_mitogenome_records[(idx + step) % n_full];
+                append_rotated_acgt(
+                    &mut raw_acgt,
+                    &rec.sequence,
+                    idx.saturating_mul(2311).saturating_add(step.saturating_mul(997)),
+                );
+                step += 1;
+            }
+        }
+        raw_acgt.truncate(ortho64_cols_bp);
         if raw_acgt.len() < ortho64_cols_bp {
             raw_acgt.push_str(&"-".repeat(ortho64_cols_bp - raw_acgt.len()));
         }
@@ -1674,7 +1775,6 @@ pub fn execute_china_aus_pests_supervisor_study(
         b_replicates,
         20261118,
     )?;
-    let _ = (&ml_c12, &ml_unrec, &ml_raw0);
     let _ = fs::write(run_dir.join("trees/china_aus_pests_64_ry3_ml.nwk"), &ml_ry3.newick_tree);
     let stage_ml_ufboot_ms = t_ml.elapsed().as_millis().max(1);
 
@@ -1699,6 +1799,19 @@ pub fn execute_china_aus_pests_supervisor_study(
         .ok_or_else(|| "Failed to parse solved China/Australia RY3 ML tree".to_string())?;
     let mut flat_tree = Vec::new();
     flatten_postorder(&parsed_root, &tip_to_idx, &mut flat_tree);
+    let flatten_regime_ml = |nwk: &str, label: &str| {
+        let root = parse_phylo_tree(nwk, false, &empty_ages)
+            .ok_or_else(|| format!("Failed to parse solved China/Australia {} tree", label))?;
+        let mut flat = Vec::new();
+        flatten_postorder(&root, &tip_to_idx, &mut flat);
+        Ok::<_, String>(flat)
+    };
+    let flat_trees_4 = [
+        flat_tree.clone(),
+        flatten_regime_ml(&ml_c12.newick_tree, "Codon-12 ML")?,
+        flatten_regime_ml(&ml_unrec.newick_tree, "Unrecoded-4 ML")?,
+        flatten_regime_ml(&ml_raw0.newick_tree, "Raw-0Beaker ML")?,
+    ];
     let mut split_vec_ry3 = Vec::new();
     let full_mask_phy: u64 = if n_phy >= 64 { u64::MAX } else { (1u64 << n_phy) - 1 };
     collect_u64_splits(&parsed_root, &tip_to_idx, full_mask_phy, &mut split_vec_ry3);
@@ -1745,7 +1858,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         lookup_split_boot(&sec_idxs(&['G'])),
     ];
 
-    // Phase 3B: Re-score 32-Chain Native RuNIE Combinatorial Sweep on final solved ML tree (`flat_tree`)
+    // Phase 3B: Re-score 32-Chain Native RuNIE Combinatorial Sweep on each regime's own solved ML tree (`flat_trees_4`)
     let t_mt = Instant::now();
     let reg_defs = [
         ("Regime 1 (1st Best — 5 Beakers): Native Bio-Suite RY3 + SeqNet Neural QC", "RY3", &ry3_pats, pi_ry3, rcfv_ry3, boot_rep_ry3.mean_split_support_pct),
@@ -1755,11 +1868,12 @@ pub fn execute_china_aus_pests_supervisor_study(
     ];
     let opt_sc_r: Vec<f64> = reg_defs
         .iter()
-        .map(|(_, _, pats, pi_r, _, _)| {
+        .enumerate()
+        .map(|(ri, (_, _, pats, pi_r, _, _))| {
             let mut best_sc = 1.0_f64;
             let mut best_l = f64::NEG_INFINITY;
             for &cand in &[0.35_f64, 0.55, 0.75, 0.95, 1.15, 1.40, 1.70] {
-                let lnl = evaluate_felsenstein_ln_l(&flat_tree, pats, pi_r, 5.18, 4.22, &[0.06, 0.36, 1.06, 2.74], &[0.36, 0.30, 0.20, 0.14], 0.26, cand);
+                let lnl = evaluate_felsenstein_ln_l(&flat_trees_4[ri], pats, pi_r, 5.18, 4.22, &[0.06, 0.36, 1.06, 2.74], &[0.36, 0.30, 0.20, 0.14], 0.26, cand);
                 if lnl > best_l { best_l = lnl; best_sc = cand; }
             }
             best_sc
@@ -1775,7 +1889,7 @@ pub fn execute_china_aus_pests_supervisor_study(
             let (_mname, k_p, kp, ky, ref rc, ref rw, p_inv, eq_f) = models[mi];
             let pi_use = if eq_f { [0.25; 4] } else { *pi_r };
             let c0 = Instant::now();
-            let lnl = round4(evaluate_felsenstein_ln_l(&flat_tree, pats, &pi_use, kp, ky, rc, rw, p_inv, opt_sc_r[ri]));
+            let lnl = round4(evaluate_felsenstein_ln_l(&flat_trees_4[ri], pats, &pi_use, kp, ky, rc, rw, p_inv, opt_sc_r[ri]));
             let cpu = c0.elapsed().as_millis().max(1);
             (ri, mi, lnl, round4(-2.0 * lnl + 2.0 * (k_p as f64)), round4(-2.0 * lnl + (k_p as f64) * n_ln_eff), cpu)
         })
@@ -1933,7 +2047,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         runie_9col_comparison_table.push(RunieComparisonRow {
             rank_label: rank_str.to_string(),
             tool_chain: tc,
-            model_summary: format!("{} [Boot: {}] ({})", regime_best_model[ri], init_win_rm[ri].code(), reg_defs[ri].1),
+            model_summary: format!("{} ({})", regime_best_model[ri], reg_defs[ri].1),
             marginal_ln_l: regime_best_lnl[ri],
             delta_ln_l_vs_best: if rk_idx == 0 { 0.0 } else { delta },
             rcfv: reg_defs[ri].4,

@@ -1002,8 +1002,57 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
                 frame_translations.push((strand_idx == 1, frame, aa));
             }
         }
+        let extract_diag_window = |is_rc: bool,
+                                   frame: usize,
+                                   aa: &[u8],
+                                   top_diag: isize,
+                                   min_aa_span: usize,
+                                   max_internal_stops: usize,
+                                   min_nt_span: usize|
+         -> Option<String> {
+            let strand_str = if is_rc { rc.as_str() } else { clean.as_str() };
+            let mut doubled = String::with_capacity(strand_str.len() + wrap_extra);
+            doubled.push_str(strand_str);
+            doubled.push_str(&strand_str[..wrap_extra]);
+            let start_aa = top_diag.saturating_sub(4).max(0) as usize;
+            let max_end_aa = (top_diag.max(0) as usize + target_aa_len + 12).min(aa.len());
+            let mut end_aa = max_end_aa;
+            let core_floor = (top_diag.max(0) as usize + (target_aa_len * 2 / 3)).min(aa.len());
+            for p in core_floor..max_end_aa {
+                if aa[p] == b'*' {
+                    end_aa = p;
+                    break;
+                }
+            }
+            if end_aa < start_aa + min_aa_span {
+                return None;
+            }
+            let nt_s = frame + start_aa * 3;
+            let nt_e = (frame + end_aa * 3).min(doubled.len());
+            let mut clean_s = nt_s;
+            for p in (top_diag.max(0) as usize).saturating_sub(2)..end_aa.min(aa.len()) {
+                if aa[p] == b'*' {
+                    if p < top_diag.max(0) as usize + target_aa_len / 2 {
+                        clean_s = frame + (p + 1) * 3;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            let clean_start_aa = (clean_s - frame) / 3;
+            let internal_stops = aa[(clean_start_aa + 2).min(end_aa)..end_aa.saturating_sub(2)]
+                .iter()
+                .filter(|&&c| c == b'*')
+                .count();
+            if internal_stops <= max_internal_stops && nt_e >= clean_s + min_nt_span {
+                Some(doubled[clean_s..nt_e].to_string())
+            } else {
+                None
+            }
+        };
+
         // Fallback for divergent lineages (e.g. Arachnida vs Hexapoda) when exact 4-mer AA seeding
-        // misses sparse Table-5 conserved motifs: 3-mer AA diagonal chaining with strict stop-codon filtering.
+        // misses sparse Table-5 conserved motifs: 3-mer AA diagonal chaining with stop-codon filtering.
         if best_nt_seq.is_none() && seed_aa.len() >= 45 {
             let mut ref_3mers: std::collections::HashMap<[u8; 3], usize> =
                 std::collections::HashMap::with_capacity(seed_aa.len());
@@ -1014,13 +1063,9 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
                     }
                 }
             }
-            let min_3mer_hits = (target_aa_len / 14).clamp(10, 18);
+            let min_3mer_hits = (target_aa_len / 22).clamp(6, 11);
             let mut best_3mer_score = 0usize;
             for (is_rc, frame, aa) in &frame_translations {
-                let strand_str = if *is_rc { rc.as_str() } else { clean.as_str() };
-                let mut doubled = String::with_capacity(strand_str.len() + wrap_extra);
-                doubled.push_str(strand_str);
-                doubled.push_str(&strand_str[..wrap_extra]);
                 let mut diag_counts: std::collections::HashMap<isize, usize> =
                     std::collections::HashMap::new();
                 for (qp, w) in aa.windows(3).enumerate() {
@@ -1035,43 +1080,60 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
                 }
                 if let Some((&top_diag, &top_cnt)) = diag_counts.iter().max_by_key(|(_, c)| *c) {
                     if top_cnt > best_3mer_score && top_cnt >= min_3mer_hits {
-                        let start_aa = top_diag.saturating_sub(4).max(0) as usize;
-                        let max_end_aa =
-                            (top_diag.max(0) as usize + target_aa_len + 12).min(aa.len());
-                        let mut end_aa = max_end_aa;
-                        let core_floor =
-                            (top_diag.max(0) as usize + (target_aa_len * 2 / 3)).min(aa.len());
-                        for p in core_floor..max_end_aa {
-                            if aa[p] == b'*' {
-                                end_aa = p;
-                                break;
-                            }
+                        if let Some(cand) = extract_diag_window(*is_rc, *frame, aa, top_diag, 45, 2, 135) {
+                            best_3mer_score = top_cnt;
+                            best_nt_seq = Some(cand);
                         }
-                        if end_aa >= start_aa + 45 {
-                            let nt_s = *frame + start_aa * 3;
-                            let nt_e = (*frame + end_aa * 3).min(doubled.len());
-                            let mut clean_s = nt_s;
-                            for p in
-                                (top_diag.max(0) as usize).saturating_sub(2)..end_aa.min(aa.len())
-                            {
-                                if aa[p] == b'*' {
-                                    if p < top_diag.max(0) as usize + target_aa_len / 2 {
-                                        clean_s = *frame + (p + 1) * 3;
-                                    } else {
-                                        break;
+                    }
+                }
+            }
+        }
+        // Second-tier divergent-lineage fallback (e.g. Chelicerata mites vs Hexapoda seeds):
+        // Dayhoff-6 functional-group 4-mer diagonal chaining with stop-codon filtering.
+        if best_nt_seq.is_none() && seed_aa.len() >= 45 {
+            let seed_d6: Vec<u8> = seed_aa
+                .bytes()
+                .map(crate::align_viewer::recode_dayhoff6)
+                .collect();
+            let mut ref_d6: std::collections::HashMap<[u8; 4], Vec<usize>> =
+                std::collections::HashMap::with_capacity(seed_d6.len());
+            for (rp, w) in seed_d6.windows(4).enumerate() {
+                if w.iter().all(|&c| matches!(c, b'1'..=b'6'))
+                    && !(w[0] == w[1] && w[1] == w[2] && w[2] == w[3])
+                {
+                    if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                        ref_d6.entry(arr).or_default().push(rp);
+                    }
+                }
+            }
+            let min_d6_hits = (target_aa_len / 11).clamp(12, 20);
+            let mut best_d6_score = 0usize;
+            for (is_rc, frame, aa) in &frame_translations {
+                let aa_d6: Vec<u8> = aa
+                    .iter()
+                    .map(|&c| crate::align_viewer::recode_dayhoff6(c))
+                    .collect();
+                let mut diag_counts: std::collections::HashMap<isize, usize> =
+                    std::collections::HashMap::new();
+                for (qp, w) in aa_d6.windows(4).enumerate() {
+                    if !(w[0] == w[1] && w[1] == w[2] && w[2] == w[3]) {
+                        if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                            if let Some(rps) = ref_d6.get(&arr) {
+                                for &rp in rps.iter().take(4) {
+                                    let diag = (qp as isize) - (rp as isize);
+                                    for d in (diag - 2)..=(diag + 2) {
+                                        *diag_counts.entry(d).or_insert(0) += 1;
                                     }
                                 }
                             }
-                            let clean_start_aa = (clean_s - *frame) / 3;
-                            let internal_stops = aa[clean_start_aa + 2..end_aa.saturating_sub(2)]
-                                .iter()
-                                .filter(|&&c| c == b'*')
-                                .count();
-                            if internal_stops <= 1 && nt_e >= clean_s + 135 {
-                                let cand = doubled[clean_s..nt_e].to_string();
-                                best_3mer_score = top_cnt;
-                                best_nt_seq = Some(cand);
-                            }
+                        }
+                    }
+                }
+                if let Some((&top_diag, &top_cnt)) = diag_counts.iter().max_by_key(|(_, c)| *c) {
+                    if top_cnt > best_d6_score && top_cnt >= min_d6_hits {
+                        if let Some(cand) = extract_diag_window(*is_rc, *frame, aa, top_diag, 40, 2, 126) {
+                            best_d6_score = top_cnt;
+                            best_nt_seq = Some(cand);
                         }
                     }
                 }

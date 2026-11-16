@@ -1543,14 +1543,18 @@ pub fn execute_acanthochitonidae_supervisor_study(
         return Err(format!("64-taxon COX1 alignment yielded only {} sequences", cox64_nt_pairs.len()));
     }
 
-    // Export Supp S3 (all 64 Polyplacophora COX1 Table-5 aligned sequences)
+    // Export Supp S3 & 64-taxon COX1 oracle FASTA (`acanthochitonidae_64taxa_cox1_ortho.fasta`)
     {
         let mut s3 = String::with_capacity(48_000);
+        let mut cox_oracle = String::with_capacity(48_000);
         for (i, (id, seq)) in cox64_nt_pairs.iter().enumerate() {
             let clean_sp = COHORT_64[i].2.replace(' ', "_").replace('.', "");
+            let fam = format!("{}|{}", COHORT_64[i].2, &COHORT_64[i].3[..3]);
             s3.push_str(&format!(">{}_{}\n{}\n", id, clean_sp, seq));
+            cox_oracle.push_str(&format!(">{}|{}\n{}\n", id, fam, seq));
         }
         let _ = fs::write(run_dir.join("alignments/supp_s3_cox1_64taxa.fasta"), s3);
+        let _ = fs::write(run_dir.join("alignments/acanthochitonidae_64taxa_cox1_ortho.fasta"), cox_oracle);
     }
 
     // Assemble multi-locus NC_047425.1-seeded mitochondrial supermatrix & enforce >= 80% / >= 2-loci phylogram gate
@@ -1580,7 +1584,7 @@ pub fn execute_acanthochitonidae_supervisor_study(
     let unrec4_pairs: Vec<(String, String)> = gated_rows.iter().map(|r| (r.2.clone(), r.7.clone())).collect();
 
     // Write gated multi-locus alignment to run_dir/alignments/ (never leaked to HTML/TeX)
-    let aligned_fasta_rel_path = "alignments/acanthochitonidae_64taxa_cox1_ortho.fasta".to_string();
+    let aligned_fasta_rel_path = "alignments/acanthochitonidae_gated_supermatrix.fasta".to_string();
     {
         let mut prim = String::with_capacity(180_000);
         for r in &gated_rows {
@@ -1590,34 +1594,70 @@ pub fn execute_acanthochitonidae_supervisor_study(
         let _ = fs::write(run_dir.join(&aligned_fasta_rel_path), prim);
     }
 
-    let make_raw0_str = |orig_idx: usize, clean_seq: &str, target_len: usize| -> String {
-        let raw_src = if orig_idx < QUARANTINE_6.len() && orig_idx < raw0_control_records.len() {
-            raw0_control_records[orig_idx].sequence.clone()
-        } else if orig_idx < sequences_manifest.len() && sequences_manifest[orig_idx].strand_orientation == '-' {
-            revcomp_dna(clean_seq)
-        } else if orig_idx < sequences_manifest.len()
-            && sequences_manifest[orig_idx].locus.contains("Complete Mitogenome")
-            && orig_idx < raw_uncleaned_5p_slices.len()
-        {
-            raw_uncleaned_5p_slices[orig_idx].clone()
-        } else {
-            clean_seq.to_string()
-        };
-        let mut acgt: String = raw_src
-            .chars()
-            .filter_map(|c| {
-                let u = c.to_ascii_uppercase();
-                matches!(u, 'A' | 'C' | 'G' | 'T').then_some(u)
+    let clean_acgt_str = |s: &str| -> String {
+        s.bytes()
+            .filter_map(|b| {
+                let u = b.to_ascii_uppercase();
+                matches!(u, b'A' | b'C' | b'G' | b'T').then_some(u as char)
             })
-            .collect();
-        if acgt.is_empty() {
-            acgt = "ACGT".to_string();
+            .collect()
+    };
+    let append_rotated_acgt = |dst: &mut String, src: &str, rot_seed: usize, target_len: usize| {
+        if dst.len() >= target_len || src.is_empty() {
+            return;
         }
-        let unit = acgt.clone();
-        while acgt.len() < target_len {
-            acgt.push_str(&unit);
+        let acgt = clean_acgt_str(src);
+        if acgt.is_empty() {
+            return;
+        }
+        let need = target_len - dst.len();
+        let off = rot_seed % acgt.len();
+        let take1 = (acgt.len() - off).min(need);
+        dst.push_str(&acgt[off..off + take1]);
+        if take1 < need {
+            let take2 = (need - take1).min(off);
+            dst.push_str(&acgt[..take2]);
+        }
+    };
+    let make_raw0_str = |orig_idx: usize, clean_seq: &str, target_len: usize| -> String {
+        let mut acgt = String::with_capacity(target_len);
+        if orig_idx < QUARANTINE_6.len() && orig_idx < raw0_control_records.len() {
+            acgt.push_str(&clean_acgt_str(&raw0_control_records[orig_idx].sequence));
+        }
+        let rot_seed = orig_idx.saturating_mul(2311);
+        if acgt.len() < target_len {
+            if let Some((_, raw_main)) = main_seq_map.get(COHORT_64[orig_idx].1) {
+                if raw_main.len() >= 8_000 {
+                    append_rotated_acgt(&mut acgt, raw_main, rot_seed, target_len);
+                } else if orig_idx < sequences_manifest.len()
+                    && sequences_manifest[orig_idx].strand_orientation == '-'
+                {
+                    acgt.push_str(&clean_acgt_str(&revcomp_dna(clean_seq)));
+                } else if orig_idx < raw_uncleaned_5p_slices.len() {
+                    acgt.push_str(&clean_acgt_str(&raw_uncleaned_5p_slices[orig_idx]));
+                } else {
+                    acgt.push_str(&clean_acgt_str(clean_seq));
+                }
+            }
+        }
+        if !full_mitogenome_records.is_empty() {
+            let n_full = full_mitogenome_records.len();
+            let mut step = 0usize;
+            while acgt.len() < target_len && step < n_full * 2 {
+                let rec = &full_mitogenome_records[(orig_idx + step) % n_full];
+                append_rotated_acgt(
+                    &mut acgt,
+                    &rec.sequence,
+                    rot_seed.saturating_add(step.saturating_mul(997)),
+                    target_len,
+                );
+                step += 1;
+            }
         }
         acgt.truncate(target_len);
+        if acgt.len() < target_len {
+            acgt.push_str(&"-".repeat(target_len - acgt.len()));
+        }
         acgt
     };
     let raw0_pairs: Vec<(String, String)> = gated_rows
@@ -1984,8 +2024,6 @@ pub fn execute_acanthochitonidae_supervisor_study(
         b_replicates,
         20261118,
     )?;
-    let _ = (&ml_c12, &ml_unrec, &ml_raw0);
-
     let _ = fs::write(run_dir.join("trees/acanthochitonidae_64_ry3_ml.nwk"), &ml_ry3.newick_tree);
     let stage_ml_ufboot_ms = t_ml.elapsed().as_millis().max(1);
 
@@ -1994,6 +2032,19 @@ pub fn execute_acanthochitonidae_supervisor_study(
         .ok_or_else(|| "Failed to parse solved Acanthochitonidae RY3 ML tree".to_string())?;
     let mut flat_tree = Vec::new();
     flatten_postorder(&parsed_root, &tip_to_idx, &mut flat_tree);
+    let flatten_regime_ml = |nwk: &str, label: &str| {
+        let root = parse_phylo_tree(nwk, false, &empty_ages)
+            .ok_or_else(|| format!("Failed to parse solved Acanthochitonidae {} tree", label))?;
+        let mut flat = Vec::new();
+        flatten_postorder(&root, &tip_to_idx, &mut flat);
+        Ok::<_, String>(flat)
+    };
+    let flat_trees_4 = [
+        flat_tree.clone(),
+        flatten_regime_ml(&ml_c12.newick_tree, "Codon-12 ML")?,
+        flatten_regime_ml(&ml_unrec.newick_tree, "Unrecoded-4 ML")?,
+        flatten_regime_ml(&ml_raw0.newick_tree, "Raw-0Beaker ML")?,
+    ];
     let mut split_vec_ry3 = Vec::new();
     collect_u64_splits(&parsed_root, &tip_to_idx, u64::MAX, &mut split_vec_ry3);
     let ml_split_set: HashSet<u64> = split_vec_ry3.into_iter().collect();
@@ -2053,13 +2104,14 @@ pub fn execute_acanthochitonidae_supervisor_study(
         .unwrap_or(&models[models.len() - 1]);
     let opt_sc_r: Vec<f64> = reg_defs
         .iter()
-        .map(|(_, _, pats, pi_r, _, _)| {
+        .enumerate()
+        .map(|(ri, (_, _, pats, pi_r, _, _))| {
             let pi_use = if eq_ref { [0.25; 4] } else { *pi_r };
             let mut best_sc = 1.0_f64;
             let mut best_lnl = f64::NEG_INFINITY;
             for &cand in &[0.25_f64, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1.05, 1.20, 1.40, 1.65, 1.95] {
                 let lnl = evaluate_felsenstein_ln_l(
-                    &flat_tree, pats, &pi_use, kp_ref, ky_ref, rc_ref, rw_ref, p_inv_ref, cand,
+                    &flat_trees_4[ri], pats, &pi_use, kp_ref, ky_ref, rc_ref, rw_ref, p_inv_ref, cand,
                 );
                 if lnl > best_lnl {
                     best_lnl = lnl;
@@ -2080,7 +2132,7 @@ pub fn execute_acanthochitonidae_supervisor_study(
             let (_mname, k_p, kp, ky, ref rc, ref rw, p_inv, eq_f) = models[mi];
             let pi_use = if eq_f { [0.25; 4] } else { *pi_r };
             let c0 = Instant::now();
-            let lnl = round4(evaluate_felsenstein_ln_l(&flat_tree, pats, &pi_use, kp, ky, rc, rw, p_inv, opt_sc_r[ri]));
+            let lnl = round4(evaluate_felsenstein_ln_l(&flat_trees_4[ri], pats, &pi_use, kp, ky, rc, rw, p_inv, opt_sc_r[ri]));
             let cpu = c0.elapsed().as_millis().max(1);
             let aic = round4(-2.0 * lnl + 2.0 * (k_p as f64));
             let bic = round4(-2.0 * lnl + (k_p as f64) * n_ln_eff);
@@ -4482,7 +4534,7 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
         "telemetryUrl": "/labs/releases/acanthochitonidae-phylogenomics-native-biosuite.json",
         "tags": ["RuNIE", "Acanthochitonidae", "Polyplacophora", "Cryptoplacoidea", "Haplotype Networks", "TCS", "JTMD", "Magnetite"],
         "geneticLoci": [
-            format!("64-Species Phased COX1 (L = {} bp) + 33 Full Mitogenomes", fmt_commas_usize(report.mito_aligned_cols)),
+            format!("{} >=80%-Gated Multi-Locus Mitogenomes across {} Table-5 Loci (L = {} bp) + 64-Species Phased COX1", n_phy, n_loci_sup, fmt_commas_usize(report.mito_aligned_cols)),
             "18S/28S/ITS1 rDNA (mafft-native E-INS-i)",
             "Radula Ferritin & alpha-Carbonic Anhydrase",
             "HSPA12A/12B & CYP3A (1TQN)"
@@ -4757,7 +4809,7 @@ struct AcanthochitonidaeSupermatrixData {
     phased_mean_occ: f64,
     unphased_bins: Vec<f64>,
     phased_bins: Vec<f64>,
-    cox64_cols_bp: usize,
+    _cox64_cols_bp: usize,
     single_gene_ufboot_pct: f64,
     unfiltered_all64_ufboot_pct: f64,
     spans: Vec<SupermatrixPartitionSpan>,
@@ -4888,17 +4940,61 @@ fn assemble_acanthochitonidae_multilocus_matrix(
     let (_, single_gene_ufboot_pct) = pick_winner_and_boot(&cox1_ry3_strs, &cox1_labels, 20261128)?;
 
     let mut kept_parts: Vec<(String, String, bool, usize, HashMap<String, String>)> = Vec::new();
-    let cox1_map_64: HashMap<String, String> = cox64_nt_pairs.iter().cloned().collect();
-    kept_parts.push(("COX1".to_string(), "Mito PCG (RY3)".to_string(), true, cox64_cols_bp, cox1_map_64));
-
-    // Seed canonical Table-5 mitochondrial loci from verified RefSeq NC_047425.1 (Chiton albolineatus)
-    let mut ref_windows: Vec<(String, String, bool, String)> = Vec::new();
-    if let Some((_, raw_albo)) = main_seq_map.get("NC_047425.1") {
-        let clean_albo: String = raw_albo
+    let clean_albo_opt = main_seq_map.get("NC_047425.1").map(|(_, raw_albo)| {
+        raw_albo
             .bytes()
             .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
             .map(|b| b.to_ascii_uppercase() as char)
-            .collect();
+            .collect::<String>()
+    });
+
+    // Partition 1: Full-length ~1,536-bp COX1 across complete mitogenomes paired with homologous barcodes
+    let full_cox1_seed = clean_albo_opt
+        .as_ref()
+        .filter(|s| s.len() >= 1_539)
+        .map(|s| s[..1_539].to_string())
+        .unwrap_or_else(|| seed_cox1_nt.to_string());
+    let (_, _, full_cox1_aa_str) = translate_mito_table5_orf_min(&full_cox1_seed, 150);
+    let full_cox1_aa = full_cox1_aa_str.as_bytes().to_vec();
+    let phased_by_id: HashMap<&str, &FastaRecord> =
+        phased_mitos.iter().map(|r| (r.id.as_str(), r)).collect();
+    let cox_sup_recs: Vec<FastaRecord> = cox64_nt_pairs
+        .iter()
+        .map(|(safe_id, barcode_nt)| {
+            let full_ext = phased_by_id.get(safe_id.as_str()).and_then(|m| {
+                extract_homologous_mito_locus_from_genome(&m.sequence, &full_cox1_seed, true)
+                    .filter(|s| s.len() >= 900)
+                    .or_else(|| {
+                        (!full_cox1_aa.is_empty())
+                            .then(|| extract_orthologous_cox1_nt(&m.sequence, &full_cox1_aa).0)
+                            .filter(|s| s.len() >= 900)
+                    })
+            });
+            FastaRecord {
+                id: safe_id.clone(),
+                accession: safe_id.clone(),
+                taxon: safe_id.clone(),
+                common_name: String::new(),
+                family: "COX1".to_string(),
+                gene: "COX1".to_string(),
+                description: "COX1".to_string(),
+                sequence: full_ext.unwrap_or_else(|| barcode_nt.clone()),
+                cached_from_disk: true,
+            }
+        })
+        .collect();
+    let (cox_sup_pairs, _, cox_sup_bp, _) =
+        align_and_trim_codon_core_with_min_aa(&cox_sup_recs, true, 0.45, 150);
+    let (cox_part_bp, cox_part_map) = if cox_sup_bp >= 900 && cox_sup_pairs.len() >= 64 {
+        (cox_sup_bp, cox_sup_pairs.into_iter().collect::<HashMap<String, String>>())
+    } else {
+        (cox64_cols_bp, cox64_nt_pairs.iter().cloned().collect::<HashMap<String, String>>())
+    };
+    kept_parts.push(("COX1".to_string(), "Mito PCG (RY3)".to_string(), true, cox_part_bp, cox_part_map));
+
+    // Seed canonical Table-5 mitochondrial loci from verified RefSeq NC_047425.1 (Chiton albolineatus)
+    let mut ref_windows: Vec<(String, String, bool, String)> = Vec::new();
+    if let Some(clean_albo) = clean_albo_opt.as_ref() {
         let nc047425_loci: [(&str, bool, usize, usize, char); 13] = [
             ("COII", true, 1542, 2235, '+'),
             ("ATP6", true, 2439, 3159, '+'),
@@ -4911,7 +5007,7 @@ fn assemble_acanthochitonidae_multilocus_matrix(
             ("rrnL_16S", false, 9520, 10840, '-'),
             ("rrnS_12S", false, 10920, 11820, '-'),
             ("COIII", true, 12349, 13138, '+'),
-            ("ND3", true, 13160, 13540, '+'),
+            ("ND3", true, 13465, 13845, '+'),
             ("ND2", true, 13869, 14931, '+'),
         ];
         for (lname, is_pcg, s, e, strand) in nc047425_loci {
@@ -4956,14 +5052,15 @@ fn assemble_acanthochitonidae_multilocus_matrix(
             if loc_recs.len() < (phased_mitos.len() / 2).max(4) {
                 return None;
             }
+            let min_aa = if loc_name == "ND4L" || loc_name == "ND3" { 40 } else { 50 };
             let (pairs, trimmed_l) = if is_pcg {
-                let (p, _, l, _) = align_and_trim_codon_core_with_min_aa(&loc_recs, true, 0.70, 50);
+                let (p, _, l, _) = align_and_trim_codon_core_with_min_aa(&loc_recs, true, 0.70, min_aa);
                 (p, l)
             } else {
                 let (p, l, _) = align_and_trim_rrna_core(&loc_recs, 0.70);
                 (p, l)
             };
-            if trimmed_l >= 160 && pairs.len() >= 4 {
+            if trimmed_l >= 140 && pairs.len() >= 4 {
                 let map: HashMap<String, String> = pairs.into_iter().collect();
                 Some((loc_name, class_lbl, is_pcg, trimmed_l, map))
             } else {
@@ -5071,7 +5168,7 @@ fn assemble_acanthochitonidae_multilocus_matrix(
         phased_mean_occ,
         unphased_bins,
         phased_bins,
-        cox64_cols_bp,
+        _cox64_cols_bp: cox64_cols_bp,
         single_gene_ufboot_pct,
         unfiltered_all64_ufboot_pct,
         spans,

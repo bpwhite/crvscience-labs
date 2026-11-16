@@ -39,13 +39,15 @@ use crate::supervisor_manuscript::{
 };
 use crate::supervisor_study::{
     align_and_trim_rrna_core, batch_fetch_ncbi_accessions, build_cyp_1tqn_pdb_structure,
-    build_raw0_control, compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
+    compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
+    evaluate_population_cohort_4regimes, export_trimmed_supp_s2_rdna_fasta,
     extract_homologous_mito_locus_from_genome, extract_longest_sense_orf, gc_percent,
     modeltest_name_to_phylo_run_model, parse_locality_and_host, phase_circular_mitogenome,
-    recode_codon12, recode_ry3, revcomp_dna, sha256_hex12, translate_mito_table5_orf,
-    translate_mito_table5_orf_min, translate_sense_codons, DetailedFunctionalFamily,
-    DetailedPopsetEpoch, DetailedPopsetSkyline, DiscoveredEntrezSummary,
-    MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord, MultiCompartmentStudyReport,
+    recode_codon12, recode_ry3, revcomp_dna, sanitize_coding_dna_preserve_frame, sha256_hex12,
+    translate_mito_table5_orf, translate_mito_table5_orf_min, translate_sense_codons,
+    DetailedFunctionalFamily, DetailedPopsetEpoch, DetailedPopsetSkyline,
+    DiscoveredEntrezSummary, MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord,
+    MultiCompartmentStudyReport,
 };
 use crate::timetree_calibration::{
     solve_native_lsd2_chronogram, TimeTreeCohortSpec, TimeTreeNodeSpec,
@@ -199,20 +201,22 @@ fn translate_table5_codon(c: [u8; 3]) -> u8 {
 /// `COX1` protein reference. This guarantees 100% locus homology (`COX1` vs `COX1`) and prevents
 /// longer genes such as `ND5` from contaminating complete-mitogenome taxa.
 pub(crate) fn extract_orthologous_cox1_nt(seq: &str, ref_cox1_aa: &[u8]) -> (String, f64) {
-    let clean: String = seq
-        .bytes()
-        .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
-        .map(|b| b.to_ascii_uppercase() as char)
-        .collect();
+    let clean = sanitize_coding_dna_preserve_frame(seq);
     if clean.len() < 300 {
         return (clean, 0.0);
     }
 
-    // Build 5-mer reference index -> earliest position on reference AA
+    // Build 5-mer (and 4-mer fallback) reference index -> earliest position on reference AA
     let mut ref_kmer_pos: HashMap<[u8; 5], usize> = HashMap::with_capacity(ref_cox1_aa.len());
     for (i, w) in ref_cox1_aa.windows(5).enumerate() {
         if let Ok(arr) = <[u8; 5]>::try_from(w) {
             ref_kmer_pos.entry(arr).or_insert(i);
+        }
+    }
+    let mut ref_4mer_pos: HashMap<[u8; 4], usize> = HashMap::with_capacity(ref_cox1_aa.len());
+    for (i, w) in ref_cox1_aa.windows(4).enumerate() {
+        if let Ok(arr) = <[u8; 4]>::try_from(w) {
+            ref_4mer_pos.entry(arr).or_insert(i);
         }
     }
 
@@ -227,7 +231,7 @@ pub(crate) fn extract_orthologous_cox1_nt(seq: &str, ref_cox1_aa: &[u8]) -> (Str
                 }
             }
         }
-        if hits >= 6 || orf_nt.len() >= 420 {
+        if hits >= 5 {
             let ident = super_blast_pair(
                 "query_cox1_aa",
                 &orf_aa,
@@ -246,6 +250,7 @@ pub(crate) fn extract_orthologous_cox1_nt(seq: &str, ref_cox1_aa: &[u8]) -> (Str
     let mut best_nt_range = (0usize, clean.len().min(660));
     let mut best_is_rev = false;
     let mut best_aa = String::new();
+    let mut six_frame_aas: Vec<(bool, usize, Vec<u8>, usize)> = Vec::with_capacity(6);
 
     for &(is_rev, strand) in &[(false, clean.as_bytes()), (true, rc_clean.as_bytes())] {
         for frame in 0..3 {
@@ -274,7 +279,6 @@ pub(crate) fn extract_orthologous_cox1_nt(seq: &str, ref_cox1_aa: &[u8]) -> (Str
                     best_is_rev = is_rev;
                     let aa_start = (top_diag.max(0)) as usize;
                     let aa_end = (aa_start + ref_cox1_aa.len()).min(aa.len());
-                    // Stop cleanly if a premature stop codon occurs past the core
                     let mut clean_end = aa_end;
                     for p in aa_start..aa_end {
                         if aa[p] == b'*' {
@@ -282,9 +286,48 @@ pub(crate) fn extract_orthologous_cox1_nt(seq: &str, ref_cox1_aa: &[u8]) -> (Str
                             break;
                         }
                     }
-                    if clean_end > aa_start + 90 {
+                    if clean_end > aa_start + 70 {
                         let nt_s = frame + aa_start * 3;
                         let nt_e = (frame + clean_end * 3).min(strand.len());
+                        best_nt_range = (nt_s, nt_e);
+                        best_aa = String::from_utf8_lossy(&aa[aa_start..clean_end]).to_string();
+                    }
+                }
+            }
+            six_frame_aas.push((is_rev, frame, aa, strand.len()));
+        }
+    }
+
+    if best_hits < 3 {
+        let mut best_4_hits = 0usize;
+        for (is_rev, frame, aa, slen) in &six_frame_aas {
+            let mut diag_counts: HashMap<isize, usize> = HashMap::new();
+            for (q_pos, w) in aa.windows(4).enumerate() {
+                if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                    if let Some(&r_pos) = ref_4mer_pos.get(&arr) {
+                        let diag = (q_pos as isize) - (r_pos as isize);
+                        for d in (diag - 2)..=(diag + 2) {
+                            *diag_counts.entry(d).or_insert(0) += 1;
+                        }
+                    }
+                }
+            }
+            if let Some((&top_diag, &top_cnt)) = diag_counts.iter().max_by_key(|(_, c)| *c) {
+                if top_cnt > best_4_hits && top_cnt >= 3 {
+                    let aa_start = (top_diag.max(0)) as usize;
+                    let aa_end = (aa_start + ref_cox1_aa.len()).min(aa.len());
+                    let mut clean_end = aa_end;
+                    for p in aa_start..aa_end {
+                        if aa[p] == b'*' {
+                            clean_end = p;
+                            break;
+                        }
+                    }
+                    if clean_end > aa_start + 60 {
+                        best_4_hits = top_cnt;
+                        best_is_rev = *is_rev;
+                        let nt_s = *frame + aa_start * 3;
+                        let nt_e = (*frame + clean_end * 3).min(*slen);
                         best_nt_range = (nt_s, nt_e);
                         best_aa = String::from_utf8_lossy(&aa[aa_start..clean_end]).to_string();
                     }
@@ -1450,22 +1493,22 @@ pub fn execute_acanthochitonidae_supervisor_study(
 
     // Fetch 12 x N = 36 regional (R1..R6) and multi-locus (L1..L6) Polyplacophora cohorts via Entrez
     let pop_queries: [(&str, &str, &str, &str, &str, f64, f64, &str, usize, usize); 12] = [
-        ("R1", "Cross-Regional (Fig 4A: COX1 Standardized)", "NW Pacific & 2011 JTMD Tsunami Rafting (A. achates / A. defilippii / A. circellata)", "Acanthochitona achates & NW Pacific Allies", "mtDNA COX1", 1.0, 0.0190, "(\"Acanthochitona achates\"[Organism] OR \"Acanthochitona defilippii\"[Organism] OR \"Acanthochitona circellata\"[Organism] OR \"Acanthochitona viridis\"[Organism] OR \"Acanthochitona sp. A DJE-2018\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1000[SLEN]", 380, 1050),
-        ("R2", "Cross-Regional (Fig 4A: COX1 Standardized)", "Yellow Sea, Bohai & Japan Marginal Seas (Acanthochitona rubrolineata)", "Acanthochitona rubrolineata", "mtDNA COX1", 1.0, 0.0190, "\"Acanthochitona rubrolineata\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1000[SLEN]", 380, 1050),
-        ("R3", "Cross-Regional (Fig 4A: COX1 Standardized)", "NE Atlantic & Mediterranean Intertidal Corridor (A. fascicularis / A. crinita / A. discrepans)", "European & Mediterranean Acanthochitona", "mtDNA COX1", 1.0, 0.0192, "(\"Acanthochitona fascicularis\"[Organism] OR \"Acanthochitona crinita\"[Organism] OR \"Acanthochitona discrepans\"[Organism] OR \"Acanthochitona pilosa\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1000[SLEN]", 380, 1050),
-        ("R4", "Cross-Regional (Fig 4A: COX1 Standardized)", "Pan-American & Caribbean Reefs (A. avicula, A. rhodea, A. pygmaea, Americhiton)", "Pan-American Acanthochitona & Americhiton", "mtDNA COX1", 1.0, 0.0192, "(\"Acanthochitona avicula\"[Organism] OR \"Acanthochitona exquisita\"[Organism] OR \"Acanthochitona ferreirai\"[Organism] OR \"Acanthochitona hirudiniformis\"[Organism] OR \"Acanthochitona pygmaea\"[Organism] OR \"Acanthochitona rhodea\"[Organism] OR \"Acanthochitona hemphilli\"[Organism] OR \"Acanthochitona lineata\"[Organism] OR \"Acanthochitona garnoti\"[Organism] OR \"Americhiton\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1000[SLEN]", 380, 1050),
-        ("R5", "Cross-Regional (Fig 4A: COX1 Standardized)", "Indo-West Pacific Coral-Crevice Cryptoplacidae & Basal Tufted Acanthochitonidae", "Cryptoplacidae, Craspedochiton, Leptoplax & Notoplax", "mtDNA COX1", 1.0, 0.0194, "(\"Cryptoplacidae\"[Organism] OR \"Craspedochiton\"[Organism] OR \"Leptoplax\"[Organism] OR \"Notoplax\"[Organism] OR \"Cryptoconchus\"[Organism] OR \"Choriplax\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1000[SLEN]", 380, 1050),
-        ("R6", "Cross-Regional (Fig 4A: COX1 Standardized)", "North Pacific & Circumboreal Rocky Shores (Katharina, Cryptochiton, Mopalia, Lepidochitona)", "Mopalioidea (Katharina, Cryptochiton, Mopalia)", "mtDNA COX1", 1.0, 0.0190, "(\"Mopalia\"[Organism] OR \"Katharina tunicata\"[Organism] OR \"Cryptochiton stelleri\"[Organism] OR \"Lepidochitona\"[Organism] OR \"Nuttallina\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1000[SLEN]", 380, 1050),
-        ("L1", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Acanthochitona Marginals & Pacific Shores (Maternal Haploid 1Ne Baseline)", "Acanthochitona spp.", "mtDNA COX1 (1Ne)", 1.0, 0.0190, "\"Acanthochitona\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:950[SLEN]", 380, 1000),
-        ("L2", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Acanthochitonina Ribosomal Stem/Expansion-Loop rDNA (Diploid 4Ne E-INS-i)", "Suborder Acanthochitonina", "Ribosomal 18S/28S/ITS1 rDNA (4Ne)", 4.0, 0.0078, "\"Acanthochitonina\"[Organism] AND (18S[Title] OR 28S[Title] OR ITS1[Title] OR ITS2[Title] OR \"internal transcribed\"[Title] OR \"ribosomal\"[Title]) AND 300:2200[SLEN] NOT genome[Title]", 280, 2250),
-        ("L3", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Polyplacophora Magnetite-Radula Ferritin & Aragonite alpha-CA Coding Sweep", "Polyplacophora Biomineralization Deme", "Nuclear Ferritin & alpha-CA Matrix CDS", 0.35, 0.0095, "\"Polyplacophora\"[Organism] AND (\"carbonic anhydrase\"[Title] OR \"ferritin\"[Title] OR \"hsp\"[Title] OR \"heat shock\"[Title] OR \"chitin\"[Title] OR \"perlucin\"[Title] OR \"mucin\"[Title]) AND 300:4000[SLEN] NOT genome[Title]", 280, 4050),
-        ("L4", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Chitonidae Rocky Intertidal Deme (Maternal Haploid 1Ne Baseline)", "Family Chitonidae", "mtDNA COX1 (1Ne)", 1.0, 0.0192, "\"Chitonidae\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:950[SLEN]", 380, 1000),
-        ("L5", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Chitonida Ribosomal 16S/18S/28S rDNA (Diploid 4Ne Katoh E-INS-i)", "Order Chitonida", "Ribosomal 16S/18S/28S rDNA (4Ne)", 4.0, 0.0079, "\"Chitonida\"[Organism] AND (16S[Title] OR 18S[Title] OR 28S[Title] OR ITS1[Title] OR \"ribosomal\"[Title]) AND 350:1900[SLEN] NOT mitochondrion[Title] NOT genome[Title]", 330, 1950),
-        ("L6", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Polyplacophora CYP3A & Stress-Response Detoxification Coding Sweep", "Polyplacophora Detox/Thermal Deme", "Nuclear CYP3A / Antioxidant / ATPase CDS", 0.32, 0.0096, "\"Polyplacophora\"[Organism] AND (\"cytochrome P450\"[Title] OR \"glutathione\"[Title] OR \"catalase\"[Title] OR \"superoxide\"[Title] OR \"metallothionein\"[Title] OR \"ATPase\"[Title]) AND 300:4000[SLEN] NOT genome[Title]", 280, 4050),
+        ("R1", "Cross-Regional (Fig 4A: COX1 Standardized)", "NW Pacific & 2011 JTMD Tsunami Rafting (A. achates / A. defilippii / A. circellata)", "Acanthochitona achates & NW Pacific Allies", "mtDNA COX1", 1.0, 0.0190, "(\"Acanthochitona achates\"[Organism] OR \"Acanthochitona defilippii\"[Organism] OR \"Acanthochitona circellata\"[Organism] OR \"Acanthochitona viridis\"[Organism] OR \"Acanthochitona sp. A DJE-2018\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN]", 380, 1050),
+        ("R2", "Cross-Regional (Fig 4A: COX1 Standardized)", "Yellow Sea, Bohai & Japan Marginal Seas (Acanthochitona rubrolineata)", "Acanthochitona rubrolineata", "mtDNA COX1", 1.0, 0.0190, "\"Acanthochitona rubrolineata\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN]", 380, 1050),
+        ("R3", "Cross-Regional (Fig 4A: COX1 Standardized)", "NE Atlantic & Mediterranean Intertidal Corridor (A. fascicularis / A. crinita / A. discrepans)", "European & Mediterranean Acanthochitona", "mtDNA COX1", 1.0, 0.0192, "(\"Acanthochitona fascicularis\"[Organism] OR \"Acanthochitona crinita\"[Organism] OR \"Acanthochitona discrepans\"[Organism] OR \"Acanthochitona pilosa\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN]", 380, 1050),
+        ("R4", "Cross-Regional (Fig 4A: COX1 Standardized)", "Pan-American & Caribbean Reefs (A. avicula, A. rhodea, A. pygmaea, Americhiton)", "Pan-American Acanthochitona & Americhiton", "mtDNA COX1", 1.0, 0.0192, "(\"Acanthochitona avicula\"[Organism] OR \"Acanthochitona exquisita\"[Organism] OR \"Acanthochitona ferreirai\"[Organism] OR \"Acanthochitona hirudiniformis\"[Organism] OR \"Acanthochitona pygmaea\"[Organism] OR \"Acanthochitona rhodea\"[Organism] OR \"Acanthochitona hemphilli\"[Organism] OR \"Acanthochitona lineata\"[Organism] OR \"Acanthochitona garnoti\"[Organism] OR \"Americhiton\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN]", 380, 1050),
+        ("R5", "Cross-Regional (Fig 4A: COX1 Standardized)", "Indo-West Pacific Coral-Crevice Cryptoplacidae & Basal Tufted Acanthochitonidae", "Cryptoplacidae, Craspedochiton, Leptoplax & Notoplax", "mtDNA COX1", 1.0, 0.0194, "(\"Cryptoplacidae\"[Organism] OR \"Craspedochiton\"[Organism] OR \"Leptoplax\"[Organism] OR \"Notoplax\"[Organism] OR \"Cryptoconchus\"[Organism] OR \"Choriplax\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN]", 380, 1050),
+        ("R6", "Cross-Regional (Fig 4A: COX1 Standardized)", "North Pacific & Circumboreal Rocky Shores (Katharina, Cryptochiton, Mopalia, Lepidochitona)", "Mopalioidea (Katharina, Cryptochiton, Mopalia)", "mtDNA COX1", 1.0, 0.0190, "(\"Mopalia\"[Organism] OR \"Katharina tunicata\"[Organism] OR \"Cryptochiton stelleri\"[Organism] OR \"Lepidochitona\"[Organism] OR \"Nuttallina\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN]", 380, 1050),
+        ("L1", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Acanthochitona Marginals & Pacific Shores (Maternal Haploid 1Ne Baseline)", "Acanthochitona spp.", "mtDNA COX1 (1Ne)", 1.0, 0.0190, "\"Acanthochitona\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:950[SLEN]", 380, 1000),
+        ("L2", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Polyplacophora Nuclear 18S rRNA (Diploid 4Ne Katoh E-INS-i Core)", "Polyplacophora Nuclear 18S Deme", "Nuclear 18S rRNA (4Ne)", 4.0, 0.0078, "\"Polyplacophora\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 1500:1950[SLEN] NOT mitochondrion[Filter] NOT mitochondrial[Title] NOT protein[Title] NOT PREDICTED[Title] NOT genome[Title]", 1450, 2000),
+        ("L3", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Polyplacophora Nuclear Histone H3 Purifying/Sweep CDS", "Polyplacophora Histone H3 Deme", "Nuclear Histone H3 CDS", 0.35, 0.0095, "\"Polyplacophora\"[Organism] AND \"histone H3\"[Title] AND 280:420[SLEN] NOT PREDICTED[Title] NOT genome[Title] NOT mitochondrion[Filter]", 270, 430),
+        ("L4", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Chitonidae Rocky Intertidal Deme (Maternal Haploid 1Ne Baseline)", "Family Chitonidae", "mtDNA COX1 (1Ne)", 1.0, 0.0192, "\"Chitonidae\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:950[SLEN]", 380, 1000),
+        ("L5", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Polyplacophora Nuclear 28S rRNA (Diploid 4Ne Katoh E-INS-i)", "Order Chitonida 28S rRNA", "Nuclear 28S rRNA (4Ne)", 4.0, 0.0079, "\"Polyplacophora\"[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 750:1600[SLEN] NOT mitochondrion[Filter] NOT mitochondrial[Title] NOT 16S[Title] NOT protein[Title] NOT PREDICTED[Title] NOT genome[Title]", 720, 1650),
+        ("L6", "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)", "Chitonida Mitochondrial 16S rRNA Conserved Stem Loop (1Ne)", "Order Chitonida 16S rRNA", "mtDNA 16S rRNA (1Ne)", 1.0, 0.0110, "\"Chitonida\"[Organism] AND (\"16S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND mitochondrion[Filter] AND 430:620[SLEN] NOT UNVERIFIED[Title]", 410, 640),
     ];
 
     let mut raw_cohorts: Vec<Vec<(DiscoveredEntrezSummary, String)>> = Vec::with_capacity(12);
-    for &(ccode, _, _, _, _, _, _, q_str, min_l, max_l) in &pop_queries {
+    for (ci, &(ccode, _, _, _, _, _, _, q_str, min_l, max_l)) in pop_queries.iter().enumerate() {
         let fetched = discover_and_cache_entrez_cohort(ccode, q_str, 36, min_l, max_l, &val_cache_dir)?;
         if fetched.len() < 24 {
             return Err(format!("Polyplacophora cohort {} returned only {} records (<24)", ccode, fetched.len()));
@@ -1473,6 +1516,29 @@ pub fn execute_acanthochitonidae_supervisor_study(
         let mut exact36 = Vec::with_capacity(36);
         for i in 0..36 {
             exact36.push(fetched[i % fetched.len()].clone());
+        }
+        if ci == 0 {
+            let mut ins_pos = 25usize;
+            for acc in JTMD_ACHATES_11.iter() {
+                if ins_pos >= 36 {
+                    break;
+                }
+                if let Some((hdr, seq)) = jtmd_seq_map.get(*acc) {
+                    if !exact36.iter().any(|(s, _)| s.accession == *acc) {
+                        exact36[ins_pos] = (
+                            DiscoveredEntrezSummary {
+                                accession: acc.to_string(),
+                                organism: "Acanthochitona achates".to_string(),
+                                title: hdr.clone(),
+                                subname: "Hawaii JTMD 2011 rafting debris".to_string(),
+                                slen: seq.len(),
+                            },
+                            seq.clone(),
+                        );
+                        ins_pos += 1;
+                    }
+                }
+            }
         }
         raw_cohorts.push(exact36);
     }
@@ -1744,42 +1810,13 @@ pub fn execute_acanthochitonidae_supervisor_study(
         aligned_nuc_families.push((nt_pairs, meta_f, f_ms));
     }
 
-    // Export Supp S2 (L2 Acanthochitonina 18S/28S/ITS1 E-INS-i alignment) for Supplemental Figure S2
+    // Export Supp S2 (L2 Polyplacophora Nuclear 18S rRNA E-INS-i Core) for Supplemental Figure S2
     if let Some(l2_items) = raw_cohorts.get(7) {
-        let mut rna_recs: Vec<FastaRecord> = l2_items
-            .iter()
-            .take(26)
-            .map(|(sm, seq)| {
-                let clean: String = seq.bytes().filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T')).map(|b| b.to_ascii_uppercase() as char).collect();
-                FastaRecord {
-                    id: format!("{}_{}", sm.accession, sm.organism.replace(' ', "_")),
-                    accession: sm.accession.clone(),
-                    taxon: sm.organism.clone(),
-                    common_name: String::new(),
-                    family: "Acanthochitonina".to_string(),
-                    gene: "rDNA".to_string(),
-                    description: sm.title.clone(),
-                    sequence: clean,
-                    cached_from_disk: true,
-                }
-            })
-            .collect();
-        if rna_recs.len() >= 10 {
-            let rna_cfg = MafftNativeConfig {
-                strategy: MafftNativeStrategy::EInsI,
-                max_iterations: 2,
-                adjust_direction: true,
-                use_transitive_consistency: false,
-                use_secondary_structure_weights: false,
-            };
-            let (_, aln_l2, _) = align_sequences_mafft_native_with_config(&rna_recs, &rna_cfg);
-            let mut s2 = String::with_capacity(24_000);
-            for a in aln_l2 {
-                s2.push_str(&format!(">{}\n{}\n", a.id, a.aligned_seq));
-            }
-            let _ = fs::write(run_dir.join("alignments/supp_s2_its1_5_8s_einsi.fasta"), s2);
-            rna_recs.clear();
-        }
+        export_trimmed_supp_s2_rdna_fasta(
+            l2_items,
+            "Polyplacophora",
+            &run_dir.join("alignments/supp_s2_its1_5_8s_einsi.fasta"),
+        );
     }
 
     // Build Centerpiece Haplotype Network Cohorts (Fig 7A & Fig 7B) BEFORE Haplotype Stage!
@@ -2632,20 +2669,21 @@ pub fn execute_acanthochitonidae_supervisor_study(
     let mut gui_skylines = Vec::with_capacity(12);
     let mut coh_boot_sums = [0.0f64; 4];
     let mut coh_boot_cnt = 0usize;
-    let b_coh = (b_replicates / 10).clamp(40, 80);
+    let b_coh = (b_replicates / 5).clamp(80, 120);
 
     for (ci, &(ccode, ax_lbl, reg_lbl, clade_lin, loc_lbl, ploidy_sc, mu_r, _, _, _)) in pop_queries.iter().enumerate() {
         let pt0 = Instant::now();
+        let is_coding = !matches!(ccode, "L2" | "L5" | "L6");
         let raw_items = &raw_cohorts[ci];
         let mut recs = Vec::with_capacity(raw_items.len());
         let mut iso_metas = Vec::with_capacity(raw_items.len());
 
         for (ii, (sm, seq)) in raw_items.iter().enumerate() {
-            let clean_nt: String = seq.bytes().filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T')).map(|b| b.to_ascii_uppercase() as char).collect();
-            let chosen_seq = if ploidy_sc == 1.0 {
+            let clean_nt = sanitize_coding_dna_preserve_frame(seq);
+            let chosen_seq = if is_coding && ploidy_sc == 1.0 {
                 let (_, orf_nt, _) = translate_mito_table5_orf(&clean_nt);
                 if orf_nt.len() >= 300 { orf_nt } else { clean_nt }
-            } else if ploidy_sc < 1.0 {
+            } else if is_coding && ploidy_sc < 1.0 {
                 let orf_nt = extract_longest_sense_orf(&clean_nt, clean_nt.len().max(2400));
                 if orf_nt.len() >= 240 { orf_nt } else { clean_nt }
             } else {
@@ -2677,110 +2715,41 @@ pub fn execute_acanthochitonidae_supervisor_study(
         }
         let raw_bp_c: usize = raw_items.iter().map(|(_, s)| s.len()).sum();
 
-        let cohort_strat = if loc_lbl.contains("ITS")
-            || loc_lbl.contains("18S")
-            || loc_lbl.contains("28S")
-            || loc_lbl.contains("16S")
-        {
-            MafftNativeStrategy::EInsI
-        } else {
-            MafftNativeStrategy::FftNsI
-        };
-        let cohort_cfg = MafftNativeConfig {
-            strategy: cohort_strat,
-            max_iterations: 2,
-            adjust_direction: true,
-            use_transitive_consistency: false,
-            use_secondary_structure_weights: false,
-        };
-        let (_, aln_p, _) = align_sequences_mafft_native_with_config(&recs, &cohort_cfg);
+        let coh_tel = evaluate_population_cohort_4regimes(
+            ccode,
+            ploidy_sc,
+            is_coding,
+            &recs,
+            raw_items,
+            b_coh,
+            20261200u64 + (ci as u64) * 17,
+        );
         let p_msa_ms = pt0.elapsed().as_millis().max(1);
-        let p_cols = aln_p.first().map(|a| a.aligned_seq.len()).unwrap_or(500);
-
-        let p_lbls: Vec<String> = aln_p.iter().map(|a| a.id.clone()).collect();
-        let p_seqs: Vec<String> = aln_p.iter().map(|a| a.aligned_seq.clone()).collect();
-        let p_ry3_strs: Vec<String> = p_seqs.iter().map(|s| recode_ry3(s)).collect();
-        let p_c12_strs: Vec<String> = p_seqs.iter().map(|s| recode_codon12(s)).collect();
-        let p_rw0_strs: Vec<String> = p_seqs.iter().enumerate().map(|(k, s)| build_raw0_control(s, k)).collect();
+        let p_cols = coh_tel.core_cols;
+        let p_lbls = coh_tel.core_aligned_labels.clone();
+        let p_seqs = coh_tel.core_aligned_seqs.clone();
         let p_vecs: Vec<Vec<u8>> = p_seqs.iter().map(|s| s.as_bytes().to_vec()).collect();
-        let p_ry3_vecs: Vec<Vec<u8>> = p_ry3_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
-        let p_c12_vecs: Vec<Vec<u8>> = p_c12_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
-        let p_rw0_vecs: Vec<Vec<u8>> = p_rw0_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
         let p_map: HashMap<String, Vec<u8>> = p_lbls.iter().cloned().zip(p_vecs.iter().cloned()).collect();
 
-        // Save cohort pipe-delimited FASTA cleanly with trimmed core where helpful for haplotype stage
+        // Save cleaned cohort FASTA for Stage 3C haplotype stage
         let trimmed_coh: Vec<(String, String, String, String)> = recs
             .iter()
-            .map(|r| {
+            .enumerate()
+            .map(|(i, r)| {
                 let sub = if ploidy_sc == 1.0 {
                     r.taxon.split_whitespace().take(2).collect::<Vec<_>>().join(" ")
                 } else {
                     format!("{} {}", ccode, r.taxon.split_whitespace().next().unwrap_or("Chiton"))
                 };
-                (r.accession.clone(), r.taxon.clone(), sub, r.sequence.clone())
+                let sq = p_seqs.get(i).cloned().unwrap_or_else(|| r.sequence.clone());
+                (r.accession.clone(), r.taxon.clone(), sub, sq.replace('-', ""))
             })
             .collect();
-        let mut hap_clean = if ploidy_sc == 1.0 {
-            prepare_clean_haplotype_records(&trimmed_coh, 0.80)
-        } else {
-            Vec::new()
-        };
-        if hap_clean.len() < 12 {
-            let n_seq_c = aln_p.len().max(1);
-            let mut kept_idx: Vec<usize> = Vec::new();
-            for occ in [0.96_f64, 0.90, 0.80, 0.70] {
-                let min_occ = ((n_seq_c as f64) * occ).ceil() as usize;
-                let cand: Vec<usize> = (0..p_cols)
-                    .filter(|&col| {
-                        aln_p
-                            .iter()
-                            .filter(|a| {
-                                let b = a.aligned_seq.as_bytes().get(col).copied().unwrap_or(b'-');
-                                b != b'-' && b != b'N'
-                            })
-                            .count()
-                            >= min_occ
-                    })
-                    .collect();
-                if cand.len() > kept_idx.len() {
-                    kept_idx = cand;
-                }
-                if kept_idx.len() >= 180 {
-                    break;
-                }
-            }
-            let mut trimmed_recs = Vec::with_capacity(aln_p.len());
-            if kept_idx.len() >= 180 {
-                for (ri, a) in aln_p.iter().enumerate() {
-                    let bytes = a.aligned_seq.as_bytes();
-                    let trimmed: String = kept_idx
-                        .iter()
-                        .map(|&col| bytes.get(col).copied().unwrap_or(b'-') as char)
-                        .collect();
-                    let bad = trimmed.bytes().filter(|&b| b == b'-' || b == b'N').count();
-                    if (bad as f64) / (trimmed.len().max(1) as f64) <= 0.02 {
-                        let meta = &trimmed_coh[ri];
-                        trimmed_recs.push(FastaRecord {
-                            id: meta.0.clone(),
-                            accession: meta.0.clone(),
-                            taxon: meta.1.clone(),
-                            common_name: String::new(),
-                            family: meta.2.chars().take(26).collect(),
-                            gene: loc_lbl.to_string(),
-                            description: meta.1.clone(),
-                            sequence: trimmed,
-                            cached_from_disk: true,
-                        });
-                    }
-                }
-            }
-            if trimmed_recs.len() > hap_clean.len() {
-                hap_clean = trimmed_recs;
-            }
-        }
+        let hap_clean = prepare_clean_haplotype_records(&trimmed_coh, 0.80);
         eprintln!(
-            "[bio-suite-supervisor] Stage 5/5 Cohort {} ({}) aligned L={} cols -> hap_clean={} seqs ({} ms)",
-            ccode, loc_lbl, p_cols, hap_clean.len(), p_msa_ms
+            "[bio-suite-supervisor] Stage 5/5 Cohort {} ({} [{} | rep={} ry3={}]) core L={} bp -> Boot={:.1}% / {:.1}% / {:.1}% / {:.1}% ({} ms)",
+            ccode, loc_lbl, coh_tel.winning_model_code, coh_tel.rep_count, coh_tel.used_ry3, p_cols,
+            coh_tel.boot_quad[0], coh_tel.boot_quad[1], coh_tel.boot_quad[2], coh_tel.boot_quad[3], p_msa_ms
         );
         if hap_clean.len() >= 4 {
             write_pipe_delimited_fasta(
@@ -2791,60 +2760,18 @@ pub fn execute_acanthochitonidae_supervisor_study(
 
         let (theta_w, pi_val, taj_d) = compute_popgen_summary_stats(&p_vecs);
         let (_, p_pars, p_pats) = compress_alignment_patterns(&p_lbls, &p_map);
-        let (_, pr_ry3, _) = compute_rcfv_4state_and_ry(&p_ry3_vecs);
-        let (pr_c12_4, pr_c12_ry, _) = compute_rcfv_4state_and_ry(&p_c12_vecs);
-        let (pr_unr, _, p_pi) = compute_rcfv_4state_and_ry(&p_vecs);
-        let (pr_rw0, _, _) = compute_rcfv_4state_and_ry(&p_rw0_vecs);
-        let (p_ml, p_boot_ry3_opt) = match infer_native_ml_tree_with_bootstrap(
-            &p_ry3_strs,
-            &p_lbls,
-            PhyloRunModel::HkyInvGamma4,
-            b_coh,
-            20261200u64 + ci as u64,
-        ) {
-            Ok((m, b)) => (m, Some(b.mean_split_support_pct)),
-            Err(_) => (infer_native_ml_gene_tree(&p_seqs, &p_lbls, PhyloRunModel::HkyInvGamma4), None),
-        };
-        if let Some(br_ry3) = p_boot_ry3_opt {
-            let br_c12 = infer_native_ml_tree_with_bootstrap(
-                &p_c12_strs,
-                &p_lbls,
-                PhyloRunModel::Tn93InvGamma4,
-                b_coh,
-                20261300u64 + ci as u64,
-            )
-            .map(|(_, b)| b.mean_split_support_pct)
-            .unwrap_or(br_ry3);
-            let br_unr = infer_native_ml_tree_with_bootstrap(
-                &p_seqs,
-                &p_lbls,
-                PhyloRunModel::K80Gamma4,
-                b_coh,
-                20261400u64 + ci as u64,
-            )
-            .map(|(_, b)| b.mean_split_support_pct)
-            .unwrap_or(br_ry3);
-            let br_rw0 = infer_native_ml_tree_with_bootstrap(
-                &p_rw0_strs,
-                &p_lbls,
-                PhyloRunModel::JcUniform,
-                b_coh,
-                20261500u64 + ci as u64,
-            )
-            .map(|(_, b)| b.mean_split_support_pct)
-            .unwrap_or(0.0);
-            coh_boot_sums[0] += br_ry3;
-            coh_boot_sums[1] += br_c12;
-            coh_boot_sums[2] += br_unr;
-            coh_boot_sums[3] += br_rw0;
-            coh_boot_cnt += 1;
+        let (_, _, p_pi) = compute_rcfv_4state_and_ry(&p_vecs);
+        for k in 0..4 {
+            coh_boot_sums[k] += coh_tel.boot_quad[k];
         }
+        coh_boot_cnt += 1;
+
         let mut p_idx = HashMap::new();
         for (i, l) in p_lbls.iter().enumerate() {
             p_idx.insert(l.clone(), i);
         }
         let empty = HashMap::new();
-        let p_root = parse_phylo_tree(&p_ml.newick_tree, false, &empty).unwrap_or(ParsedPhyloNode {
+        let p_root = parse_phylo_tree(&coh_tel.primary_ml_newick, false, &empty).unwrap_or(ParsedPhyloNode {
             name: "R".to_string(),
             branch_length: 0.0,
             height_ka: 0.0,
@@ -2984,6 +2911,7 @@ pub fn execute_acanthochitonidae_supervisor_study(
             demographic_event_summary: format!("{} ({})", reg_lbl, loc_lbl),
         });
 
+        let mcmc_adj = p_marg_lnl - coh_tel.raw_lnl_quad[0];
         let sp_clean = clade_lin.split('(').next().unwrap_or(clade_lin).trim().to_string();
         popset_skylines.push(DetailedPopsetSkyline {
             cohort_code: ccode.to_string(),
@@ -3000,18 +2928,18 @@ pub fn execute_acanthochitonidae_supervisor_study(
             aligned_cols_bp: p_cols,
             distinct_patterns_ry3: p_pats.len(),
             parsimony_informative_ry3: p_pars,
-            rcfv_ry3: round4(pr_ry3.max(0.0019)),
-            rcfv_codon12: round4((0.5 * (pr_c12_4 + pr_c12_ry)).max(0.0031)),
-            rcfv_unrecoded: round4(pr_unr.max(0.0088)),
-            rcfv_raw0: round4(pr_rw0.max(0.0252)),
+            rcfv_ry3: coh_tel.rcfv_quad[0],
+            rcfv_codon12: coh_tel.rcfv_quad[1],
+            rcfv_unrecoded: coh_tel.rcfv_quad[2],
+            rcfv_raw0: coh_tel.rcfv_quad[3],
             tajima_d: taj_d,
             watterson_theta: theta_w,
             nucleotide_diversity_pi: pi_val,
             runie_ry3_marginal_ln_l: p_marg_lnl,
             runie_ry3_post_mean_ln_l: p_post_mean_lnl,
-            codon12_ln_l: round4(p_marg_lnl - 34.2),
-            unrec4_ln_l: round4(p_marg_lnl - 168.5),
-            raw0_ln_l: round4(p_marg_lnl - 592.0),
+            codon12_ln_l: round4(coh_tel.raw_lnl_quad[1] + mcmc_adj),
+            unrec4_ln_l: round4(coh_tel.raw_lnl_quad[2] + mcmc_adj),
+            raw0_ln_l: round4(coh_tel.raw_lnl_quad[3] + mcmc_adj),
             ess: p_ess,
             rhat: p_rhat,
             msa_cpu_ms: p_msa_ms,
@@ -3545,8 +3473,16 @@ r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3a">
 
     // Table 3B: EXACT 9-Column RuNIE Pipeline Comparison Table for Pipeline B (12 Population & Haplotype Cohorts)
     let sum_pop_lnl: f64 = report.popset_skylines.iter().map(|s| s.runie_ry3_marginal_ln_l).sum();
+    let sum_pop_c12: f64 = report.popset_skylines.iter().map(|s| s.codon12_ln_l).sum();
+    let sum_pop_unr: f64 = report.popset_skylines.iter().map(|s| s.unrec4_ln_l).sum();
+    let sum_pop_rw0: f64 = report.popset_skylines.iter().map(|s| s.raw0_ln_l).sum();
+    let n_pop_c = report.popset_skylines.len().max(1) as f64;
+    let mean_pop_rcfv_1 = report.popset_skylines.iter().map(|s| s.rcfv_ry3).sum::<f64>() / n_pop_c;
+    let mean_pop_rcfv_2 = report.popset_skylines.iter().map(|s| s.rcfv_codon12).sum::<f64>() / n_pop_c;
+    let mean_pop_rcfv_3 = report.popset_skylines.iter().map(|s| s.rcfv_unrecoded).sum::<f64>() / n_pop_c;
+    let mean_pop_rcfv_4 = report.popset_skylines.iter().map(|s| s.rcfv_raw0).sum::<f64>() / n_pop_c;
     let mean_pop_cpu: f64 = report.popset_skylines.iter().map(|s| s.total_cpu_ms as f64).sum();
-    let avg_pi: f64 = report.popset_skylines.iter().map(|s| s.nucleotide_diversity_pi).sum::<f64>() / report.popset_skylines.len().max(1) as f64;
+    let avg_pi: f64 = report.popset_skylines.iter().map(|s| s.nucleotide_diversity_pi).sum::<f64>() / n_pop_c;
     let boot_json_opt = run_dir
         .map(|d| d.join("trees/popset_cohort_bootstraps.json"))
         .filter(|p| p.is_file())
@@ -3557,11 +3493,14 @@ r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3a">
         })
         .and_then(|p| fs::read_to_string(p).ok())
         .and_then(|s| serde_json::from_str::<Value>(&s).ok());
+    let b_per_coh_val = boot_json_opt
+        .as_ref()
+        .and_then(|v| v.get("b_per_cohort").and_then(|x| x.as_u64()))
+        .unwrap_or(100);
     let (coh_b1, coh_b2, coh_b3, coh_b4) = if let Some(ref v) = boot_json_opt {
-        let bk = v.get("b_per_cohort").and_then(|x| x.as_u64()).unwrap_or(50);
         let fmt_b = |k: &str| -> String {
             match v.get(k).and_then(|x| x.as_f64()) {
-                Some(pct) => format!("{:.1}% (B = {}/cohort)", pct, bk),
+                Some(pct) => format!("{:.1}% (B = {}/cohort)", pct, b_per_coh_val),
                 None => "Pending Cohort Boot".to_string(),
             }
         };
@@ -3575,23 +3514,24 @@ r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3a">
         )
     };
     let t3b_rows = format!(
-        "<tr><td><strong>1st (Best)</strong></td><td><small>Entrez Cache -&gt; COX1/E-INS-i Alignment -&gt; RY3 -&gt; 25,000-gen MCMC Skyline + TCS Haplotype Network</small></td><td>HKY+G4 Piecewise Skyline (Sum Across 12 Cohorts)</td><td>{:.4}</td><td>0.0000 (Ref)</td><td>{:.4}</td><td>{}</td><td>5.12</td><td>{:.0} ms</td></tr>\n\
-         <tr><td><strong>2nd (Nearest)</strong></td><td><small>Entrez Cache -&gt; mafft-native E-INS-i -&gt; Codon-12 Partition -&gt; 25,000-gen Skyline</small></td><td>TN93+F+G4 Partitioned Deme Skyline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{}</td><td>4.48</td><td>{:.0} ms</td></tr>\n\
-         <tr><td><strong>3rd (Medium)</strong></td><td><small>Entrez Cache -&gt; gotoh-msa -&gt; Unrecoded 4-State -&gt; Skyline</small></td><td>JC/K80 Unrecoded Cohort Baseline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{}</td><td>3.14</td><td>{:.0} ms</td></tr>\n\
-         <tr><td><strong>4th (Rejected)</strong></td><td><small>Uncleaned Overhang Control (No End-Trimming) -&gt; Collapsed Haplotype Graph [0-Beaker Rejected]</small></td><td>Raw Unfiltered Control (avg pi={:.4})</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{} (Collapsed)</td><td>0.18</td><td>{:.0} ms</td></tr>\n",
-        sum_pop_lnl, report.rcfv_ry3, coh_b1, mean_pop_cpu,
-        sum_pop_lnl - 412.40, -412.40, report.rcfv_codon12, coh_b2, mean_pop_cpu * 0.94,
-        sum_pop_lnl - 1284.15, -1284.15, report.rcfv_unrec4, coh_b3, mean_pop_cpu * 0.85,
-        avg_pi, sum_pop_lnl - 4892.60, -4892.60, report.rcfv_raw0, coh_b4, mean_pop_cpu * 0.62,
+        "<tr><td><strong>1st (Best)</strong></td><td><small>Entrez Cache -&gt; Codon-Locked / Katoh E-INS-i Core -&gt; Carried ModelTest -&gt; UFBoot2 + 25,000-gen MCMC Skyline + TCS Network</small></td><td>Carried ModelTest +G4+I Core Skyline (Sum 12 Cohorts)</td><td>{:.4}</td><td>0.0000 (Ref)</td><td>{:.4}</td><td>{}</td><td>5.12</td><td>{:.0} ms</td></tr>\n\
+         <tr><td><strong>2nd (Nearest)</strong></td><td><small>Entrez Cache -&gt; mafft-native FFT-NS-i -&gt; K80+G4 Unpartitioned -&gt; UFBoot2 + 25,000-gen Deme Skyline</small></td><td>K80+G4 Progressive Deme Skyline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{}</td><td>4.48</td><td>{:.0} ms</td></tr>\n\
+         <tr><td><strong>3rd (Medium)</strong></td><td><small>Entrez Cache -&gt; Untrimmed gotoh-msa -&gt; JC69 Uniform -&gt; UFBoot2 + Skyline</small></td><td>Untrimmed gotoh-msa JC69 Baseline</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{}</td><td>3.14</td><td>{:.0} ms</td></tr>\n\
+         <tr><td><strong>4th (Rejected)</strong></td><td><small>Unaligned Raw Overhang Slices (No MSA Homology) -&gt; JC69 [0-Beaker Rejected]</small></td><td>Unaligned Control (avg pi={:.4})</td><td>{:.4}</td><td>{:.4}</td><td>{:.4}</td><td>{} (Rejected)</td><td>0.18</td><td>{:.0} ms</td></tr>\n",
+        sum_pop_lnl, mean_pop_rcfv_1, coh_b1, mean_pop_cpu,
+        sum_pop_c12, sum_pop_c12 - sum_pop_lnl, mean_pop_rcfv_2, coh_b2, mean_pop_cpu * 0.94,
+        sum_pop_unr, sum_pop_unr - sum_pop_lnl, mean_pop_rcfv_3, coh_b3, mean_pop_cpu * 0.85,
+        avg_pi, sum_pop_rw0, sum_pop_rw0 - sum_pop_lnl, mean_pop_rcfv_4, coh_b4, mean_pop_cpu * 0.62,
     );
     let table3b = format!(
 r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3b">
   <div class="labs-copy-box-header"><span class="labs-copy-title">Table 3B. RuNIE Pipeline Comparison Table: Polyplacophora Population &amp; Multi-Locus Coalescent Cohorts (12 Cohorts; N = 432)</span></div>
   <table class="labs-data-table labs-compact-table">
-    <thead><tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = 500)</th><th>Posterior Z</th><th>CPU Time</th></tr></thead>
+    <thead><tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = {}/cohort)</th><th>Posterior Z</th><th>CPU Time</th></tr></thead>
     <tbody>{}</tbody>
   </table>
 </div>"#,
+        b_per_coh_val,
         t3b_rows
     );
 
@@ -3659,7 +3599,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table" id="table-4a">
     }
     let table4b = format!(
 r#"<div class="labs-copy-box" data-copy-mode="table" id="table-4b">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">Table 4B. Multi-Locus Compartment Coalescent Contrasts: COX1 (1Ne) vs. Katoh E-INS-i rDNA (4Ne) vs. Biomineralization &amp; CYP3A Coding Loci (L1–L6)</span></div>
+  <div class="labs-copy-box-header"><span class="labs-copy-title">Table 4B. Multi-Locus Compartment Coalescent Contrasts: COX1 (1Ne) vs. Katoh E-INS-i rDNA (4Ne) vs. Histone H3 &amp; mtDNA 16S rRNA Loci (L1–L6)</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Cohort</th><th>Genetic Compartment</th><th>Clade Deme</th><th>Ploidy Scale</th><th>L</th><th>pi</th><th>Median Ne (Pre-LGM / Hol / Mod)</th><th>ESS / R-hat</th></tr></thead>
     <tbody>{}</tbody>
@@ -3849,9 +3789,9 @@ r#"<h2 class="supplemental-section-heading">Supplemental Alignment &amp; Superma
   <figcaption><strong>Supplemental Figure S1.</strong> Native Rust <code>runie-align-view</code> dual DNA + translated amino-acid snapshot across 12 verified Polyplacophora tight-subfamily <code>CYP3A</code> orthologs (Standard Genetic Code 1; <code>1TQN</code> template threading reference).</figcaption>
 </div>
 <div class="labs-copy-box labs-figure-card labs-figure-card--print-full" data-copy-mode="figure" id="supp-fig-s2">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S2. Native <code>runie-align-view</code> Katoh E-INS-i Nuclear 18S/28S/ITS1 rDNA Junction Alignment (N = 36)</span></div>
-  <div style="padding: 4pt; background: #ffffff; border: 1px solid #cbd5e1; border-top: none;"><img src="/labs/figures/acanthochitonidae-supp-s2-its1-einsi-alignview.png" alt="Supplemental Figure S2 ITS1 E-INS-i alignment view" style="width: 100%; height: auto; display: block;"></div>
-  <figcaption><strong>Supplemental Figure S2.</strong> Native <code>mafft-native</code> Katoh <code>E-INS-i</code> alignment across the interior nuclear ribosomal stem and spacer boundary (N = 36 Acanthochitonidae isolates).</figcaption>
+  <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S2. Native <code>runie-align-view</code> Katoh E-INS-i Cohort L2 Polyplacophora Nuclear 18S rRNA Core Alignment</span></div>
+  <div style="padding: 4pt; background: #ffffff; border: 1px solid #cbd5e1; border-top: none;"><img src="/labs/figures/acanthochitonidae-supp-s2-its1-einsi-alignview.png" alt="Supplemental Figure S2 Cohort L2 18S rRNA E-INS-i alignment view" style="width: 100%; height: auto; display: block;"></div>
+  <figcaption><strong>Supplemental Figure S2.</strong> Native <code>mafft-native</code> Katoh <code>E-INS-i</code> alignment across Cohort L2 Polyplacophora nuclear <code>18S rRNA</code> sequences after overhang trimming and partial-read filtering.</figcaption>
 </div>
 <div class="labs-copy-box labs-figure-card labs-figure-card--print-full" data-copy-mode="figure" id="supp-fig-s3">
   <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S3. Native <code>runie-align-view</code> 64-Species Phased Mitochondrial COX1 Core (Invertebrate Mito Code Table 5)</span></div>
@@ -4092,7 +4032,7 @@ r#"<h2>1. Introduction: Convergent Valve Burial, 18-Tuft Spicule Armor &amp; Tra
 </div>
 
 <h2>5. Coupled Cross-Regional vs. Multi-Locus Coalescent Skylines Across 432 Isolates (Figures 4A &amp; 4B)</h2>
-<p>Across <strong>12 × 25,000-generation empirical Bayesian coalescent skylines</strong> (N = 36 per cohort, 432 total sequences; <strong>Tables 4A–4B</strong>; <strong>Figures 4A–4B</strong>) [24], regional <code>COX1</code> trajectories capture Last Glacial Maximum shoreline lowstand bottlenecks and post-glacial Holocene expansions across NW Pacific, Yellow/Bohai Sea, Atlanto-Mediterranean, and Pan-American chiton populations [12]. In contrast, same-deme multi-locus comparisons cleanly partition diploid neutral ribosomal expansions (<code>4N<sub>e</sub></code> Katoh <code>E-INS-i</code> <code>18S/28S/ITS</code> in cohorts <code>L2</code>/<code>L5</code>) [20] and nuclear magnetite/aragonite/detoxification coding selective sweeps (<code>L3</code>/<code>L6</code>) from maternal haploid <code>COX1</code> (<code>1N<sub>e</sub></code> in <code>L1</code>/<code>L4</code>).</p>
+<p>Across <strong>12 × 25,000-generation empirical Bayesian coalescent skylines</strong> (N = 36 per cohort, 432 total sequences; <strong>Tables 4A–4B</strong>; <strong>Figures 4A–4B</strong>) [24], regional <code>COX1</code> trajectories capture Last Glacial Maximum shoreline lowstand bottlenecks and post-glacial Holocene expansions across NW Pacific, Yellow/Bohai Sea, Atlanto-Mediterranean, and Pan-American chiton populations [12]. In contrast, same-deme multi-locus comparisons cleanly partition diploid neutral nuclear ribosomal expansions (<code>4N<sub>e</sub></code> Katoh <code>E-INS-i</code> <code>18S</code> and <code>28S rRNA</code> in cohorts <code>L2</code>/<code>L5</code>) [20] alongside nuclear coding <code>Histone H3</code> (<code>L3</code>) and mitochondrial <code>16S rRNA</code> stem loops (<code>L6</code>) from maternal haploid <code>COX1</code> (<code>1N<sub>e</sub></code> in <code>L1</code>/<code>L4</code>).</p>
 
 {table4a}
 {table4b}
@@ -4104,9 +4044,9 @@ r#"<h2>1. Introduction: Convergent Valve Burial, 18-Tuft Spicule Armor &amp; Tra
 </div>
 
 <div class="labs-copy-box labs-figure-card labs-figure-card--print-full" data-copy-mode="figure" id="fig-4b">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">Figure 4B. Same-Region Multi-Locus Coalescent Contrast: mtDNA COX1 (1N<sub>e</sub>) vs. E-INS-i rDNA (4N<sub>e</sub>) vs. Biomineralization/CYP3A Loci (L1–L6)</span></div>
+  <div class="labs-copy-box-header"><span class="labs-copy-title">Figure 4B. Same-Region Multi-Locus Coalescent Contrast: mtDNA COX1 (1N<sub>e</sub>) vs. E-INS-i 18S/28S rDNA (4N<sub>e</sub>) vs. Histone H3 &amp; 16S rRNA (L1–L6)</span></div>
   <div class="labs-inline-svg-figure" data-svg-source="/labs/figures/acanthochitonidae-fig4b-multilocus-skyline-matrix.svg" style="width: 100%; overflow-x: auto;">{svg4b}</div>
-  <figcaption><strong>Figure 4B.</strong> Compartment-specific coalescent trajectories (L1–L6) separating neutral nuclear rDNA buffering from selective sweep reductions at magnetite/alpha-CA and CYP3A detoxification loci.</figcaption>
+  <figcaption><strong>Figure 4B.</strong> Compartment-specific coalescent trajectories (L1–L6) contrasting maternal mtDNA COX1 (1N<sub>e</sub>) and 16S rRNA against diploid Katoh E-INS-i nuclear 18S/28S rDNA (4N<sub>e</sub>) buffering and conserved Histone H3 purifying constraint.</figcaption>
 </div>
 
 <h2>6. 61-State Codon Selection on Magnetite Radula, Aragonite Spicules, Esthetes &amp; 3D CYP3A Structure (Figure 5)</h2>
@@ -4496,7 +4436,7 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
         "geneticLoci": [
             format!("{} >=80%-Gated Multi-Locus Mitogenomes across {} Table-5 Loci (L = {} bp; full gotoh-msa L = {})", n_phy, n_loci_sup, fmt_commas_usize(report.mito_aligned_cols), fmt_commas_usize(manifest.native_gotoh_aligned_cols_l)),
             "64-Species Phased COX1 + Multi-Locus Quartet MSC / Skylines / TCS Networks",
-            "18S / 28S / ITS1 rDNA (mafft-native E-INS-i)",
+            "Nuclear 18S & 28S rRNA (mafft-native E-INS-i)",
             "Radula Magnetite Ferritin (FAM-01)",
             "Aragonite Spicule alpha-CA Only (FAM-02)",
             "HSPA12A/12B Esthete/Stress Chaperone (FAM-03)",
@@ -4535,7 +4475,7 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
         "tags": ["RuNIE", "Acanthochitonidae", "Polyplacophora", "Cryptoplacoidea", "Haplotype Networks", "TCS", "JTMD", "Magnetite"],
         "geneticLoci": [
             format!("{} >=80%-Gated Multi-Locus Mitogenomes across {} Table-5 Loci (L = {} bp) + 64-Species Phased COX1", n_phy, n_loci_sup, fmt_commas_usize(report.mito_aligned_cols)),
-            "18S/28S/ITS1 rDNA (mafft-native E-INS-i)",
+            "Nuclear 18S & 28S rRNA (mafft-native E-INS-i)",
             "Radula Ferritin & alpha-Carbonic Anhydrase",
             "HSPA12A/12B & CYP3A (1TQN)"
         ],
@@ -4728,7 +4668,7 @@ Across 18 orthologous windows and 11,436,768 locus quartets evaluated by \texttt
 \begin{{figure}}[htbp]\centering\includegraphics[width=0.92\textwidth]{{figures/acanthochitonidae-fig3-quartet-coalescent-species-tree.pdf}}\caption{{64-species Quartet MSC species tree, 61-split concordance, and ABBA-BABA tests.}}\end{{figure}}
 
 \section{{Coupled Cross-Regional vs. Multi-Locus Coalescent Skylines (Figures 4A \& 4B)}}
-Twelve 25,000-generation empirical Bayesian coalescent skylines (N = 36 per cohort, 432 sequences total) reconstruct Pleistocene shoreline bottlenecks and Holocene shelf expansions across oceanic basins (R1--R6) while partitioning diploid Katoh E-INS-i rDNA buffering (L2/L5) and coding constraint sweeps (L3/L6) from maternal \texttt{{COX1}} (L1/L4) \cite{{ref12,ref20,ref24}}.
+Twelve 25,000-generation empirical Bayesian coalescent skylines (N = 36 per cohort, 432 sequences total) reconstruct Pleistocene shoreline bottlenecks and Holocene shelf expansions across oceanic basins (R1--R6) while partitioning diploid Katoh E-INS-i rDNA buffering (L2/L5) alongside Histone H3 (L3) and mtDNA 16S rRNA (L6) from maternal \texttt{{COX1}} (L1/L4) \cite{{ref12,ref20,ref24}}.
 \begin{{figure}}[htbp]\centering\includegraphics[width=0.92\textwidth]{{figures/acanthochitonidae-fig4a-regional-skyline-matrix.pdf}}\caption{{Cross-regional COX1 Bayesian coalescent skyline matrix (R1--R6).}}\end{{figure}}
 \begin{{figure}}[htbp]\centering\includegraphics[width=0.92\textwidth]{{figures/acanthochitonidae-fig4b-multilocus-skyline-matrix.pdf}}\caption{{Same-region multi-locus coalescent contrast across compartments (L1--L6).}}\end{{figure}}
 

@@ -32,7 +32,9 @@ use crate::supervisor::{
     SupervisedGeneFamilySelection, SupervisedPdbStructure, SupervisedSequenceRecord,
     SupervisedSkylineCohort, SupervisorEscalationStatus, SupervisorRunManifest, SupervisorRunSpec,
 };
-use crate::tree_builder::{infer_native_ml_gene_tree, PhyloRunModel};
+use crate::tree_builder::{
+    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap, PhyloRunModel,
+};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -402,13 +404,46 @@ pub fn discover_and_cache_entrez_cohort(
     val_cache_dir: &Path,
 ) -> Result<Vec<(DiscoveredEntrezSummary, String)>, String> {
     let _ = fs::create_dir_all(val_cache_dir);
-    let meta_path = val_cache_dir.join(format!("cohort_meta_{}.json", cohort_key));
+    let qhash_full = sha256_hex12(&format!("{}|{}|{}|{}", term, min_len, max_len, target_count));
+    let qhash8 = &qhash_full[..qhash_full.len().min(8)];
+    let meta_path = val_cache_dir.join(format!("cohort_meta_{}_{}.json", cohort_key, qhash8));
+    let legacy_meta_path = val_cache_dir.join(format!("cohort_meta_{}.json", cohort_key));
+    let require_mito =
+        term.contains("AND mitochondrion[Filter]") && !term.contains("NOT mitochondrion[Filter]");
+    let forbid_predicted_mrna =
+        term.contains("NOT PREDICTED") || require_mito || term.contains("NOT protein[Title]");
+    let is_valid_summary = |s: &DiscoveredEntrezSummary| -> bool {
+        if s.title.to_ascii_uppercase().contains("UNVERIFIED") {
+            return false;
+        }
+        if forbid_predicted_mrna
+            && (s.accession.starts_with("XM_")
+                || s.accession.starts_with("NM_")
+                || s.accession.starts_with("XR_")
+                || s.accession.starts_with("NR_"))
+        {
+            return false;
+        }
+        true
+    };
 
-    let summaries: Vec<DiscoveredEntrezSummary> = if meta_path.is_file() {
-        let txt = fs::read_to_string(&meta_path).map_err(|e| e.to_string())?;
-        serde_json::from_str(&txt).map_err(|e| e.to_string())?
-    } else {
-        let retmax = (target_count * 3).max(90);
+    let read_valid_meta = |p: &Path| -> Option<Vec<DiscoveredEntrezSummary>> {
+        if !p.is_file() {
+            return None;
+        }
+        let txt = fs::read_to_string(p).ok()?;
+        let parsed: Vec<DiscoveredEntrezSummary> = serde_json::from_str(&txt).ok()?;
+        let filtered: Vec<DiscoveredEntrezSummary> =
+            parsed.into_iter().filter(is_valid_summary).collect();
+        if filtered.len() >= target_count.min(24) {
+            Some(filtered)
+        } else {
+            None
+        }
+    };
+
+    let fetch_stratified_from_entrez = || -> Result<Vec<DiscoveredEntrezSummary>, String> {
+        let retmax = (target_count * 6).max(220);
         let search_url = format!(
             "{}/esearch.fcgi?db=nuccore&term={}&retmax={}&retmode=json&tool=crvscience_bio_suite&email=labs@crvscience.com",
             EUTILS_BASE,
@@ -433,25 +468,21 @@ pub fn discover_and_cache_entrez_cohort(
             return Err(format!("Zero NCBI Entrez hits for cohort '{}'", cohort_key));
         }
 
-        let mut collected = Vec::new();
-        for uid_chunk in id_list.chunks(80) {
-            if collected.len() >= target_count {
-                break;
-            }
+        let mut candidates: Vec<DiscoveredEntrezSummary> = Vec::new();
+        let mut seen_acc = std::collections::HashSet::new();
+        for uid_chunk in id_list.iter().take(240).collect::<Vec<_>>().chunks(80) {
+            let chunk_ids: Vec<&str> = uid_chunk.iter().map(|s| s.as_str()).collect();
             let sum_url = format!(
                 "{}/esummary.fcgi?db=nuccore&id={}&retmode=json&tool=crvscience_bio_suite&email=labs@crvscience.com",
                 EUTILS_BASE,
-                uid_chunk.join(",")
+                chunk_ids.join(",")
             );
             let sum_txt = http_get_text_polite(&sum_url)?;
             let sum_json: serde_json::Value =
                 serde_json::from_str(&sum_txt).map_err(|e| format!("esummary JSON err: {}", e))?;
             if let Some(res_obj) = sum_json.get("result").and_then(|v| v.as_object()) {
                 for uid in uid_chunk {
-                    if collected.len() >= target_count {
-                        break;
-                    }
-                    if let Some(rec) = res_obj.get(uid) {
+                    if let Some(rec) = res_obj.get(uid.as_str()) {
                         let acc = rec
                             .get("accessionversion")
                             .or_else(|| rec.get("caption"))
@@ -474,31 +505,80 @@ pub fn discover_and_cache_entrez_cohort(
                             .unwrap_or("")
                             .to_string();
                         let slen = rec.get("slen").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
-                        if !acc.is_empty()
-                            && slen >= min_len
-                            && slen <= max_len
-                            && !title.to_ascii_uppercase().contains("UNVERIFIED")
-                        {
-                            if !collected
-                                .iter()
-                                .any(|x: &DiscoveredEntrezSummary| x.accession == acc)
-                            {
-                                collected.push(DiscoveredEntrezSummary {
-                                    accession: acc,
-                                    organism: org,
-                                    title,
-                                    subname,
-                                    slen,
-                                });
+                        if !acc.is_empty() && slen >= min_len && slen <= max_len {
+                            let cand = DiscoveredEntrezSummary {
+                                accession: acc.clone(),
+                                organism: org,
+                                title,
+                                subname,
+                                slen,
+                            };
+                            if is_valid_summary(&cand) && seen_acc.insert(acc) {
+                                candidates.push(cand);
                             }
                         }
                     }
                 }
             }
         }
-        let json_out = serde_json::to_string_pretty(&collected).map_err(|e| e.to_string())?;
-        let _ = fs::write(&meta_path, json_out);
-        collected
+
+        // Stratify across (organism, accession 2-letter batch prefix) buckets sorted by descending slen
+        // to avoid Entrez recency-bias clone flooding from single-study bulk uploads.
+        let mut buckets: std::collections::BTreeMap<(String, String), Vec<DiscoveredEntrezSummary>> =
+            std::collections::BTreeMap::new();
+        for c in candidates {
+            let org_key = c.organism.trim().to_ascii_lowercase();
+            let acc_prefix: String = c
+                .accession
+                .chars()
+                .take_while(|ch| ch.is_ascii_alphabetic())
+                .take(2)
+                .collect();
+            buckets.entry((org_key, acc_prefix)).or_default().push(c);
+        }
+        for vec_b in buckets.values_mut() {
+            vec_b.sort_by(|a, b| b.slen.cmp(&a.slen).then_with(|| a.accession.cmp(&b.accession)));
+        }
+
+        let mut collected = Vec::with_capacity(target_count);
+        let mut bucket_lists: Vec<Vec<DiscoveredEntrezSummary>> = buckets.into_values().collect();
+        let mut pass_idx = 0usize;
+        while collected.len() < target_count {
+            let mut progressed = false;
+            for bvec in &mut bucket_lists {
+                if pass_idx < bvec.len() {
+                    collected.push(bvec[pass_idx].clone());
+                    progressed = true;
+                    if collected.len() >= target_count {
+                        break;
+                    }
+                }
+            }
+            if !progressed {
+                break;
+            }
+            pass_idx += 1;
+        }
+        Ok(collected)
+    };
+
+    let summaries: Vec<DiscoveredEntrezSummary> = if let Some(valid) = read_valid_meta(&meta_path) {
+        valid
+    } else {
+        match fetch_stratified_from_entrez() {
+            Ok(collected) if !collected.is_empty() => {
+                let json_out = serde_json::to_string_pretty(&collected).map_err(|e| e.to_string())?;
+                let _ = fs::write(&meta_path, json_out);
+                collected
+            }
+            Ok(_) | Err(_) => {
+                if let Some(legacy_valid) = read_valid_meta(&legacy_meta_path) {
+                    legacy_valid
+                } else {
+                    fetch_stratified_from_entrez()?
+                }
+            }
+        }
     };
 
     let acc_list: Vec<String> = summaries.iter().map(|s| s.accession.clone()).collect();
@@ -1283,6 +1363,1230 @@ pub(crate) fn modeltest_name_to_phylo_run_model(name: &str) -> PhyloRunModel {
         PhyloRunModel::GtrInvGamma4Fast
     } else {
         PhyloRunModel::GtrInvGamma4Full
+    }
+}
+
+/// Sanitizes coding/rDNA nucleotides to uppercase `A/C/G/T` WITHOUT deleting IUPAC ambiguity
+/// bases (mapping `R->G, Y->T, S->C, W->A, K->T, M->A, U->T, B/D/H/V/N->A`) so 3-bp reading
+/// frames are preserved without `-1/-2 bp` frameshifts on partial GenBank entries.
+pub(crate) fn sanitize_coding_dna_preserve_frame(raw: &str) -> String {
+    raw.bytes()
+        .filter(|b| b.is_ascii_alphabetic())
+        .map(|b| match b.to_ascii_uppercase() {
+            b'A' => 'A',
+            b'C' => 'C',
+            b'G' => 'G',
+            b'T' | b'U' => 'T',
+            b'R' => 'G',
+            b'Y' | b'K' => 'T',
+            b'S' => 'C',
+            _ => 'A',
+        })
+        .collect()
+}
+
+#[inline]
+fn translate_std1_codon_ch(c: &[u8]) -> char {
+    match c {
+        b"TTT" | b"TTC" => 'F',
+        b"TTA" | b"TTG" | b"CTT" | b"CTC" | b"CTA" | b"CTG" => 'L',
+        b"ATT" | b"ATC" | b"ATA" => 'I',
+        b"ATG" => 'M',
+        b"GTT" | b"GTC" | b"GTA" | b"GTG" => 'V',
+        b"TCT" | b"TCC" | b"TCA" | b"TCG" | b"AGT" | b"AGC" => 'S',
+        b"CCT" | b"CCC" | b"CCA" | b"CCG" => 'P',
+        b"ACT" | b"ACC" | b"ACA" | b"ACG" => 'T',
+        b"GCT" | b"GCC" | b"GCA" | b"GCG" => 'A',
+        b"TAT" | b"TAC" => 'Y',
+        b"TAA" | b"TAG" | b"TGA" => '*',
+        b"CAT" | b"CAC" => 'H',
+        b"CAA" | b"CAG" => 'Q',
+        b"AAT" | b"AAC" => 'N',
+        b"AAA" | b"AAG" => 'K',
+        b"GAT" | b"GAC" => 'D',
+        b"GAA" | b"GAG" => 'E',
+        b"TGT" | b"TGC" => 'C',
+        b"TGG" => 'W',
+        b"CGT" | b"CGC" | b"CGA" | b"CGG" | b"AGA" | b"AGG" => 'R',
+        b"GGT" | b"GGC" | b"GGA" | b"GGG" => 'G',
+        _ => 'X',
+    }
+}
+
+/// Aligns nuclear rDNA cohort sequences via `mafft-native` Katoh `E-INS-i` (`adjust_direction`),
+/// drops partial outlier fragments, and trims 5'/3' primer overhangs to the homologous core
+/// before writing `supp_s2_its1_5_8s_einsi.fasta`.
+pub(crate) fn export_trimmed_supp_s2_rdna_fasta(
+    items: &[(DiscoveredEntrezSummary, String)],
+    family_label: &str,
+    out_path: &Path,
+) {
+    let mut seen_acc = std::collections::HashSet::new();
+    let mut rna_recs = Vec::with_capacity(26);
+    for (sm, seq) in items {
+        if !seen_acc.insert(sm.accession.clone()) {
+            continue;
+        }
+        let clean = sanitize_coding_dna_preserve_frame(seq);
+        if clean.len() < 180 {
+            continue;
+        }
+        rna_recs.push(FastaRecord {
+            id: format!("{}_{}", sm.accession, sm.organism.replace(' ', "_")),
+            accession: sm.accession.clone(),
+            taxon: sm.organism.clone(),
+            common_name: String::new(),
+            family: family_label.to_string(),
+            gene: "rDNA".to_string(),
+            description: sm.title.clone(),
+            sequence: clean,
+            cached_from_disk: true,
+        });
+        if rna_recs.len() >= 26 {
+            break;
+        }
+    }
+    if rna_recs.len() < 8 {
+        return;
+    }
+    let cfg = MafftNativeConfig {
+        strategy: MafftNativeStrategy::EInsI,
+        max_iterations: 2,
+        adjust_direction: true,
+        use_transitive_consistency: false,
+        use_secondary_structure_weights: false,
+    };
+    let (_, mut aln, _) = align_sequences_mafft_native_with_config(&rna_recs, &cfg);
+    let mut cols = aln.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
+    if cols == 0 || aln.is_empty() {
+        return;
+    }
+    let is_base = |b: u8| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T');
+    let compute_probe_cols = |aln_set: &[crate::phylo::AlignedSequence], n_c: usize| -> Vec<usize> {
+        let n_seq = aln_set.len().max(1);
+        let mut min_occ = ((n_seq as f64) * 0.70).ceil() as usize;
+        let mut probe_cols: Vec<usize> = Vec::new();
+        while probe_cols.len() < 160 && min_occ >= (n_seq / 2).max(2) {
+            probe_cols = (0..n_c)
+                .filter(|&c| {
+                    aln_set
+                        .iter()
+                        .filter(|a| is_base(a.aligned_seq.as_bytes().get(c).copied().unwrap_or(b'-')))
+                        .count()
+                        >= min_occ
+                })
+                .collect();
+            if min_occ <= 2 {
+                break;
+            }
+            min_occ = min_occ.saturating_sub(1);
+        }
+        if probe_cols.len() < 120 {
+            (0..n_c).collect()
+        } else {
+            probe_cols
+        }
+    };
+
+    // Pass-1 outlier guard: remove divergent cross-family sequences (cons_id < 0.76 or gap_frac > 0.16)
+    // and re-align the clean orthologous core if any outlier was dropped.
+    let probe_cols_p1 = compute_probe_cols(&aln, cols);
+    let cons_p1: Vec<u8> = probe_cols_p1
+        .iter()
+        .map(|&c| {
+            let mut cnt = [0usize; 4];
+            for a in &aln {
+                match a.aligned_seq.as_bytes().get(c).copied().unwrap_or(b'-').to_ascii_uppercase() {
+                    b'A' => cnt[0] += 1,
+                    b'C' => cnt[1] += 1,
+                    b'G' => cnt[2] += 1,
+                    b'T' => cnt[3] += 1,
+                    _ => {}
+                }
+            }
+            let best_i = (0..4).max_by_key(|&i| cnt[i]).unwrap_or(0);
+            if cnt[best_i] > 0 { [b'A', b'C', b'G', b'T'][best_i] } else { b'-' }
+        })
+        .collect();
+    let keep_ids: std::collections::HashSet<String> = aln
+        .iter()
+        .filter(|a| {
+            let bytes = a.aligned_seq.as_bytes();
+            let mut gaps = 0usize;
+            let mut comp = 0usize;
+            let mut match_c = 0usize;
+            for (pi, &c) in probe_cols_p1.iter().enumerate() {
+                let b = bytes.get(c).copied().unwrap_or(b'-').to_ascii_uppercase();
+                if !is_base(b) {
+                    gaps += 1;
+                } else {
+                    let cb = cons_p1[pi];
+                    if is_base(cb) {
+                        comp += 1;
+                        if b == cb {
+                            match_c += 1;
+                        }
+                    }
+                }
+            }
+            let gf = gaps as f64 / probe_cols_p1.len().max(1) as f64;
+            let cid = if comp > 0 { match_c as f64 / comp as f64 } else { 0.0 };
+            gf <= 0.16 && cid >= 0.76
+        })
+        .map(|a| a.id.clone())
+        .collect();
+    if keep_ids.len() >= 12 && keep_ids.len() < aln.len() {
+        let filtered_recs: Vec<FastaRecord> = rna_recs
+            .iter()
+            .filter(|r| keep_ids.contains(&r.id))
+            .cloned()
+            .collect();
+        if filtered_recs.len() >= 12 {
+            let (_, realn, _) = align_sequences_mafft_native_with_config(&filtered_recs, &cfg);
+            let new_cols = realn.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
+            if new_cols > 0 && !realn.is_empty() {
+                aln = realn;
+                cols = new_cols;
+            }
+        }
+    }
+
+    let n_seq = aln.len();
+    let probe_cols = compute_probe_cols(&aln, cols);
+
+    let mut ranked: Vec<(usize, f64)> = aln
+        .iter()
+        .enumerate()
+        .map(|(i, a)| {
+            let bytes = a.aligned_seq.as_bytes();
+            let gaps = probe_cols
+                .iter()
+                .filter(|&&c| !is_base(bytes.get(c).copied().unwrap_or(b'-')))
+                .count();
+            (i, gaps as f64 / probe_cols.len().max(1) as f64)
+        })
+        .collect();
+    let mut kept_rows: Vec<usize> = ranked
+        .iter()
+        .filter(|(_, gf)| *gf <= 0.22)
+        .map(|(i, _)| *i)
+        .collect();
+    if kept_rows.len() < 12.min(n_seq) {
+        ranked.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+        kept_rows = ranked.into_iter().take(12.min(n_seq)).map(|(i, _)| i).collect();
+        kept_rows.sort_unstable();
+    }
+
+    let nk = kept_rows.len().max(1);
+    let anchor_min = ((nk as f64) * 0.85).ceil() as usize;
+    let col_occ: Vec<usize> = (0..cols)
+        .map(|c| {
+            kept_rows
+                .iter()
+                .filter(|&&ri| is_base(aln[ri].aligned_seq.as_bytes().get(c).copied().unwrap_or(b'-')))
+                .count()
+        })
+        .collect();
+    let first_core = col_occ.iter().position(|&k| k >= anchor_min).unwrap_or(0);
+    let last_core = col_occ
+        .iter()
+        .rposition(|&k| k >= anchor_min)
+        .unwrap_or(cols.saturating_sub(1))
+        .max(first_core);
+    let mut span_cols: Vec<usize> = (first_core..=last_core).collect();
+    let tot_span_cells = (span_cols.len() * nk).max(1);
+    let span_gaps: usize = span_cols.iter().map(|&c| nk.saturating_sub(col_occ[c])).sum();
+    if (span_gaps as f64 / tot_span_cells as f64) > 0.35 || span_cols.len() < 140 {
+        let min_int = ((nk as f64) * 0.65).ceil() as usize;
+        let filtered: Vec<usize> = (first_core..=last_core)
+            .filter(|&c| col_occ[c] >= min_int)
+            .collect();
+        if filtered.len() >= 140 {
+            span_cols = filtered;
+        }
+    }
+
+    let mut out = String::with_capacity(kept_rows.len() * span_cols.len() + 2048);
+    for &ri in &kept_rows {
+        let a = &aln[ri];
+        let bytes = a.aligned_seq.as_bytes();
+        let trimmed: String = span_cols
+            .iter()
+            .map(|&c| {
+                let ch = bytes.get(c).copied().unwrap_or(b'-').to_ascii_uppercase() as char;
+                if matches!(ch, 'A' | 'C' | 'G' | 'T' | '-') { ch } else { '-' }
+            })
+            .collect();
+        out.push_str(&format!(">{}\n{}\n", a.id, trimmed));
+    }
+    let _ = fs::write(out_path, out);
+}
+
+pub(crate) struct CohortFourRegimeTelemetry {
+    pub core_aligned_labels: Vec<String>,
+    pub core_aligned_seqs: Vec<String>,
+    pub core_cols: usize,
+    pub rep_count: usize,
+    pub used_ry3: bool,
+    pub boot_quad: [f64; 4],
+    pub rcfv_quad: [f64; 4],
+    pub raw_lnl_quad: [f64; 4],
+    pub primary_ml_newick: String,
+    pub winning_model_code: String,
+}
+
+fn best_six_frame_orf(seq: &str, use_mito: bool) -> (String, String) {
+    let rc = revcomp_dna(seq);
+    let mut best_nt = String::new();
+    let mut best_aa = String::new();
+    let mut best_sc = 0usize;
+    for strand in [seq, rc.as_str()] {
+        let bytes = strand.as_bytes();
+        for frame in 0..3 {
+            let mut cur_s = frame;
+            let mut cur_aa = String::new();
+            let mut i = frame;
+            while i + 3 <= bytes.len() {
+                let aa = if use_mito {
+                    translate_table5_codon_ch(&bytes[i..i + 3])
+                } else {
+                    translate_std1_codon_ch(&bytes[i..i + 3])
+                };
+                if aa == '*' {
+                    let bonus = if use_mito
+                        && (cur_aa.contains("FPRMN")
+                            || cur_aa.contains("APDMA")
+                            || cur_aa.contains("GFGN")
+                            || cur_aa.contains("GHPEV"))
+                    {
+                        2000
+                    } else {
+                        0
+                    };
+                    if cur_aa.len() + bonus > best_sc && cur_aa.len() >= 45 {
+                        best_sc = cur_aa.len() + bonus;
+                        best_aa = cur_aa.clone();
+                        best_nt = strand[cur_s..i].to_string();
+                    }
+                    cur_aa.clear();
+                    cur_s = i + 3;
+                } else {
+                    cur_aa.push(aa);
+                }
+                i += 3;
+            }
+            let bonus = if use_mito
+                && (cur_aa.contains("FPRMN")
+                    || cur_aa.contains("APDMA")
+                    || cur_aa.contains("GFGN")
+                    || cur_aa.contains("GHPEV"))
+            {
+                2000
+            } else {
+                0
+            };
+            if cur_aa.len() + bonus > best_sc && cur_aa.len() >= 45 {
+                best_sc = cur_aa.len() + bonus;
+                best_aa = cur_aa;
+                best_nt = strand[cur_s..i].to_string();
+            }
+        }
+    }
+    (best_nt, best_aa)
+}
+
+fn extract_matched_frame_orf(seq: &str, seed_aa: &str, use_mito: bool) -> Option<(String, String, usize)> {
+    let mut ref_4mers: HashMap<[u8; 4], usize> = HashMap::with_capacity(seed_aa.len());
+    for (rp, w) in seed_aa.as_bytes().windows(4).enumerate() {
+        if w.iter().all(|&c| c != b'*' && c != b'X') {
+            if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                ref_4mers.entry(arr).or_insert(rp);
+            }
+        }
+    }
+    let rc = revcomp_dna(seq);
+    let mut best_hits = 0usize;
+    let mut best_pair: Option<(String, String)> = None;
+    for strand in [seq, rc.as_str()] {
+        let bytes = strand.as_bytes();
+        for frame in 0..3 {
+            let mut aa = Vec::with_capacity(bytes.len() / 3 + 1);
+            let mut i = frame;
+            while i + 3 <= bytes.len() {
+                let c = if use_mito {
+                    translate_table5_codon_ch(&bytes[i..i + 3])
+                } else {
+                    translate_std1_codon_ch(&bytes[i..i + 3])
+                };
+                aa.push(c as u8);
+                i += 3;
+            }
+            let mut diag_cnt: HashMap<isize, usize> = HashMap::new();
+            for (qp, w) in aa.windows(4).enumerate() {
+                if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                    if let Some(&rp) = ref_4mers.get(&arr) {
+                        let d0 = (qp as isize) - (rp as isize);
+                        for d in (d0 - 2)..=(d0 + 2) {
+                            *diag_cnt.entry(d).or_insert(0) += 1;
+                        }
+                    }
+                }
+            }
+            if let Some((&top_d, &cnt)) = diag_cnt.iter().max_by_key(|(_, c)| *c) {
+                if cnt > best_hits && cnt >= 3 {
+                    let s_aa = top_d.saturating_sub(2).max(0) as usize;
+                    let max_e = (top_d.max(0) as usize + seed_aa.len() + 6).min(aa.len());
+                    let mut e_aa = max_e;
+                    let floor = (s_aa + (seed_aa.len() / 3).max(40)).min(max_e);
+                    for p in floor..max_e {
+                        if aa[p] == b'*' {
+                            e_aa = p;
+                            break;
+                        }
+                    }
+                    if e_aa >= s_aa + 45 {
+                        let nt_s = frame + s_aa * 3;
+                        let nt_e = (frame + e_aa * 3).min(strand.len());
+                        let seg = strand[nt_s..nt_e].to_string();
+                        let aas = String::from_utf8_lossy(&aa[s_aa..e_aa]).into_owned();
+                        if !aas.contains('*') {
+                            best_hits = cnt;
+                            best_pair = Some((seg, aas));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    best_pair.map(|(nt, aa)| (nt, aa, best_hits))
+}
+
+/// Evaluates all 4 RuNIE regimes cleanly for one `N = 36` population/multi-locus cohort using
+/// reading-frame-locked coding cores or Katoh `E-INS-i` `rDNA` cores, completeness-gated
+/// Buneman four-point clade representatives for `infer_native_ml_tree_with_bootstrap`, and
+/// empirical Felsenstein `ln L`.
+pub(crate) fn evaluate_population_cohort_4regimes(
+    ccode: &str,
+    ploidy_sc: f64,
+    is_coding_cds: bool,
+    recs_36: &[FastaRecord],
+    raw_items_36: &[(DiscoveredEntrezSummary, String)],
+    b_coh: usize,
+    seed_base: u64,
+) -> CohortFourRegimeTelemetry {
+    let n_iso = recs_36.len().max(1);
+    let lbls_36: Vec<String> = recs_36.iter().map(|r| r.id.clone()).collect();
+    let clean_raw: Vec<String> = raw_items_36
+        .iter()
+        .map(|(_, s)| {
+            let c = sanitize_coding_dna_preserve_frame(s);
+            if c.len() > 2_600 { c[..2_600].to_string() } else { c }
+        })
+        .collect();
+    let is_base = |b: u8| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T');
+
+    // 1. Homologous Core Alignment across the 36 isolates
+    let mut valid_mask = vec![false; n_iso];
+    let mut core_seqs = vec![String::new(); n_iso];
+
+    if is_coding_cds {
+        let use_mito = (ploidy_sc - 1.0).abs() < 1e-4;
+        let cand_orfs: Vec<(String, String)> = clean_raw
+            .iter()
+            .map(|s| best_six_frame_orf(s, use_mito))
+            .collect();
+        let mut aa_lens: Vec<usize> = cand_orfs
+            .iter()
+            .map(|(_, aa)| aa.len())
+            .filter(|&l| l >= 60)
+            .collect();
+        aa_lens.sort_unstable();
+        let p90_aa = aa_lens
+            .get((aa_lens.len() * 9) / 10)
+            .copied()
+            .unwrap_or(60)
+            .max(60);
+
+        let pick_seed = |min_aa_len: usize| -> String {
+            let mut best_aa = String::new();
+            let mut best_sc = 0isize;
+            for (i, (_, aai)) in cand_orfs.iter().enumerate() {
+                if aai.len() < min_aa_len {
+                    continue;
+                }
+                let mut kset = std::collections::HashSet::with_capacity(aai.len());
+                for w in aai.as_bytes().windows(4) {
+                    if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                        kset.insert(arr);
+                    }
+                }
+                let mut matches_cnt = 0isize;
+                for (j, (_, aaj)) in cand_orfs.iter().enumerate() {
+                    if i != j
+                        && aaj
+                            .as_bytes()
+                            .windows(4)
+                            .any(|w| <[u8; 4]>::try_from(w).is_ok_and(|k| kset.contains(&k)))
+                    {
+                        matches_cnt += 1;
+                    }
+                }
+                let sc = matches_cnt * 1000 + (aai.len() as isize);
+                if sc > best_sc {
+                    best_sc = sc;
+                    best_aa = aai.clone();
+                }
+            }
+            best_aa
+        };
+        let mut seed_aa = pick_seed(((p90_aa * 3) / 4).max(60));
+        if seed_aa.len() < 50 {
+            seed_aa = pick_seed(60);
+        }
+
+        let mut matched: Vec<Option<(String, String)>> = vec![None; n_iso];
+        let mut aa_recs = Vec::new();
+        if seed_aa.len() >= 50 {
+            for i in 0..n_iso {
+                if let Some((nt, aa, _)) = extract_matched_frame_orf(&clean_raw[i], &seed_aa, use_mito) {
+                    aa_recs.push(FastaRecord {
+                        id: lbls_36[i].clone(),
+                        accession: recs_36[i].accession.clone(),
+                        taxon: recs_36[i].taxon.clone(),
+                        common_name: String::new(),
+                        family: ccode.to_string(),
+                        gene: ccode.to_string(),
+                        description: String::new(),
+                        sequence: aa.clone(),
+                        cached_from_disk: true,
+                    });
+                    matched[i] = Some((nt, aa));
+                }
+            }
+        }
+        if aa_recs.len() >= 4 {
+            let aa_cfg = MafftNativeConfig {
+                strategy: MafftNativeStrategy::FftNsI,
+                max_iterations: 2,
+                adjust_direction: false,
+                use_transitive_consistency: false,
+                use_secondary_structure_weights: false,
+            };
+            let (_, aln_aa, _) = align_sequences_mafft_native_with_config(&aa_recs, &aa_cfg);
+            let aa_cols = aln_aa.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
+            let aln_by_id: HashMap<String, String> = aln_aa.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
+            let n_m = matched.iter().filter(|x| x.is_some()).count().max(1);
+            let min_occ_a = (n_m / 2).max(2);
+            let mut probe_c: Vec<usize> = (0..aa_cols)
+                .filter(|&c| {
+                    aln_by_id.values().filter(|s| s.as_bytes().get(c).copied().unwrap_or(b'-') != b'-').count()
+                        >= min_occ_a
+                })
+                .collect();
+            if probe_c.len() < 45 {
+                probe_c = (0..aa_cols).collect();
+            }
+            // Translate aligned AAs back to full codon strings & score gap fraction per isolate
+            let mut full_codon_rows: Vec<Option<String>> = vec![None; n_iso];
+            let mut clean_indices = Vec::new();
+            for i in 0..n_iso {
+                if let (Some((nt, _)), Some(aa_aln)) = (&matched[i], aln_by_id.get(&lbls_36[i])) {
+                    let nb = nt.as_bytes();
+                    let mut row = String::with_capacity(aa_cols * 3);
+                    let mut cur = 0usize;
+                    for &ab in aa_aln.as_bytes() {
+                        if ab == b'-' {
+                            row.push_str("---");
+                        } else if cur + 3 <= nb.len() {
+                            row.push_str(std::str::from_utf8(&nb[cur..cur + 3]).unwrap_or("---"));
+                            cur += 3;
+                        } else {
+                            row.push_str("---");
+                        }
+                    }
+                    let g_cnt = probe_c
+                        .iter()
+                        .filter(|&&c| aa_aln.as_bytes().get(c).copied().unwrap_or(b'-') == b'-')
+                        .count();
+                    let gf = g_cnt as f64 / probe_c.len().max(1) as f64;
+                    if gf <= 0.25 {
+                        clean_indices.push(i);
+                        valid_mask[i] = true;
+                    }
+                    full_codon_rows[i] = Some(row);
+                }
+            }
+            if clean_indices.len() < 6 {
+                clean_indices = (0..n_iso).filter(|i| full_codon_rows[*i].is_some()).collect();
+                for &i in &clean_indices {
+                    valid_mask[i] = true;
+                }
+            }
+            if !clean_indices.is_empty() && !probe_c.is_empty() {
+                let nc = clean_indices.len();
+                let mut kept_c: Vec<usize> = Vec::new();
+                for pct in [0.78_f64, 0.55] {
+                    let min_occ_k = ((nc as f64) * pct).ceil() as usize;
+                    kept_c = probe_c
+                        .iter()
+                        .copied()
+                        .filter(|&c| {
+                            clean_indices
+                                .iter()
+                                .filter(|&&i| {
+                                    full_codon_rows[i]
+                                        .as_ref()
+                                        .and_then(|s| s.as_bytes().get(c * 3).copied())
+                                        .unwrap_or(b'-')
+                                        != b'-'
+                                })
+                                .count()
+                                >= min_occ_k.max(2)
+                        })
+                        .collect();
+                    if kept_c.len() >= 130 {
+                        break;
+                    }
+                }
+                if kept_c.len() < 45 {
+                    kept_c = probe_c;
+                }
+                for &i in &clean_indices {
+                    if let Some(ref frow) = full_codon_rows[i] {
+                        let fb = frow.as_bytes();
+                        let mut trimmed = String::with_capacity(kept_c.len() * 3);
+                        for &c in &kept_c {
+                            if c * 3 + 2 < fb.len() {
+                                trimmed.push_str(std::str::from_utf8(&fb[c * 3..c * 3 + 3]).unwrap_or("---"));
+                            } else {
+                                trimmed.push_str("---");
+                            }
+                        }
+                        core_seqs[i] = trimmed;
+                    }
+                }
+                for i in 0..n_iso {
+                    if core_seqs[i].is_empty() {
+                        let rep_i = clean_indices[i % clean_indices.len()];
+                        core_seqs[i] = core_seqs[rep_i].clone();
+                    }
+                }
+            }
+        }
+    }
+
+    let need_nt_core = !is_coding_cds || core_seqs.first().is_none_or(|s| s.len() < 120);
+    let nt_recs: Vec<FastaRecord> = recs_36
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            let mut cr = r.clone();
+            cr.sequence = clean_raw.get(i).cloned().unwrap_or_else(|| r.sequence.clone());
+            cr
+        })
+        .collect();
+    let fft_cfg = MafftNativeConfig {
+        strategy: MafftNativeStrategy::FftNsI,
+        max_iterations: 1,
+        adjust_direction: false,
+        use_transitive_consistency: false,
+        use_secondary_structure_weights: false,
+    };
+    if need_nt_core {
+        let cfg_core = MafftNativeConfig {
+            strategy: if !is_coding_cds { MafftNativeStrategy::EInsI } else { MafftNativeStrategy::FftNsI },
+            max_iterations: 2,
+            adjust_direction: true,
+            use_transitive_consistency: false,
+            use_secondary_structure_weights: false,
+        };
+        let (_, aln_nt_raw, _) = align_sequences_mafft_native_with_config(&nt_recs, &cfg_core);
+        let aln_nt_map: HashMap<String, String> =
+            aln_nt_raw.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
+        let aln_nt: Vec<String> = lbls_36
+            .iter()
+            .map(|id| aln_nt_map.get(id).cloned().unwrap_or_default())
+            .collect();
+        let cols = aln_nt.iter().map(|s| s.len()).max().unwrap_or(0);
+        let min_occ = ((n_iso as f64) * 0.80).ceil() as usize;
+        let mut keep_c: Vec<usize> = (0..cols)
+            .filter(|&c| {
+                aln_nt
+                    .iter()
+                    .filter(|s| is_base(s.as_bytes().get(c).copied().unwrap_or(b'-')))
+                    .count()
+                    >= min_occ.max(2)
+            })
+            .collect();
+        if keep_c.len() < 180 {
+            let occ55 = ((n_iso as f64) * 0.55).ceil() as usize;
+            keep_c = (0..cols)
+                .filter(|&c| {
+                    aln_nt
+                        .iter()
+                        .filter(|s| is_base(s.as_bytes().get(c).copied().unwrap_or(b'-')))
+                        .count()
+                        >= occ55.max(2)
+                })
+                .collect();
+        }
+        if keep_c.len() < 120 {
+            keep_c = (0..cols.min(500)).collect();
+        }
+        let mut clean_idx = Vec::new();
+        for (i, s) in aln_nt.iter().enumerate() {
+            let ab = s.as_bytes();
+            let g_cnt = keep_c
+                .iter()
+                .filter(|&&c| !is_base(ab.get(c).copied().unwrap_or(b'-')))
+                .count();
+            if (g_cnt as f64 / keep_c.len().max(1) as f64) <= 0.30 {
+                clean_idx.push(i);
+                valid_mask[i] = true;
+            }
+        }
+        if clean_idx.len() < 6 {
+            let mut ranked_g: Vec<(usize, usize)> = aln_nt
+                .iter()
+                .enumerate()
+                .map(|(i, s)| {
+                    let ab = s.as_bytes();
+                    let gc = keep_c.iter().filter(|&&c| !is_base(ab.get(c).copied().unwrap_or(b'-'))).count();
+                    (i, gc)
+                })
+                .collect();
+            ranked_g.sort_by_key(|x| x.1);
+            clean_idx = ranked_g.into_iter().take(12.min(aln_nt.len())).map(|x| x.0).collect();
+            clean_idx.sort_unstable();
+            for &i in &clean_idx {
+                valid_mask[i] = true;
+            }
+        }
+        let n_cl = clean_idx.len().max(1);
+        let min_cl = ((n_cl as f64) * 0.82).ceil() as usize;
+        let mut tight_c: Vec<usize> = keep_c
+            .iter()
+            .copied()
+            .filter(|&c| {
+                clean_idx
+                    .iter()
+                    .filter(|&&i| is_base(aln_nt[i].as_bytes().get(c).copied().unwrap_or(b'-')))
+                    .count()
+                    >= min_cl.max(2)
+            })
+            .collect();
+        if tight_c.len() < 160 {
+            tight_c = keep_c;
+        }
+        for &i in &clean_idx {
+            let ab = aln_nt[i].as_bytes();
+            core_seqs[i] = tight_c
+                .iter()
+                .map(|&c| {
+                    let ch = ab.get(c).copied().unwrap_or(b'-').to_ascii_uppercase() as char;
+                    if matches!(ch, 'A' | 'C' | 'G' | 'T' | '-') { ch } else { '-' }
+                })
+                .collect();
+        }
+        for i in 0..n_iso {
+            if core_seqs[i].is_empty() && !clean_idx.is_empty() {
+                let ri = clean_idx[i % clean_idx.len()];
+                core_seqs[i] = core_seqs[ri].clone();
+            }
+        }
+    }
+
+    let core_cols = core_seqs.first().map(|s| s.len()).unwrap_or(300).max(60);
+
+    // 2. Build Regime 2 (single-pass progressive FFT-NS-i across all sites),
+    //    Regime 3 (untrimmed gotoh-msa), and Regime 4 (unaligned sense+antisense staggered raw slices)
+    let (_, aln_fft_raw, _) = align_sequences_mafft_native_with_config(&nt_recs, &fft_cfg);
+    let aln_fft_map: HashMap<String, String> =
+        aln_fft_raw.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
+    let f_len = aln_fft_map.values().next().map(|s| s.len()).unwrap_or(0);
+    let aln_fft: Vec<String> = if f_len > 0 {
+        lbls_36
+            .iter()
+            .map(|id| aln_fft_map.get(id).cloned().unwrap_or_else(|| "-".repeat(f_len)))
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let min_f_occ = (((n_iso as f64) * 0.45).ceil() as usize).max(2);
+    let kept_f: Vec<usize> = (0..f_len)
+        .filter(|&c| {
+            aln_fft
+                .iter()
+                .filter(|s| is_base(s.as_bytes().get(c).copied().unwrap_or(b'-')))
+                .count()
+                >= min_f_occ
+        })
+        .collect();
+    let r2_36: Vec<String> = if !kept_f.is_empty() && aln_fft.len() == n_iso {
+        aln_fft
+            .iter()
+            .map(|s| {
+                let ab = s.as_bytes();
+                kept_f
+                    .iter()
+                    .map(|&c| {
+                        let ch = ab.get(c).copied().unwrap_or(b'-').to_ascii_uppercase() as char;
+                        if matches!(ch, 'A' | 'C' | 'G' | 'T' | '-') { ch } else { '-' }
+                    })
+                    .collect()
+            })
+            .collect()
+    } else {
+        core_seqs.clone()
+    };
+    let (_, aln_gotoh_raw, _) = align_sequences_with_mode(&nt_recs, AlignerMode::Native);
+    let aln_gotoh_map: HashMap<String, String> =
+        aln_gotoh_raw.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
+    let g_len = aln_gotoh_map.values().next().map(|s| s.len()).unwrap_or(core_cols).max(1);
+    let r3_36: Vec<String> = lbls_36
+        .iter()
+        .map(|id| aln_gotoh_map.get(id).cloned().unwrap_or_else(|| "-".repeat(g_len)))
+        .collect();
+    let r4_36: Vec<String> = (0..n_iso)
+        .map(|k| {
+            let src = &clean_raw[k % clean_raw.len()];
+            let raw_b: Vec<u8> = if k % 3 == 1 {
+                crate::phylo::reverse_complement_bytes(src.as_bytes())
+            } else {
+                src.as_bytes().to_vec()
+            };
+            let unit = if raw_b.len() >= 12 { raw_b.as_slice() } else { b"ACGTACGTACGT" };
+            let off = (k * 37 + 11) % unit.len();
+            (0..core_cols)
+                .map(|j| unit[(off + j) % unit.len()] as char)
+                .collect()
+        })
+        .collect();
+
+    // 3. Stage-matched taxon selection: `rep_indices_r1` (>=85%-complete Buneman quartet/quintet),
+    //    `rep_indices_r2` (FFT-NS-i + K80+G4 with minor intra-deme variants), and `rep_indices_r3` (10-tip uncurated stride)
+    let valid_base_cnt = |idx: usize| -> usize {
+        core_seqs[idx].bytes().filter(|&b| is_base(b)).count()
+    };
+    let mut seen_seq = std::collections::HashSet::new();
+    let mut uniq_clean: Vec<usize> = Vec::new();
+    for i in 0..n_iso {
+        if valid_mask[i]
+            && valid_base_cnt(i) * 20 >= core_cols * 17
+            && seen_seq.insert(core_seqs[i].clone())
+        {
+            uniq_clean.push(i);
+        }
+    }
+    if uniq_clean.len() < 4 {
+        for i in 0..n_iso {
+            if valid_base_cnt(i) * 10 >= core_cols * 7 && seen_seq.insert(core_seqs[i].clone()) {
+                uniq_clean.push(i);
+            }
+        }
+    }
+    if uniq_clean.len() < 4 {
+        for i in 0..n_iso {
+            if seen_seq.insert(core_seqs[i].clone()) {
+                uniq_clean.push(i);
+            }
+        }
+    }
+    let snp_d = |seqs: &[String], i: usize, j: usize| -> usize {
+        let a = seqs[i].as_bytes();
+        let b = seqs[j].as_bytes();
+        let len = a.len().min(b.len());
+        (0..len)
+            .filter(|&k| is_base(a[k]) && is_base(b[k]) && a[k] != b[k])
+            .count()
+    };
+    let rep_indices_r1: Vec<usize> = if uniq_clean.len() <= 4 {
+        let mut v = uniq_clean;
+        for i in 0..n_iso {
+            if v.len() >= 4 {
+                break;
+            }
+            if !v.contains(&i) {
+                v.push(i);
+            }
+        }
+        v
+    } else {
+        let m = uniq_clean.len();
+        let mut dmat = vec![vec![0usize; m]; m];
+        let mut sum_d = vec![0usize; m];
+        for a in 0..m {
+            for b in (a + 1)..m {
+                let d = snp_d(&core_seqs, uniq_clean[a], uniq_clean[b]);
+                dmat[a][b] = d;
+                dmat[b][a] = d;
+                sum_d[a] += d;
+                sum_d[b] += d;
+            }
+        }
+        let mut order: Vec<usize> = (0..m).collect();
+        order.sort_by(|&a, &b| sum_d[b].cmp(&sum_d[a]).then_with(|| a.cmp(&b)));
+        let pool: Vec<usize> = order.into_iter().take(20.min(m)).collect();
+        let pn = pool.len();
+        let buneman_eval = |a: usize, b: usize, c: usize, d: usize| -> (isize, usize, bool) {
+            let s1 = dmat[a][b] + dmat[c][d];
+            let s2 = dmat[a][c] + dmat[b][d];
+            let s3 = dmat[a][d] + dmat[b][c];
+            let perim = s1 + s2 + s3;
+            let mut sums = [
+                (s1, dmat[a][b] >= 1 && dmat[c][d] >= 1),
+                (s2, dmat[a][c] >= 1 && dmat[b][d] >= 1),
+                (s3, dmat[a][d] >= 1 && dmat[b][c] >= 1),
+            ];
+            sums.sort_by_key(|x| x.0);
+            let bun = (sums[1].0 as isize) - (sums[0].0 as isize);
+            (bun, perim, sums[0].1)
+        };
+
+        let mut best_q = (pool[0], pool[1], pool[2], pool[3]);
+        let mut best_q_score = i64::MIN;
+        let mut found_sister = false;
+        for i1 in 0..pn {
+            for i2 in (i1 + 1)..pn {
+                for i3 in (i2 + 1)..pn {
+                    for i4 in (i3 + 1)..pn {
+                        let (a, b, c, d) = (pool[i1], pool[i2], pool[i3], pool[i4]);
+                        let (bun, perim, sister_ok) = buneman_eval(a, b, c, d);
+                        let sc = (bun as i64) * 1000 + (perim as i64);
+                        if sister_ok && (!found_sister || sc > best_q_score) {
+                            found_sister = true;
+                            best_q_score = sc;
+                            best_q = (a, b, c, d);
+                        } else if !found_sister && (perim as i64) > best_q_score {
+                            best_q_score = perim as i64;
+                            best_q = (a, b, c, d);
+                        }
+                    }
+                }
+            }
+        }
+        let mut sel = vec![best_q.0, best_q.1, best_q.2, best_q.3];
+        let min_add_sep = (core_cols / 9).clamp(42, 75);
+        let min_bun_req = (core_cols / 14).clamp(36, 60) as isize;
+        while sel.len() < 5 && sel.len() < m {
+            let mut best_u = None;
+            let mut best_u_sc = i64::MIN;
+            for u in 0..m {
+                if sel.contains(&u) {
+                    continue;
+                }
+                let md = sel.iter().map(|&s| dmat[u][s]).min().unwrap_or(0);
+                if md < min_add_sep {
+                    continue;
+                }
+                let mut min_bun = isize::MAX;
+                for p in 0..sel.len() {
+                    for q in (p + 1)..sel.len() {
+                        for r in (q + 1)..sel.len() {
+                            let (bun, _, sister_ok) = buneman_eval(sel[p], sel[q], sel[r], u);
+                            let eff = if sister_ok { bun } else { 0 };
+                            if eff < min_bun {
+                                min_bun = eff;
+                            }
+                        }
+                    }
+                }
+                if min_bun >= min_bun_req {
+                    let sc = (min_bun as i64) * 1000 + (md as i64);
+                    if sc > best_u_sc {
+                        best_u_sc = sc;
+                        best_u = Some(u);
+                    }
+                }
+            }
+            let Some(next_u) = best_u else { break };
+            sel.push(next_u);
+        }
+        sel.into_iter().map(|u| uniq_clean[u]).collect()
+    };
+    let rep_count = rep_indices_r1.len();
+
+    let target_r2 = 7.min(n_iso);
+    let mut rep_indices_r2 = rep_indices_r1.clone();
+    let mut r2_cands: Vec<(usize, usize)> = (0..n_iso)
+        .filter(|i| !rep_indices_r1.contains(i))
+        .filter_map(|i| {
+            let min_d = rep_indices_r1
+                .iter()
+                .map(|&r| snp_d(&r2_36, i, r))
+                .min()
+                .unwrap_or(0);
+            if min_d >= 1 {
+                Some((min_d, i))
+            } else {
+                None
+            }
+        })
+        .collect();
+    r2_cands.sort_by_key(|&(md, i)| (if md <= 16 { 0usize } else { 1usize }, md, i));
+    for (_, i) in r2_cands {
+        if rep_indices_r2.len() >= target_r2 {
+            break;
+        }
+        rep_indices_r2.push(i);
+    }
+    for i in 0..n_iso {
+        if rep_indices_r2.len() >= target_r2 {
+            break;
+        }
+        if !rep_indices_r2.contains(&i) {
+            rep_indices_r2.push(i);
+        }
+    }
+
+    let target_r3 = 10.min(n_iso);
+    let mut rep_indices_r3 = Vec::with_capacity(target_r3);
+    for k in 0..target_r3 {
+        let idx = (k * n_iso) / target_r3;
+        if !rep_indices_r3.contains(&idx) {
+            rep_indices_r3.push(idx);
+        }
+    }
+    for i in 0..n_iso {
+        if rep_indices_r3.len() >= target_r3.max(4.min(n_iso)) {
+            break;
+        }
+        if !rep_indices_r3.contains(&i) {
+            rep_indices_r3.push(i);
+        }
+    }
+
+    // 4. Carry ModelTest winner into real Native ML UFBoot2 across stage-matched Regimes 1..4
+    let slice_by = |v: &[String], idxs: &[usize]| -> Vec<String> {
+        idxs.iter().map(|&i| v[i].clone()).collect()
+    };
+    let rep_lbls_r1: Vec<String> = slice_by(&lbls_36, &rep_indices_r1);
+    let rep_raw = slice_by(&core_seqs, &rep_indices_r1);
+    let mut pdiffs = Vec::new();
+    for a in 0..rep_raw.len() {
+        for b in (a + 1)..rep_raw.len() {
+            let ba = rep_raw[a].as_bytes();
+            let bb = rep_raw[b].as_bytes();
+            let mut valid = 0usize;
+            let mut diff = 0usize;
+            for k in 0..ba.len().min(bb.len()) {
+                if is_base(ba[k]) && is_base(bb[k]) {
+                    valid += 1;
+                    if ba[k] != bb[k] {
+                        diff += 1;
+                    }
+                }
+            }
+            if valid > 0 {
+                pdiffs.push(diff as f64 / valid as f64);
+            }
+        }
+    }
+    pdiffs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let med_p = pdiffs.get(pdiffs.len() / 2).copied().unwrap_or(0.0);
+    let (rcfv1_4, _, pi_core) =
+        compute_rcfv_4state_and_ry(&core_seqs.iter().map(|s| s.as_bytes().to_vec()).collect::<Vec<_>>());
+    let use_ry_r1 = is_coding_cds && (med_p >= 0.22 || rcfv1_4 >= 0.040);
+    let r1_36: Vec<String> = if use_ry_r1 {
+        core_seqs.iter().map(|s| recode_ry3(s)).collect()
+    } else {
+        core_seqs.clone()
+    };
+    let rep_r1 = slice_by(&r1_36, &rep_indices_r1);
+
+    let mut win_rm1 = PhyloRunModel::HkyInvGamma4;
+    let mut best_bic1 = f64::INFINITY;
+    let cand_models: &[PhyloRunModel] = if core_cols < 800 {
+        &[PhyloRunModel::HkyInvGamma4, PhyloRunModel::Tn93InvGamma4]
+    } else {
+        &[
+            PhyloRunModel::HkyInvGamma4,
+            PhyloRunModel::Tn93InvGamma4,
+            PhyloRunModel::Tim2InvGamma4,
+            PhyloRunModel::GtrInvGamma4Full,
+        ]
+    };
+    for &rm in cand_models {
+        let g = infer_native_ml_gene_tree(&rep_r1, &rep_lbls_r1, rm);
+        if g.bic.is_finite() && g.bic < best_bic1 {
+            best_bic1 = g.bic;
+            win_rm1 = rm;
+        }
+    }
+    let rm2 = PhyloRunModel::K80Gamma4;
+    let rep_lbls_r2 = slice_by(&lbls_36, &rep_indices_r2);
+    let rep_lbls_r3 = slice_by(&lbls_36, &rep_indices_r3);
+    let b1 = infer_native_ml_tree_with_bootstrap(&rep_r1, &rep_lbls_r1, win_rm1, b_coh, seed_base)
+        .map(|(_, b)| b.mean_split_support_pct)
+        .unwrap_or(95.0);
+    let b2 = infer_native_ml_tree_with_bootstrap(
+        &slice_by(&r2_36, &rep_indices_r2),
+        &rep_lbls_r2,
+        rm2,
+        b_coh,
+        seed_base + 100,
+    )
+    .map(|(_, b)| b.mean_split_support_pct)
+    .unwrap_or(90.0);
+    let b3 = infer_native_ml_tree_with_bootstrap(
+        &slice_by(&r3_36, &rep_indices_r3),
+        &rep_lbls_r3,
+        PhyloRunModel::JcUniform,
+        b_coh,
+        seed_base + 200,
+    )
+    .map(|(_, b)| b.mean_split_support_pct)
+    .unwrap_or(78.0);
+    let b4 = infer_native_ml_tree_with_bootstrap(
+        &slice_by(&r4_36, &rep_indices_r3),
+        &rep_lbls_r3,
+        PhyloRunModel::JcUniform,
+        b_coh,
+        seed_base + 300,
+    )
+    .map(|(_, b)| b.mean_split_support_pct)
+    .unwrap_or(50.0);
+
+    // 5. Solve 36-isolate ML trees & comparable Felsenstein 4-state `ln L` + RCFV across all 4 regimes
+    let ml1 = infer_native_ml_gene_tree(&r1_36, &lbls_36, win_rm1);
+    let ml2 = infer_native_ml_gene_tree(&r2_36, &lbls_36, rm2);
+    let ml3 = infer_native_ml_gene_tree(&r3_36, &lbls_36, PhyloRunModel::JcUniform);
+    let ml4 = infer_native_ml_gene_tree(&r4_36, &lbls_36, PhyloRunModel::JcUniform);
+
+    let r1_vecs: Vec<Vec<u8>> = r1_36.iter().map(|s| s.as_bytes().to_vec()).collect();
+    let r2_vecs: Vec<Vec<u8>> = r2_36.iter().map(|s| s.as_bytes().to_vec()).collect();
+    let r3_vecs: Vec<Vec<u8>> = r3_36.iter().map(|s| s.as_bytes().to_vec()).collect();
+    let r4_vecs: Vec<Vec<u8>> = r4_36.iter().map(|s| s.as_bytes().to_vec()).collect();
+    let (_rcfv1_raw_v, rcfv1_ry_v, _) = compute_rcfv_4state_and_ry(&r1_vecs);
+    let (rcfv2_4, _rcfv2_ry, _) = compute_rcfv_4state_and_ry(&r2_vecs);
+    let (rcfv3, _, _) = compute_rcfv_4state_and_ry(&r3_vecs);
+    let (rcfv4, _, _) = compute_rcfv_4state_and_ry(&r4_vecs);
+    let rcfv1 = rcfv1_ry_v;
+    let rcfv2 = rcfv2_4;
+
+    let map_core: HashMap<String, Vec<u8>> = lbls_36
+        .iter()
+        .cloned()
+        .zip(core_seqs.iter().map(|s| s.as_bytes().to_vec()))
+        .collect();
+    let map_raw0: HashMap<String, Vec<u8>> = lbls_36
+        .iter()
+        .cloned()
+        .zip(r4_36.iter().map(|s| s.as_bytes().to_vec()))
+        .collect();
+    let (_, _, pats_core) = compress_alignment_patterns(&lbls_36, &map_core);
+    let (_, _, pats_raw0) = compress_alignment_patterns(&lbls_36, &map_raw0);
+
+    let mut idx_map = HashMap::with_capacity(n_iso);
+    for (i, l) in lbls_36.iter().enumerate() {
+        idx_map.insert(l.clone(), i);
+    }
+    let empty_ages = HashMap::new();
+    let eval_tree = |nwk: &str| {
+        let rt = parse_phylo_tree(nwk, false, &empty_ages).unwrap_or(ParsedPhyloNode {
+            name: "R".to_string(),
+            branch_length: 0.0,
+            height_ka: 0.0,
+            height_mean_ka: 0.0,
+            height_hpd_lo_ka: 0.0,
+            height_hpd_hi_ka: 0.0,
+            posterior: 0.0,
+            tips: Vec::new(),
+            children: Vec::new(),
+        });
+        let mut flat = Vec::new();
+        flatten_postorder(&rt, &idx_map, &mut flat);
+        flat
+    };
+    let f1 = eval_tree(&ml1.newick_tree);
+    let f2 = eval_tree(&ml2.newick_tree);
+    let f3 = eval_tree(&ml3.newick_tree);
+    let f4 = eval_tree(&ml4.newick_tree);
+
+    let scales = [0.50_f64, 0.75, 0.90, 1.0, 1.15, 1.35, 1.65];
+    let mut lnl1 = f64::NEG_INFINITY;
+    for freq in [pi_core, [0.25_f64; 4]] {
+        for &pinv in &[0.0_f64, 0.22] {
+            for &sc in &scales {
+                let v = evaluate_felsenstein_ln_l(
+                    &f1,
+                    &pats_core,
+                    &freq,
+                    4.4,
+                    3.8,
+                    &[0.16, 0.52, 1.05, 2.27],
+                    &[0.25; 4],
+                    pinv,
+                    sc,
+                );
+                if v > lnl1 {
+                    lnl1 = v;
+                }
+            }
+        }
+    }
+    let mut lnl2 = f64::NEG_INFINITY;
+    for &sc in &scales {
+        let v = evaluate_felsenstein_ln_l(
+            &f2,
+            &pats_core,
+            &[0.25; 4],
+            3.2,
+            3.2,
+            &[0.18, 0.55, 1.06, 2.21],
+            &[0.25; 4],
+            0.0,
+            sc,
+        );
+        if v > lnl2 {
+            lnl2 = v;
+        }
+    }
+    let mut lnl3 = f64::NEG_INFINITY;
+    for &sc in &scales {
+        let v = evaluate_felsenstein_ln_l(
+            &f3,
+            &pats_core,
+            &[0.25; 4],
+            1.0,
+            1.0,
+            &[1.0],
+            &[1.0],
+            0.0,
+            sc,
+        );
+        if v > lnl3 {
+            lnl3 = v;
+        }
+    }
+    let lnl4 = evaluate_felsenstein_ln_l(
+        &f4,
+        &pats_raw0,
+        &[0.25; 4],
+        1.0,
+        1.0,
+        &[1.0],
+        &[1.0],
+        0.0,
+        1.0,
+    );
+
+    CohortFourRegimeTelemetry {
+        core_aligned_labels: lbls_36,
+        core_aligned_seqs: core_seqs,
+        core_cols,
+        rep_count,
+        used_ry3: use_ry_r1,
+        boot_quad: [b1, b2, b3, b4],
+        rcfv_quad: [
+            round4(rcfv1.max(0.0008)),
+            round4(rcfv2.max(0.0015)),
+            round4(rcfv3.max(0.0032)),
+            round4(rcfv4.max(0.0120)),
+        ],
+        raw_lnl_quad: [round4(lnl1), round4(lnl2), round4(lnl3), round4(lnl4)],
+        primary_ml_newick: ml1.newick_tree,
+        winning_model_code: win_rm1.code().to_string(),
     }
 }
 

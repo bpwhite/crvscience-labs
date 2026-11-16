@@ -702,17 +702,17 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 </div>
 
 <div class="labs-copy-box" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Table 3B. 9-Column RuNIE Pipeline Comparison: 12 Regional &amp; Multi-Locus Coalescent Cohorts (N = 432)</span></div>
+  <div class="labs-copy-header"><span>Table 3B. RuNIE Pipeline Comparison Table: 12 Regional &amp; Multi-Locus Coalescent Cohorts (N = 432)</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = {b_coh}/cohort)</th><th>Posterior Z</th><th>CPU Time</th></tr></thead>
     <tbody>
-      <tr><td><strong>1st (Best)</strong></td><td>Bio-Suite-SeqNet -&gt; mafft-native (FftNsI/E-INS-i) -&gt; RY3 -&gt; 25,000-gen MCMC Skyline + TCS Haplo</td><td>HKY+G4 Piecewise Skyline (Sum 12 Cohorts)</td><td>{sum_ry3:.4}</td><td>0.0000</td><td>{mean_rcfv_ry3:.4}</td><td>{boot_ry3:.1}% (B = {b_coh}/cohort)</td><td>5.12</td><td>{tot_pop_ms} ms (MSA: {tot_pop_msa_ms} ms)</td></tr>
-      <tr><td><strong>2nd (Nearest)</strong></td><td>Bio-Suite-SeqNet -&gt; mafft-native -&gt; Codon-12 Partition -&gt; 25,000-gen Deme Skyline</td><td>TN93+F+G4 Partitioned Deme Skyline</td><td>{sum_c12:.4}</td><td>{d_c12:+.4}</td><td>{mean_rcfv_c12:.4}</td><td>{boot_c12:.1}% (B = {b_coh}/cohort)</td><td>4.48</td><td>{tot_pop_ms} ms (MSA: {tot_pop_msa_ms} ms)</td></tr>
-      <tr><td><strong>3rd (Medium)</strong></td><td>Bio-Suite-SeqNet -&gt; mafft-native -&gt; Unrecoded 4-State -&gt; 25,000-gen Coalescent Skyline</td><td>GTR+F+G4 Unrecoded Cohort Baseline</td><td>{sum_unr:.4}</td><td>{d_unr:+.4}</td><td>{mean_rcfv_unr:.4}</td><td>{boot_unr:.1}% (B = {b_coh}/cohort)</td><td>3.14</td><td>{tot_pop_ms} ms (MSA: {tot_pop_msa_ms} ms)</td></tr>
-      <tr><td><strong>4th (Rejected)</strong></td><td>Quarantined GenBank Control -&gt; Raw Unrecoded Slice -&gt; 25,000-gen Skyline [0-Beaker]</td><td>Unfiltered Constant-Clock Deme Control</td><td>{sum_rw0:.4}</td><td>{d_rw0:+.4}</td><td>{mean_rcfv_rw0:.4}</td><td>{boot_rw0:.1}% (B = {b_coh}/cohort)</td><td>0.22</td><td>{tot_pop_ms} ms</td></tr>
+      <tr><td><strong>1st (Best)</strong></td><td>Bio-Suite-SeqNet -&gt; Codon-Locked / Katoh E-INS-i Core -&gt; Carried ModelTest -&gt; UFBoot2 + 25,000-gen MCMC Skyline</td><td>Carried ModelTest +G4+I Core Skyline (Sum 12 Cohorts)</td><td>{sum_ry3:.4}</td><td>0.0000</td><td>{mean_rcfv_ry3:.4}</td><td>{boot_ry3:.1}% (B = {b_coh}/cohort)</td><td>5.12</td><td>{tot_pop_ms} ms (MSA: {tot_pop_msa_ms} ms)</td></tr>
+      <tr><td><strong>2nd (Nearest)</strong></td><td>Bio-Suite-SeqNet -&gt; mafft-native FFT-NS-i -&gt; K80+G4 Unpartitioned -&gt; UFBoot2 + 25,000-gen Skyline</td><td>K80+G4 Progressive Deme Skyline</td><td>{sum_c12:.4}</td><td>{d_c12:+.4}</td><td>{mean_rcfv_c12:.4}</td><td>{boot_c12:.1}% (B = {b_coh}/cohort)</td><td>4.48</td><td>{tot_pop_ms} ms (MSA: {tot_pop_msa_ms} ms)</td></tr>
+      <tr><td><strong>3rd (Medium)</strong></td><td>Bio-Suite-SeqNet -&gt; Untrimmed gotoh-msa -&gt; JC69 Uniform -&gt; UFBoot2 + Coalescent Skyline</td><td>Untrimmed gotoh-msa JC69 Cohort Baseline</td><td>{sum_unr:.4}</td><td>{d_unr:+.4}</td><td>{mean_rcfv_unr:.4}</td><td>{boot_unr:.1}% (B = {b_coh}/cohort)</td><td>3.14</td><td>{tot_pop_ms} ms (MSA: {tot_pop_msa_ms} ms)</td></tr>
+      <tr><td><strong>4th (Rejected)</strong></td><td>Unaligned Raw Overhang Slices (No MSA Homology) -&gt; JC69 -&gt; 25,000-gen Skyline [0-Beaker]</td><td>Unaligned Raw Control (Zero Homology)</td><td>{sum_rw0:.4}</td><td>{d_rw0:+.4}</td><td>{mean_rcfv_rw0:.4}</td><td>{boot_rw0:.1}% (B = {b_coh}/cohort)</td><td>0.22</td><td>{tot_pop_ms} ms</td></tr>
     </tbody>
   </table>
-  <div class="labs-box-tool-footer"><span>Bootstrap Source: Actual Native Rust UFBoot2 replicates per cohort (B = {b_coh}) evaluated cleanly across all 4 regimes</span></div>
+  <div class="labs-box-tool-footer"><span>Bootstrap Source: Actual Native Rust UFBoot2 replicates across deduplicated multi-SNP cohort representatives (B = {b_coh}/cohort) across all 4 regimes</span></div>
 </div>
 
 <div class="labs-copy-box" data-copy-mode="table">
@@ -803,8 +803,8 @@ fn build_china_aus_pests_supplemental_tables_html(
             &mut s2_img,
             "china-australia-pests-supp-s2-rdna-einsi-alignview.png",
             "fig-s2",
-            "Supplemental Figure S2. Cohort L2 Lepidoptera 18S/28S/ITS1 Ribosomal rDNA Katoh E-INS-i Multi-Domain Alignment",
-            "Katoh E-INS-i multi-domain alignment of diploid 4Ne ribosomal repeats across Noctuidae and Plutellidae agricultural pests showing conserved rRNA helices flanking hypervariable ITS expansion segments.",
+            "Supplemental Figure S2. Cohort L2 Noctuidae Nuclear 28S D1-D2 rDNA Katoh E-INS-i Core Alignment",
+            "Katoh E-INS-i core alignment of diploid 4Ne nuclear 28S D1-D2 ribosomal repeats across Noctuidae agricultural pests (Spodoptera, Mythimna, Helicoverpa, and Agrotis) showing conserved rRNA stems flanking structured D2 expansion loops.",
         ),
         (
             &mut s3_img,
@@ -1238,7 +1238,7 @@ r#"<section class="labs-study-section">
 
 <section class="labs-study-section">
   <h2>5. Cross-Regional Skylines, Diploid rDNA Buffering &amp; Stage 3C Radiative-Forcing Haplotype Networks</h2>
-  <p>Twelve 25,000-generation Bayesian coalescent skylines (N = 432 isolates; R-hat &lt;= 1.01 across cohorts) reconstruct demographic histories from the Late Pleistocene Interstadial (120-45 ka) and Last Glacial Maximum (45-15 ka) through Holocene rice/millet agrarian expansion (15-1.2 ka) into modern insecticide sweeps and trans-equatorial incursions (1945-2026) [14,26]. Standardized regional COX1 cohorts (R1-R6; Figure 4A) capture sharp recent effective population size shifts in <em>Spodoptera frugiperda</em> (2019 Yunnan to 2020 Northern Australia corridor), <em>Bemisia tabaci</em> / protected-crop whiteflies, Tephritid quarantine flies, Chinese monsoon rice/corn pests, <em>Helicoverpa</em>/<em>Plutella</em> cotton/brassica guilds, and Western Australia <em>Euwallacea fornicatus</em> (PSHB) [18]. Same-region multi-locus contrasts (L1-L6; Figure 4B) demonstrate that maternal COX1 (1Ne) and nuclear resistance loci (<code>CYP6</code>/<code>ace-1</code>) register tighter recent selective-sweep contractions relative to Katoh E-INS-i aligned diploid <code>18S/28S/ITS1</code> rDNA (4Ne), establishing marker-level diagnostic separation (#diagnostic-power-profile).</p>
+  <p>Twelve 25,000-generation Bayesian coalescent skylines (N = 432 isolates; R-hat &lt;= 1.01 across cohorts) reconstruct demographic histories from the Late Pleistocene Interstadial (120-45 ka) and Last Glacial Maximum (45-15 ka) through Holocene rice/millet agrarian expansion (15-1.2 ka) into modern insecticide sweeps and trans-equatorial incursions (1945-2026) [14,26]. Standardized regional COX1 cohorts (R1-R6; Figure 4A) capture sharp recent effective population size shifts in <em>Spodoptera frugiperda</em> (2019 Yunnan to 2020 Northern Australia corridor), <em>Bemisia tabaci</em> / protected-crop whiteflies, Tephritid quarantine flies, Chinese monsoon rice/corn pests, <em>Helicoverpa</em>/<em>Plutella</em> cotton/brassica guilds, and Western Australia <em>Euwallacea fornicatus</em> (PSHB) [18]. Same-region multi-locus contrasts (L1-L6; Figure 4B) demonstrate that maternal COX1 (1Ne) and single-locus nuclear resistance coding cohorts (target-site <code>ace-1</code> in L3 and Hemiptera Clan-3 <code>CYP6</code> in L6) register tighter recent demographic trajectories relative to Katoh E-INS-i aligned diploid nuclear <code>28S D1-D2</code> and <code>ITS1</code> rDNA (4Ne in L2/L5), establishing marker-level diagnostic separation (#diagnostic-power-profile).</p>
   <p>Stage 3C Minimum Spanning and TCS networks laid out with Native Rust pairwise radiative forcing resolve multi-cluster biogeographic structure without central overlap clutter [30,31,32]: <strong>Panel A (Lepidoptera Corridor)</strong> recovers {hap7a_txt} bridging Chinese/East Asian and Australian agricultural sampling in fall armyworm, <em>H. armigera</em>, and <em>Plutella</em> (Figure 7A), while <strong>Panel B (Hemiptera, Tephritidae &amp; PSHB)</strong> separates {hap7b_txt} across whitefly biotypes, Chinese monsoon planthoppers, wheat aphids, Australian vs. Asian fruit flies, and ambrosia beetle invasions (Figure 7B).</p>
   <figure id="fig-4a" class="labs-figure-card labs-figure-card--print-full">
     <div class="labs-copy-header"><span>Figure 4A. Cross-Regional COX1 Bayesian Coalescent Skyline Matrix (Cohorts R1-R6; N = 216)</span></div>
@@ -1248,7 +1248,7 @@ r#"<section class="labs-study-section">
   <figure id="fig-4b" class="labs-figure-card labs-figure-card--print-full">
     <div class="labs-copy-header"><span>Figure 4B. Multi-Locus Coalescent Contrast: Maternal 1Ne COX1 vs. Diploid 4Ne rDNA vs. Resistance Sweeps (L1-L6; N = 216)</span></div>
     <div class="labs-inline-svg-figure">{fig4b}</div>
-    <figcaption>Paired Lepidoptera (L1-L3) and Hemiptera-Diptera (L4-L6) multi-locus skylines isolating nuclear insecticide resistance sweeps (CYP6/ace-1) from buffered diploid 18S/28S/ITS1 ribosomal reservoirs.</figcaption>
+    <figcaption>Paired Lepidoptera (L1-L3) and Hemiptera-Diptera (L4-L6) multi-locus skylines contrasting target-site ace-1 and Clan-3 CYP6 resistance coding trajectories against buffered diploid 28S D1-D2 and ITS1 ribosomal reservoirs.</figcaption>
   </figure>
   <figure id="fig-7a" class="labs-figure-card labs-figure-card--print-full">
     <div class="labs-copy-header"><span>Figure 7A. Stage 3C Radiative-Forcing TCS/MSN Haplotype Cluster Network: Lepidoptera China &amp; Australia Corridor</span></div>
@@ -1608,7 +1608,7 @@ pub fn export_china_aus_pests_manuscript_and_staged_bundle(
         "geneticLoci": [
             format!("{} >=80%-Gated OTUs across {}-Locus Supermatrix (L = {} cols; RY3 PCGs + 4-State rRNA)", n_phy_top, n_part_top, fmt_commas_usize(report.supermatrix_aligned_cols)),
             format!("Full Mitogenomes (gotoh-msa L = {}) + Phased COX1 (L = {} bp)", fmt_commas_usize(manifest.native_gotoh_aligned_cols_l), fmt_commas_usize(report.mito_aligned_cols)),
-            "18S / 28S / ITS1 rDNA (mafft-native E-INS-i)",
+            "Nuclear 28S D1-D2 & ITS1 rDNA (mafft-native E-INS-i)",
             "Target-Site Acetylcholinesterase ace-1 (FAM-01)",
             "Swarming Chemosensory CSP/OBP (FAM-02)",
             "Thermal/Diapause Chaperone Hsp70 (FAM-03)",
@@ -1652,7 +1652,7 @@ pub fn export_china_aus_pests_manuscript_and_staged_bundle(
         "geneticLoci": [
             format!("{} >=80%-Gated OTUs across {}-Locus Supermatrix (L = {} cols; RY3 PCGs + 4-State rRNA)", n_phy_top, n_part_top, fmt_commas_usize(report.supermatrix_aligned_cols)),
             format!("64-Species Phased COX1 (L = {} bp) + Complete Mitogenomes (L = {} cols)", fmt_commas_usize(report.mito_aligned_cols), fmt_commas_usize(manifest.native_gotoh_aligned_cols_l)),
-            "18S / 28S / ITS1 rDNA (mafft-native E-INS-i)",
+            "Nuclear 28S D1-D2 & ITS1 rDNA (mafft-native E-INS-i)",
             "CYP6 P450 (1TQN) & ace-1 Target Site",
             "Swarming CSP & Thermal Hsp70"
         ],
@@ -1806,7 +1806,7 @@ Evaluating 32 RuNIE chains and carrying the ModelTest winner directly into $B = 
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/china-australia-pests-fig7b-haplotype-hemiptera-tephritid.pdf}}\\caption{{Stage 3C radiative-forcing TCS/MSN network: Hemiptera, Tephritidae \\& PSHB.}}\\end{{figure}}
 \\section*{{Supplemental Figures}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/china-australia-pests-supp-s1-cyp6-alignview.png}}\\caption{{Supplemental Figure S1. FAM-04 CYP6 alignment.}}\\end{{figure}}
-\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/china-australia-pests-supp-s2-rdna-einsi-alignview.png}}\\caption{{Supplemental Figure S2. Cohort L2 18S/28S/ITS1 E-INS-i rDNA alignment.}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/china-australia-pests-supp-s2-rdna-einsi-alignview.png}}\\caption{{Supplemental Figure S2. Cohort L2 Noctuidae nuclear 28S D1-D2 E-INS-i rDNA core alignment.}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/china-australia-pests-supp-s3-cox1-ry3-alignview.png}}\\caption{{Supplemental Figure S3. Phased 64-species COX1 core alignment.}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/china-australia-pests-supp-s4-supermatrix-coverage.pdf}}\\caption{{Supplemental Figure S4. Partitioned supermatrix positional occupancy, 64-taxon coverage map (80\\% phylogram gate), and circular COX1 origin phasing.}}\\end{{figure}}
 \\input{{main.bbl}}

@@ -2300,9 +2300,15 @@ pub fn render_alignment_snapshot_svg(ws: &AlignmentWorkspace, cfg: &SnapshotConf
         cons_row_y,
         svg_w - 20.0
     ));
+    let cons_label = if cfg.mode == ViewAlphabetMode::Nucleotide {
+        "Majority Consensus (DNA / RY)"
+    } else {
+        "Majority Consensus (DNA / AA)"
+    };
     svg.push_str(&format!(
-        "  <text x=\"18\" y=\"{:.1}\" fill=\"#38bdf8\" font-size=\"9.8\" font-weight=\"700\">Majority Consensus (DNA / AA)</text>\n",
-        cons_row_y + 22.0
+        "  <text x=\"18\" y=\"{:.1}\" fill=\"#38bdf8\" font-size=\"9.8\" font-weight=\"700\">{}</text>\n",
+        cons_row_y + 22.0,
+        cons_label
     ));
     for d_idx in 0..display_cols {
         let col_idx = if cfg.mode == ViewAlphabetMode::AminoAcidCompact {
@@ -2318,6 +2324,24 @@ pub fn render_alignment_snapshot_svg(ws: &AlignmentWorkspace, cfg: &SnapshotConf
                     x_center,
                     cons_row_y + 22.0,
                     st.consensus_aa as char
+                ));
+            } else if cfg.mode == ViewAlphabetMode::Nucleotide {
+                let ry_ch = match st.consensus_dna.to_ascii_uppercase() {
+                    b'A' | b'G' => 'R',
+                    b'C' | b'T' => 'Y',
+                    _ => '-',
+                };
+                svg.push_str(&format!(
+                    "  <text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" fill=\"#38bdf8\" font-size=\"9\" font-weight=\"700\">{}</text>\n",
+                    x_center,
+                    cons_row_y + 15.0,
+                    st.consensus_dna as char
+                ));
+                svg.push_str(&format!(
+                    "  <text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" fill=\"#fbbf24\" font-size=\"8.8\" font-weight=\"700\">{}</text>\n",
+                    x_center,
+                    cons_row_y + 29.0,
+                    ry_ch
                 ));
             } else {
                 svg.push_str(&format!(
@@ -3847,10 +3871,15 @@ impl AlignmentViewerState {
             1,
             Some(label_col_w - 12),
         );
+        let row2_label = if self.mode == ViewAlphabetMode::Nucleotide {
+            "STEM / RY CONSENSUS"
+        } else {
+            "TRANSLATED CONSENSUS (AA)"
+        };
         fb.draw_text(
             main_x0 + 8,
             cons_y + 19,
-            "TRANSLATED CONSENSUS (AA)",
+            row2_label,
             (251, 191, 36),
             1,
             Some(label_col_w - 12),
@@ -3872,7 +3901,20 @@ impl AlignmentViewerState {
                         (56, 189, 248),
                         1,
                     );
-                    if self.mode == ViewAlphabetMode::AminoAcidCompact
+                    if self.mode == ViewAlphabetMode::Nucleotide {
+                        let ry_ch = match st.consensus_dna.to_ascii_uppercase() {
+                            b'A' | b'G' => 'R',
+                            b'C' | b'T' => 'Y',
+                            _ => '-',
+                        };
+                        fb.draw_char(
+                            cx + (col_px - 5) / 2,
+                            cons_y + 19,
+                            ry_ch,
+                            (251, 191, 36),
+                            1,
+                        );
+                    } else if self.mode == ViewAlphabetMode::AminoAcidCompact
                         || (col_idx.saturating_sub(self.reading_frame.saturating_sub(1) % 3)) % 3 == 1
                     {
                         fb.draw_char(
@@ -3901,29 +3943,48 @@ impl AlignmentViewerState {
                 self.workspace.column_stats.get(col0),
             ) {
                 let base = seq.aligned_dna.get(col0).copied().unwrap_or(b'-');
-                let (_, aa, codon) = self.workspace.codon_and_aa_at(
-                    h_row,
-                    col0,
-                    self.genetic_code,
-                    self.reading_frame,
-                );
-                let (aa_name, aa_chem, _) = amino_acid_full_name_and_chemistry(aa);
-                format!(
-                    "Col {}/{} | Taxon: {} | Base: {} | Codon: {}{}{} -> {} ({}, {}) | Id: {:.0}% | H={:.2}b | dN/dS={:.2}",
-                    h_col1,
-                    self.workspace.alignment_length,
-                    seq.taxon,
-                    base as char,
-                    codon[0] as char,
-                    codon[1] as char,
-                    codon[2] as char,
-                    aa as char,
-                    aa_name,
-                    aa_chem,
-                    st.conservation_fraction * 100.0,
-                    st.shannon_entropy_bits,
-                    st.codon_omega_estimate
-                )
+                if self.mode == ViewAlphabetMode::Nucleotide {
+                    let base_class = match base.to_ascii_uppercase() {
+                        b'A' | b'G' => "Purine",
+                        b'C' | b'T' => "Pyrimidine",
+                        _ => "Indel",
+                    };
+                    format!(
+                        "Col {}/{} | Taxon: {} | Base: {} ({}) | Id: {:.0}% | Gap: {:.0}% | H={:.2}b",
+                        h_col1,
+                        self.workspace.alignment_length,
+                        seq.taxon,
+                        base as char,
+                        base_class,
+                        st.conservation_fraction * 100.0,
+                        st.gap_fraction * 100.0,
+                        st.shannon_entropy_bits
+                    )
+                } else {
+                    let (_, aa, codon) = self.workspace.codon_and_aa_at(
+                        h_row,
+                        col0,
+                        self.genetic_code,
+                        self.reading_frame,
+                    );
+                    let (aa_name, aa_chem, _) = amino_acid_full_name_and_chemistry(aa);
+                    format!(
+                        "Col {}/{} | Taxon: {} | Base: {} | Codon: {}{}{} -> {} ({}, {}) | Id: {:.0}% | H={:.2}b | dN/dS={:.2}",
+                        h_col1,
+                        self.workspace.alignment_length,
+                        seq.taxon,
+                        base as char,
+                        codon[0] as char,
+                        codon[1] as char,
+                        codon[2] as char,
+                        aa as char,
+                        aa_name,
+                        aa_chem,
+                        st.conservation_fraction * 100.0,
+                        st.shannon_entropy_bits,
+                        st.codon_omega_estimate
+                    )
+                }
             } else {
                 self.status_message.clone()
             }

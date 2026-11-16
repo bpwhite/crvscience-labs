@@ -40,13 +40,14 @@ use crate::supervisor_acanthochitonidae::{
 use crate::supervisor_manuscript::{extract_terminal_branch_map, html_esc};
 use crate::supervisor_study::{
     align_and_trim_rrna_core, append_zero_star_dump_entry, build_cyp_1tqn_pdb_structure,
-    build_raw0_control, compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
+    compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
+    evaluate_population_cohort_4regimes, export_trimmed_supp_s2_rdna_fasta,
     extract_homologous_mito_locus_from_genome, extract_longest_sense_orf, gc_percent,
     modeltest_name_to_phylo_run_model, parse_locality_and_host, phase_circular_mitogenome,
-    recode_codon12, recode_ry3, revcomp_dna, sha256_hex12, translate_mito_table5_orf,
-    translate_sense_codons, DetailedFunctionalFamily, DetailedPopsetEpoch, DetailedPopsetSkyline,
-    DiscoveredEntrezSummary, MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord,
-    MultiCompartmentStudyReport,
+    recode_codon12, recode_ry3, revcomp_dna, sanitize_coding_dna_preserve_frame, sha256_hex12,
+    translate_mito_table5_orf, translate_sense_codons, DetailedFunctionalFamily,
+    DetailedPopsetEpoch, DetailedPopsetSkyline, DiscoveredEntrezSummary,
+    MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord, MultiCompartmentStudyReport,
 };
 use crate::timetree_calibration::{
     solve_native_lsd2_chronogram, TimeTreeCohortSpec, TimeTreeNodeSpec,
@@ -856,30 +857,19 @@ pub fn execute_china_aus_pests_supervisor_study(
         tip_family_map.insert(safe_id.clone(), family.clone());
         slot_label_map.insert(tip_code.clone(), format!("{} {}", tip_code, sp_name));
 
-        // Prefer dedicated COI slot when OTU came from seqnet; else use clean Table-5 barcode ORF when <= 2.4 kb or extract orthologous COX1 from mitogenomes
+        // Prefer dedicated COI slot when OTU came from seqnet; preserve frame on IUPAC bases and
+        // check homology against seed_cox1_aa (never blind antisense ORFs), rescuing any <1,350-bp
+        // partial barcode from cached complete mitogenomes so S3 covers full 5'+3' COX1.
         let coi_src = otu_by_tip[idx]
             .as_ref()
             .and_then(|o| o.locus_slots.get("COI").map(|s| s.sequence_raw.as_str()))
             .unwrap_or(&seq_upper);
-        let mut cox_nt = if coi_src.len() <= 2_400 {
-            let clean_src: String = coi_src
-                .bytes()
-                .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
-                .map(|b| b.to_ascii_uppercase() as char)
-                .collect();
-            let (_, clean_orf_nt, clean_aa) = translate_mito_table5_orf(&clean_src);
-            if clean_aa.len() >= 90 {
-                clean_orf_nt
-            } else {
-                extract_orthologous_cox1_nt(coi_src, &seed_cox1_aa).0
-            }
-        } else {
-            extract_orthologous_cox1_nt(coi_src, &seed_cox1_aa).0
-        };
-        if cox_nt.len() < 550 {
+        let sanitized_coi = sanitize_coding_dna_preserve_frame(coi_src);
+        let mut cox_nt = extract_orthologous_cox1_nt(&sanitized_coi, &seed_cox1_aa).0;
+        if cox_nt.len() < 1_350 {
             if let Some(mito_seq) = mito_by_sp_low.get(&norm_sp(sp_name)) {
                 let ext_cox = extract_orthologous_cox1_nt(mito_seq, &seed_cox1_aa).0;
-                if ext_cox.len() > cox_nt.len() {
+                if ext_cox.len() > cox_nt.len() + 60 {
                     cox_nt = ext_cox;
                 }
             }
@@ -987,18 +977,18 @@ pub fn execute_china_aus_pests_supervisor_study(
 
     // Discover 12 x N = 36 regional (R1..R6) & multi-locus (L1..L6) cohorts covering China & Australia corridors
     let pop_queries: [(&str, &str, &str, &str, &str, f64, f64, &str, usize, usize); 12] = [
-        ("R1", "Cross-Regional (Fig 4A: COX1 Standardized)", "2019 China -> 2020 Australia Trans-Equatorial Invasion (Spodoptera frugiperda)", "Fall Armyworm (Spodoptera frugiperda)", "mtDNA COX1", 1.0, 0.0205, "\"Spodoptera frugiperda\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND 400:1200[SLEN]", 380, 1250),
-        ("R2", "Cross-Regional (Fig 4A: COX1 Standardized)", "Australia & China Protected-Crop Whitefly Corridors (Bemisia, Trialeurodes, Siphoninus, Aleurothrixus)", "Aleyrodidae Whiteflies (MEAM1 / MED / Greenhouse / Ash / Capsicum)", "mtDNA COX1", 1.0, 0.0218, "(\"Bemisia tabaci\"[Organism] OR \"Trialeurodes vaporariorum\"[Organism] OR \"Siphoninus phillyreae\"[Organism] OR \"Aleurothrixus trachoides\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1200[SLEN]", 380, 1250),
-        ("R3", "Cross-Regional (Fig 4A: COX1 Standardized)", "Australian vs. Asian Horticulture Fruit-Fly Quarantine Zone (B. tryoni, C. capitata, B. dorsalis)", "Tephritidae Fruit Flies (Qfly / Medfly / Oriental FF)", "mtDNA COX1", 1.0, 0.0195, "(\"Bactrocera tryoni\"[Organism] OR \"Ceratitis capitata\"[Organism] OR \"Bactrocera dorsalis\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1200[SLEN]", 380, 1250),
-        ("R4", "Cross-Regional (Fig 4A: COX1 Standardized)", "East Asian Monsoon Rice-Corn-Steppe Pest Corridor (Nilaparvata lugens, Ostrinia furnacalis, Locusta migratoria)", "China Monsoon Pests (Planthopper / Corn Borer / Migratory Locust)", "mtDNA COX1", 1.0, 0.0198, "(\"Nilaparvata lugens\"[Organism] OR \"Ostrinia furnacalis\"[Organism] OR \"Locusta migratoria\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1200[SLEN]", 380, 1250),
-        ("R5", "Cross-Regional (Fig 4A: COX1 Standardized)", "Indo-Australian & Chinese Cotton/Brassica Corridor (Helicoverpa armigera/punctigera, Plutella, Pieris)", "Cotton Bollworm, Native Budworm, Diamondback & Cabbage White", "mtDNA COX1", 1.0, 0.0200, "(\"Helicoverpa armigera\"[Organism] OR \"Helicoverpa punctigera\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Plutella australiana\"[Organism] OR \"Pieris rapae\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1200[SLEN]", 380, 1250),
-        ("R6", "Cross-Regional (Fig 4A: COX1 Standardized)", "Western Australia PSHB, Greenhouse Thrips & Tetranychid Mite Biosecurity Guild", "PSHB (Euwallacea), Western Flower Thrips, Two-Spotted Mite & Wheat Aphids", "mtDNA COX1", 1.0, 0.0210, "(\"Euwallacea fornicatus\"[Organism] OR \"Frankliniella occidentalis\"[Organism] OR \"Tetranychus urticae\"[Organism] OR \"Sitobion avenae\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 400:1200[SLEN]", 380, 1250),
-        ("L1", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Indo-Pacific Noctuidae & Plutellidae Agroecosystem (Maternal Haploid 1Ne Baseline)", "Noctuidae / Plutellidae / Crambidae (1Ne)", "mtDNA COX1 (1Ne)", 1.0, 0.0202, "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Plutella\"[Organism] OR \"Ostrinia\"[Organism]) AND (COX1[Title] OR COI[Title]) AND 450:950[SLEN]", 420, 1000),
-        ("L2", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Lepidoptera Crop Pests Nuclear 18S/28S/ITS1 rDNA (Diploid 4Ne E-INS-i)", "Lepidoptera Pests Ribosomal Reservoir", "Ribosomal 18S/28S/ITS1 rDNA (4Ne)", 4.0, 0.0079, "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Plutella\"[Organism] OR \"Ostrinia\"[Organism]) AND (18S[Title] OR 28S[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:1900[SLEN] NOT genome[Title]", 330, 1950),
-        ("L3", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Lepidoptera Pyrethroid & Diamide Resistance Selective Sweep (CYP6 / AChE / VGSC / RyR)", "Lepidoptera Insecticide Resistance Sweep", "Nuclear CYP6 / AChE / VGSC / RyR CDS", 0.24, 0.0102, "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Plutella\"[Organism] OR \"Ostrinia\"[Organism]) AND (\"cytochrome P450\"[Title] OR \"CYP6\"[Title] OR \"acetylcholinesterase\"[Title] OR \"sodium channel\"[Title] OR \"ryanodine\"[Title]) AND 350:3200[SLEN] NOT genome[Title] NOT chromosome[Title]", 330, 3250),
-        ("L4", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Hemiptera-Diptera Horticultural Agroecosystem (Maternal Haploid 1Ne Baseline)", "Whiteflies / Planthoppers / Fruit Flies (1Ne)", "mtDNA COX1 (1Ne)", 1.0, 0.0212, "(\"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Sitobion\"[Organism] OR \"Bactrocera\"[Organism]) AND (COX1[Title] OR COI[Title]) AND 450:950[SLEN]", 420, 1000),
-        ("L5", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Hemiptera-Diptera Nuclear 18S/28S/ITS rDNA (Diploid 4Ne Katoh E-INS-i)", "Whiteflies / Planthoppers / Fruit Flies rDNA", "Ribosomal 18S/28S/ITS rDNA (4Ne)", 4.0, 0.0082, "(\"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Aphididae\"[Organism] OR \"Bactrocera\"[Organism]) AND (18S[Title] OR 28S[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:1900[SLEN] NOT genome[Title]", 330, 1950),
-        ("L6", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Sap-Sucking & Frugivore Resistance Sweep (CYP6CM1 / CYP6ER1 / AChE / nAChR / GST)", "Hemiptera-Diptera Insecticide Resistance Sweep", "Nuclear CYP6 / AChE / GST / nAChR CDS", 0.26, 0.0104, "(\"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Myzus\"[Organism] OR \"Bactrocera\"[Organism]) AND (\"cytochrome P450\"[Title] OR \"CYP6\"[Title] OR \"acetylcholinesterase\"[Title] OR \"glutathione S-transferase\"[Title] OR \"nicotinic\"[Title]) AND 350:3200[SLEN] NOT genome[Title] NOT chromosome[Title]", 330, 3250),
+        ("R1", "Cross-Regional (Fig 4A: COX1 Standardized)", "2019 China -> 2020 Australia Trans-Equatorial Invasion (Spodoptera frugiperda)", "Fall Armyworm (Spodoptera frugiperda)", "mtDNA COX1", 1.0, 0.0205, "\"Spodoptera frugiperda\"[Organism] AND (COX1[Title] OR COI[Title] OR \"subunit I\"[Title] OR \"subunit 1\"[Title]) AND mitochondrion[Filter] AND 550:950[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT UNVERIFIED[Title]", 520, 980),
+        ("R2", "Cross-Regional (Fig 4A: COX1 Standardized)", "Australia & China Protected-Crop Whitefly Corridors (Bemisia, Trialeurodes, Siphoninus, Aleurothrixus)", "Aleyrodidae Whiteflies (MEAM1 / MED / Greenhouse / Ash / Capsicum)", "mtDNA COX1", 1.0, 0.0218, "(\"Bemisia tabaci\"[Organism] OR \"Trialeurodes vaporariorum\"[Organism] OR \"Siphoninus phillyreae\"[Organism] OR \"Aleurothrixus trachoides\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN]", 380, 1250),
+        ("R3", "Cross-Regional (Fig 4A: COX1 Standardized)", "Australian vs. Asian Horticulture Fruit-Fly Quarantine Zone (B. tryoni, C. capitata, B. dorsalis)", "Tephritidae Fruit Flies (Qfly / Medfly / Oriental FF)", "mtDNA COX1", 1.0, 0.0195, "(\"Bactrocera tryoni\"[Organism] OR \"Ceratitis capitata\"[Organism] OR \"Bactrocera dorsalis\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN]", 380, 1250),
+        ("R4", "Cross-Regional (Fig 4A: COX1 Standardized)", "East Asian Monsoon Rice-Corn-Steppe Pest Corridor (Nilaparvata lugens, Ostrinia furnacalis, Locusta migratoria)", "China Monsoon Pests (Planthopper / Corn Borer / Migratory Locust)", "mtDNA COX1", 1.0, 0.0198, "(\"Nilaparvata lugens\"[Organism] OR \"Ostrinia furnacalis\"[Organism] OR \"Locusta migratoria\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"subunit I\"[Title] OR \"subunit 1\"[Title]) AND mitochondrion[Filter] AND 550:900[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT UNVERIFIED[Title]", 520, 930),
+        ("R5", "Cross-Regional (Fig 4A: COX1 Standardized)", "Indo-Australian & Chinese Cotton/Brassica Corridor (Helicoverpa armigera/punctigera, Plutella, Pieris)", "Cotton Bollworm, Native Budworm, Diamondback & Cabbage White", "mtDNA COX1", 1.0, 0.0200, "(\"Helicoverpa armigera\"[Organism] OR \"Helicoverpa punctigera\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Plutella australiana\"[Organism] OR \"Pieris rapae\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN]", 380, 1250),
+        ("R6", "Cross-Regional (Fig 4A: COX1 Standardized)", "Western Australia PSHB, Greenhouse Thrips & Tetranychid Mite Biosecurity Guild", "PSHB (Euwallacea), Western Flower Thrips, Two-Spotted Mite & Wheat Aphids", "mtDNA COX1", 1.0, 0.0210, "(\"Euwallacea fornicatus\"[Organism] OR \"Frankliniella occidentalis\"[Organism] OR \"Tetranychus urticae\"[Organism] OR \"Sitobion avenae\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN]", 380, 1250),
+        ("L1", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Indo-Pacific Noctuidae & Plutellidae Agroecosystem (Maternal Haploid 1Ne Baseline)", "Noctuidae / Plutellidae / Crambidae (1Ne)", "mtDNA COX1 (1Ne)", 1.0, 0.0202, "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Plutella\"[Organism] OR \"Ostrinia\"[Organism]) AND (COX1[Title] OR COI[Title]) AND mitochondrion[Filter] AND 450:950[SLEN]", 420, 1000),
+        ("L2", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Noctuidae Crop Pests Nuclear 28S D1-D2 rDNA (Diploid 4Ne Katoh E-INS-i)", "Noctuidae Pests 28S rDNA Reservoir", "Nuclear 28S rDNA (4Ne)", 4.0, 0.0079, "(\"Spodoptera\"[Organism] OR \"Mythimna\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Agrotis\"[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 720:900[SLEN] NOT \"internal transcribed spacer\"[Title] NOT \"5.8S\"[Title] NOT \"18S\"[Title] NOT mitochondrion[Filter] NOT mitochondrial[Title] NOT 16S[Title] NOT PREDICTED[Title] NOT protein[Title] NOT genome[Title] NOT UNVERIFIED[Title]", 700, 920),
+        ("L3", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Target-Site Acetylcholinesterase (ace-1) Coding Sweep", "Pest Target-Site ace-1 Sweep", "Nuclear ace-1 CDS", 0.24, 0.0102, "(\"Plutella\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Spodoptera\"[Organism] OR \"Bemisia\"[Organism]) AND \"acetylcholinesterase\"[Title] AND 900:2800[SLEN] NOT PREDICTED[Title] NOT genome[Title]", 880, 2850),
+        ("L4", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Hemiptera-Diptera Horticultural Agroecosystem (Maternal Haploid 1Ne Baseline)", "Whiteflies / Planthoppers / Fruit Flies (1Ne)", "mtDNA COX1 (1Ne)", 1.0, 0.0212, "(\"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Sitobion\"[Organism] OR \"Bactrocera\"[Organism]) AND (COX1[Title] OR COI[Title]) AND mitochondrion[Filter] AND 450:950[SLEN]", 420, 1000),
+        ("L5", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Bemisia tabaci Whitefly Complex Nuclear ITS1 rDNA (Diploid 4Ne Katoh E-INS-i)", "Whiteflies ITS1 rDNA Reservoir", "Nuclear ITS1 rDNA (4Ne)", 4.0, 0.0082, "\"Bemisia tabaci\"[Organism] AND \"internal transcribed spacer 1\"[Title] AND 420:950[SLEN] NOT PREDICTED[Title] NOT protein[Title] NOT genome[Title]", 400, 980),
+        ("L6", "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)", "Hemiptera Sap-Feeder Neonicotinoid Resistance CYP6 Coding Sweep (CYP6CM1 / CYP6ER1 / CYP6CY3)", "Hemiptera Clan-3 CYP6 Resistance Sweep", "Nuclear Clan-3 CYP6 CDS", 0.26, 0.0104, "(\"Bemisia tabaci\"[Organism] OR \"Nilaparvata lugens\"[Organism] OR \"Myzus persicae\"[Organism]) AND (\"CYP6CM1\"[Title] OR \"CYP6ER1\"[Title] OR \"CYP6CY3\"[Title]) AND 450:2200[SLEN] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title]", 430, 2250),
     ];
 
     let mut raw_cohorts: Vec<Vec<(DiscoveredEntrezSummary, String)>> = Vec::with_capacity(12);
@@ -1545,41 +1535,13 @@ pub fn execute_china_aus_pests_supervisor_study(
         aligned_nuc_families.push((nt_pairs, meta_f, f_ms));
     }
 
-    // Export Supp S2 (L2 Lepidoptera 18S/28S/ITS1 E-INS-i alignment) for Supplemental Figure S2
+    // Export Supp S2 (L2 Lepidoptera Nuclear ITS1-5.8S E-INS-i Core) for Supplemental Figure S2
     if let Some(l2_items) = raw_cohorts.get(7) {
-        let rna_recs: Vec<FastaRecord> = l2_items
-            .iter()
-            .take(26)
-            .map(|(sm, seq)| {
-                let clean: String = seq.bytes().filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T')).map(|b| b.to_ascii_uppercase() as char).collect();
-                FastaRecord {
-                    id: format!("{}_{}", sm.accession, sm.organism.replace(' ', "_")),
-                    accession: sm.accession.clone(),
-                    taxon: sm.organism.clone(),
-                    common_name: String::new(),
-                    family: "Lepidoptera".to_string(),
-                    gene: "rDNA".to_string(),
-                    description: sm.title.clone(),
-                    sequence: clean,
-                    cached_from_disk: true,
-                }
-            })
-            .collect();
-        if rna_recs.len() >= 10 {
-            let rna_cfg = MafftNativeConfig {
-                strategy: MafftNativeStrategy::EInsI,
-                max_iterations: 2,
-                adjust_direction: true,
-                use_transitive_consistency: false,
-                use_secondary_structure_weights: false,
-            };
-            let (_, aln_l2, _) = align_sequences_mafft_native_with_config(&rna_recs, &rna_cfg);
-            let mut s2 = String::with_capacity(24_000);
-            for a in aln_l2 {
-                s2.push_str(&format!(">{}\n{}\n", a.id, a.aligned_seq));
-            }
-            let _ = fs::write(run_dir.join("alignments/supp_s2_its1_5_8s_einsi.fasta"), s2);
-        }
+        export_trimmed_supp_s2_rdna_fasta(
+            l2_items,
+            "Lepidoptera",
+            &run_dir.join("alignments/supp_s2_its1_5_8s_einsi.fasta"),
+        );
     }
 
     // Build Centerpiece Stage 3C Haplotype Cohorts (Fig 7A Lepidoptera CN/AU + Fig 7B Hemiptera/Diptera/PSHB)
@@ -2262,22 +2224,23 @@ pub fn execute_china_aus_pests_supervisor_study(
         ("Epoch 5: Colonial Maritime Trade", 1.2, 0.08, "1.2-0.08 ka (Pre-1945)", "European-Australian ballast & nursery introductions"),
         ("Epoch 6: Synthetic Pesticide & Air Era", 0.08, 0.0, "1945-2026 Modern", "Pyrethroid/neonicotinoid sweeps & 2019 CN/2020 AU incursions"),
     ];
-    let b_coh = (b_replicates / 10).clamp(40, 80);
+    let b_coh = (b_replicates / 5).clamp(80, 120);
 
-    let cohort_results: Vec<(SupervisedSkylineCohort, DetailedPopsetSkyline, Option<[f64; 4]>)> = (0..pop_queries.len())
+    let cohort_results: Vec<(SupervisedSkylineCohort, DetailedPopsetSkyline, [f64; 4])> = (0..pop_queries.len())
         .into_par_iter()
         .map(|ci| {
             let (ccode, ax_lbl, reg_lbl, clade_lin, loc_lbl, ploidy_sc, mu_r, _, _, _) = pop_queries[ci];
             let pt0 = Instant::now();
+            let is_coding = !matches!(ccode, "L2" | "L5");
             let raw_items = &raw_cohorts[ci];
             let mut recs = Vec::with_capacity(raw_items.len());
             let mut iso_metas = Vec::with_capacity(raw_items.len());
             for (ii, (sm, seq)) in raw_items.iter().enumerate() {
-                let clean_nt: String = seq.bytes().filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T')).map(|b| b.to_ascii_uppercase() as char).collect();
-                let chosen_seq = if ploidy_sc == 1.0 {
+                let clean_nt = sanitize_coding_dna_preserve_frame(seq);
+                let chosen_seq = if is_coding && ploidy_sc == 1.0 {
                     let (_, orf_nt, _) = translate_mito_table5_orf(&clean_nt);
                     if orf_nt.len() >= 300 { orf_nt } else { clean_nt }
-                } else if ploidy_sc < 1.0 {
+                } else if is_coding && ploidy_sc < 1.0 {
                     let orf_nt = extract_longest_sense_orf(&clean_nt, clean_nt.len().max(2400));
                     if orf_nt.len() >= 240 { orf_nt } else { clean_nt }
                 } else {
@@ -2308,31 +2271,35 @@ pub fn execute_china_aus_pests_supervisor_study(
                 });
             }
             let raw_bp_c: usize = raw_items.iter().map(|(_, s)| s.len()).sum();
-            let cohort_cfg = MafftNativeConfig {
-                strategy: if loc_lbl.contains("ITS") || loc_lbl.contains("18S") { MafftNativeStrategy::EInsI } else { MafftNativeStrategy::FftNsI },
-                max_iterations: 2,
-                adjust_direction: true,
-                use_transitive_consistency: false,
-                use_secondary_structure_weights: false,
-            };
-            let (_, aln_p, _) = align_sequences_mafft_native_with_config(&recs, &cohort_cfg);
+            let coh_tel = evaluate_population_cohort_4regimes(
+                ccode,
+                ploidy_sc,
+                is_coding,
+                &recs,
+                raw_items,
+                b_coh,
+                20262200u64 + (ci as u64) * 17,
+            );
             let p_msa_ms = pt0.elapsed().as_millis().max(1);
-            let p_cols = aln_p.first().map(|a| a.aligned_seq.len()).unwrap_or(500);
-            let p_lbls: Vec<String> = aln_p.iter().map(|a| a.id.clone()).collect();
-            let p_seqs: Vec<String> = aln_p.iter().map(|a| a.aligned_seq.clone()).collect();
-            let p_ry3_strs: Vec<String> = p_seqs.iter().map(|s| recode_ry3(s)).collect();
-            let p_c12_strs: Vec<String> = p_seqs.iter().map(|s| recode_codon12(s)).collect();
-            let p_rw0_strs: Vec<String> = p_seqs.iter().enumerate().map(|(k, s)| build_raw0_control(s, k)).collect();
+            let p_cols = coh_tel.core_cols;
+            let p_lbls = coh_tel.core_aligned_labels.clone();
+            let p_seqs = coh_tel.core_aligned_seqs.clone();
             let p_vecs: Vec<Vec<u8>> = p_seqs.iter().map(|s| s.as_bytes().to_vec()).collect();
-            let p_ry3_vecs: Vec<Vec<u8>> = p_ry3_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
-            let p_c12_vecs: Vec<Vec<u8>> = p_c12_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
-            let p_rw0_vecs: Vec<Vec<u8>> = p_rw0_strs.iter().map(|s| s.as_bytes().to_vec()).collect();
             let p_map: HashMap<String, Vec<u8>> = p_lbls.iter().cloned().zip(p_vecs.iter().cloned()).collect();
 
-            if ploidy_sc == 1.0 {
+            {
                 let trimmed_coh: Vec<(String, String, String, String)> = recs
                     .iter()
-                    .map(|r| (r.accession.clone(), r.taxon.clone(), r.taxon.split_whitespace().take(2).collect::<Vec<_>>().join(" "), r.sequence.clone()))
+                    .enumerate()
+                    .map(|(i, r)| {
+                        let sub = if ploidy_sc == 1.0 {
+                            r.taxon.split_whitespace().take(2).collect::<Vec<_>>().join(" ")
+                        } else {
+                            format!("{} {}", ccode, r.taxon.split_whitespace().next().unwrap_or("Pest"))
+                        };
+                        let sq = p_seqs.get(i).cloned().unwrap_or_else(|| r.sequence.clone());
+                        (r.accession.clone(), r.taxon.clone(), sub, sq.replace('-', ""))
+                    })
                     .collect();
                 let hap_clean = prepare_clean_haplotype_records(&trimmed_coh, 0.80);
                 if hap_clean.len() >= 4 {
@@ -2342,25 +2309,16 @@ pub fn execute_china_aus_pests_supervisor_study(
 
             let (theta_w, pi_val, taj_d) = compute_popgen_summary_stats(&p_vecs);
             let (_, p_pars, p_pats) = compress_alignment_patterns(&p_lbls, &p_map);
-            let (_, pr_ry3, _) = compute_rcfv_4state_and_ry(&p_ry3_vecs);
-            let (pr_c12_4, pr_c12_ry, _) = compute_rcfv_4state_and_ry(&p_c12_vecs);
-            let (pr_unr, _, p_pi) = compute_rcfv_4state_and_ry(&p_vecs);
-            let (pr_rw0, _, _) = compute_rcfv_4state_and_ry(&p_rw0_vecs);
-
-            let (p_ml, p_boot_ry3_opt) = match infer_native_ml_tree_with_bootstrap(&p_ry3_strs, &p_lbls, PhyloRunModel::HkyInvGamma4, b_coh, 20262200u64 + ci as u64) {
-                Ok((m, b)) => (m, Some(b.mean_split_support_pct)),
-                Err(_) => (infer_native_ml_gene_tree(&p_seqs, &p_lbls, PhyloRunModel::HkyInvGamma4), None),
-            };
-            let boot_quad = p_boot_ry3_opt.map(|br_ry3| {
-                let br_c12 = infer_native_ml_tree_with_bootstrap(&p_c12_strs, &p_lbls, PhyloRunModel::Tn93InvGamma4, b_coh, 20262300u64 + ci as u64).map(|(_, b)| b.mean_split_support_pct).unwrap_or(br_ry3);
-                let br_unr = infer_native_ml_tree_with_bootstrap(&p_seqs, &p_lbls, PhyloRunModel::K80Gamma4, b_coh, 20262400u64 + ci as u64).map(|(_, b)| b.mean_split_support_pct).unwrap_or(br_ry3);
-                let br_rw0 = infer_native_ml_tree_with_bootstrap(&p_rw0_strs, &p_lbls, PhyloRunModel::JcUniform, b_coh, 20262500u64 + ci as u64).map(|(_, b)| b.mean_split_support_pct).unwrap_or(0.0);
-                [br_ry3, br_c12, br_unr, br_rw0]
-            });
+            let (_, _, p_pi) = compute_rcfv_4state_and_ry(&p_vecs);
+            eprintln!(
+                "[bio-suite-supervisor] Stage 5/5 Cohort {} ({} [{} | rep={} ry3={}]) core L={} bp -> Boot={:.1}% / {:.1}% / {:.1}% / {:.1}% ({} ms)",
+                ccode, loc_lbl, coh_tel.winning_model_code, coh_tel.rep_count, coh_tel.used_ry3, p_cols,
+                coh_tel.boot_quad[0], coh_tel.boot_quad[1], coh_tel.boot_quad[2], coh_tel.boot_quad[3], p_msa_ms
+            );
 
             let mut p_idx = HashMap::new();
             for (i, l) in p_lbls.iter().enumerate() { p_idx.insert(l.clone(), i); }
-            let p_root = parse_phylo_tree(&p_ml.newick_tree, false, &HashMap::new()).unwrap_or(ParsedPhyloNode {
+            let p_root = parse_phylo_tree(&coh_tel.primary_ml_newick, false, &HashMap::new()).unwrap_or(ParsedPhyloNode {
                 name: "R".to_string(), branch_length: 0.0, height_ka: 0.0, height_mean_ka: 0.0, height_hpd_lo_ka: 0.0, height_hpd_hi_ka: 0.0, posterior: 0.0, tips: Vec::new(), children: Vec::new(),
             });
             let mut p_flat = Vec::new();
@@ -2383,6 +2341,7 @@ pub fn execute_china_aus_pests_supervisor_study(
             let p_post_mean_lnl = round4(p_post.iter().sum::<f64>() / (p_post.len().max(1) as f64));
             let p_var = p_post.iter().map(|&x| (x - p_post_mean_lnl).powi(2)).sum::<f64>() / (p_post.len().max(1) as f64);
             let p_marg_lnl = round4(p_post_mean_lnl - 0.5 * p_var.max(1.25));
+            let mcmc_adj = p_marg_lnl - coh_tel.raw_lnl_quad[0];
             let (p_ess, p_rhat) = compute_ess_and_rhat(&p_post);
 
             let mut coal_d = Vec::new();
@@ -2425,12 +2384,12 @@ pub fn execute_china_aus_pests_supervisor_study(
                 cohort_code: ccode.to_string(), axis_group: ax_lbl.to_string(), cohort_source_id: src_span, species: clade_lin.split('(').next().unwrap_or(clade_lin).trim().to_string(),
                 clade_lineage: clade_lin.to_string(), region_label: reg_lbl.to_string(), locus_name: loc_lbl.to_string(), ploidy_scalar: ploidy_sc, evolutionary_context: format!("{} - {}", clade_lin, reg_lbl),
                 num_isolates: 36, raw_bp: raw_bp_c, aligned_cols_bp: p_cols, distinct_patterns_ry3: p_pats.len(), parsimony_informative_ry3: p_pars,
-                rcfv_ry3: round4(pr_ry3.max(0.0019)), rcfv_codon12: round4((0.5 * (pr_c12_4 + pr_c12_ry)).max(0.0031)), rcfv_unrecoded: round4(pr_unr.max(0.0088)), rcfv_raw0: round4(pr_rw0.max(0.0252)),
+                rcfv_ry3: coh_tel.rcfv_quad[0], rcfv_codon12: coh_tel.rcfv_quad[1], rcfv_unrecoded: coh_tel.rcfv_quad[2], rcfv_raw0: coh_tel.rcfv_quad[3],
                 tajima_d: taj_d, watterson_theta: theta_w, nucleotide_diversity_pi: pi_val, runie_ry3_marginal_ln_l: p_marg_lnl, runie_ry3_post_mean_ln_l: p_post_mean_lnl,
-                codon12_ln_l: round4(p_marg_lnl - 34.2), unrec4_ln_l: round4(p_marg_lnl - 168.5), raw0_ln_l: round4(p_marg_lnl - 592.0),
+                codon12_ln_l: round4(coh_tel.raw_lnl_quad[1] + mcmc_adj), unrec4_ln_l: round4(coh_tel.raw_lnl_quad[2] + mcmc_adj), raw0_ln_l: round4(coh_tel.raw_lnl_quad[3] + mcmc_adj),
                 ess: p_ess, rhat: p_rhat, msa_cpu_ms: p_msa_ms, tree_mcmc_cpu_ms: ptot_ms.saturating_sub(p_msa_ms), total_cpu_ms: ptot_ms, epochs, isolates: iso_metas,
             };
-            (gui_c, pop_c, boot_quad)
+            (gui_c, pop_c, coh_tel.boot_quad)
         })
         .collect();
 
@@ -2438,15 +2397,13 @@ pub fn execute_china_aus_pests_supervisor_study(
     let mut gui_skylines = Vec::with_capacity(12);
     let mut coh_boot_sums = [0.0f64; 4];
     let mut coh_boot_cnt = 0usize;
-    for (g_c, p_c, b_opt) in cohort_results {
+    for (g_c, p_c, bq) in cohort_results {
         gui_skylines.push(g_c);
         popset_skylines.push(p_c);
-        if let Some(bq) = b_opt {
-            for k in 0..4 {
-                coh_boot_sums[k] += bq[k];
-            }
-            coh_boot_cnt += 1;
+        for k in 0..4 {
+            coh_boot_sums[k] += bq[k];
         }
+        coh_boot_cnt += 1;
     }
     let stage_popsets_mcmc_ms = t_pop.elapsed().as_millis().max(1);
     if coh_boot_cnt > 0 {

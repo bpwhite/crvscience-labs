@@ -1,0 +1,201 @@
+{
+  "benchmark_id": "china-australia-pests-preprint29-design-v1",
+  "title": "China and Australia Arthropod Agricultural Pests 64-species x 16-locus design (PREPRINT-29 dimensions) vs. published arthropod phylogenomics",
+  "fixed_before_first_run": "2026-11-15",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at the dataset dimensions of PREPRINT-29 (china-australia-arthropod-pests-preprint): 64 species across 12 Arthropod families covering all major Australian and Chinese agricultural crop pests and 16 loci (12 mitochondrial PCGs + rrnL_16S + rrnS_12S + nuclear SSU_18S + LSU_28S). Final trees are scored against deep arthropod and holometabolan clades reported in the peer-reviewed studies below. A clade is testable when the run samples >= 2 tips inside and >= 2 outside it, and recovered when the unrooted tree contains the corresponding bipartition.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-29",
+    "species": 64,
+    "loci": 16,
+    "taxon_design": "4 Chelicerata outgroups (4 Tetranychidae spider mites), 6 Polyneoptera migratory/plague locusts (6 Acrididae), 18 Paraneoptera sap/rasping-sucking pests (3 Thripidae thrips, 6 Aleyrodidae whiteflies, 5 Aphididae wheat/crop aphids, 4 Delphacidae planthoppers), 7 Coleoptera ambrosia & grain weevils (7 Curculionidae incl. Euwallacea fornicatus PSHB), 10 Diptera quarantine fruit flies (10 Tephritidae incl. Bactrocera tryoni, Ceratitis capitata, B. dorsalis), 5 Lepidoptera Yponomeutoidea diamondback/crop moths (2 Plutellidae, 1 Praydidae, 1 Yponomeutidae, 1 Lyonetiidae), and 14 Lepidoptera Obtectomera defoliators & borers (2 Pieridae, 4 Crambidae, 8 Noctuidae incl. Spodoptera frugiperda, Helicoverpa armigera, H. punctigera).",
+    "taxonomy_note": "Sectors [A]-[G] remain strictly monophyletic under the arthropod backbone ([A] Chelicerata Tetranychidae, [B] Acrididae, [C] Paraneoptera, [D] Coleoptera Curculionidae, [E] Diptera Tephritidae, [F] Yponomeutoidea, [G] Obtectomera Pieridae+Crambidae+Noctuidae). Priority Australia/China focal pest binomials are selected first from seqnet assembled OTUs and Entrez queries.",
+    "locus_interpretation": "14 mitochondrial loci (12 insect/acari PCGs + rrnL_16S + rrnS_12S) + nuclear SSU_18S + LSU_28S = 16 orthologous phylogenomic loci. Xenobiotic detoxification CYP6 P450s, neurotoxic VGSC/AChE targets, swarming CSP/OBP proteins, and diapause HSP/GST chaperones are analyzed separately in Stage 4 codon-selection sweeps."
+  },
+  "sources": [
+    {
+      "key": "Misof2014",
+      "citation": "Misof, B., et al. (2014). Phylogenomics resolves the timing and pattern of insect evolution. Science, 346(6210), 763-767.",
+      "doi": "10.1126/science.1257570"
+    },
+    {
+      "key": "RotaStabelli2013",
+      "citation": "Rota-Stabelli, O., Daley, A. C., & Pisani, D. (2013). Molecular Timetrees Reveal a Cambrian Colonization of Land and a New Scenario for Ecdysozoan Evolution. Current Biology, 23(5), 392-398.",
+      "doi": "10.1016/j.cub.2013.01.026"
+    },
+    {
+      "key": "Johnson2018",
+      "citation": "Johnson, K. P., et al. (2018). Phylogenomics and the evolution of hemipteroid insects. Proceedings of the National Academy of Sciences, 115(50), 12775-12780.",
+      "doi": "10.1073/pnas.1815820115"
+    },
+    {
+      "key": "McKenna2019",
+      "citation": "McKenna, D. D., et al. (2019). The evolution and genomic basis of beetle diversity. Proceedings of the National Academy of Sciences, 116(49), 24729-24737.",
+      "doi": "10.1073/pnas.1909655116"
+    },
+    {
+      "key": "Wiegmann2011",
+      "citation": "Wiegmann, B. M., et al. (2011). Episodic radiations in the fly tree of life. Proceedings of the National Academy of Sciences, 108(14), 5690-5695.",
+      "doi": "10.1073/pnas.1012675108"
+    },
+    {
+      "key": "Kawahara2019",
+      "citation": "Kawahara, A. Y., et al. (2019). Phylogenomics reveals the evolutionary timing and pattern of butterflies and moths. Proceedings of the National Academy of Sciences, 116(45), 22657-22663.",
+      "doi": "10.1073/pnas.1907847116"
+    },
+    {
+      "key": "Song2015",
+      "citation": "Song, H., et al. (2015). 300 million years of diversification: elucidating the patterns of orthopteran evolution based on comprehensive taxon and gene sampling. Cladistics, 31(6), 621-651.",
+      "doi": "10.1111/cla.12116"
+    }
+  ],
+  "taxon_group": "Arthropoda",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 65,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Chelicerata_Tetranychidae": ["Tetranychidae"],
+    "Polyneoptera_Acrididae": ["Acrididae"],
+    "Paraneoptera_Crop_Pests": ["Thripidae", "Aleyrodidae", "Aphididae", "Delphacidae"],
+    "Coleoptera_Curculionidae_Ambrosia": ["Curculionidae"],
+    "Diptera_Tephritidae_FruitFlies": ["Tephritidae"],
+    "Lepidoptera_Yponomeutoidea": ["Plutellidae", "Praydidae", "Yponomeutidae", "Lyonetiidae"],
+    "Lepidoptera_Obtectomera_Pests": ["Pieridae", "Crambidae", "Noctuidae"]
+  },
+  "species_per_family": {
+    "Tetranychidae": 4,
+    "Acrididae": 6,
+    "Thripidae": 3,
+    "Aleyrodidae": 6,
+    "Aphididae": 5,
+    "Delphacidae": 4,
+    "Curculionidae": 7,
+    "Tephritidae": 10,
+    "Plutellidae": 2,
+    "Praydidae": 1,
+    "Yponomeutidae": 1,
+    "Lyonetiidae": 1,
+    "Pieridae": 2,
+    "Crambidae": 4,
+    "Noctuidae": 8
+  },
+  "scored_clades": [
+    {
+      "id": "hexapoda_vs_chelicerata",
+      "name": "Hexapoda (Insecta) vs. Chelicerata (Tetranychidae) Root Split",
+      "families": ["Acrididae", "Thripidae", "Aleyrodidae", "Aphididae", "Delphacidae", "Curculionidae", "Tephritidae", "Plutellidae", "Praydidae", "Yponomeutidae", "Lyonetiidae", "Pieridae", "Crambidae", "Noctuidae"],
+      "support": [
+        { "source": "RotaStabelli2013", "statement": "Deep Paleozoic split separating Arachnida/Acari (Tetranychidae) from Pancrustacea/Hexapoda" },
+        { "source": "Misof2014", "statement": "Insecta monophyletic relative to Chelicerata outgroups" }
+      ]
+    },
+    {
+      "id": "eumetabola",
+      "name": "Eumetabola (Paraneoptera + Holometabola vs. Polyneoptera)",
+      "families": ["Thripidae", "Aleyrodidae", "Aphididae", "Delphacidae", "Curculionidae", "Tephritidae", "Plutellidae", "Praydidae", "Yponomeutidae", "Lyonetiidae", "Pieridae", "Crambidae", "Noctuidae"],
+      "support": [
+        { "source": "Misof2014", "statement": "Polyneoptera (Orthoptera Acrididae) sister to Paraneoptera + Holometabola" }
+      ]
+    },
+    {
+      "id": "holometabola",
+      "name": "Holometabola (Coleoptera + Diptera + Lepidoptera)",
+      "families": ["Curculionidae", "Tephritidae", "Plutellidae", "Praydidae", "Yponomeutidae", "Lyonetiidae", "Pieridae", "Crambidae", "Noctuidae"],
+      "support": [
+        { "source": "Misof2014", "statement": "Holometabola strongly recovered as a monophyletic superorder" },
+        { "source": "McKenna2019", "statement": "Coleoptera placed within basal Holometabola sister to Neuropterida / Panorpida" }
+      ]
+    },
+    {
+      "id": "panorpida_mecopterida",
+      "name": "Panorpida / Mecopterida (Diptera Tephritidae + Lepidoptera)",
+      "families": ["Tephritidae", "Plutellidae", "Praydidae", "Yponomeutidae", "Lyonetiidae", "Pieridae", "Crambidae", "Noctuidae"],
+      "support": [
+        { "source": "Misof2014", "statement": "Antliophora/Diptera + Amphiesmenoptera/Lepidoptera form crown Mecopterida" },
+        { "source": "Wiegmann2011", "statement": "Diptera forms a robust crown radiation paired with Amphiesmenoptera" }
+      ]
+    },
+    {
+      "id": "lepidoptera_ditrysia",
+      "name": "Lepidoptera Crown Ditrysia (Yponomeutoidea + Obtectomera)",
+      "families": ["Plutellidae", "Praydidae", "Yponomeutidae", "Lyonetiidae", "Pieridae", "Crambidae", "Noctuidae"],
+      "support": [
+        { "source": "Kawahara2019", "statement": "Yponomeutoidea and Obtectomera united in crown Lepidoptera Ditrysia" }
+      ]
+    },
+    {
+      "id": "obtectomera",
+      "name": "Obtectomera (Pieridae + Crambidae + Noctuidae)",
+      "families": ["Pieridae", "Crambidae", "Noctuidae"],
+      "support": [
+        { "source": "Kawahara2019", "statement": "Pieridae, Pyraloidea/Crambidae, and Noctuoidea form crown Obtectomera" }
+      ]
+    },
+    {
+      "id": "acrididae_monophyly",
+      "name": "Acrididae (Migratory & Plague Locusts)",
+      "families": ["Acrididae"],
+      "support": [
+        { "source": "Song2015", "statement": "Acrididae recovers as a cohesive Caelifera locust radiation" }
+      ]
+    },
+    {
+      "id": "tephritidae_monophyly",
+      "name": "Tephritidae (Quarantine Fruit Flies)",
+      "families": ["Tephritidae"],
+      "support": [
+        { "source": "Wiegmann2011", "statement": "Schizophoran Tephritidae fruit flies form a monophyletic family" }
+      ]
+    },
+    {
+      "id": "noctuidae_monophyly",
+      "name": "Noctuidae (Fall Armyworm & Helicoverpa Bollworm Pests)",
+      "families": ["Noctuidae"],
+      "support": [
+        { "source": "Kawahara2019", "statement": "Spodoptera and Helicoverpa unite inside crown Noctuidae" }
+      ]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "paraneoptera_group",
+      "name": "Paraneoptera (Thysanoptera + Hemiptera)",
+      "families": ["Thripidae", "Aleyrodidae", "Aphididae", "Delphacidae"],
+      "why_not_scored": "Johnson et al. (2018) showed Condylognatha (Thysanoptera + Hemiptera) exhibits deep divergence and accelerated substitution rates in Sternorrhyncha (whiteflies/aphids)."
+    },
+    {
+      "id": "sternorrhyncha_group",
+      "name": "Sternorrhyncha (Aleyrodidae + Aphididae)",
+      "families": ["Aleyrodidae", "Aphididae"],
+      "why_not_scored": "Rapid rRNA and mitochondrial substitution rates in Aleyrodidae vs. Aphididae cause long-branch sensitivity in single-gene trees."
+    },
+    {
+      "id": "curculionidae",
+      "name": "Curculionidae (PSHB Ambrosia & Grain Weevils)",
+      "families": ["Curculionidae"],
+      "why_not_scored": "Single-family check; rapid Scolytinae evolution vs. Sitophilus Dryophthorinae."
+    },
+    {
+      "id": "crambidae",
+      "name": "Crambidae (Stem Borers & Leaf Folders)",
+      "families": ["Crambidae"],
+      "why_not_scored": "Single-family check."
+    }
+  ]
+}

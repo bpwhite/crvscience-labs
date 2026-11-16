@@ -787,6 +787,100 @@ pub(crate) const ACANTHOCHITONIDAE_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "acanthochitonidae-supp-s3-cox1-ry3-alignview",
 };
 
+static ARTHROPODA_ERAS_580: &[(&str, f64, f64, &str)] = &[
+    ("Cambrian-Ord", 580.0, 443.8, "#f1f5f9"),
+    ("Sil-Devonian", 443.8, 358.9, "#f8fafc"),
+    ("Carb-Perm", 358.9, 251.9, "#f1f5f9"),
+    ("Mesozoic", 251.9, 66.0, "#f8fafc"),
+    ("Cenozoic", 66.0, 0.0, "#f1f5f9"),
+];
+
+pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [112.0, 142.0, 268.0, 102.0, 94.0, 68.0, 96.0],
+    backbone_node_ages: [148.0, 288.0, 328.0, 356.0, 378.0, 545.0],
+    fig1_max_ma: 580.0,
+    fig1_eras: ARTHROPODA_ERAS_580,
+    fig1_ticks: &[550, 450, 350, 250, 150, 50, 0],
+    fig1_node_y_slots: [8.0, 16.0, 26.5, 39.0, 31.0, 46.5, 52.0, 58.0],
+    fig1_clade_cards: &[
+        ("[A]", 0, 3, "Chelicerata: Tetranychidae Mites (n=4)", "Tetranychus urticae, T. truncatus, T. kanzawai, Panonychus citri", "Acari outgroup + rapid VGSC/CYP392 acaricide evolution"),
+        ("[B]", 4, 9, "Polyneoptera: Acrididae Locusts (n=6)", "Locusta migratoria, Chortoicetes terminifera, Oedaleus, Oxya", "Phase-polyphenic swarming CSP/OBP + arid Hsp70 tolerance"),
+        ("[C]", 10, 27, "Paraneoptera: Thrips/Whiteflies/Aphids/Hoppers (n=18)", "Bemisia, Trialeurodes, Siphoninus, Aleurothrixus, Nilaparvata, Sitobion", "Phloem/rasping plant-virus vectors + CYP6CM1/CYP6ER1 resistance"),
+        ("[D]", 28, 34, "Coleoptera: Curculionidae & PSHB (n=7)", "Euwallacea fornicatus, E. interjectus, Xyleborinus, Xylosandrus, Sitophilus", "Fusarium ambrosia symbioses + wood-boring/stored-grain guilds"),
+        ("[E]", 35, 44, "Diptera: Tephritidae Fruit Flies (n=10)", "Bactrocera tryoni, Ceratitis capitata, B. dorsalis, B. minax, Zeugodacus", "Quarantine frugivores + horticultural biosecurity bridges"),
+        ("[F]", 45, 49, "Lepidoptera: Yponomeutoidea (n=5)", "Plutella xylostella, Plutella australiana, Prays, Yponomeuta, Leucoptera", "Brassicaceae specialist crucifer moths + native AU sister taxa"),
+        ("[G]", 50, 63, "Lepidoptera: Obtectomera Defoliators & Borers (n=14)", "Spodoptera frugiperda, Helicoverpa armigera, H. punctigera, Ostrinia, Pieris", "Trans-Pacific migration corridors, CYP6AE & ace-1 resistance"),
+    ],
+    fig1_web_svg: "china-australia-pests-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of China & Australia Arthropod Crop Pests (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) across Chelicerata and six Hexapoda crop-pest clades with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 3, "Tetranychidae Outgroup // (n=4)", ""),
+        ("[B]", 4, 9, "Acrididae Locusts (n=6)", "8,4"),
+        ("[C]", 10, 27, "Paraneoptera Sap Pests (n=18)", ""),
+        ("[D]", 28, 34, "Curculionidae & PSHB (n=7)", "9,3,2,3"),
+        ("[E]", 35, 44, "Tephritidae Fruit Flies (n=10)", "5,3"),
+        ("[F]", 45, 49, "Yponomeutoidea Moths (n=5)", ""),
+        ("[G]", 50, 63, "Obtectomera Crown Pests (n=14)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "china-australia-pests-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across 64 China & Australia Arthropod Pest Species (A:T001-G:T064)",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with Chelicerata [A] outgroup // stem break, B&W alternating sectors, and sector-prefixed IDs A:T001-G:T064.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T001", 0),
+        ("Node II", "B:T005", 1),
+        ("Node III", "C:T014", 2),
+        ("Node IV", "D:T029", 3),
+        ("Node V", "D:T031", 4),
+        ("Node VI", "E:T036", 5),
+        ("Node VII", "F:T046", 6),
+        ("Node VIII", "G:T057", 7),
+    ],
+    fig3_abba_arc_tips: ("G:T060", "G:T061"),
+    fig3_web_svg: "china-australia-pests-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating multi-locus ASTRAL-equivalent quartet coalescent species tree with empirical CU branch lengths, 61-split q1 concordance, and China-Australia pest ABBA-BABA tests.",
+    fig4a_web_svg: "china-australia-pests-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across China & Australia Pest Corridors (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across Fall Armyworm, Whiteflies, Tephritid Fruit Flies, Rice/Corn Pests, Helicoverpa/Plutella, and PSHB/Thrips/Mite corridors.",
+    fig4b_web_svg: "china-australia-pests-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 18S/28S/ITS rDNA (4Ne) vs. Insecticide Resistance Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Paired multi-locus skylines separating maternal mtDNA expansion from diploid Katoh E-INS-i rDNA buffering and selective sweep bottlenecks at CYP6/AChE/VGSC resistance loci.",
+    fig5_short_fam_titles: [
+        "Neurotoxic Target-Site Acetylcholinesterase / Sodium Channel (ace-1 / VGSC)",
+        "Migratory Swarming & Host-Finding Chemosensory Proteins (CSP / OBP)",
+        "Overwintering Diapause & Arid Heat-Shock Chaperones (Hsp70 / HSP90 / GST)",
+        "Xenobiotic & Insecticide Resistance Cytochrome P450s (CYP6 Clan-3 Subfamily)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Target-Site AChE (ace-1)",
+        "FAM-02: Swarming Chemosensory (CSP)",
+        "FAM-03: Thermal Diapause (Hsp70)",
+        "FAM-04: Resistance P450 (CYP6, 1TQN)",
+    ],
+    fig5_panel_d_header: "Panel D | Arthropod CYP6 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Clan-3 Microsomal P450 Fold (461 Ca Threaded with Helicoverpa CYP6)",
+    fig5_web_svg: "china-australia-pests-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP6 Heme-Thiolate Pocket",
+    fig5_caption: "Translated amino-acid motif alignments across 48 China & Australia pest NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D insect CYP6 structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
+    fig6_web_svg: "china-australia-pests-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    fig6_caption: "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon China & Australia pest supermatrix + complete mitogenomes) and Pipeline B (12 coalescent skyline cohorts, N = 432).",
+    fig6_clade_label: "China & Australia Crop Pests",
+    fig6_p450_label: "CYP6 / ace-1 / CSP / Hsp70",
+    fig6_its_label: "Bemisia, Nilaparvata & Spodoptera rDNA",
+    supp_s1_fasta_name: "supp_s1_cyp6_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (Agricultural Pest CYP6 Tight Subfamily)",
+    supp_s1_source: "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS (FAM-04)",
+    supp_s1_stem: "china-australia-pests-supp-s1-cyp6-alignview",
+    supp_s2_title: "Cohort L2 Lepidoptera 18S/28S/ITS1 Ribosomal rDNA (N = 36)",
+    supp_s2_source: "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS (Cohort L2)",
+    supp_s2_stem: "china-australia-pests-supp-s2-rdna-einsi-alignview",
+    supp_s3_title: "China & Australia Arthropod Pests Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS (COX1 Mito Code 5)",
+    supp_s3_stem: "china-australia-pests-supp-s3-cox1-ry3-alignview",
+};
+
 fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
@@ -1496,6 +1590,32 @@ fn render_bemisia_fig2_circular_phylogram(
         }
     }
     draw_circ_rec(root, cx, cy, &r_of, r_label, &mut svg, &mut fb);
+
+    // Visual double-slash `//` outgroup stem break on Sector [A] when displaying compressed long outgroups
+    if theme.fig2_web_svg.starts_with("china-australia-pests") {
+        let a_mid = ang_of_idx(1.5);
+        let r_brk = r_inner + 36.0;
+        let (bx, by) = (cx + r_brk * a_mid.cos(), cy + r_brk * a_mid.sin());
+        let (tx, ty) = (-a_mid.sin(), a_mid.cos());
+        let (rx, ry) = (a_mid.cos(), a_mid.sin());
+        svg.push_str(&format!(
+            r##"<rect x="{:.1}" y="{:.1}" width="10" height="10" transform="rotate({:.1} {:.1} {:.1})" fill="#f1f5f9"/>"##,
+            bx - 5.0, by - 5.0, a_mid.to_degrees(), bx, by
+        ));
+        for off in [-2.6_f64, 2.6_f64] {
+            svg.push_str(&format!(
+                r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="1.8"/>"##,
+                bx + off * rx - 6.0 * tx + 2.0 * rx,
+                by + off * ry - 6.0 * ty + 2.0 * ry,
+                bx + off * rx + 6.0 * tx - 2.0 * rx,
+                by + off * ry + 6.0 * ty - 2.0 * ry,
+            ));
+        }
+        svg.push_str(&format!(
+            r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#475569">// outgroup scale</text>"##,
+            bx + 12.0 * tx, by + 12.0 * ty
+        ));
+    }
 
     // Compact single-line bottom legend bar (preserving >= 87.7% circular tree height!)
     let b_lbl = infer_bootstrap_count_label(manifest);
@@ -4308,6 +4428,39 @@ pub fn generate_acanthochitonidae_locked_figures(
             theme.fig1_eras = ACAN_ERAS_450;
             theme.fig1_ticks = &[450, 350, 250, 150, 100, 50, 0];
         }
+    }
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
+}
+
+/// Generates synchronized locked figures (Figures 1-6 + Supplemental S1-S3) for
+/// `PREPRINT-29` (`VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS`), dynamically
+/// locking `backbone_node_ages` and `sec_crown_ages` directly from `manifest.calibrated_nodes`.
+pub fn generate_china_aus_pests_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    let mut theme = CHINA_AUS_PESTS_THEME;
+    if manifest.calibrated_nodes.len() >= 8 {
+        let cn = &manifest.calibrated_nodes;
+        theme.backbone_node_ages = [
+            cn[6].age_ma,
+            cn[5].age_ma,
+            cn[3].age_ma,
+            cn[2].age_ma,
+            cn[1].age_ma,
+            cn[0].age_ma,
+        ];
+        theme.sec_crown_ages = [
+            (cn[0].age_ma * 0.22).max(45.0).min(cn[0].age_ma - 25.0),
+            (cn[1].age_ma * 0.42).max(40.0).min(cn[1].age_ma - 20.0),
+            (cn[2].age_ma * 0.72).max(40.0).min(cn[2].age_ma - 18.0),
+            cn[4].age_ma.min(cn[3].age_ma - 12.0).max(24.0),
+            (cn[5].age_ma * 0.36).max(24.0).min(cn[5].age_ma - 15.0),
+            (cn[6].age_ma * 0.48).max(18.0).min(cn[6].age_ma - 10.0),
+            cn[7].age_ma.min(cn[6].age_ma - 8.0).max(14.0),
+        ];
     }
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }

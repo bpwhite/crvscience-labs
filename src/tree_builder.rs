@@ -908,17 +908,15 @@ fn compress_alignment_and_estimate_rates(seqs: &[String]) -> CompressedAlignment
                 0b1000 => counts[3] += 1.0,
                 _ => col_inv = false,
             }
-            if mask == 0b0001 || mask == 0b0010 || mask == 0b0100 || mask == 0b1000 {
-                if let Some(fb) = first_b {
-                    if fb != mask {
-                        col_inv = false;
-                    }
-                } else {
-                    first_b = Some(mask);
+            if let Some(fb) = first_b {
+                if fb != mask {
+                    col_inv = false;
                 }
+            } else {
+                first_b = Some(mask);
             }
         }
-        if col_inv && first_b.is_some() {
+        if col_inv {
             inv_sites += 1;
         }
         if let Some(&idx) = pattern_map.get(&pat) {
@@ -941,31 +939,23 @@ fn compress_alignment_and_estimate_rates(seqs: &[String]) -> CompressedAlignment
 
     let mut is_invariant_base = Vec::with_capacity(patterns.len());
     for pat in &patterns {
-        let mut fb: Option<usize> = None;
-        let mut all_same = true;
-        for &m in pat {
-            let b_idx = match m {
-                0b0001 => Some(0),
-                0b0010 => Some(1),
-                0b0100 => Some(2),
-                0b1000 => Some(3),
-                _ => None,
-            };
-            if let Some(bi) = b_idx {
-                if let Some(prev) = fb {
-                    if prev != bi {
-                        all_same = false;
-                        break;
-                    }
-                } else {
-                    fb = Some(bi);
-                }
+        let first = pat[0];
+        let b_idx = match first {
+            0b0001 => Some(0),
+            0b0010 => Some(1),
+            0b0100 => Some(2),
+            0b1000 => Some(3),
+            _ => None,
+        };
+        if let Some(bi) = b_idx {
+            if pat.iter().all(|&m| m == first) {
+                is_invariant_base.push(Some(bi));
             } else {
-                all_same = false;
-                break;
+                is_invariant_base.push(None);
             }
+        } else {
+            is_invariant_base.push(None);
         }
-        is_invariant_base.push(if all_same { fb } else { None });
     }
 
     // Empirical substitution pair counts across pairs (AC, AG, AT, CG, CT, GT)
@@ -1204,6 +1194,10 @@ fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
     let mut pos12_gt = 0usize;
     let mut all_ac = 0usize;
     let mut all_gt = 0usize;
+    let mut col_ac = vec![0usize; seq_len];
+    let mut col_gt = vec![0usize; seq_len];
+    let mut col_has_a = vec![false; seq_len];
+    let mut col_has_c = vec![false; seq_len];
 
     for col in 0..seq_len {
         let mut has_literal_ry = false;
@@ -1211,9 +1205,20 @@ fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
         for s in seqs {
             let b = s.as_bytes().get(col).copied().unwrap_or(b'-').to_ascii_uppercase();
             match b {
-                b'A' | b'C' => {
+                b'A' => {
                     has_acgt = true;
                     all_ac += 1;
+                    col_ac[col] += 1;
+                    col_has_a[col] = true;
+                    if col % 3 == 2 {
+                        pos3_ac += 1;
+                    }
+                }
+                b'C' => {
+                    has_acgt = true;
+                    all_ac += 1;
+                    col_ac[col] += 1;
+                    col_has_c[col] = true;
                     if col % 3 == 2 {
                         pos3_ac += 1;
                     }
@@ -1221,6 +1226,7 @@ fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
                 b'G' | b'T' | b'U' => {
                     has_acgt = true;
                     all_gt += 1;
+                    col_gt[col] += 1;
                     if col % 3 == 2 {
                         pos3_gt += 1;
                     } else {
@@ -1241,6 +1247,46 @@ fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
     } else if seq_len >= 9 && pos3_ac > 0 && pos3_gt == 0 && pos12_gt > 0 {
         for col in (2..seq_len).step_by(3) {
             is_binary[col] = true;
+        }
+    } else if seq_len >= 36 {
+        // Partitioned supermatrices may combine frame-shifted RY3 PCG loci with 4-state rRNA blocks:
+        // detect contiguous codon-stride-3 runs (>= 12 codons = 36 bp) with zero G/T across all taxa,
+        // polymorphic {A,C} RY variation, and active G/T bases in adjacent non-recoded codon positions.
+        for phase in 0..3 {
+            let mut run: Vec<usize> = Vec::new();
+            let flush_run = |run_cols: &[usize], out: &mut [bool]| {
+                if run_cols.len() < 12 {
+                    return;
+                }
+                let poly_ac = run_cols
+                    .iter()
+                    .filter(|&&c| col_has_a[c] && col_has_c[c])
+                    .count();
+                let adj_gt = run_cols
+                    .iter()
+                    .filter(|&&c| {
+                        (c >= 1 && col_gt[c - 1] > 0)
+                            || (c >= 2 && col_gt[c - 2] > 0)
+                            || (c + 1 < seq_len && col_gt[c + 1] > 0)
+                    })
+                    .count();
+                if poly_ac >= 2 && adj_gt >= 4 {
+                    for &c in run_cols {
+                        out[c] = true;
+                    }
+                }
+            };
+            let mut c = phase;
+            while c < seq_len {
+                if col_gt[c] == 0 && col_ac[c] > 0 {
+                    run.push(c);
+                } else {
+                    flush_run(&run, &mut is_binary);
+                    run.clear();
+                }
+                c += 3;
+            }
+            flush_run(&run, &mut is_binary);
         }
     }
     is_binary
@@ -1327,8 +1373,12 @@ fn compute_model_pairwise_distances_weighted(
                 0.0
             };
 
-            let tot_v = (valid_4 + valid_2).max(1.0);
-            let d = ((valid_4 * d4 + valid_2 * d2) / tot_v).clamp(1e-5, 2.5);
+            let raw_tot = valid_4 + valid_2;
+            let d = if raw_tot <= 0.0 {
+                0.35
+            } else {
+                ((valid_4 * d4 + valid_2 * d2) / raw_tot).clamp(1e-5, 2.5)
+            };
             dist[i][j] = d;
             dist[j][i] = d;
         }
@@ -2145,10 +2195,17 @@ fn build_weighted_bionj_pool(
                 }
             }
 
-            let p_all = (ti_12 + ti_3) / valid.max(1.0);
-            let q_all = (tv_12 + tv_3) / valid.max(1.0);
-            let p_aa = aa_diff / aa_valid.max(1.0);
-            let d_aa_grishin = p_aa / (1.0 - p_aa.min(0.85)).max(0.05);
+            let (p_all, q_all) = if valid > 0.0 {
+                ((ti_12 + ti_3) / valid, (tv_12 + tv_3) / valid)
+            } else {
+                (0.22, 0.13)
+            };
+            let d_aa_grishin = if aa_valid > 0.0 {
+                let p_aa = aa_diff / aa_valid;
+                p_aa / (1.0 - p_aa.min(0.85)).max(0.05)
+            } else {
+                0.25
+            };
 
             if need_tv_heavy {
                 let d2 = (-0.5 * (1.0 - 2.0 * q_all.min(0.45)).ln() + 0.35 * p_all).max(1e-5);
@@ -3110,7 +3167,7 @@ fn solve_native_ml_tree_with_fit(
         if lnl_opt > best_lnl {
             best_lnl = lnl_opt;
         }
-        for _post_pass in 0..3 {
+        for _post_pass in 0..10 {
             let prev_acc = nni_acc;
             let prev_lnl = best_lnl;
             let lnl_post = run_inside_outside_pulley_pass(
@@ -3131,6 +3188,21 @@ fn solve_native_ml_tree_with_fit(
             if nni_acc == prev_acc && (best_lnl - prev_lnl).abs() < 0.2 {
                 break;
             }
+        }
+        let lnl_polish = run_inside_outside_pulley_pass(
+            &mut best_nodes,
+            n_taxa,
+            aln,
+            &q,
+            &pi,
+            pinv,
+            &rate_cats,
+            false,
+            &mut nni_eval,
+            &mut nni_acc,
+        );
+        if lnl_polish > best_lnl {
+            best_lnl = lnl_polish;
         }
         let exact_lnl =
             evaluate_tree_log_likelihood(&best_nodes, aln, &q, &pi, pinv, &rate_cats, 1.0);
@@ -3203,7 +3275,7 @@ fn solve_native_ml_tree_with_fit(
     best_lnl = lnl_stage2;
 
     // Stage 3: Multi-pass Inside-Outside Pulley All-Branch + Quartet-Polished NNI Topology Search
-    for _pass in 0..4 {
+    for _pass in 0..8 {
         let prev_acc = nni_accepted;
         let prev_lnl = best_lnl;
         let lnl = run_inside_outside_pulley_pass(
@@ -4115,6 +4187,16 @@ pub fn infer_native_ml_tree_with_bootstrap(
     let col_to_pat = map_columns_to_patterns(raw_aligned_strings, &aln);
 
     let fit = solve_native_ml_tree_with_fit(raw_aligned_strings, labels, &aln, rm);
+    let (init_q, init_pi) = build_rate_matrix_q_for_run_model(rm, &aln);
+    let (init_pinv, init_cats) = if matches!(rm, PhyloRunModel::JcUniform) {
+        (0.0, vec![(1.0, 1.0)])
+    } else if rm.is_fast_search() {
+        build_rate_cats_from_params(rm, 0.34, 0.24, 0.68, 0.08)
+    } else if matches!(rm, PhyloRunModel::GtrFreeRate2) {
+        build_rate_cats_from_params(rm, 0.30, 0.0, 0.68, 0.06)
+    } else {
+        build_rate_cats_from_params(rm, 0.28, 0.0, 0.68, 0.06)
+    };
 
     let run_weighted_ml_estimator = |col_w: Option<&[u16]>, pat_w: &[f64]| -> (Vec<MlTreeNode>, f64) {
         let aln_rep = compact_weighted_alignment(&aln, pat_w);
@@ -4122,10 +4204,8 @@ pub fn infer_native_ml_tree_with_bootstrap(
             vec![0]
         } else if rm.is_fast_search() {
             vec![fit.best_pool_idx]
-        } else if fit.best_pool_idx == 0 {
-            vec![0, 1]
         } else {
-            vec![0, fit.best_pool_idx]
+            vec![0, 1, 2, 3, 4]
         };
         let cands = build_weighted_bionj_pool(
             raw_aligned_strings,
@@ -4137,8 +4217,7 @@ pub fn infer_native_ml_tree_with_bootstrap(
             &cand_indices,
         );
         let mut best_nodes = Vec::new();
-        let mut best_lnl = f64::NEG_INFINITY;
-        let mut best_acc = 0usize;
+        let mut best_init_lnl = f64::NEG_INFINITY;
         for (_, mut cand_nodes) in cands {
             let mut ev = 0usize;
             let mut acc = 0usize;
@@ -4146,26 +4225,32 @@ pub fn infer_native_ml_tree_with_bootstrap(
                 &mut cand_nodes,
                 n_taxa,
                 &aln_rep,
-                &fit.q,
-                &fit.pi,
-                fit.pinv,
-                &fit.rate_cats,
+                &init_q,
+                &init_pi,
+                init_pinv,
+                &init_cats,
                 true,
                 &mut ev,
                 &mut acc,
             );
-            if lnl > best_lnl || best_nodes.is_empty() {
-                best_lnl = lnl;
+            if lnl > best_init_lnl || best_nodes.is_empty() {
+                best_init_lnl = lnl;
                 best_nodes = cand_nodes;
-                best_acc = acc;
             }
         }
-        let max_extra_nni = 2usize;
-        let mut prev_acc = best_acc;
-        for _extra in 0..max_extra_nni {
-            if prev_acc == 0 {
-                break;
-            }
+        let nni_passes = if rm.is_fast_search() { 10usize } else { 8usize };
+        let tol = if rm.is_fast_search() { 0.2 } else { 0.05 };
+        let mut best_lnl = evaluate_tree_log_likelihood_seq(
+            &best_nodes,
+            &aln_rep,
+            &fit.q,
+            &fit.pi,
+            fit.pinv,
+            &fit.rate_cats,
+            1.0,
+        );
+        for pass_idx in 0..nni_passes {
+            let prev_lnl = best_lnl;
             let mut ev2 = 0usize;
             let mut acc2 = 0usize;
             let lnl2 = run_inside_outside_pulley_pass(
@@ -4183,24 +4268,29 @@ pub fn infer_native_ml_tree_with_bootstrap(
             if lnl2 > best_lnl {
                 best_lnl = lnl2;
             }
-            prev_acc = acc2;
+            if pass_idx > 0 && acc2 == 0 && (lnl2 - prev_lnl).abs() < tol {
+                break;
+            }
         }
-        let mut ev_p = 0usize;
-        let mut acc_p = 0usize;
-        let lnl_p = run_inside_outside_pulley_pass(
-            &mut best_nodes,
-            n_taxa,
-            &aln_rep,
-            &fit.q,
-            &fit.pi,
-            fit.pinv,
-            &fit.rate_cats,
-            false,
-            &mut ev_p,
-            &mut acc_p,
-        );
-        if lnl_p > best_lnl {
-            best_lnl = lnl_p;
+        let polish_n = if rm.is_fast_search() { 1usize } else { 2usize };
+        for _polish in 0..polish_n {
+            let mut ev_p = 0usize;
+            let mut acc_p = 0usize;
+            let lnl_p = run_inside_outside_pulley_pass(
+                &mut best_nodes,
+                n_taxa,
+                &aln_rep,
+                &fit.q,
+                &fit.pi,
+                fit.pinv,
+                &fit.rate_cats,
+                false,
+                &mut ev_p,
+                &mut acc_p,
+            );
+            if lnl_p > best_lnl {
+                best_lnl = lnl_p;
+            }
         }
         (best_nodes, best_lnl)
     };

@@ -14,7 +14,10 @@ use crate::coalescent::{
 use crate::codon_selection::{run_native_codon_selection, CodonSelectionEngineResult};
 use crate::complexity::round4;
 use crate::fetch::{FastaRecord, PoliteCacheManager};
-use crate::mafft_native::align_sequences_mafft_native;
+use crate::mafft_native::{
+    align_sequences_mafft_native, align_sequences_mafft_native_with_config, MafftNativeConfig,
+    MafftNativeStrategy,
+};
 use crate::mcmc_skyline::{
     compress_alignment_patterns, compute_epoch_coalescent_stats, compute_ess_and_rhat,
     compute_popgen_summary_stats, compute_rcfv_4state_and_ry, evaluate_felsenstein_ln_l,
@@ -673,42 +676,455 @@ pub(crate) fn translate_sense_codons(nt: &str, max_aa: usize) -> String {
     aa
 }
 
-/// Rotates a circular mitochondrial genome so it starts in phase with a conserved 18-mer anchor
-/// from the reference mitogenome (`NC_006279.1`), rescuing reverse-complement strand if needed.
+/// Rotates a circular mitochondrial genome so its origin aligns to the homologous `COX1` /
+/// reference coordinate across all 6 reading frames (Table 5 mitochondrial code) on circular
+/// wraparound (`+` and `-` strands), avoiding the 12-mer exact DNA seed misses that leave
+/// divergent mitogenomes unrotated at arbitrary GenBank start positions.
 pub(crate) fn phase_circular_mitogenome(seq: &str, anchor_ref: &str) -> (String, char) {
-    let (_, _, hsp_fwd) = super_blast_pair(
-        "Q",
-        &seq[..seq.len().min(3200)],
-        "REF",
-        &anchor_ref[..anchor_ref.len().min(3200)],
-    );
-    let rc = revcomp_dna(seq);
-    let (_, _, hsp_rev) = super_blast_pair(
-        "Q_RC",
-        &rc[..rc.len().min(3200)],
-        "REF",
-        &anchor_ref[..anchor_ref.len().min(3200)],
-    );
-    let (oriented, strand) = if hsp_rev.bit_score > hsp_fwd.bit_score + 24.0 {
-        (rc, '-')
+    let clean: String = seq
+        .bytes()
+        .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+        .map(|b| b.to_ascii_uppercase() as char)
+        .collect();
+    if clean.len() < 400 {
+        return (clean, '+');
+    }
+    let anchor_clean: String = anchor_ref
+        .bytes()
+        .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+        .map(|b| b.to_ascii_uppercase() as char)
+        .collect();
+    let rc = revcomp_dna(&clean);
+
+    // Non-circular single-locus fragments (< 8,000 bp): full-length strand check only
+    if clean.len() < 8_000 {
+        let q_len = clean.len().min(3200);
+        let a_len = anchor_clean.len().min(3200);
+        let (_, _, hsp_fwd) = super_blast_pair("Q", &clean[..q_len], "REF", &anchor_clean[..a_len]);
+        let (_, _, hsp_rev) = super_blast_pair("Q_RC", &rc[..q_len], "REF", &anchor_clean[..a_len]);
+        return if hsp_rev.bit_score > hsp_fwd.bit_score + 20.0 {
+            (rc, '-')
+        } else {
+            (clean, '+')
+        };
+    }
+
+    // Extract reference AA 4-mers & nucleotide offset inside `anchor_clean`
+    let (anchor_orf_start_nt, _, mut anchor_aa_str) = if anchor_clean.len() <= 2_400 {
+        translate_mito_table5_orf(&anchor_clean)
     } else {
-        (seq.to_string(), '+')
+        translate_mito_table5_orf(&anchor_clean)
+    };
+    if anchor_aa_str.len() < 60 && anchor_clean.len() >= 180 {
+        let mut fallback_aa = String::with_capacity(anchor_clean.len() / 3);
+        for c in anchor_clean.as_bytes().chunks_exact(3) {
+            fallback_aa.push(translate_table5_codon_ch(c));
+        }
+        anchor_aa_str = fallback_aa;
+    }
+
+    // When `anchor_clean` is a single-locus COX1 reference (<= 2.4 kb), rotate every circular
+    // mitogenome so the conserved codon position matching `anchor_aa[0]` sits at nt index 0.
+    // When `anchor_clean` is itself a complete mitogenome (>= 8 kb), shift by `q_nt - r_nt`
+    // so position 0 of the rotated genome matches position 0 of `anchor_clean`.
+    let anchor_r_offset_nt: usize = if anchor_clean.len() >= 8_000 {
+        anchor_orf_start_nt
+    } else {
+        0usize
     };
 
-    // Check 12-mer k-mer offset vs reference start window to phase circular origin
-    if oriented.len() > 2000 && anchor_ref.len() > 400 {
-        let seed = &anchor_ref[120..132];
-        if let Some(pos) = oriented.find(seed) {
-            if pos > 120 && pos + 120 < oriented.len() {
-                let start = pos - 120;
-                let mut rotated = String::with_capacity(oriented.len());
-                rotated.push_str(&oriented[start..]);
-                rotated.push_str(&oriented[..start]);
-                return (rotated, strand);
+    let mut ref_4mers: std::collections::HashMap<[u8; 4], Vec<usize>> =
+        std::collections::HashMap::with_capacity(anchor_aa_str.len());
+    for (rp, w) in anchor_aa_str.as_bytes().windows(4).enumerate() {
+        if w.iter().all(|&c| c != b'*' && c != b'X') {
+            if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                ref_4mers.entry(arr).or_default().push(rp);
             }
         }
     }
-    (oriented, strand)
+
+    let n = clean.len();
+    let wrap_extra = n.min(3_600);
+    let mut best_strand = '+';
+    let mut best_bucket_score = 0usize;
+    let mut best_origin = 0usize;
+
+    for &(strand_ch, strand_str) in &[('+', clean.as_str()), ('-', rc.as_str())] {
+        let mut doubled = String::with_capacity(n + wrap_extra);
+        doubled.push_str(strand_str);
+        doubled.push_str(&strand_str[..wrap_extra]);
+        let dbytes = doubled.as_bytes();
+
+        let mut bucket_hits: std::collections::HashMap<usize, Vec<usize>> =
+            std::collections::HashMap::new();
+
+        for frame in 0..3 {
+            let mut aa = Vec::with_capacity(dbytes.len() / 3 + 1);
+            let mut i = frame;
+            while i + 3 <= dbytes.len() {
+                aa.push(translate_table5_codon_ch(&dbytes[i..i + 3]) as u8);
+                i += 3;
+            }
+            for (qp, w) in aa.windows(4).enumerate() {
+                if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                    if let Some(r_list) = ref_4mers.get(&arr) {
+                        for &rp in r_list {
+                            let cand_nt = (frame as isize)
+                                + (qp as isize - rp as isize) * 3
+                                - (anchor_r_offset_nt as isize);
+                            let mod_nt = cand_nt.rem_euclid(n as isize) as usize;
+                            let bucket = mod_nt / 24;
+                            bucket_hits.entry(bucket).or_default().push(mod_nt);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Score sliding 3-bucket neighborhood to tolerate minor N-terminal indel shifts
+        let mut top_b_score = 0usize;
+        let mut top_origin = 0usize;
+        for (&b_idx, hits) in &bucket_hits {
+            let mut merged = hits.clone();
+            let prev_b = if b_idx == 0 { (n / 24).max(1) - 1 } else { b_idx - 1 };
+            let next_b = b_idx + 1;
+            if let Some(ph) = bucket_hits.get(&prev_b) {
+                merged.extend_from_slice(ph);
+            }
+            if let Some(nh) = bucket_hits.get(&next_b) {
+                merged.extend_from_slice(nh);
+            }
+            if merged.len() > top_b_score {
+                top_b_score = merged.len();
+                merged.sort_unstable();
+                top_origin = merged[merged.len() / 2] % n;
+            }
+        }
+
+        if top_b_score > best_bucket_score {
+            best_bucket_score = top_b_score;
+            best_strand = strand_ch;
+            best_origin = top_origin;
+        }
+    }
+
+    if best_bucket_score >= 4 {
+        let base_str = if best_strand == '-' { &rc } else { &clean };
+        let origin = best_origin % base_str.len();
+        let mut rotated = String::with_capacity(base_str.len());
+        rotated.push_str(&base_str[origin..]);
+        rotated.push_str(&base_str[..origin]);
+        return (rotated, best_strand);
+    }
+
+    // Last-resort strand check if anchor had zero conserved AA 4-mers
+    let (_, _, hsp_fwd) = super_blast_pair("Q", &clean[..clean.len().min(3200)], "REF", &anchor_clean[..anchor_clean.len().min(3200)]);
+    let (_, _, hsp_rev) = super_blast_pair("Q_RC", &rc[..rc.len().min(3200)], "REF", &anchor_clean[..anchor_clean.len().min(3200)]);
+    if hsp_rev.bit_score > hsp_fwd.bit_score + 20.0 {
+        (rc, '-')
+    } else {
+        (clean, '+')
+    }
+}
+
+/// Computes positional occupancy (%) across `n_bins` evenly spaced slices of a multiple sequence
+/// alignment and returns `(mean_occupancy_pct, bin_occupancy_pcts)`.
+pub(crate) fn compute_alignment_occupancy_bins(
+    aligned_seqs: &[String],
+    n_bins: usize,
+) -> (f64, Vec<f64>) {
+    if aligned_seqs.is_empty() || n_bins == 0 {
+        return (0.0, vec![0.0; n_bins.max(1)]);
+    }
+    let cols = aligned_seqs.iter().map(|s| s.len()).max().unwrap_or(0);
+    if cols == 0 {
+        return (0.0, vec![0.0; n_bins]);
+    }
+    let n_tax = aligned_seqs.len() as f64;
+    let mut col_occ = vec![0.0f64; cols];
+    for col in 0..cols {
+        let mut valid = 0usize;
+        for s in aligned_seqs {
+            let b = s.as_bytes().get(col).copied().unwrap_or(b'-').to_ascii_uppercase();
+            if matches!(b, b'A' | b'C' | b'G' | b'T' | b'U' | b'R' | b'Y') {
+                valid += 1;
+            }
+        }
+        col_occ[col] = (valid as f64 / n_tax) * 100.0;
+    }
+    let mean_occ = col_occ.iter().sum::<f64>() / (cols as f64);
+    let mut bins = Vec::with_capacity(n_bins);
+    for bi in 0..n_bins {
+        let s = (bi * cols) / n_bins;
+        let e = (((bi + 1) * cols) / n_bins).max(s + 1).min(cols);
+        let avg = col_occ[s..e].iter().sum::<f64>() / ((e - s) as f64);
+        bins.push(round4(avg));
+    }
+    (round4(mean_occ), bins)
+}
+
+/// Extracts an orthologous mitochondrial locus (protein-coding gene via circular 6-frame Table-5 AA
+/// 4-mer diagonal matching, or non-coding rRNA via sliding-window Super-BLAST search across both
+/// strands) directly from a complete circular mitochondrial genome (`>= 4,000` bp).
+pub(crate) fn extract_homologous_mito_locus_from_genome(
+    mito_seq: &str,
+    seed_nt: &str,
+    protein_coding: bool,
+) -> Option<String> {
+    let clean: String = mito_seq
+        .bytes()
+        .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+        .map(|b| b.to_ascii_uppercase() as char)
+        .collect();
+    let seed_clean: String = seed_nt
+        .bytes()
+        .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+        .map(|b| b.to_ascii_uppercase() as char)
+        .collect();
+    if clean.len() < 4_000 || seed_clean.len() < 150 {
+        return None;
+    }
+
+    let rc = revcomp_dna(&clean);
+    let wrap_extra = clean.len().min(2_800);
+
+    if protein_coding {
+        let min_seed_aa = if seed_clean.len() < 360 { 42 } else { 75 };
+        let (_, seed_orf_nt, seed_aa_raw) = translate_mito_table5_orf_min(&seed_clean, min_seed_aa);
+        let seed_aa = if !seed_aa_raw.is_empty() {
+            seed_aa_raw
+        } else {
+            let mut aa = String::with_capacity(seed_clean.len() / 3);
+            for c in seed_clean.as_bytes().chunks_exact(3) {
+                aa.push(translate_table5_codon_ch(c));
+            }
+            aa
+        };
+        if seed_aa.len() < 40 {
+            return None;
+        }
+        let target_aa_len = (seed_orf_nt.len() / 3).max(seed_aa.len()).max(45);
+
+        let mut ref_4mers: std::collections::HashMap<[u8; 4], usize> =
+            std::collections::HashMap::with_capacity(seed_aa.len());
+        for (rp, w) in seed_aa.as_bytes().windows(4).enumerate() {
+            if w.iter().all(|&c| c != b'*' && c != b'X') {
+                if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                    ref_4mers.entry(arr).or_insert(rp);
+                }
+            }
+        }
+
+        let mut best_score = 0usize;
+        let mut best_nt_seq: Option<String> = None;
+
+        for strand_str in [clean.as_str(), rc.as_str()] {
+            let mut doubled = String::with_capacity(strand_str.len() + wrap_extra);
+            doubled.push_str(strand_str);
+            doubled.push_str(&strand_str[..wrap_extra]);
+            let dbytes = doubled.as_bytes();
+
+            for frame in 0..3 {
+                let mut aa = Vec::with_capacity(dbytes.len() / 3 + 1);
+                let mut i = frame;
+                while i + 3 <= dbytes.len() {
+                    aa.push(translate_table5_codon_ch(&dbytes[i..i + 3]) as u8);
+                    i += 3;
+                }
+                let mut diag_counts: std::collections::HashMap<isize, usize> =
+                    std::collections::HashMap::new();
+                for (qp, w) in aa.windows(4).enumerate() {
+                    if let Ok(arr) = <[u8; 4]>::try_from(w) {
+                        if let Some(&rp) = ref_4mers.get(&arr) {
+                            let diag = (qp as isize) - (rp as isize);
+                            for d in (diag - 2)..=(diag + 2) {
+                                *diag_counts.entry(d).or_insert(0) += 1;
+                            }
+                        }
+                    }
+                }
+                if let Some((&top_diag, &top_cnt)) = diag_counts.iter().max_by_key(|(_, c)| *c) {
+                    if top_cnt > best_score && top_cnt >= 6 {
+                        let start_aa = top_diag.saturating_sub(4).max(0) as usize;
+                        let max_end_aa = (top_diag.max(0) as usize + target_aa_len + 12).min(aa.len());
+                        let mut end_aa = max_end_aa;
+                        // Stop at the first downstream stop codon past core homology
+                        let core_floor = (top_diag.max(0) as usize + (target_aa_len * 2 / 3)).min(aa.len());
+                        for p in core_floor..max_end_aa {
+                            if aa[p] == b'*' {
+                                end_aa = p;
+                                break;
+                            }
+                        }
+                        if end_aa >= start_aa + 45 {
+                            let nt_s = frame + start_aa * 3;
+                            let nt_e = (frame + end_aa * 3).min(doubled.len());
+                            // Trim back any trailing internal stop codon inside `nt_s..nt_e`
+                            let mut clean_s = nt_s;
+                            for p in (top_diag.max(0) as usize).saturating_sub(2)..end_aa.min(aa.len()) {
+                                if aa[p] == b'*' {
+                                    if p < top_diag.max(0) as usize + target_aa_len / 2 {
+                                        clean_s = frame + (p + 1) * 3;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            if nt_e >= clean_s + 135 {
+                                let cand = doubled[clean_s..nt_e].to_string();
+                                best_score = top_cnt;
+                                best_nt_seq = Some(cand);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return best_nt_seq;
+    }
+
+    // Structural mitochondrial rRNA (`rrnL_16S` or `rrnS_12S`): sliding-window Super-BLAST across both strands
+    let win_len = (seed_clean.len() + 700).clamp(1_100, 2_200);
+    let step = (win_len / 3).max(350);
+    let mut best_bit = 0.0f64;
+    let mut best_rrna: Option<String> = None;
+
+    for strand_str in [clean.as_str(), rc.as_str()] {
+        let mut doubled = String::with_capacity(strand_str.len() + win_len);
+        doubled.push_str(strand_str);
+        doubled.push_str(&strand_str[..strand_str.len().min(win_len)]);
+        let mut pos = 0usize;
+        while pos + 500 <= strand_str.len() {
+            let end = (pos + win_len).min(doubled.len());
+            let slice = &doubled[pos..end];
+            let (_, _, hsp) = super_blast_pair("SEED_RNA", &seed_clean, "MITO_WIN", slice);
+            if hsp.bit_score > best_bit && hsp.bit_score >= 62.0 && hsp.query_coverage_pct >= 28.0 {
+                let t0 = hsp.target_start_1based.saturating_sub(1);
+                let t1 = hsp.target_end_1based.min(slice.len());
+                if t1 > t0 + 280 {
+                    best_bit = hsp.bit_score;
+                    best_rrna = Some(slice[t0..t1].to_string());
+                }
+            }
+            pos += step;
+        }
+    }
+    best_rrna
+}
+
+/// Aligns a structural ribosomal RNA locus (`rrnL_16S`, `rrnS_12S`, `SSU_18S`, `LSU_28S`) via
+/// `mafft-native` with `adjust_direction: true`, removing singleton overhang / insertion columns
+/// below `min_occ_frac` occupancy so gappy flanks do not inflate supermatrix column count.
+pub(crate) fn align_and_trim_rrna_core(
+    records: &[FastaRecord],
+    min_occ_frac: f64,
+) -> (Vec<(String, String)>, usize, u128) {
+    let t0 = Instant::now();
+    if records.len() < 2 {
+        return (Vec::new(), 0, t0.elapsed().as_millis().max(1));
+    }
+    let clean_recs: Vec<FastaRecord> = records
+        .iter()
+        .filter_map(|r| {
+            let s: String = r
+                .sequence
+                .bytes()
+                .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+                .map(|b| b.to_ascii_uppercase() as char)
+                .collect();
+            if s.len() < 150 {
+                return None;
+            }
+            let capped = if s.len() > 2_800 {
+                s[..2_800].to_string()
+            } else {
+                s
+            };
+            let mut cr = r.clone();
+            cr.sequence = capped;
+            Some(cr)
+        })
+        .collect();
+    if clean_recs.len() < 2 {
+        return (Vec::new(), 0, t0.elapsed().as_millis().max(1));
+    }
+    let cfg = MafftNativeConfig {
+        strategy: MafftNativeStrategy::FftNsI,
+        max_iterations: 2,
+        adjust_direction: true,
+        use_transitive_consistency: false,
+        use_secondary_structure_weights: false,
+    };
+    let (_, aligned, _) = align_sequences_mafft_native_with_config(&clean_recs, &cfg);
+    let cols = aligned.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
+    if cols == 0 {
+        return (Vec::new(), 0, t0.elapsed().as_millis().max(1));
+    }
+    let n_seq = aligned.len();
+    let min_cnt = ((n_seq as f64) * min_occ_frac).ceil() as usize;
+    let min_cnt = min_cnt.max(2).min(n_seq);
+    let mut keep_cols = Vec::with_capacity(cols);
+    for col in 0..cols {
+        let mut valid = 0usize;
+        for a in &aligned {
+            let b = a.aligned_seq.as_bytes().get(col).copied().unwrap_or(b'-').to_ascii_uppercase();
+            if matches!(b, b'A' | b'C' | b'G' | b'T') {
+                valid += 1;
+            }
+        }
+        if valid >= min_cnt {
+            keep_cols.push(col);
+        }
+    }
+    if keep_cols.len() < 120 {
+        let half = (n_seq / 2).max(2).min(n_seq);
+        keep_cols.clear();
+        for col in 0..cols {
+            let valid = aligned
+                .iter()
+                .filter(|a| matches!(a.aligned_seq.as_bytes().get(col).copied().unwrap_or(b'-').to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+                .count();
+            if valid >= half {
+                keep_cols.push(col);
+            }
+        }
+    }
+    let mut out = Vec::with_capacity(n_seq);
+    for a in &aligned {
+        let bytes = a.aligned_seq.as_bytes();
+        let mut row = String::with_capacity(keep_cols.len());
+        for &c in &keep_cols {
+            let ch = bytes.get(c).copied().unwrap_or(b'-').to_ascii_uppercase() as char;
+            row.push(if matches!(ch, 'A' | 'C' | 'G' | 'T') { ch } else { '-' });
+        }
+        out.push((a.id.clone(), row));
+    }
+    let trimmed_len = out.first().map(|(_, s)| s.len()).unwrap_or(0);
+    (out, trimmed_len, t0.elapsed().as_millis().max(1))
+}
+
+/// Maps the winning substitution model name from the Felsenstein ModelTest sweep
+/// (`JC`, `K80+G4`, `HKY+F+I+G4`, `TN+F+I+G4`, `TIM2+F+I+G4`, `GTR+F+G4`, `GTR+F+I+G4`, `GTR+F+R4`)
+/// onto the exact `PhyloRunModel` passed into `infer_native_ml_tree_with_bootstrap`.
+pub(crate) fn modeltest_name_to_phylo_run_model(name: &str) -> PhyloRunModel {
+    let up = name.trim().to_ascii_uppercase();
+    if up == "JC" || up.starts_with("JC69") {
+        PhyloRunModel::JcUniform
+    } else if up.starts_with("K80") || up.starts_with("K2P") {
+        PhyloRunModel::K80Gamma4
+    } else if up.starts_with("HKY") {
+        PhyloRunModel::HkyInvGamma4
+    } else if up.starts_with("TN") {
+        PhyloRunModel::Tn93InvGamma4
+    } else if up.starts_with("TIM") {
+        PhyloRunModel::Tim2InvGamma4
+    } else if up.contains("+R") {
+        PhyloRunModel::GtrFreeRate2
+    } else if up.contains("FAST") {
+        PhyloRunModel::GtrInvGamma4Fast
+    } else {
+        PhyloRunModel::GtrInvGamma4Full
+    }
 }
 
 pub(crate) fn append_zero_star_dump_entry(
@@ -826,78 +1242,104 @@ pub(crate) fn aa_volume_proxy(aa: char) -> f64 {
     }
 }
 
+#[inline]
+pub(crate) fn translate_table5_codon_ch(c: &[u8]) -> char {
+    match c {
+        b"TTT" | b"TTC" => 'F',
+        b"TTA" | b"TTG" | b"CTT" | b"CTC" | b"CTA" | b"CTG" => 'L',
+        b"ATT" | b"ATC" => 'I',
+        b"ATA" | b"ATG" => 'M',
+        b"GTT" | b"GTC" | b"GTA" | b"GTG" => 'V',
+        b"TCT" | b"TCC" | b"TCA" | b"TCG" | b"AGT" | b"AGC" | b"AGA" | b"AGG" => 'S',
+        b"CCT" | b"CCC" | b"CCA" | b"CCG" => 'P',
+        b"ACT" | b"ACC" | b"ACA" | b"ACG" => 'T',
+        b"GCT" | b"GCC" | b"GCA" | b"GCG" => 'A',
+        b"TAT" | b"TAC" => 'Y',
+        b"TAA" | b"TAG" => '*',
+        b"CAT" | b"CAC" => 'H',
+        b"CAA" | b"CAG" => 'Q',
+        b"AAT" | b"AAC" => 'N',
+        b"AAA" | b"AAG" => 'K',
+        b"GAT" | b"GAC" => 'D',
+        b"GAA" | b"GAG" => 'E',
+        b"TGT" | b"TGC" => 'C',
+        b"TGA" | b"TGG" => 'W',
+        b"CGT" | b"CGC" | b"CGA" | b"CGG" => 'R',
+        b"GGT" | b"GGC" | b"GGA" | b"GGG" => 'G',
+        _ => 'X',
+    }
+}
+
 /// Translates sense codons under Invertebrate Mitochondrial Genetic Code (NCBI Table 5:
 /// `TGA = W`, `ATA = M`, `AGA/AGG = S`, stops = `TAA/TAG`).
 pub(crate) fn translate_mito_table5_orf(nt: &str) -> (usize, String, String) {
-    let bytes = nt.as_bytes();
-    let mut best_frame_start = 0usize;
-    let mut best_aa = String::new();
-    let mut best_nt = String::new();
-    let mut best_score = 0usize;
+    let min_aa = if nt.len() > 2_400 { 180usize } else { 90usize };
+    translate_mito_table5_orf_min(nt, min_aa)
+}
 
-    for frame in 0..3 {
-        let mut cur_start = frame;
-        let mut cur_aa = String::new();
-        let mut i = frame;
-        while i + 3 <= bytes.len() {
-            let c = &bytes[i..i + 3];
-            let aa = match c {
-                b"TTT" | b"TTC" => 'F',
-                b"TTA" | b"TTG" | b"CTT" | b"CTC" | b"CTA" | b"CTG" => 'L',
-                b"ATT" | b"ATC" => 'I',
-                b"ATA" | b"ATG" => 'M',
-                b"GTT" | b"GTC" | b"GTA" | b"GTG" => 'V',
-                b"TCT" | b"TCC" | b"TCA" | b"TCG" | b"AGT" | b"AGC" | b"AGA" | b"AGG" => 'S',
-                b"CCT" | b"CCC" | b"CCA" | b"CCG" => 'P',
-                b"ACT" | b"ACC" | b"ACA" | b"ACG" => 'T',
-                b"GCT" | b"GCC" | b"GCA" | b"GCG" => 'A',
-                b"TAT" | b"TAC" => 'Y',
-                b"TAA" | b"TAG" => '*',
-                b"CAT" | b"CAC" => 'H',
-                b"CAA" | b"CAG" => 'Q',
-                b"AAT" | b"AAC" => 'N',
-                b"AAA" | b"AAG" => 'K',
-                b"GAT" | b"GAC" => 'D',
-                b"GAA" | b"GAG" => 'E',
-                b"TGT" | b"TGC" => 'C',
-                b"TGA" | b"TGG" => 'W',
-                b"CGT" | b"CGC" | b"CGA" | b"CGG" => 'R',
-                b"GGT" | b"GGC" | b"GGA" | b"GGG" => 'G',
-                _ => 'X',
-            };
-            if aa == '*' {
-                let cox1_bonus = if cur_aa.contains("FPRMN") || cur_aa.contains("APDMA") || cur_aa.contains("GFGN") {
-                    2000
-                } else if cur_aa.contains("GHPEVY") || cur_aa.contains("WLLPP") || cur_aa.contains("WLVPL") {
-                    1500
+pub(crate) fn translate_mito_table5_orf_min(nt: &str, min_aa: usize) -> (usize, String, String) {
+    let scan_strand = |seq: &str| -> (usize, String, String, usize) {
+        let bytes = seq.as_bytes();
+        let mut best_frame_start = 0usize;
+        let mut best_aa = String::new();
+        let mut best_nt = String::new();
+        let mut best_score = 0usize;
+
+        for frame in 0..3 {
+            let mut cur_start = frame;
+            let mut cur_aa = String::new();
+            let mut i = frame;
+            while i + 3 <= bytes.len() {
+                let c = &bytes[i..i + 3];
+                let aa = translate_table5_codon_ch(c);
+                if aa == '*' {
+                    let cox1_bonus = if cur_aa.contains("FPRMN") || cur_aa.contains("APDMA") || cur_aa.contains("GFGN") {
+                        2000
+                    } else if cur_aa.contains("GHPEVY") || cur_aa.contains("WLLPP") || cur_aa.contains("WLVPL") {
+                        1500
+                    } else {
+                        0
+                    };
+                    let sc = cur_aa.len() + cox1_bonus;
+                    if sc > best_score && cur_aa.len() >= min_aa {
+                        best_score = sc;
+                        best_frame_start = cur_start;
+                        best_aa = cur_aa.clone();
+                        best_nt = seq[cur_start..i].to_string();
+                    }
+                    cur_aa.clear();
+                    cur_start = i + 3;
                 } else {
-                    0
-                };
-                let sc = cur_aa.len() + cox1_bonus;
-                if sc > best_score && cur_aa.len() >= 180 {
-                    best_score = sc;
-                    best_frame_start = cur_start;
-                    best_aa = cur_aa.clone();
-                    best_nt = nt[cur_start..i].to_string();
+                    cur_aa.push(aa);
                 }
-                cur_aa.clear();
-                cur_start = i + 3;
-            } else {
-                cur_aa.push(aa);
+                i += 3;
             }
-            i += 3;
+            let cox1_bonus = if cur_aa.contains("FPRMN") || cur_aa.contains("APDMA") || cur_aa.contains("GFGN") {
+                2000
+            } else if cur_aa.contains("GHPEVY") || cur_aa.contains("WLLPP") || cur_aa.contains("WLVPL") {
+                1500
+            } else {
+                0
+            };
+            let sc = cur_aa.len() + cox1_bonus;
+            if sc > best_score && cur_aa.len() >= min_aa {
+                best_score = sc;
+                best_frame_start = cur_start;
+                best_aa = cur_aa;
+                best_nt = seq[cur_start..i].to_string();
+            }
         }
-        let cox1_bonus = if cur_aa.contains("FPRMN") || cur_aa.contains("APDMA") || cur_aa.contains("GFGN") {
-            2000
-        } else {
-            0
-        };
-        let sc = cur_aa.len() + cox1_bonus;
-        if sc > best_score && cur_aa.len() >= 180 {
-            best_score = sc;
-            best_frame_start = cur_start;
-            best_aa = cur_aa;
-            best_nt = nt[cur_start..i].to_string();
+        (best_frame_start, best_nt, best_aa, best_score)
+    };
+
+    let (mut best_frame_start, mut best_nt, mut best_aa, best_score) = scan_strand(nt);
+    if (best_aa.is_empty() || best_score < 1500) && nt.len() <= 2_400 && nt.len() >= min_aa * 3 {
+        let rc = revcomp_dna(nt);
+        let (rc_start, rc_nt, rc_aa, rc_score) = scan_strand(&rc);
+        if !rc_aa.is_empty() && (best_aa.is_empty() || rc_score > best_score + 200) {
+            best_frame_start = rc_start;
+            best_nt = rc_nt;
+            best_aa = rc_aa;
         }
     }
     (best_frame_start, best_nt, best_aa)

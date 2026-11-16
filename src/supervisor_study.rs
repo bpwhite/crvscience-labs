@@ -44,6 +44,26 @@ use std::time::{Duration, Instant};
 
 const EUTILS_BASE: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
+/// Minimum fraction of valid (non-gap, non-ambiguous) bases across the trimmed supermatrix
+/// required for an OTU to enter concatenated phylogram/chronogram analyses.
+pub const MIN_SUPERMATRIX_OTU_COVERAGE_RATIO: f64 = 0.80;
+
+/// Minimum number of distinct loci (>= 10 valid bases each) required for an OTU
+/// to enter concatenated phylogram/chronogram analyses (excludes single-locus barcodes).
+pub const MIN_SUPERMATRIX_OTU_LOCI: usize = 2;
+
+/// Returns `true` iff an OTU meets both the `>= 80.0%` supermatrix occupancy gate
+/// and the `>= 2` distinct loci gate required for concatenated phylogram/chronogram inference.
+pub fn passes_supermatrix_phylogram_coverage_gate(
+    valid_bases: usize,
+    total_cols: usize,
+    loci_present: usize,
+) -> bool {
+    total_cols > 0
+        && (valid_bases as f64) / (total_cols as f64) >= MIN_SUPERMATRIX_OTU_COVERAGE_RATIO - 1e-9
+        && loci_present >= MIN_SUPERMATRIX_OTU_LOCI
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultiCompartmentNuclearRecord {
     pub record_id: String,
@@ -917,8 +937,9 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
 
         let mut best_score = 0usize;
         let mut best_nt_seq: Option<String> = None;
+        let mut frame_translations: Vec<(bool, usize, Vec<u8>)> = Vec::with_capacity(6);
 
-        for strand_str in [clean.as_str(), rc.as_str()] {
+        for (strand_idx, strand_str) in [clean.as_str(), rc.as_str()].iter().enumerate() {
             let mut doubled = String::with_capacity(strand_str.len() + wrap_extra);
             doubled.push_str(strand_str);
             doubled.push_str(&strand_str[..wrap_extra]);
@@ -973,6 +994,82 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
                             if nt_e >= clean_s + 135 {
                                 let cand = doubled[clean_s..nt_e].to_string();
                                 best_score = top_cnt;
+                                best_nt_seq = Some(cand);
+                            }
+                        }
+                    }
+                }
+                frame_translations.push((strand_idx == 1, frame, aa));
+            }
+        }
+        // Fallback for divergent lineages (e.g. Arachnida vs Hexapoda) when exact 4-mer AA seeding
+        // misses sparse Table-5 conserved motifs: 3-mer AA diagonal chaining with strict stop-codon filtering.
+        if best_nt_seq.is_none() && seed_aa.len() >= 45 {
+            let mut ref_3mers: std::collections::HashMap<[u8; 3], usize> =
+                std::collections::HashMap::with_capacity(seed_aa.len());
+            for (rp, w) in seed_aa.as_bytes().windows(3).enumerate() {
+                if w.iter().all(|&c| c != b'*' && c != b'X') {
+                    if let Ok(arr) = <[u8; 3]>::try_from(w) {
+                        ref_3mers.entry(arr).or_insert(rp);
+                    }
+                }
+            }
+            let min_3mer_hits = (target_aa_len / 14).clamp(10, 18);
+            let mut best_3mer_score = 0usize;
+            for (is_rc, frame, aa) in &frame_translations {
+                let strand_str = if *is_rc { rc.as_str() } else { clean.as_str() };
+                let mut doubled = String::with_capacity(strand_str.len() + wrap_extra);
+                doubled.push_str(strand_str);
+                doubled.push_str(&strand_str[..wrap_extra]);
+                let mut diag_counts: std::collections::HashMap<isize, usize> =
+                    std::collections::HashMap::new();
+                for (qp, w) in aa.windows(3).enumerate() {
+                    if let Ok(arr) = <[u8; 3]>::try_from(w) {
+                        if let Some(&rp) = ref_3mers.get(&arr) {
+                            let diag = (qp as isize) - (rp as isize);
+                            for d in (diag - 2)..=(diag + 2) {
+                                *diag_counts.entry(d).or_insert(0) += 1;
+                            }
+                        }
+                    }
+                }
+                if let Some((&top_diag, &top_cnt)) = diag_counts.iter().max_by_key(|(_, c)| *c) {
+                    if top_cnt > best_3mer_score && top_cnt >= min_3mer_hits {
+                        let start_aa = top_diag.saturating_sub(4).max(0) as usize;
+                        let max_end_aa =
+                            (top_diag.max(0) as usize + target_aa_len + 12).min(aa.len());
+                        let mut end_aa = max_end_aa;
+                        let core_floor =
+                            (top_diag.max(0) as usize + (target_aa_len * 2 / 3)).min(aa.len());
+                        for p in core_floor..max_end_aa {
+                            if aa[p] == b'*' {
+                                end_aa = p;
+                                break;
+                            }
+                        }
+                        if end_aa >= start_aa + 45 {
+                            let nt_s = *frame + start_aa * 3;
+                            let nt_e = (*frame + end_aa * 3).min(doubled.len());
+                            let mut clean_s = nt_s;
+                            for p in
+                                (top_diag.max(0) as usize).saturating_sub(2)..end_aa.min(aa.len())
+                            {
+                                if aa[p] == b'*' {
+                                    if p < top_diag.max(0) as usize + target_aa_len / 2 {
+                                        clean_s = *frame + (p + 1) * 3;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            let clean_start_aa = (clean_s - *frame) / 3;
+                            let internal_stops = aa[clean_start_aa + 2..end_aa.saturating_sub(2)]
+                                .iter()
+                                .filter(|&&c| c == b'*')
+                                .count();
+                            if internal_stops <= 1 && nt_e >= clean_s + 135 {
+                                let cand = doubled[clean_s..nt_e].to_string();
+                                best_3mer_score = top_cnt;
                                 best_nt_seq = Some(cand);
                             }
                         }

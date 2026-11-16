@@ -196,8 +196,25 @@ fn solve_china_aus_empirical_chronogram(
     node_ufboot: &[f64; 8],
     node_msc: &[(f64, f64, f64, f64, f64); 8],
 ) -> (Vec<SupervisedCalibratedNode>, [f64; 7], HashMap<String, f64>) {
+    let cleaned_vec: Vec<&SupervisedSequenceRecord> = sequences_manifest
+        .iter()
+        .filter(|r| r.included_in_cleaned_cohort)
+        .collect();
+    let matched = cleaned_vec
+        .iter()
+        .filter(|rec| {
+            let safe = rec.tip_code.replace(':', "_");
+            tip_bls.contains_key(&rec.tip_code) || tip_bls.contains_key(&safe)
+        })
+        .count();
+    let filter_by_tips = !tip_bls.is_empty() && matched >= 4;
+
     let mut by_sec: Vec<Vec<(String, String, f64)>> = vec![Vec::new(); 7];
-    for rec in sequences_manifest.iter().filter(|r| r.included_in_cleaned_cohort) {
+    for rec in cleaned_vec {
+        let safe = rec.tip_code.replace(':', "_");
+        if filter_by_tips && !tip_bls.contains_key(&rec.tip_code) && !tip_bls.contains_key(&safe) {
+            continue;
+        }
         let rk = match rec.tip_code.chars().next() {
             Some('A') => 0,
             Some('B') => 1,
@@ -207,7 +224,6 @@ fn solve_china_aus_empirical_chronogram(
             Some('F') => 5,
             _ => 6,
         };
-        let safe = rec.tip_code.replace(':', "_");
         let bl = tip_bls
             .get(&rec.tip_code)
             .or_else(|| tip_bls.get(&safe))
@@ -216,37 +232,68 @@ fn solve_china_aus_empirical_chronogram(
         by_sec[rk].push((rec.tip_code.clone(), rec.organism.clone(), bl));
     }
 
-    let mut nodes: Vec<TimeTreeNodeSpec> = vec![
-        TimeTreeNodeSpec { node_id: 0, parent_id: None, label: "Node I".to_string(), is_tip: false, is_extinct_fossil_tip: false, branch_length_subs: 0.0, tip_age_ma: None, cal_min_ma: Some(525.0), cal_max_ma: Some(565.0), focal_node_tag: Some("Node I".to_string()) },
-        TimeTreeNodeSpec { node_id: 1, parent_id: Some(0), label: "Node II".to_string(), is_tip: false, is_extinct_fossil_tip: false, branch_length_subs: 0.052, tip_age_ma: None, cal_min_ma: Some(360.0), cal_max_ma: Some(395.0), focal_node_tag: Some("Node II".to_string()) },
-        TimeTreeNodeSpec { node_id: 2, parent_id: Some(1), label: "Node III".to_string(), is_tip: false, is_extinct_fossil_tip: false, branch_length_subs: 0.036, tip_age_ma: None, cal_min_ma: Some(340.0), cal_max_ma: Some(372.0), focal_node_tag: Some("Node III".to_string()) },
-        TimeTreeNodeSpec { node_id: 3, parent_id: Some(2), label: "Node IV".to_string(), is_tip: false, is_extinct_fossil_tip: false, branch_length_subs: 0.032, tip_age_ma: None, cal_min_ma: Some(310.0), cal_max_ma: Some(345.0), focal_node_tag: Some("Node IV".to_string()) },
-        TimeTreeNodeSpec { node_id: 4, parent_id: Some(3), label: "Node VI".to_string(), is_tip: false, is_extinct_fossil_tip: false, branch_length_subs: 0.030, tip_age_ma: None, cal_min_ma: Some(270.0), cal_max_ma: Some(308.0), focal_node_tag: Some("Node VI".to_string()) },
-        TimeTreeNodeSpec { node_id: 5, parent_id: Some(4), label: "Node VII".to_string(), is_tip: false, is_extinct_fossil_tip: false, branch_length_subs: 0.038, tip_age_ma: None, cal_min_ma: Some(132.0), cal_max_ma: Some(168.0), focal_node_tag: Some("Node VII".to_string()) },
+    let non_empty_secs: Vec<usize> = (0..7).filter(|&s| !by_sec[s].is_empty()).collect();
+    let backbone_defs: [(&str, f64, f64, f64); 6] = [
+        ("Node I", 525.0, 565.0, 0.0),
+        ("Node II", 360.0, 395.0, 0.052),
+        ("Node III", 340.0, 372.0, 0.036),
+        ("Node IV", 310.0, 345.0, 0.032),
+        ("Node VI", 270.0, 308.0, 0.030),
+        ("Node VII", 132.0, 168.0, 0.038),
     ];
 
-    let sec_bounds: [(usize, Option<f64>, Option<f64>, &str); 7] = [
-        (0, Some(90.0), Some(145.0), "SecA_Crown"),
-        (1, Some(110.0), Some(175.0), "SecB_Crown"),
-        (2, Some(220.0), Some(310.0), "SecC_Crown"),
-        (3, Some(88.0), Some(120.0), "Node V"),
-        (4, Some(65.0), Some(115.0), "SecE_Crown"),
-        (5, Some(48.0), Some(92.0), "SecF_Crown"),
-        (5, Some(36.0), Some(62.0), "Node VIII"),
-    ];
-    let mut sec_node_ids = [0usize; 7];
-    for s_i in 0..7 {
-        let (p_id, c_lo, c_hi, lbl) = sec_bounds[s_i];
-        sec_node_ids[s_i] = collect_sorted_clade_nodes(&by_sec[s_i], p_id, c_lo, c_hi, lbl, &mut nodes);
+    let mut nodes: Vec<TimeTreeNodeSpec> = Vec::new();
+    let mut backbone_id_for_sec: [Option<usize>; 7] = [None; 7];
+    let mut parent_id_for_sec = [0usize; 7];
+    let n_active = non_empty_secs.len();
+    for pos in 0..n_active.saturating_sub(1) {
+        let s_left = non_empty_secs[pos];
+        let (lbl, cmin, cmax, bl_stem) = backbone_defs[s_left.min(5)];
+        let id = nodes.len();
+        let pid = if pos == 0 { None } else { Some(pos - 1) };
+        nodes.push(TimeTreeNodeSpec {
+            node_id: id,
+            parent_id: pid,
+            label: lbl.to_string(),
+            is_tip: false,
+            is_extinct_fossil_tip: false,
+            branch_length_subs: if pos == 0 { 0.0 } else { bl_stem },
+            tip_age_ma: None,
+            cal_min_ma: Some(cmin),
+            cal_max_ma: Some(cmax),
+            focal_node_tag: Some(lbl.to_string()),
+        });
+        backbone_id_for_sec[s_left] = Some(id);
+        parent_id_for_sec[s_left] = id;
+    }
+    if n_active >= 2 {
+        parent_id_for_sec[non_empty_secs[n_active - 1]] = nodes.len().saturating_sub(1);
     }
 
+    let sec_bounds: [(Option<f64>, Option<f64>, &str); 7] = [
+        (Some(90.0), Some(145.0), "SecA_Crown"),
+        (Some(110.0), Some(175.0), "SecB_Crown"),
+        (Some(220.0), Some(310.0), "SecC_Crown"),
+        (Some(88.0), Some(120.0), "Node V"),
+        (Some(65.0), Some(115.0), "SecE_Crown"),
+        (Some(48.0), Some(92.0), "SecF_Crown"),
+        (Some(36.0), Some(62.0), "Node VIII"),
+    ];
+    let mut sec_node_ids: [Option<usize>; 7] = [None; 7];
+    for &s_i in &non_empty_secs {
+        let (c_lo, c_hi, lbl) = sec_bounds[s_i];
+        let sid = collect_sorted_clade_nodes(&by_sec[s_i], parent_id_for_sec[s_i], c_lo, c_hi, lbl, &mut nodes);
+        sec_node_ids[s_i] = Some(sid);
+    }
+
+    let n_gated_taxa: usize = by_sec.iter().map(|v| v.len()).sum();
     let spec = TimeTreeCohortSpec {
-        cohort_id: "CHINA-AUS-PESTS-64TAXA-LSD2".to_string(),
+        cohort_id: format!("CHINA-AUS-PESTS-{}TAXA-LSD2", n_gated_taxa),
         split: "Development".to_string(),
         domain: "Arthropoda".to_string(),
         clade_label: "China & Australia Arthropod Agricultural Pests".to_string(),
         alignment_length_sites: aln_cols.max(1_000),
-        accession_anchor: "Arthropoda 64-Species Phased Multi-Compartment Core".to_string(),
+        accession_anchor: "Arthropoda >=80%-Gated Multi-Compartment Core".to_string(),
         literature_anchor: "Misof et al. 2014; Rota-Stabelli et al. 2013; Johnson et al. 2018; McKenna et al. 2019; Wiegmann et al. 2011; Kawahara et al. 2019".to_string(),
         is_negative_control: false,
         negative_control_type: None,
@@ -257,17 +304,19 @@ fn solve_china_aus_empirical_chronogram(
     let (solved_t, solved_cis, _rate, _q, _st, _reg) = solve_native_lsd2_chronogram(&spec);
     let mut sec_crowns = [0.0f64; 7];
     for s_i in 0..7 {
-        sec_crowns[s_i] = round4(solved_t[sec_node_ids[s_i]]);
+        if let Some(nid) = sec_node_ids[s_i] {
+            sec_crowns[s_i] = round4(solved_t[nid]);
+        }
     }
     let idx_map: [(&str, usize); 8] = [
-        ("Node I", 0),
-        ("Node II", 1),
-        ("Node III", 2),
-        ("Node IV", 3),
-        ("Node V", sec_node_ids[3]),
-        ("Node VI", 4),
-        ("Node VII", 5),
-        ("Node VIII", sec_node_ids[6]),
+        ("Node I", backbone_id_for_sec[0].unwrap_or(0)),
+        ("Node II", backbone_id_for_sec[1].unwrap_or(0)),
+        ("Node III", backbone_id_for_sec[2].unwrap_or(backbone_id_for_sec[1].unwrap_or(0))),
+        ("Node IV", backbone_id_for_sec[3].unwrap_or(sec_node_ids[2].unwrap_or(0))),
+        ("Node V", sec_node_ids[3].unwrap_or(sec_node_ids[1].unwrap_or(0))),
+        ("Node VI", backbone_id_for_sec[4].unwrap_or(backbone_id_for_sec[3].unwrap_or(0))),
+        ("Node VII", backbone_id_for_sec[5].unwrap_or(backbone_id_for_sec[4].unwrap_or(0))),
+        ("Node VIII", sec_node_ids[6].unwrap_or(backbone_id_for_sec[5].unwrap_or(0))),
     ];
     let mut node_lookup = HashMap::new();
     for &(lbl, ni) in &idx_map {
@@ -559,16 +608,54 @@ pub fn execute_china_aus_pests_supervisor_study(
     ];
     let mut full_mitogenome_records: Vec<FastaRecord> = Vec::new();
     let mut seen_mito_acc: HashSet<String> = HashSet::new();
+    let mut seen_mito_sp: HashSet<String> = HashSet::new();
+    let norm_sp_init = |s: &str| -> String {
+        let w: Vec<String> = s.split_whitespace().take(2).map(|x| x.to_ascii_lowercase()).collect();
+        w.join(" ")
+    };
     for &(mk, mq, n_tgt) in &mito_cohort_queries {
         if let Ok(items) = discover_entrez_with_retry(mk, mq, n_tgt, 12_000, 20_000, &val_cache_dir) {
             for (sm, seq) in items {
                 if seen_mito_acc.insert(sm.accession.clone()) && seq.len() >= 12_000 {
+                    seen_mito_sp.insert(norm_sp_init(&sm.organism));
                     full_mitogenome_records.push(FastaRecord {
                         id: sm.accession.clone(),
                         accession: sm.accession,
                         taxon: sm.organism.clone(),
                         common_name: String::new(),
                         family: mk.to_string(),
+                        gene: "MITOGENOME".to_string(),
+                        description: sm.title,
+                        sequence: seq,
+                        cached_from_disk: true,
+                    });
+                }
+            }
+        }
+    }
+    // Per-species RefSeq/GenBank complete mitogenome discovery so all 7 sectors (incl. [A] Tetranychidae)
+    // expose complete multi-locus mitogenomes when available on NCBI Entrez (cached to val_cache_dir).
+    for (tip_code, _, _, sp_lbl, _, _, _, raw_seq, _) in &slot_entries {
+        if raw_seq.len() >= 11_500 {
+            seen_mito_sp.insert(norm_sp_init(sp_lbl));
+        }
+        let sp_key = norm_sp_init(sp_lbl);
+        if seen_mito_sp.contains(&sp_key) {
+            continue;
+        }
+        let cache_key = format!("mito_sp_{}", sp_key.replace(' ', "_"));
+        let mq = format!("\"{}\"[Organism] AND mitochondrion[Filter] AND 11500:21000[SLEN]", sp_lbl);
+        if let Ok(items) = discover_entrez_with_retry(&cache_key, &mq, 1, 11_500, 21_500, &val_cache_dir) {
+            for (sm, seq) in items {
+                if seen_mito_acc.insert(sm.accession.clone()) && seq.len() >= 11_500 {
+                    seen_mito_sp.insert(sp_key.clone());
+                    seen_mito_sp.insert(norm_sp_init(&sm.organism));
+                    full_mitogenome_records.push(FastaRecord {
+                        id: sm.accession.clone(),
+                        accession: sm.accession,
+                        taxon: sp_lbl.clone(),
+                        common_name: String::new(),
+                        family: tip_code.clone(),
                         gene: "MITOGENOME".to_string(),
                         description: sm.title,
                         sequence: seq,
@@ -1057,6 +1144,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         }
     }
 
+    let mut msc_partitions: Vec<(String, bool, bool, usize, HashMap<String, String>)> = Vec::new();
     let mut kept_partitions: Vec<(String, bool, bool, usize, HashMap<String, String>)> = Vec::new();
     for loc in &bench.loci {
         let is_nuc = matches!(loc.as_str(), "SSU_18S" | "LSU_28S");
@@ -1110,6 +1198,7 @@ pub fn execute_china_aus_pests_supervisor_study(
 
         if loc == "COI" {
             let pmap: HashMap<String, String> = cox64_nt_pairs.iter().cloned().collect();
+            msc_partitions.push((loc.clone(), true, false, cox64_cols_bp, pmap.clone()));
             kept_partitions.push((loc.clone(), true, false, cox64_cols_bp, pmap));
             continue;
         }
@@ -1132,7 +1221,11 @@ pub fn execute_china_aus_pests_supervisor_study(
         };
         if plen >= 90 && aligned_pairs.len() >= 8 {
             let pmap: HashMap<String, String> = aligned_pairs.into_iter().collect();
-            kept_partitions.push((loc.clone(), is_pcg, is_nuc, plen, pmap));
+            msc_partitions.push((loc.clone(), is_pcg, is_nuc, plen, pmap.clone()));
+            // Enforce >= 50% taxon coverage on sparse nuclear rRNAs before entering concatenated supermatrix (Rule 2.00.1.d.2)
+            if !is_nuc || pmap.len() >= 38 {
+                kept_partitions.push((loc.clone(), is_pcg, is_nuc, plen, pmap));
+            }
         }
     }
 
@@ -1160,18 +1253,55 @@ pub fn execute_china_aus_pests_supervisor_study(
     }
     let ortho64_cols_bp = cursor_1b.saturating_sub(1);
 
+    let mut all64_labels = Vec::with_capacity(64);
+    let mut all64_ry3_strs = Vec::with_capacity(64);
+    let mut all64_unrec_pairs = Vec::with_capacity(64);
+    let mut all64_raw0_strs = Vec::with_capacity(64);
+    let mut viz_rows: Vec<SupermatrixTaxonRow> = Vec::with_capacity(64);
+
     let mut ry3_pairs = Vec::with_capacity(64);
     let mut codon12_pairs = Vec::with_capacity(64);
     let mut unrec4_pairs = Vec::with_capacity(64);
-    let mut viz_rows: Vec<SupermatrixTaxonRow> = Vec::with_capacity(64);
+    let mut raw0_pairs = Vec::with_capacity(64);
+
+    let build_raw0_for = |idx: usize| -> String {
+        let mut raw_acgt = String::new();
+        if idx < raw0_control_records.len() {
+            raw_acgt.push_str(&raw0_control_records[idx].sequence);
+        }
+        let raw_slot: String = slot_entries[idx]
+            .7
+            .bytes()
+            .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+            .map(|b| b.to_ascii_uppercase() as char)
+            .collect();
+        if raw_acgt.len() < ortho64_cols_bp {
+            if idx < sequences_manifest.len() && sequences_manifest[idx].strand_orientation == '-' {
+                raw_acgt.push_str(&revcomp_dna(&raw_slot));
+            } else {
+                raw_acgt.push_str(&raw_slot);
+            }
+        }
+        raw_acgt = raw_acgt
+            .bytes()
+            .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
+            .map(|b| b.to_ascii_uppercase() as char)
+            .take(ortho64_cols_bp)
+            .collect();
+        if raw_acgt.len() < ortho64_cols_bp {
+            raw_acgt.push_str(&"-".repeat(ortho64_cols_bp - raw_acgt.len()));
+        }
+        raw_acgt
+    };
 
     for (idx, (tip_code, sec_code, _, sp_name, _, _, _, _, _)) in slot_entries.iter().enumerate() {
-        let _ = idx;
         let safe_id = tip_code.replace(':', "_");
         let mut s_ry3 = String::with_capacity(ortho64_cols_bp);
         let mut s_c12 = String::with_capacity(ortho64_cols_bp);
         let mut s_unr = String::with_capacity(ortho64_cols_bp);
         let mut s_viz = String::with_capacity(ortho64_cols_bp);
+        let mut valid_bases = 0usize;
+        let mut loci_present = 0usize;
         for (_, is_pcg, _, plen, pmap) in &kept_partitions {
             if let Some(seq_p) = pmap.get(&safe_id) {
                 let mut fixed = seq_p.clone();
@@ -1180,13 +1310,20 @@ pub fn execute_china_aus_pests_supervisor_study(
                 } else if fixed.len() > *plen {
                     fixed.truncate(*plen);
                 }
+                let vb = fixed
+                    .bytes()
+                    .filter(|&b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T' | b'R' | b'Y'))
+                    .count();
+                valid_bases += vb;
+                if vb >= 10 {
+                    loci_present += 1;
+                }
                 s_unr.push_str(&fixed);
                 s_viz.push_str(&fixed);
                 if *is_pcg {
                     s_ry3.push_str(&recode_ry3(&fixed));
                     s_c12.push_str(&recode_codon12(&fixed));
                 } else {
-                    // Preserve structural rRNAs as unrecoded 4-state nucleotides in both RY3 and Codon-12 regimes!
                     s_ry3.push_str(&fixed);
                     s_c12.push_str(&fixed);
                 }
@@ -1199,59 +1336,57 @@ pub fn execute_china_aus_pests_supervisor_study(
                 s_viz.push_str(&miss_q);
             }
         }
-        ry3_pairs.push((safe_id.clone(), s_ry3));
-        codon12_pairs.push((safe_id.clone(), s_c12));
-        unrec4_pairs.push((safe_id.clone(), s_unr));
+        let raw0_s = build_raw0_for(idx);
+        all64_labels.push(safe_id.clone());
+        all64_ry3_strs.push(s_ry3.clone());
+        all64_unrec_pairs.push((safe_id.clone(), s_unr.clone()));
+        all64_raw0_strs.push(raw0_s.clone());
         viz_rows.push(SupermatrixTaxonRow {
             tip_code: tip_code.clone(),
             sector_code: sec_code.clone(),
             species_label: sp_name.clone(),
             aligned_row: s_viz,
         });
+        if crate::supervisor_study::passes_supermatrix_phylogram_coverage_gate(
+            valid_bases,
+            ortho64_cols_bp,
+            loci_present,
+        ) {
+            ry3_pairs.push((safe_id.clone(), s_ry3));
+            codon12_pairs.push((safe_id.clone(), s_c12));
+            unrec4_pairs.push((safe_id.clone(), s_unr));
+            raw0_pairs.push((safe_id, raw0_s));
+        }
     }
+    if ry3_pairs.len() < 10 {
+        return Err(format!(
+            "P29 >=80% supermatrix gate retained only {} OTUs (<10)",
+            ry3_pairs.len()
+        ));
+    }
+    let n_phy = ry3_pairs.len();
+    let unrec64_map: HashMap<String, Vec<u8>> = all64_unrec_pairs
+        .iter()
+        .map(|(k, v)| (k.clone(), v.as_bytes().to_vec()))
+        .collect();
+    let unfiltered_all64_ufboot_pct = infer_native_ml_tree_with_bootstrap(
+        &all64_ry3_strs,
+        &all64_labels,
+        PhyloRunModel::Tn93InvGamma4,
+        150,
+        20261129,
+    )
+    .map(|(_, rep)| rep.mean_split_support_pct)
+    .unwrap_or(0.0);
 
     let aligned_fasta_rel_path = "alignments/china_aus_pests_64taxa_supermatrix.fasta".to_string();
     {
         let mut prim = String::with_capacity(64 * (ortho64_cols_bp + 64));
-        for (i, (id, nt)) in unrec4_pairs.iter().enumerate() {
+        for (i, (id, nt)) in all64_unrec_pairs.iter().enumerate() {
             prim.push_str(&format!(">{}|{}|{}\n{}\n", id, slot_entries[i].3, slot_entries[i].2, nt));
         }
         let _ = fs::write(run_dir.join(&aligned_fasta_rel_path), prim);
     }
-
-    let raw0_pairs: Vec<(String, String)> = unrec4_pairs
-        .iter()
-        .enumerate()
-        .map(|(idx, (tax, _seq))| {
-            let mut raw_acgt = String::new();
-            if idx < raw0_control_records.len() {
-                raw_acgt.push_str(&raw0_control_records[idx].sequence);
-            }
-            let raw_slot: String = slot_entries[idx]
-                .7
-                .bytes()
-                .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
-                .map(|b| b.to_ascii_uppercase() as char)
-                .collect();
-            if raw_acgt.len() < ortho64_cols_bp {
-                if idx < sequences_manifest.len() && sequences_manifest[idx].strand_orientation == '-' {
-                    raw_acgt.push_str(&revcomp_dna(&raw_slot));
-                } else {
-                    raw_acgt.push_str(&raw_slot);
-                }
-            }
-            raw_acgt = raw_acgt
-                .bytes()
-                .filter(|b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T'))
-                .map(|b| b.to_ascii_uppercase() as char)
-                .take(ortho64_cols_bp)
-                .collect();
-            if raw_acgt.len() < ortho64_cols_bp {
-                raw_acgt.push_str(&"-".repeat(ortho64_cols_bp - raw_acgt.len()));
-            }
-            (tax.clone(), raw_acgt)
-        })
-        .collect();
 
     // Track C: Align all 4 Nuclear Functional CDS families via mafft-native & export Supp S1 (CYP6)
     let mut aligned_nuc_families: Vec<(Vec<(String, String)>, Vec<MultiCompartmentNuclearRecord>, u128)> =
@@ -1543,40 +1678,71 @@ pub fn execute_china_aus_pests_supervisor_study(
     let _ = fs::write(run_dir.join("trees/china_aus_pests_64_ry3_ml.nwk"), &ml_ry3.newick_tree);
     let stage_ml_ufboot_ms = t_ml.elapsed().as_millis().max(1);
 
-    // Evaluate bipartitions against `benchmarks/china_australia_pests_preprint29_design.json` using shared `validate_tree`!
-    let val_ml = validate_tree("ML RY3 (64 Taxa)", &ml_ry3.newick_tree, &tip_family_map, &bench);
+    // Evaluate bipartitions over gated N_phy taxa using shared `validate_tree`
+    let gated_tip_family_map: HashMap<String, String> = tip_labels
+        .iter()
+        .filter_map(|t| {
+            tip_family_map
+                .get(t)
+                .map(|v| (t.clone(), v.clone()))
+                .or_else(|| tip_family_map.get(&t.replace('_', ":")).map(|v| (t.clone(), v.clone())))
+        })
+        .collect();
+    let val_ml = validate_tree(
+        &format!("ML RY3 ({} >=80% Gated Taxa)", n_phy),
+        &ml_ry3.newick_tree,
+        &gated_tip_family_map,
+        &bench,
+    );
 
     let parsed_root = parse_phylo_tree(&ml_ry3.newick_tree, false, &empty_ages)
         .ok_or_else(|| "Failed to parse solved China/Australia RY3 ML tree".to_string())?;
     let mut flat_tree = Vec::new();
     flatten_postorder(&parsed_root, &tip_to_idx, &mut flat_tree);
     let mut split_vec_ry3 = Vec::new();
-    collect_u64_splits(&parsed_root, &tip_to_idx, u64::MAX, &mut split_vec_ry3);
+    let full_mask_phy: u64 = if n_phy >= 64 { u64::MAX } else { (1u64 << n_phy) - 1 };
+    collect_u64_splits(&parsed_root, &tip_to_idx, full_mask_phy, &mut split_vec_ry3);
     let ml_split_set: HashSet<u64> = split_vec_ry3.into_iter().collect();
 
-    // Exact node UFBoot supports from `boot_rep_ry3.split_support_pct_by_mask`
+    // Dynamic sector tip indices on the N_phy gated ML tree + UFBoot supports
+    let sec_idxs = |letters: &[char]| -> Vec<usize> {
+        tip_labels
+            .iter()
+            .enumerate()
+            .filter_map(|(i, id)| letters.contains(&id.chars().next().unwrap_or('G')).then_some(i))
+            .collect()
+    };
     let lookup_split_boot = |indices: &[usize]| -> f64 {
+        if indices.len() < 2 || indices.len() >= n_phy {
+            return boot_rep_ry3.mean_split_support_pct;
+        }
         let mut mask = 0u64;
         for &i in indices {
             if i < 64 { mask |= 1u64 << i; }
         }
-        let canon = if (mask & 1) != 0 { (!mask) & u64::MAX } else { mask };
+        let canon = if (mask & 1) != 0 { (!mask) & full_mask_phy } else { mask };
         boot_rep_ry3
             .split_support_pct_by_mask
             .iter()
             .find(|(m, _)| m.len() == 1 && m[0] == canon)
             .map(|(_, p)| *p)
-            .unwrap_or_else(|| if clade_bipartition_recovered(indices, 64, &ml_split_set) { 100.0 } else { boot_rep_ry3.mean_split_support_pct })
+            .unwrap_or_else(|| {
+                if clade_bipartition_recovered(indices, n_phy, &ml_split_set) {
+                    100.0
+                } else {
+                    boot_rep_ry3.mean_split_support_pct
+                }
+            })
     };
     let node_ufboot: [f64; 8] = [
-        lookup_split_boot(&(0..4).collect::<Vec<_>>()),
-        lookup_split_boot(&(4..10).collect::<Vec<_>>()),
-        lookup_split_boot(&(10..28).collect::<Vec<_>>()),
-        lookup_split_boot(&(28..64).collect::<Vec<_>>()),
-        lookup_split_boot(&(28..35).collect::<Vec<_>>()),
-        lookup_split_boot(&(35..45).collect::<Vec<_>>()),
-        lookup_split_boot(&(45..64).collect::<Vec<_>>()),
-        lookup_split_boot(&(56..64).collect::<Vec<_>>()),
+        lookup_split_boot(&sec_idxs(&['A'])),
+        lookup_split_boot(&sec_idxs(&['B'])),
+        lookup_split_boot(&sec_idxs(&['C'])),
+        lookup_split_boot(&sec_idxs(&['D', 'E', 'F', 'G'])),
+        lookup_split_boot(&sec_idxs(&['D'])),
+        lookup_split_boot(&sec_idxs(&['E'])),
+        lookup_split_boot(&sec_idxs(&['F', 'G'])),
+        lookup_split_boot(&sec_idxs(&['G'])),
     ];
 
     // Phase 3B: Re-score 32-Chain Native RuNIE Combinatorial Sweep on final solved ML tree (`flat_tree`)
@@ -1680,7 +1846,7 @@ pub fn execute_china_aus_pests_supervisor_study(
     for (grk, idx) in order_idx.into_iter().enumerate() { combinatorial_sweep_32_chains[idx].global_rank = grk + 1; }
     let stage_modeltest_ms = t_mt.elapsed().as_millis().max(1) + pre_mt_ms;
 
-    // Emit Supermatrix Positional Coverage & Circular Phasing SVG (Figure 2B) + summary JSON
+    // Emit Supplemental Figure S4 (Supermatrix Positional Coverage & Circular Phasing SVG) + summary JSON
     let phasing_cmp = CircularPhasingComparison {
         n_mitogenomes: phased_mitos.len(),
         unphased_aligned_cols: unphased_gotoh_cols_l,
@@ -1695,21 +1861,37 @@ pub fn execute_china_aus_pests_supervisor_study(
         single_gene_ufboot_pct,
         supermatrix_ufboot_pct: boot_rep_ry3.mean_split_support_pct,
         winning_model_label: format!("{} ({})", init_win_rm[0].code(), reg_defs[0].1),
+        unfiltered_all_otu_ufboot_pct: Some(round4(unfiltered_all64_ufboot_pct)),
     };
     let cov_svg = render_supermatrix_positional_coverage_svg(
-        &format!("64 China/Australia Arthropod Pest Species | {} Retained Loci", kept_partitions.len()),
+        &format!(
+            "64 China/Australia Pests ({} >=80% Gated; {} Single/Sparse to Fig 3/4/7)",
+            n_phy,
+            64usize.saturating_sub(n_phy),
+        ),
         &partition_spans,
         &viz_rows,
         &phasing_cmp,
     );
-    let fig2b_name = "china-australia-pests-fig2b-supermatrix-coverage.svg";
-    let _ = fs::write(run_dir.join("figures").join(fig2b_name), &cov_svg);
+    // Clean up any deprecated fig2b SVG/PNG/PDF artifacts from previous layout
+    let ws_root_clean = resolve_crv_workspace_root();
+    let labs_clean_dir = ws_root_clean.join("labs").join("figures");
+    for old_ext in ["svg", "png", "pdf"] {
+        let old_f = format!("china-australia-pests-fig2b-supermatrix-coverage.{}", old_ext);
+        let _ = fs::remove_file(run_dir.join("figures").join(&old_f));
+        let _ = fs::remove_file(labs_clean_dir.join(&old_f));
+    }
+    let s4_name = "china-australia-pests-supp-s4-supermatrix-coverage.svg";
+    let _ = fs::write(run_dir.join("figures").join(s4_name), &cov_svg);
     let ws_root = resolve_crv_workspace_root();
     let labs_fig_dir = ws_root.join("labs").join("figures");
     let _ = fs::create_dir_all(&labs_fig_dir);
-    let _ = fs::write(labs_fig_dir.join(fig2b_name), &cov_svg);
+    let _ = fs::write(labs_fig_dir.join(s4_name), &cov_svg);
     let cov_json = json!({
         "loci_retained": kept_partitions.len(),
+        "msc_loci_retained": msc_partitions.len(),
+        "phylogram_gated_otus_n": n_phy,
+        "popgen_only_otus_n": 64usize.saturating_sub(n_phy),
         "supermatrix_cols": ortho64_cols_bp,
         "mito_partition_cols": mito_supermatrix_cols,
         "nuc_rrna_partition_cols": nuc_rrna_supermatrix_cols,
@@ -1720,6 +1902,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         "phased_mean_occ_pct": phased_mean_occ_pct,
         "single_gene_cox1_cols": cox64_cols_bp,
         "single_gene_ufboot_pct": round4(single_gene_ufboot_pct),
+        "unfiltered_all64_ufboot_pct": round4(unfiltered_all64_ufboot_pct),
         "supermatrix_ufboot_pct": boot_rep_ry3.mean_split_support_pct,
         "carried_win_model": init_win_rm[0].code(),
         "partitions": partition_spans.iter().map(|p| json!({
@@ -1760,7 +1943,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         });
     }
 
-    // True Per-Locus Quartet MSC (1 gene tree per retained locus partition) + CladeBenchmark validation
+    // True Per-Locus Quartet MSC across ALL 64 species (1 gene tree per retained locus partition in `msc_partitions`)
     let t_msc = Instant::now();
     let infer_per_locus_trees = |mode: u8| -> Vec<String> {
         if mode == 3 {
@@ -1769,17 +1952,17 @@ pub fn execute_china_aus_pests_supervisor_study(
                 .map(|sp| {
                     let s0 = sp.start_col_1based.saturating_sub(1);
                     let len_p = sp.end_col_1based - s0;
-                    let sub: Vec<String> = raw0_strings.iter().map(|q| q.chars().skip(s0).take(len_p).collect()).collect();
-                    infer_native_ml_gene_tree(&sub, &tip_labels, PhyloRunModel::HkyInvGamma4).newick_tree
+                    let sub: Vec<String> = all64_raw0_strs.iter().map(|q| q.chars().skip(s0).take(len_p).collect()).collect();
+                    infer_native_ml_gene_tree(&sub, &all64_labels, PhyloRunModel::HkyInvGamma4).newick_tree
                 })
                 .collect()
         } else {
-            kept_partitions
+            msc_partitions
                 .par_iter()
                 .filter_map(|(_loc, is_pcg, _, _plen, pmap)| {
                     let mut lbls = Vec::new();
                     let mut seqs = Vec::new();
-                    for t in &tip_labels {
+                    for t in &all64_labels {
                         if let Some(s) = pmap.get(t) {
                             lbls.push(t.clone());
                             seqs.push(match mode {
@@ -1810,7 +1993,7 @@ pub fn execute_china_aus_pests_supervisor_study(
     );
 
     let get_u = |tid: &str| -> Vec<u8> {
-        unrec_map.get(&tid.replace(':', "_")).or_else(|| unrec_map.get(tid)).cloned().unwrap_or_default()
+        unrec64_map.get(&tid.replace(':', "_")).or_else(|| unrec64_map.get(tid)).cloned().unwrap_or_default()
     };
     let tip_disp = |tid: &str| slot_label_map.get(tid).cloned().unwrap_or_else(|| tid.to_string());
     let abba_baba_tests = vec![
@@ -2279,7 +2462,7 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
     let fig_dir = run_dir.join("figures");
     fs::create_dir_all(&fig_dir).map_err(|e| format!("Failed creating {:?}: {}", fig_dir, e))?;
 
-    let val_cache_dir = cache.cache_dir.join("val_set_068_china_aus_pests");
+    let val_cache_dir = cache.cache_dir.join("val_set_068_china_australia_pests");
     let mito_cohort_queries: [(&str, &str, usize); 5] = [
         ("mito_noct_cramb", "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Ostrinia\"[Organism] OR \"Plutella\"[Organism]) AND mitochondrion[Filter] AND 14000:18000[SLEN]", 12),
         ("mito_tephritid", "(\"Bactrocera\"[Organism] OR \"Ceratitis capitata\"[Organism] OR \"Zeugodacus\"[Organism]) AND mitochondrion[Filter] AND 14000:18000[SLEN]", 10),
@@ -2439,6 +2622,8 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
     let cox_cols = sum_val["single_gene_cox1_cols"].as_u64().unwrap_or(615) as usize;
     let single_boot = sum_val["single_gene_ufboot_pct"].as_f64().unwrap_or(77.2);
     let sup_boot = sum_val["supermatrix_ufboot_pct"].as_f64().unwrap_or(91.1);
+    let unfilt_boot = sum_val["unfiltered_all64_ufboot_pct"].as_f64();
+    let n_gated = sum_val["phylogram_gated_otus_n"].as_u64().unwrap_or(16) as usize;
     let win_model = sum_val["carried_win_model"].as_str().unwrap_or("TN+F+I+G4").to_string();
 
     let phasing_cmp = CircularPhasingComparison {
@@ -2455,20 +2640,25 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
         single_gene_ufboot_pct: single_boot,
         supermatrix_ufboot_pct: sup_boot,
         winning_model_label: format!("{} (RY3)", win_model),
+        unfiltered_all_otu_ufboot_pct: unfilt_boot,
     };
     let cov_svg = render_supermatrix_positional_coverage_svg(
-        &format!("64 China/Australia Arthropod Pest Species | {} Retained Loci", spans.len()),
+        &format!(
+            "64 China/Australia Pests ({} >=80% Gated; {} Single/Sparse to Fig 3/4/7)",
+            n_gated,
+            64usize.saturating_sub(n_gated)
+        ),
         &spans,
         &viz_rows,
         &phasing_cmp,
     );
-    let fig2b_name = "china-australia-pests-fig2b-supermatrix-coverage.svg";
-    let out_run_svg = fig_dir.join(fig2b_name);
+    let s4_name = "china-australia-pests-supp-s4-supermatrix-coverage.svg";
+    let out_run_svg = fig_dir.join(s4_name);
     fs::write(&out_run_svg, &cov_svg).map_err(|e| format!("Failed writing {:?}: {}", out_run_svg, e))?;
     let ws_root = resolve_crv_workspace_root();
     let labs_fig_dir = ws_root.join("labs").join("figures");
     fs::create_dir_all(&labs_fig_dir).map_err(|e| e.to_string())?;
-    let out_labs_svg = labs_fig_dir.join(fig2b_name);
+    let out_labs_svg = labs_fig_dir.join(s4_name);
     fs::write(&out_labs_svg, &cov_svg).map_err(|e| format!("Failed writing {:?}: {}", out_labs_svg, e))?;
 
     sum_val["unphased_mitogenome_gotoh_cols"] = json!(unphased_cols);

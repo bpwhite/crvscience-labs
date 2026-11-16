@@ -38,6 +38,7 @@ pub struct CircularPhasingComparison {
     pub single_gene_ufboot_pct: f64,
     pub supermatrix_ufboot_pct: f64,
     pub winning_model_label: String,
+    pub unfiltered_all_otu_ufboot_pct: Option<f64>,
 }
 
 fn short_locus_label(name: &str) -> String {
@@ -384,15 +385,50 @@ pub fn render_supermatrix_positional_coverage_svg(
         ));
     }
 
+    // Per-row occupancy, distinct locus count, and >= 80% / >= 2-loci phylogram inclusion status
+    let mut row_stats: Vec<(f64, usize, bool)> = Vec::with_capacity(n_taxa);
+    for r in rows {
+        let rb = r.aligned_row.as_bytes();
+        let valid_t = rb
+            .iter()
+            .filter(|&&b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T' | b'R' | b'Y'))
+            .count();
+        let mut loci_present = 0usize;
+        for p in partitions {
+            let s0 = p.start_col_1based.saturating_sub(1).min(rb.len());
+            let e0 = p.end_col_1based.min(rb.len());
+            if s0 < e0 {
+                let valid_p = rb[s0..e0]
+                    .iter()
+                    .filter(|&&b| {
+                        matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T' | b'R' | b'Y')
+                    })
+                    .count();
+                if valid_p >= 10 {
+                    loci_present += 1;
+                }
+            }
+        }
+        let occ_pct = (valid_t as f64 / total_cols as f64) * 100.0;
+        let gated_in = crate::supervisor_study::passes_supermatrix_phylogram_coverage_gate(
+            valid_t,
+            total_cols,
+            loci_present,
+        );
+        row_stats.push((occ_pct, loci_present, gated_in));
+    }
+    let n_gated_in = row_stats.iter().filter(|s| s.2).count();
+    let n_popgen_only = n_taxa.saturating_sub(n_gated_in);
+
     // ================= PANEL B =================
     out.push_str("<rect x=\"16\" y=\"328\" width=\"1448\" height=\"416\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");
     out.push_str(&format!(
-        "<text x=\"28\" y=\"348\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel B | {}-Taxon × Position Supermatrix Occupancy &amp; Locus Presence Map (Column-Synced With Panel A)</text>\n",
-        n_taxa
+        "<text x=\"28\" y=\"347\" font-size=\"12.5\" font-weight=\"700\" fill=\"#0f172a\">Panel B | {}-Taxon x Position Occupancy ({} Phylogram &gt;=80%; {} Coalescent/PopGen-Only)</text>\n",
+        n_taxa, n_gated_in, n_popgen_only
     ));
-    out.push_str("<text x=\"1452\" y=\"348\" text-anchor=\"end\" font-size=\"11\" fill=\"#334155\">Teal = Mito PCG | Blue = Mito rRNA | Purple = Nuclear | Orange = Gap (-) | Slate = Missing Locus (?)</text>\n");
+    out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Mito PCG | Blue = Mito rRNA | Purple = Nuclear | Orange = Gap (-) | Slate = Missing (?)</text>\n");
 
-    let y_m0 = 360.0f64;
+    let y_m0 = 363.0f64;
     let y_m1 = 724.0f64;
     let row_h = (y_m1 - y_m0) / (n_taxa as f64);
 
@@ -509,14 +545,15 @@ pub fn render_supermatrix_positional_coverage_svg(
         }
         out.push('\n');
 
-        // Right-margin per-taxon completeness bar (`x = 1324..1430`)
+        // Right-margin per-taxon completeness bar (`x = 1324..1428`) colored by 80% phylogram gate
         let bar_w = 104.0f64;
         let fill_w = (t_pct.clamp(0.0, 100.0) / 100.0) * bar_w;
         out.push_str(&format!(
             "<rect x=\"1324\" y=\"{:.2}\" width=\"{:.1}\" height=\"{:.2}\" fill=\"#e2e8f0\"/>\n",
             ry, bar_w, cell_h
         ));
-        let bar_col = if t_pct >= 65.0 { "#0f766e" } else if t_pct >= 25.0 { "#0284c7" } else { "#f59e0b" };
+        let gated_in = row_stats.get(ri).map(|s| s.2).unwrap_or(false);
+        let bar_col = if gated_in { "#0f766e" } else { "#f59e0b" };
         out.push_str(&format!(
             "<rect x=\"1324\" y=\"{:.2}\" width=\"{:.2}\" height=\"{:.2}\" fill=\"{}\"/>\n",
             ry, fill_w.max(1.5), cell_h, bar_col
@@ -528,7 +565,16 @@ pub fn render_supermatrix_positional_coverage_svg(
             ));
         }
     }
-    out.push_str("<text x=\"1376\" y=\"737\" text-anchor=\"middle\" font-size=\"9.5\" font-weight=\"700\" fill=\"#334155\">Taxon Completeness (%)</text>\n");
+    let gate_x = 1324.0 + 0.80 * 104.0;
+    out.push_str(&format!(
+        "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"1.4\" stroke-dasharray=\"4,3\"/>\n",
+        gate_x, y_m0, gate_x, y_m1
+    ));
+    out.push_str(&format!(
+        "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"8.2\" font-weight=\"700\" fill=\"#b91c1c\">80% Gate</text>\n",
+        gate_x, y_m0 - 2.5
+    ));
+    out.push_str("<text x=\"1376\" y=\"737\" text-anchor=\"middle\" font-size=\"9.2\" font-weight=\"700\" fill=\"#334155\">Completeness (Green &gt;=80%)</text>\n");
 
     // ================= PANEL C =================
     out.push_str("<rect x=\"16\" y=\"756\" width=\"1448\" height=\"250\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");
@@ -602,48 +648,144 @@ pub fn render_supermatrix_positional_coverage_svg(
 
     // Sub-panel C2 (`x = 846..1452, y = 788..994`): Diagnostic Resolution Comparison
     out.push_str("<rect x=\"846\" y=\"788\" width=\"606\" height=\"206\" rx=\"6\" fill=\"#ffffff\" stroke=\"#cbd5e1\" stroke-width=\"1\"/>\n");
-    out.push_str("<text x=\"858\" y=\"808\" font-size=\"10.8\" font-weight=\"700\" fill=\"#0f172a\">C2. Alignment Bloat &amp; Single-Gene Truncation vs. Multi-Locus Recovery</text>\n");
+    out.push_str("<text x=\"858\" y=\"806\" font-size=\"10.8\" font-weight=\"700\" fill=\"#0f172a\">C2. Single-Locus &amp; Unfiltered vs. >=80% Gated Supermatrix Recovery</text>\n");
 
-    let cards = [
+    let mut cards: Vec<(String, String, f64, &str)> = vec![
         (
-            "Legacy 1-Locus Truncated COX1 Only",
-            format!("{} bp aligned | UFBoot2 Mean = {:.1}%", phasing.single_gene_cols, phasing.single_gene_ufboot_pct),
+            "Legacy 1-Locus Truncated COX1 Only".to_string(),
+            format!(
+                "{} bp aligned | UFBoot2 = {:.1}%",
+                phasing.single_gene_cols, phasing.single_gene_ufboot_pct
+            ),
             (phasing.single_gene_ufboot_pct / 100.0).clamp(0.05, 1.0),
             "#f59e0b",
         ),
         (
-            "Untrimmed Center-Star seqnet NEXUS",
+            "Untrimmed Center-Star seqnet NEXUS".to_string(),
             format!("{} cols (singlet flank bloat + chimeras)", phasing.raw_seqnet_cols),
             0.52,
             "#ef4444",
         ),
-        (
-            "Partitioned Supermatrix + Model Carryover",
-            format!("{} bp ({} loci) | {}: {:.1}% UFBoot2", phasing.trimmed_supermatrix_cols, partitions.len(), xml_escape(&phasing.winning_model_label), phasing.supermatrix_ufboot_pct),
-            (phasing.supermatrix_ufboot_pct / 100.0).clamp(0.05, 1.0),
-            "#0f766e",
-        ),
     ];
+    if let Some(unfilt_uf) = phasing.unfiltered_all_otu_ufboot_pct {
+        cards.push((
+            format!("Unfiltered All-{}-OTU Supermatrix", n_taxa),
+            format!(
+                "{} sparse OTUs included | UFBoot2 = {:.1}%",
+                n_popgen_only, unfilt_uf
+            ),
+            (unfilt_uf / 100.0).clamp(0.05, 1.0),
+            "#ea580c",
+        ));
+    }
+    cards.push((
+        format!(">=80% Gated {}-OTU Supermatrix", n_gated_in),
+        format!(
+            "{} bp ({} loci) | {}: {:.1}% UFBoot2",
+            phasing.trimmed_supermatrix_cols,
+            partitions.len(),
+            xml_escape(&phasing.winning_model_label),
+            phasing.supermatrix_ufboot_pct
+        ),
+        (phasing.supermatrix_ufboot_pct / 100.0).clamp(0.05, 1.0),
+        "#0f766e",
+    ));
+    let (cy0, dy, bar_h, fsz) = if cards.len() >= 4 {
+        (823.0, 42.5, 12.0, 9.4)
+    } else {
+        (828.0, 54.0, 16.0, 10.0)
+    };
     for (ci, (title, detail, frac, bar_c)) in cards.iter().enumerate() {
-        let cy = 824.0 + (ci as f64) * 54.0;
+        let cy = cy0 + (ci as f64) * dy;
         out.push_str(&format!(
-            "<text x=\"862\" y=\"{:.1}\" font-size=\"10\" font-weight=\"700\" fill=\"#1e293b\">{}</text>\n",
-            cy, xml_escape(title)
+            "<text x=\"862\" y=\"{:.1}\" font-size=\"{:.1}\" font-weight=\"700\" fill=\"#1e293b\">{}</text>\n",
+            cy, fsz, xml_escape(title)
         ));
         out.push_str(&format!(
-            "<text x=\"1438\" y=\"{:.1}\" text-anchor=\"end\" font-size=\"9.5\" fill=\"#475569\">{}</text>\n",
-            cy, detail
+            "<text x=\"1438\" y=\"{:.1}\" text-anchor=\"end\" font-size=\"{:.1}\" fill=\"#475569\">{}</text>\n",
+            cy, fsz - 0.5, detail
         ));
         out.push_str(&format!(
-            "<rect x=\"862\" y=\"{:.1}\" width=\"576\" height=\"16\" rx=\"4\" fill=\"#f1f5f9\" stroke=\"#cbd5e1\" stroke-width=\"0.7\"/>\n",
-            cy + 7.0
+            "<rect x=\"862\" y=\"{:.1}\" width=\"576\" height=\"{:.1}\" rx=\"4\" fill=\"#f1f5f9\" stroke=\"#cbd5e1\" stroke-width=\"0.7\"/>\n",
+            cy + 5.5, bar_h
         ));
         out.push_str(&format!(
-            "<rect x=\"862\" y=\"{:.1}\" width=\"{:.1}\" height=\"16\" rx=\"4\" fill=\"{}\"/>\n",
-            cy + 7.0, 576.0 * frac, bar_c
+            "<rect x=\"862\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" rx=\"4\" fill=\"{}\"/>\n",
+            cy + 5.5, 576.0 * frac, bar_h, bar_c
         ));
     }
 
     out.push_str("</svg>\n");
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::supervisor_study::passes_supermatrix_phylogram_coverage_gate;
+
+    #[test]
+    fn supermatrix_80pct_gate_and_svg_cards_render_cleanly() {
+        assert!(!passes_supermatrix_phylogram_coverage_gate(79, 100, 3));
+        assert!(!passes_supermatrix_phylogram_coverage_gate(95, 100, 1));
+        assert!(passes_supermatrix_phylogram_coverage_gate(80, 100, 2));
+
+        let parts = vec![
+            SupermatrixPartitionSpan {
+                locus_name: "COX1".to_string(),
+                locus_class_label: "Mito PCG".to_string(),
+                is_nuclear: false,
+                protein_coding: true,
+                start_col_1based: 1,
+                end_col_1based: 120,
+                taxa_present: 2,
+            },
+            SupermatrixPartitionSpan {
+                locus_name: "CYTB".to_string(),
+                locus_class_label: "Mito PCG".to_string(),
+                is_nuclear: false,
+                protein_coding: true,
+                start_col_1based: 121,
+                end_col_1based: 240,
+                taxa_present: 1,
+            },
+        ];
+        let full_row = format!("{}{}", "ACGT".repeat(30), "ACGT".repeat(30));
+        let cox1_only = format!("{}{}", "ACGT".repeat(30), "?".repeat(120));
+        let rows = vec![
+            SupermatrixTaxonRow {
+                tip_code: "A:T001".to_string(),
+                sector_code: "[A]".to_string(),
+                species_label: "Taxon One".to_string(),
+                aligned_row: full_row,
+            },
+            SupermatrixTaxonRow {
+                tip_code: "B:T002".to_string(),
+                sector_code: "[B]".to_string(),
+                species_label: "Taxon Two".to_string(),
+                aligned_row: cox1_only,
+            },
+        ];
+        let phasing = CircularPhasingComparison {
+            n_mitogenomes: 1,
+            unphased_aligned_cols: 500,
+            phased_aligned_cols: 260,
+            unphased_mean_occ_pct: 55.0,
+            phased_mean_occ_pct: 96.0,
+            unphased_profile_bins: vec![55.0; 16],
+            phased_profile_bins: vec![96.0; 16],
+            raw_seqnet_cols: 900,
+            trimmed_supermatrix_cols: 240,
+            single_gene_cols: 120,
+            single_gene_ufboot_pct: 48.2,
+            supermatrix_ufboot_pct: 99.1,
+            winning_model_label: "TN+F+I+G4 (RY3)".to_string(),
+            unfiltered_all_otu_ufboot_pct: Some(59.4),
+        };
+        let svg = render_supermatrix_positional_coverage_svg("Gate Unit Test", &parts, &rows, &phasing);
+        assert!(svg.contains("1 Phylogram &gt;=80%; 1 Coalescent/PopGen-Only"));
+        assert!(svg.contains("80% Gate"));
+        assert!(svg.contains("Unfiltered All-2-OTU Supermatrix"));
+        assert!(svg.contains("&gt;=80% Gated 1-OTU Supermatrix"));
+    }
 }

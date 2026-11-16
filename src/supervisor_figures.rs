@@ -718,8 +718,8 @@ pub(crate) const ACANTHOCHITONIDAE_THEME: FigureStudyTheme = FigureStudyTheme {
         ("[G]", 54, 63, "Indo-West & NW Pacific Crown (n=10)", "Acanthochitona rubrolineata, A. achates, A. defilippii, A. circellata", "Kuroshio marginal-sea diversification & 2011 JTMD rafting"),
     ],
     fig1_web_svg: "acanthochitonidae-fig1-vertical-chronogram.svg",
-    fig1_title: "Calibrated Relaxed-Clock Chronogram of Class Polyplacophora & Family Acanthochitonidae (Nodes I-VIII)",
-    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) across Class Polyplacophora with two-sided 95% HPD credible intervals across all 63 internal nodes and clade functional summary cards [A]-[G].",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram Across >=80%-Gated Multi-Locus Polyplacophora Taxa (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) over >=80% supermatrix-coverage multi-locus Polyplacophora OTUs (single-locus COX1 barcodes excluded to Figure 3/4/7) with two-sided 95% HPD credible intervals and clade functional summary cards.",
     fig2_sec_ranges: &[
         ("[A]", 0, 3, "Lepidopleurida Outgroups (n=4)", ""),
         ("[B]", 4, 14, "Suborder Chitonina (n=11)", "8,4"),
@@ -730,8 +730,8 @@ pub(crate) const ACANTHOCHITONIDAE_THEME: FigureStudyTheme = FigureStudyTheme {
         ("[G]", 54, 63, "Indo-West & NW Pacific Crown (n=10)", "10,3,2,3"),
     ],
     fig2_web_svg: "acanthochitonidae-fig2-circular-phylogram.svg",
-    fig2_title: "Circular Empirical Patristic Phylogram Across 64 Polyplacophora & Acanthochitonidae OTUs (A:T001-G:T064)",
-    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone from R_INNER = 48, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    fig2_title: "Circular Empirical Patristic Phylogram Across >=80%-Gated Multi-Locus Polyplacophora OTUs",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) over >=80% supermatrix-coverage multi-locus Polyplacophora OTUs with unified root-to-tip backbone from R_INNER = 48, B&W alternating sectors, and sector-prefixed IDs.",
     fig3_sec_tip_anchors: [
         ("Node I", "A:T003", 0),
         ("Node II", "B:T010", 1),
@@ -812,8 +812,8 @@ pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
         ("[G]", 50, 63, "Lepidoptera: Obtectomera Defoliators & Borers (n=14)", "Spodoptera frugiperda, Helicoverpa armigera, H. punctigera, Ostrinia, Pieris", "Trans-Pacific migration corridors, CYP6AE & ace-1 resistance"),
     ],
     fig1_web_svg: "china-australia-pests-fig1-vertical-chronogram.svg",
-    fig1_title: "Calibrated Relaxed-Clock Chronogram of China & Australia Arthropod Crop Pests (Nodes I-VIII)",
-    fig1_caption: "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) across Chelicerata and six Hexapoda crop-pest clades with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram of >=80%-Gated Multi-Locus China & Australia Arthropod Crop Pests",
+    fig1_caption: "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) across >=80% supermatrix-coverage Chelicerata and Hexapoda crop-pest OTUs (single-locus OTUs excluded to Figure 3/4/7) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
     fig2_sec_ranges: &[
         ("[A]", 0, 3, "Tetranychidae Outgroup // (n=4)", ""),
         ("[B]", 4, 9, "Acrididae Locusts (n=6)", "8,4"),
@@ -824,8 +824,8 @@ pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
         ("[G]", 50, 63, "Obtectomera Crown Pests (n=14)", "10,3,2,3"),
     ],
     fig2_web_svg: "china-australia-pests-fig2-circular-phylogram.svg",
-    fig2_title: "Circular Empirical Patristic Phylogram Across 64 China & Australia Arthropod Pest Species (A:T001-G:T064)",
-    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with Chelicerata [A] outgroup // stem break, B&W alternating sectors, and sector-prefixed IDs A:T001-G:T064.",
+    fig2_title: "Circular Empirical Patristic Phylogram Across >=80%-Gated China & Australia Arthropod Pest Species",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) across >=80% supermatrix-coverage China & Australia pest OTUs with Chelicerata [A] outgroup // stem break, B&W alternating sectors, and sector-prefixed IDs.",
     fig3_sec_tip_anchors: [
         ("Node I", "A:T001", 0),
         ("Node II", "B:T005", 1),
@@ -881,6 +881,85 @@ pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "china-australia-pests-supp-s3-cox1-ry3-alignview",
 };
 
+fn count_tree_leaves(n: &EmpiricalBifNode) -> usize {
+    if n.children.is_empty() {
+        1
+    } else {
+        n.children.iter().map(count_tree_leaves).sum()
+    }
+}
+
+fn count_parsed_phylo_tips(n: &ParsedPhyloNode) -> usize {
+    if n.children.is_empty() {
+        if n.name.trim().is_empty() { 0 } else { 1 }
+    } else {
+        n.children.iter().map(count_parsed_phylo_tips).sum()
+    }
+}
+
+fn collect_leaf_sector_ranges(n: &EmpiricalBifNode) -> [Option<(usize, usize)>; 7] {
+    fn walk(node: &EmpiricalBifNode, idx: &mut usize, ranges: &mut [Option<(usize, usize)>; 7]) {
+        if node.children.is_empty() {
+            let rk = sector_rank(&node.label).min(6);
+            let slot = *idx;
+            *idx += 1;
+            match &mut ranges[rk] {
+                Some((lo, hi)) => {
+                    *lo = (*lo).min(slot);
+                    *hi = (*hi).max(slot);
+                }
+                slot_opt @ None => {
+                    *slot_opt = Some((slot, slot));
+                }
+            }
+        } else {
+            for ch in &node.children {
+                walk(ch, idx, ranges);
+            }
+        }
+    }
+    let mut ranges = [None; 7];
+    let mut idx = 0usize;
+    walk(n, &mut idx, &mut ranges);
+    ranges
+}
+
+fn rewrite_n_count(label: &str, count: usize) -> String {
+    if let Some(pos) = label.find("(n=") {
+        if let Some(end_rel) = label[pos..].find(')') {
+            let mut out = String::with_capacity(label.len() + 4);
+            out.push_str(&label[..pos]);
+            out.push_str(&format!("(n={})", count));
+            out.push_str(&label[pos + end_rel + 1..]);
+            return out;
+        }
+    }
+    label.to_string()
+}
+
+fn resolve_dynamic_title_and_caption(
+    raw_title: &str,
+    raw_caption: &str,
+    n_phy: usize,
+) -> (String, String) {
+    if n_phy == 64 {
+        (raw_title.to_string(), raw_caption.to_string())
+    } else {
+        let title = if raw_title.contains("Across >=") {
+            raw_title.replacen("Across >=80%-Gated", &format!("Across {} >=80%-Gated", n_phy), 1)
+        } else if raw_title.contains("Across 64 ") {
+            raw_title.replacen("Across 64 ", &format!("Across {} >=80%-Gated ", n_phy), 1)
+        } else {
+            format!("{} (N_phy = {})", raw_title, n_phy)
+        };
+        let caption = raw_caption
+            .replacen("over >=80%", &format!("over {} >=80%", n_phy), 1)
+            .replacen("across >=80%", &format!("across {} >=80%", n_phy), 1)
+            .replacen("64-taxon ", &format!("{}-taxon ", n_phy), 1);
+        (title, caption)
+    }
+}
+
 fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
     let empty = HashMap::new();
     let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
@@ -900,6 +979,21 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStu
         .iter()
         .filter(|s| s.included_in_cleaned_cohort)
         .collect();
+    if !tip_bls.is_empty() {
+        let matched = cleaned
+            .iter()
+            .filter(|s| {
+                let safe_id = s.tip_code.replace(':', "_");
+                tip_bls.contains_key(&s.tip_code) || tip_bls.contains_key(&safe_id)
+            })
+            .count();
+        if matched >= 4 {
+            cleaned.retain(|s| {
+                let safe_id = s.tip_code.replace(':', "_");
+                tip_bls.contains_key(&s.tip_code) || tip_bls.contains_key(&safe_id)
+            });
+        }
+    }
     cleaned.sort_by_key(|s| (sector_rank(&s.tip_code), tip_num(&s.tip_code)));
 
     for s in cleaned {
@@ -913,91 +1007,47 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStu
         by_sec[rk].push((s.tip_code.clone(), s.sector_code.clone(), bl));
     }
 
-    // Build each monophyletic/basal sector clade using 100% unmodified empirical branch lengths from the solved ML tree
+    // Build each non-empty monophyletic/basal sector clade using empirical branch lengths
     let sec_crown_ages = theme.sec_crown_ages;
-    let mut sec_nodes: Vec<EmpiricalBifNode> = Vec::with_capacity(7);
+    let mut non_empty_secs: Vec<(usize, EmpiricalBifNode)> = Vec::with_capacity(7);
     for s_i in 0..7 {
-        let mut node = build_balanced_sector_clade(&by_sec[s_i], &int_bls, s_i + 3, 0, sec_crown_ages[s_i]);
-        // Preserve 100% unmodified empirical sector MRCA stem branch length!
+        if by_sec[s_i].is_empty() {
+            continue;
+        }
+        let mut node =
+            build_balanced_sector_clade(&by_sec[s_i], &int_bls, s_i + 3, 0, sec_crown_ages[s_i]);
         node.branch_len = int_bls.get(s_i).copied().unwrap_or(0.028);
-        sec_nodes.push(node);
+        non_empty_secs.push((s_i, node));
     }
 
-    // Graft `[A]`..`[G]` into the single unified rooted backbone (`Node I` -> `Node II` -> `Node III` -> `Node IV` -> `NodeVI+VII+VIII`)
-    let g_node = sec_nodes.remove(6);
-    let f_node = sec_nodes.remove(5);
-    let e_node = sec_nodes.remove(4);
-    let d_node = sec_nodes.remove(3);
-    let c_node = sec_nodes.remove(2);
-    let b_node = sec_nodes.remove(1);
-    let a_node = sec_nodes.remove(0);
-
-    let node_vii = EmpiricalBifNode {
-        label: "Node VII".to_string(),
-        branch_len: int_bls.get(7 % int_bls.len()).copied().unwrap_or(0.019),
-        cum_patristic: 0.0,
-        age_ma: theme.backbone_node_ages[0],
-        y_slot: 0.0,
-        angle_rad: 0.0,
-        sector: "[F]".to_string(),
-        ufboot: 99.7,
-        children: vec![f_node, g_node],
-    };
-    let node_oldworld = EmpiricalBifNode {
-        label: "Node VI".to_string(),
-        branch_len: int_bls.get(8 % int_bls.len()).copied().unwrap_or(0.021),
-        cum_patristic: 0.0,
-        age_ma: theme.backbone_node_ages[1],
-        y_slot: 0.0,
-        angle_rad: 0.0,
-        sector: "[E]".to_string(),
-        ufboot: 99.6,
-        children: vec![e_node, node_vii],
-    };
-    let node_iv = EmpiricalBifNode {
-        label: "Node IV".to_string(),
-        branch_len: int_bls.get(9 % int_bls.len()).copied().unwrap_or(0.032),
-        cum_patristic: 0.0,
-        age_ma: theme.backbone_node_ages[2],
-        y_slot: 0.0,
-        angle_rad: 0.0,
-        sector: "[D]".to_string(),
-        ufboot: 100.0,
-        children: vec![d_node, node_oldworld],
-    };
-    let node_iii = EmpiricalBifNode {
-        label: "Node III".to_string(),
-        branch_len: int_bls.get(10 % int_bls.len()).copied().unwrap_or(0.038),
-        cum_patristic: 0.0,
-        age_ma: theme.backbone_node_ages[3],
-        y_slot: 0.0,
-        angle_rad: 0.0,
-        sector: "[C]".to_string(),
-        ufboot: 99.8,
-        children: vec![c_node, node_iv],
-    };
-    let node_ii = EmpiricalBifNode {
-        label: "Node II".to_string(),
-        branch_len: int_bls.get(11 % int_bls.len()).copied().unwrap_or(0.046),
-        cum_patristic: 0.0,
-        age_ma: theme.backbone_node_ages[4],
-        y_slot: 0.0,
-        angle_rad: 0.0,
-        sector: "[B]".to_string(),
-        ufboot: 100.0,
-        children: vec![b_node, node_iii],
-    };
-    let mut root = EmpiricalBifNode {
-        label: "Node I".to_string(),
-        branch_len: 0.0,
-        cum_patristic: 0.0,
-        age_ma: theme.backbone_node_ages[5],
-        y_slot: 0.0,
-        angle_rad: 0.0,
-        sector: "[A]".to_string(),
-        ufboot: 100.0,
-        children: vec![a_node, node_ii],
-    };
+    // Fold non-empty sectors right-to-left along the canonical bifurcating backbone
+    let mut it = non_empty_secs.into_iter().rev();
+    let (_, mut root) = it
+        .next()
+        .expect("At least one non-empty sector required to render chronogram/phylogram");
+    for (left_sec, left_node) in it {
+        let (lbl, age_idx, uf, sec_tag, bl_idx) = match left_sec {
+            5 => ("Node VII", 0usize, 99.7, "[F]", 7usize),
+            4 => ("Node VI", 1usize, 99.6, "[E]", 8usize),
+            3 => ("Node IV", 2usize, 100.0, "[D]", 9usize),
+            2 => ("Node III", 3usize, 99.8, "[C]", 10usize),
+            1 => ("Node II", 4usize, 100.0, "[B]", 11usize),
+            _ => ("Node I", 5usize, 100.0, "[A]", 12usize),
+        };
+        let node_age = theme.backbone_node_ages[age_idx].max(root.age_ma * 1.15);
+        root = EmpiricalBifNode {
+            label: lbl.to_string(),
+            branch_len: int_bls.get(bl_idx % int_bls.len()).copied().unwrap_or(0.024),
+            cum_patristic: 0.0,
+            age_ma: node_age,
+            y_slot: 0.0,
+            angle_rad: 0.0,
+            sector: sec_tag.to_string(),
+            ufboot: uf,
+            children: vec![left_node, root],
+        };
+    }
+    root.branch_len = 0.0;
 
     fn assign_coords(
         n: &mut EmpiricalBifNode,
@@ -1033,8 +1083,9 @@ fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStu
         }
     }
 
+    let total_leaves = count_tree_leaves(&root).max(1);
     let mut lc = 0usize;
-    assign_coords(&mut root, 0.0, theme.fig1_max_ma, true, &mut lc, 64);
+    assign_coords(&mut root, 0.0, theme.fig1_max_ma, true, &mut lc, total_leaves);
     root
 }
 
@@ -1139,8 +1190,11 @@ fn render_bemisia_fig1_chronogram(
     }
     svg.push_str(r##"<text x="404" y="1222" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0f172a">Divergence Time (Ma BP; Native TimeTreeLSD2 Relaxed Clock + Two-Sided 95% HPD Credible Intervals)</text>"##);
 
+    let leaf_count = count_tree_leaves(root).max(1);
+    let (fig1_title_dyn, fig1_cap_dyn) =
+        resolve_dynamic_title_and_caption(theme.fig1_title, theme.fig1_caption, leaf_count);
     let y_top = 56.0_f64;
-    let y_step = 17.4_f64;
+    let y_step = (1096.2_f64 / (leaf_count.saturating_sub(1).max(1) as f64)).clamp(17.4, 33.5);
     let y_of = |slot: f64| -> f64 { y_top + slot * y_step };
 
     let org_map: HashMap<String, String> = manifest
@@ -1156,7 +1210,7 @@ fn render_bemisia_fig1_chronogram(
     fb.draw_text(
         28,
         20,
-        theme.fig1_title,
+        &fig1_title_dyn,
         (56, 189, 248),
         1,
         Some((w - 56) as i32),
@@ -1254,18 +1308,21 @@ fn render_bemisia_fig1_chronogram(
     let cal_ages: Vec<f64> = manifest.calibrated_nodes.iter().map(|c| c.age_ma).collect();
     draw_chrono_rec(root, max_ma, &cal_ages, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
 
-    // Render highlighted two-sided 95% HPD error bars + white badges (with explicit 95% HPD [ciMin-ciMax Ma]) for Nodes I..VIII
+    // Render highlighted two-sided 95% HPD error bars + non-overlapping white badges for Nodes I..VIII
     let node_y_slots = theme.fig1_node_y_slots;
+    let mut placed_badges: Vec<(f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
     for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
         let bx = x_ma(cn.age_ma);
         let x_lo = x_ma(cn.ci_max_ma);
         let x_hi = x_ma(cn.ci_min_ma);
-        let mut best_slot = (f64::MAX, node_y_slots[idx.min(node_y_slots.len() - 1)]);
+        let fallback_slot = node_y_slots[idx.min(node_y_slots.len() - 1)]
+            .min((leaf_count.saturating_sub(2).max(1)) as f64);
+        let mut best_slot = (f64::MAX, fallback_slot);
         find_nearest_internal_slot(root, cn.age_ma, &mut best_slot);
         let exact_slot = if best_slot.0 <= 8.0 {
             best_slot.1
         } else {
-            node_y_slots[idx.min(node_y_slots.len() - 1)]
+            fallback_slot
         };
         let by = y_of(exact_slot);
         let bar_w = (x_hi - x_lo).max(6.0);
@@ -1296,7 +1353,23 @@ fn render_bemisia_fig1_chronogram(
             _ => (-104.0, -22.0),
         };
         let badge_cx = (bx + dx).clamp(x_root + badge_w * 0.5 + 2.0, x_tips - badge_w * 0.5 - 6.0);
-        let badge_cy = (by + dy).clamp(52.0, 1152.0);
+        let mut badge_cy = (by + dy).clamp(52.0, 1152.0);
+        for _ in 0..8 {
+            if let Some(&(_, oy)) = placed_badges
+                .iter()
+                .find(|&&(ox, oy)| (badge_cx - ox).abs() < badge_w + 4.0 && (badge_cy - oy).abs() < badge_h + 5.0)
+            {
+                let next_down = oy + badge_h + 6.0;
+                badge_cy = if next_down <= 1152.0 {
+                    next_down
+                } else {
+                    (oy - badge_h - 6.0).max(52.0)
+                };
+            } else {
+                break;
+            }
+        }
+        placed_badges.push((badge_cx, badge_cy));
         svg.push_str(&format!(
             r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#334155" stroke-width="1.1" stroke-dasharray="2,2"/><rect x="{:.1}" y="{:.1}" width="{:.1}" height="{:.1}" rx="4" fill="#ffffff" fill-opacity="0.96" stroke="#1e293b" stroke-width="1.1"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="8.6" font-weight="800" fill="#0f172a">{}: {:.1} Ma</text><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="7.8" font-weight="700" fill="#1d4ed8">95% HPD: {:.1}–{:.1} Ma</text>"##,
             bx, by, badge_cx, badge_cy,
@@ -1315,8 +1388,23 @@ fn render_bemisia_fig1_chronogram(
         ));
     }
 
-    // Right-hand Clade Brackets & Summary Cards [A]..[G] (summarizing once per clade!)
-    for &(sec, i0, i1, hdr, line1, line2) in theme.fig1_clade_cards {
+    // Right-hand Clade Brackets & Summary Cards across active non-empty sectors
+    let sec_slot_ranges = collect_leaf_sector_ranges(root);
+    let mut prev_card_bottom = 16.0_f64;
+    for &(sec, _i0_def, _i1_def, hdr, line1, line2) in theme.fig1_clade_cards {
+        let sec_rk = match sec {
+            "[A]" => 0,
+            "[B]" => 1,
+            "[C]" => 2,
+            "[D]" => 3,
+            "[E]" => 4,
+            "[F]" => 5,
+            _ => 6,
+        };
+        let Some((i0, i1)) = sec_slot_ranges[sec_rk] else {
+            continue;
+        };
+        let dyn_hdr = rewrite_n_count(hdr, i1 - i0 + 1);
         let y0 = y_of(i0 as f64) - 4.0;
         let y1 = y_of(i1 as f64) + 4.0;
         let ym = 0.5 * (y0 + y1);
@@ -1327,7 +1415,8 @@ fn render_bemisia_fig1_chronogram(
             y0, y0, y1, y1, col
         ));
         let card_h = 54.0_f64;
-        let card_y = (ym - card_h * 0.5).clamp(24.0, 1120.0);
+        let card_y = (ym - card_h * 0.5).clamp(prev_card_bottom + 8.0, 1120.0);
+        prev_card_bottom = card_y + card_h;
         svg.push_str(&format!(
             r##"<line x1="1048" y1="{:.1}" x2="1068" y2="{:.1}" stroke="{}" stroke-width="1.4" stroke-dasharray="3,2"/>"##,
             ym,
@@ -1343,7 +1432,7 @@ fn render_bemisia_fig1_chronogram(
             card_y + 16.0,
             col,
             sec,
-            xml_esc(hdr)
+            xml_esc(&dyn_hdr)
         ));
         svg.push_str(&format!(
             r##"<text x="1080" y="{:.1}" font-size="9.5" fill="#334155">{}</text>"##,
@@ -1356,7 +1445,7 @@ fn render_bemisia_fig1_chronogram(
             xml_esc(line2)
         ));
         fb.fill_rect(1068, card_y as i32, 530, card_h as i32, (248, 250, 252));
-        fb.draw_text(1080, card_y as i32 + 12, &format!("{} {}", sec, hdr), rgb, 1, Some(510));
+        fb.draw_text(1080, card_y as i32 + 12, &format!("{} {}", sec, dyn_hdr), rgb, 1, Some(510));
     }
 
     svg.push_str("</svg>\n");
@@ -1365,8 +1454,8 @@ fn render_bemisia_fig1_chronogram(
         "fig1-vertical-chronogram",
         theme.fig1_web_svg,
         "Chronogram",
-        theme.fig1_title,
-        theme.fig1_caption,
+        &fig1_title_dyn,
+        &fig1_cap_dyn,
         &svg,
         &fb,
         run_dir,
@@ -1416,13 +1505,16 @@ fn render_bemisia_fig2_circular_phylogram(
     ));
     svg.push('\n');
 
+    let leaf_count = count_tree_leaves(root).max(1);
+    let (fig2_title_dyn, fig2_cap_dyn) =
+        resolve_dynamic_title_and_caption(theme.fig2_title, theme.fig2_caption, leaf_count);
     let mut fb = SoftwareFrameBuffer::new(w, h);
     fb.clear((255, 255, 255));
     fb.fill_rect(16, 10, (w - 32) as i32, 26, (15, 23, 42));
     fb.draw_text(
         28,
         18,
-        theme.fig2_title,
+        &fig2_title_dyn,
         (56, 189, 248),
         1,
         Some((w - 56) as i32),
@@ -1430,15 +1522,113 @@ fn render_bemisia_fig2_circular_phylogram(
 
     // Sector angular ranges for alternating B&W pie wedges (`#f1f5f9` vs `#ffffff`) + patterned outer bracket arcs
     let sec_ranges = theme.fig2_sec_ranges;
+    let sec_slot_ranges = collect_leaf_sector_ranges(root);
     let span = std::f64::consts::TAU * 0.955;
     let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
-    let ang_of_idx = |idx: f64| -> f64 { start_ang + (idx / 64.0) * span };
+    let ang_of_idx = |idx: f64| -> f64 { start_ang + (idx / (leaf_count as f64)) * span };
 
-    for (s_idx, &(sec, i0, i1, lbl, dash)) in sec_ranges.iter().enumerate() {
+    struct ActiveCircSec {
+        s_idx: usize,
+        sec: &'static str,
+        dyn_lbl: String,
+        dash: &'static str,
+        a0: f64,
+        a1: f64,
+        amid: f64,
+    }
+    let mut active_secs: Vec<ActiveCircSec> = Vec::with_capacity(7);
+    for (s_idx, &(sec, _i0_def, _i1_def, lbl, dash)) in sec_ranges.iter().enumerate() {
+        let sec_rk = match sec {
+            "[A]" => 0,
+            "[B]" => 1,
+            "[C]" => 2,
+            "[D]" => 3,
+            "[E]" => 4,
+            "[F]" => 5,
+            _ => 6,
+        };
+        let Some((i0, i1)) = sec_slot_ranges[sec_rk] else {
+            continue;
+        };
         let a0 = ang_of_idx(i0 as f64 - 0.42);
         let a1 = ang_of_idx(i1 as f64 + 0.42);
+        active_secs.push(ActiveCircSec {
+            s_idx,
+            sec,
+            dyn_lbl: rewrite_n_count(lbl, i1 - i0 + 1),
+            dash,
+            a0,
+            a1,
+            amid: 0.5 * (a0 + a1),
+        });
+    }
+
+    let pw = 246.0_f64;
+    let ph = 32.0_f64;
+    let mut pill_coords: Vec<(f64, f64)> = vec![(0.0, 0.0); active_secs.len()];
+    if active_secs.len() == 7 {
+        for (ai, act) in active_secs.iter().enumerate() {
+            pill_coords[ai] = match act.s_idx {
+                0 => (860.0, 26.0),
+                1 => (1165.0, 62.0),
+                2 => (1200.0, 440.0),
+                3 => (1155.0, 910.0),
+                4 => (295.0, 922.0),
+                5 => (38.0, 560.0),
+                _ => (52.0, 82.0),
+            };
+        }
+    } else {
+        let mut right_idxs: Vec<usize> = Vec::new();
+        let mut left_idxs: Vec<usize> = Vec::new();
+        for (ai, act) in active_secs.iter().enumerate() {
+            if act.amid.cos() >= -0.05 {
+                right_idxs.push(ai);
+            } else {
+                left_idxs.push(ai);
+            }
+        }
+        right_idxs.sort_by(|&a, &b| {
+            active_secs[a]
+                .amid
+                .sin()
+                .partial_cmp(&active_secs[b].amid.sin())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        left_idxs.sort_by(|&a, &b| {
+            active_secs[a]
+                .amid
+                .sin()
+                .partial_cmp(&active_secs[b].amid.sin())
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        let mut prev_r_bot = 16.0_f64;
+        for ai in right_idxs {
+            let py = (cy + 475.0 * active_secs[ai].amid.sin() - ph * 0.5)
+                .clamp(prev_r_bot + 10.0, 980.0);
+            prev_r_bot = py + ph;
+            let dy = (py + ph * 0.5) - cy;
+            let x_circ = (474.0_f64.powi(2) - dy * dy).max(0.0).sqrt();
+            let px = (cx + x_circ + 36.0).clamp(760.0, 1218.0);
+            pill_coords[ai] = (px, py);
+        }
+        let mut prev_l_bot = 16.0_f64;
+        for ai in left_idxs {
+            let py = (cy + 475.0 * active_secs[ai].amid.sin() - ph * 0.5)
+                .clamp(prev_l_bot + 10.0, 980.0);
+            prev_l_bot = py + ph;
+            let dy = (py + ph * 0.5) - cy;
+            let x_circ = (474.0_f64.powi(2) - dy * dy).max(0.0).sqrt();
+            let px = (cx - x_circ - 36.0 - pw).clamp(16.0, 720.0 - pw);
+            pill_coords[ai] = (px, py);
+        }
+    }
+
+    for (ai, act) in active_secs.iter().enumerate() {
+        let a0 = act.a0;
+        let a1 = act.a1;
         let large = if (a1 - a0) > std::f64::consts::PI { 1 } else { 0 };
-        let fill_w = if s_idx % 2 == 0 { "#f1f5f9" } else { "#ffffff" };
+        let fill_w = if ai % 2 == 0 { "#f1f5f9" } else { "#ffffff" };
         let (x0i, y0i) = (cx + r_inner * a0.cos(), cy + r_inner * a0.sin());
         let (x0o, y0o) = (cx + r_arc * a0.cos(), cy + r_arc * a0.sin());
         let (x1o, y1o) = (cx + r_arc * a1.cos(), cy + r_arc * a1.sin());
@@ -1447,11 +1637,11 @@ fn render_bemisia_fig2_circular_phylogram(
             r##"<path d="M {:.1},{:.1} L {:.1},{:.1} A {:.1},{:.1} 0 {},1 {:.1},{:.1} L {:.1},{:.1} A {:.1},{:.1} 0 {},0 {:.1},{:.1} Z" fill="{}" stroke="#cbd5e1" stroke-width="0.7" stroke-dasharray="3,3"/>"##,
             x0i, y0i, x0o, y0o, r_arc, r_arc, large, x1o, y1o, x1i, y1i, r_inner, r_inner, large, x0i, y0i, fill_w
         ));
-        let col = sector_hex(sec);
-        let dash_attr = if dash.is_empty() {
+        let col = sector_hex(act.sec);
+        let dash_attr = if act.dash.is_empty() {
             String::new()
         } else {
-            format!(r#" stroke-dasharray="{}""#, dash)
+            format!(r#" stroke-dasharray="{}""#, act.dash)
         };
         svg.push_str(&format!(
             r##"<path d="M {:.1},{:.1} A {:.1},{:.1} 0 {},1 {:.1},{:.1}" fill="none" stroke="{}" stroke-width="3.4"{}/>"##,
@@ -1470,19 +1660,8 @@ fn render_bemisia_fig2_circular_phylogram(
         }
 
         // Horizontal (0-deg) perimeter callout pill connected by leader line to sector arc midpoint
-        let amid = 0.5 * (a0 + a1);
-        let (mx, my) = (cx + (r_arc + 4.0) * amid.cos(), cy + (r_arc + 4.0) * amid.sin());
-        let (px, py) = match s_idx {
-            0 => (860.0, 26.0),
-            1 => (1165.0, 62.0),
-            2 => (1200.0, 440.0),
-            3 => (1155.0, 910.0),
-            4 => (295.0, 922.0),
-            5 => (38.0, 560.0),
-            _ => (52.0, 82.0),
-        };
-        let pw = 246.0_f64;
-        let ph = 32.0_f64;
+        let (mx, my) = (cx + (r_arc + 4.0) * act.amid.cos(), cy + (r_arc + 4.0) * act.amid.sin());
+        let (px, py) = pill_coords[ai];
         let target_x = if px > cx { px } else { px + pw };
         svg.push_str(&format!(
             r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="{}" stroke-width="1.3" stroke-dasharray="3,2"/>"##,
@@ -1497,8 +1676,8 @@ fn render_bemisia_fig2_circular_phylogram(
             px + 10.0,
             py + 20.0,
             col,
-            sec,
-            xml_esc(lbl)
+            act.sec,
+            xml_esc(&act.dyn_lbl)
         ));
     }
 
@@ -1593,7 +1772,9 @@ fn render_bemisia_fig2_circular_phylogram(
 
     // Visual double-slash `//` outgroup stem break on Sector [A] when displaying compressed long outgroups
     if theme.fig2_web_svg.starts_with("china-australia-pests") {
-        let a_mid = ang_of_idx(1.5);
+        let a_mid = sec_slot_ranges[0]
+            .map(|(i0, i1)| ang_of_idx(0.5 * (i0 + i1) as f64))
+            .unwrap_or_else(|| ang_of_idx(1.5));
         let r_brk = r_inner + 36.0;
         let (bx, by) = (cx + r_brk * a_mid.cos(), cy + r_brk * a_mid.sin());
         let (tx, ty) = (-a_mid.sin(), a_mid.cos());
@@ -1631,8 +1812,8 @@ fn render_bemisia_fig2_circular_phylogram(
         "fig2-circular-phylogram",
         theme.fig2_web_svg,
         "CircularPhylogram",
-        theme.fig2_title,
-        theme.fig2_caption,
+        &fig2_title_dyn,
+        &fig2_cap_dyn,
         &svg,
         &fb,
         run_dir,
@@ -3348,6 +3529,11 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     fb.clear((255, 255, 255));
     fb.stroke_rect(2, 2, (w - 4) as i32, (h - 4) as i32, (148, 163, 184));
 
+    let empty_map = HashMap::new();
+    let n_phy = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty_map)
+        .map(|r| count_parsed_phylo_tips(&r))
+        .filter(|&k| k > 0)
+        .unwrap_or(64);
     let n1_age = study.calibrated_nodes.first().map(|n| n.age_ma).unwrap_or(234.6);
     let n8_age = study.calibrated_nodes.get(7).map(|n| n.age_ma).unwrap_or(8.14);
     let msa_s = study.stage_msa_ms as f64 / 1000.0;
@@ -3458,9 +3644,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         r##"  <rect x="16" y="14" width="888" height="232" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
   <rect x="16" y="14" width="888" height="26" rx="8" fill="#ecfdf5"/>
   <line x1="16" y1="40" x2="904" y2="40" stroke="#a7f3d0" stroke-width="1.2"/>
-  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A: 64-TAXON, {}-LOCUS SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
+  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A: {}-TAXON (>=80%), {}-LOCUS SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
 "##,
-        msc_loci, study.supermatrix_aligned_cols, r0_lnl
+        n_phy, msc_loci, study.supermatrix_aligned_cols, r0_lnl
     ));
     fb.stroke_rect(16, 14, 888, 232, (16, 185, 129));
     fb.fill_rect(17, 15, 886, 25, (236, 253, 245));
@@ -3468,8 +3654,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         28,
         22,
         &format!(
-            "PANEL A | PIPELINE A: 64-TAXON {}-LOCUS SUPERMATRIX (L = {} COLS | ln L = {:.2})",
-            msc_loci, study.supermatrix_aligned_cols, r0_lnl
+            "PANEL A | PIPELINE A: {}-TAXON {}-LOCUS SUPERMATRIX (L = {} COLS | ln L = {:.2})",
+            n_phy, msc_loci, study.supermatrix_aligned_cols, r0_lnl
         ),
         (6, 95, 70),
         1,
@@ -3479,7 +3665,11 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let a_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
         (
             "A1. Entrez + Blind Audit",
-            format!("• 64 Mito + 48 Nuc CDS"),
+            if n_phy < 64 {
+                format!("• {} >=80% OTUs / 64 Quartet", n_phy)
+            } else {
+                format!("• 64 Mito + 48 Nuc CDS")
+            },
             format!("• SHA-256 Pass 1/2 |ΔZ|=0"),
             format!("• Quarantined {} UNVERIFIED", study.quarantined_records_on_disk),
             format!("• 100% Auto Loop-Back"),
@@ -3843,8 +4033,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             short_model(r0, "RY3 + GTR+F+R4"),
             format!("super-blast → gotoh-msa ({} Loci) → RY3/4-St → ModelTest → ML+UFBoot2 → TimeTreeLSD2", msc_loci),
             format!(
-                "64-taxon {} supermatrix (L = {} cols); cuts RCFV by {:.1}%; Nodes I–VIII ({:.1}–{:.1} Ma)",
-                theme.fig6_clade_label, study.supermatrix_aligned_cols, rcfv_drop_pct, n1_age, n8_age
+                "{}-taxon {} supermatrix (L = {} cols); cuts RCFV by {:.1}%; Nodes I–VIII ({:.1}–{:.1} Ma)",
+                n_phy, theme.fig6_clade_label, study.supermatrix_aligned_cols, rcfv_drop_pct, n1_age, n8_age
             ),
             format!("{:.2}", r0_lnl),
             format!("{:.2}", bic_for_row(r0, r0_lnl, bic_r1)),

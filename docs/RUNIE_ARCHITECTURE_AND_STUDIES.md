@@ -14,7 +14,7 @@ Its primary engineering goal is to chain calibrated native Rust bioinformatics m
 - **Engine Version**: `RuNIE v2.0.2` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`; Zenodo Master DOI: [10.5281/zenodo.23969275](https://doi.org/10.5281/zenodo.23969275))
 - **Tool Operator Vocabulary**: **`37` Core Validated Native Rust Tools** (`23.19×` mean end-to-end CPU speedup; `22` synthesized/upgraded in-memory DAG operators across `37` logged interventions in [`runie_changelog.md`](../runie_changelog.md))
 - **Stage 4 `ModelTest` Gate & `RuNIE Pipeline Flowchart`**: Evaluates 88 DNA / 44 AA substitution models via exact `BIC`/`AICc` and Relative Composition Frequency Variability (`RCFV <= 0.050`), routing heterotachous/compositional cohorts to `GTR+F+I+G4`, `LG+C60+F+G4`, `RY3`, and `Dayhoff-6`/`SR4` recoding ([**`RuNIE Pipeline Flowchart` PDF**](https://crvscience.com/labs/pdfs/runie-engine-pipeline-atlas.pdf))
-- **Empirically Verified Preprints & Tool Calibrations**: **`28` Verified Empirical Preprints (`PREPRINT-01`–`PREPRINT-28`, `v2.0.2`)** and **`37` Head-to-Head Tool Calibrations** across `67` curated Development/Reserve validation datasets (`VAL-SET-001`–`VAL-SET-067`)
+- **Empirically Verified Preprints & Tool Calibrations**: **`29` Verified Empirical Preprints (`PREPRINT-01`–`PREPRINT-29`, `v2.0.2`)** and **`37` Head-to-Head Tool Calibrations** across `67` curated Development/Reserve validation datasets (`VAL-SET-001`–`VAL-SET-067`)
 - **Falsification & Negative-Control Rejects**: **`55` `0🧪` Negative Controls** rejected at Generation 2 and logged to `runs/zero-star-calibration-dump.json`
 <!-- AUTO-RUNIE-SUMMARY:END -->
 

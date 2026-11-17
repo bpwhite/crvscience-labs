@@ -5,18 +5,19 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`28`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`142` Total Reports)
+## Validated Preprints (`29`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`142` Total Reports)
 
 - **Total Lab Discovery Entries**: **142** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
-  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-28`, `v2.0.2`)**: **28** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
+  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-29`, `v2.0.2`)**: **29** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **53** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **52** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
   - **Curated Validation Dataset Registry**: **67** datasets (`VAL-SET-001` through `VAL-SET-067`)
 
-#### ✅ 28 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-28`, `v2.0.2`)
+#### ✅ 29 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-29`, `v2.0.2`)
 
 | ID & Status | Preprint Monograph Title & Live Link | Master Concept Zenodo DOI | Signal Rating | Validation Set Provenance |
 | :--- | :--- | :--- | :--- | :--- |
+| **#144** `✅ Verified Preprint` | **[Phylogenomics, Xenobiotic Resistance Selection, and Trans-Hemispheric Invasion Networks of China and Australia Arthropod Crop Pests](https://crvscience.com/labs/discoveries/china-australia-arthropod-pests)** | [`10.5281/zenodo.24295798`](https://doi.org/10.5281/zenodo.24295798) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS` |
 | **#142** `✅ Verified Preprint` | **[Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora](https://crvscience.com/labs/discoveries/acanthochitonidae-phylogenomics)** | [`10.5281/zenodo.24263607`](https://doi.org/10.5281/zenodo.24263607) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS` |
 | **#140** `✅ Verified Preprint` | **[Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nematoda-agricultural-pests-phylogenomics)** | `Verified` | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS` |
 | **#138** `✅ Verified Preprint` | **[Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics)** | [`10.5281/zenodo.24116968`](https://doi.org/10.5281/zenodo.24116968) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS` |
@@ -50,7 +51,7 @@
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
-| **#144** `🔬 Pipeline Benchmark` | [Phylogenomics, Xenobiotic Resistance Selection, and Trans-Hemispheric Invasion Networks of China and Australia Arthropod Crop Pests](https://crvscience.com/labs/discoveries/china-australia-arthropod-pests) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 15, 2026 |
+| **#144** `✅ Verified Preprint` | [Phylogenomics, Xenobiotic Resistance Selection, and Trans-Hemispheric Invasion Networks of China and Australia Arthropod Crop Pests](https://crvscience.com/labs/discoveries/china-australia-arthropod-pests) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 15, 2026 |
 | **#142** `✅ Verified Preprint` | [Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora](https://crvscience.com/labs/discoveries/acanthochitonidae-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 15, 2026 |
 | **#141** `🔬 Pipeline Benchmark` | [Neural Networks: Foundations, Core Architectures, Training Principles, and Scientific Applications](https://crvscience.com/labs/discoveries/neural-networks-foundations-architectures-synthesis) | `Tier 1` | Unrated (`0/5`) | Nov 15, 2026 |
 | **#140** `✅ Verified Preprint` | [Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes (Phylum Nematoda): Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nematoda-agricultural-pests-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 14, 2026 |

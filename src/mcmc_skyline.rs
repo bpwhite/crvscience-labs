@@ -229,31 +229,17 @@ pub(crate) struct ParsedPhyloNode {
 
 /// Reads a FASTA file into an ordered map (`id -> uppercase sequence bytes`).
 pub(crate) fn read_fasta_map(path: &Path) -> (Vec<String>, HashMap<String, Vec<u8>>) {
-    let mut order = Vec::new();
-    let mut map = HashMap::new();
-    if let Ok(txt) = fs::read_to_string(path) {
-        let mut cur_id: Option<String> = None;
-        let mut cur_seq: Vec<u8> = Vec::new();
-        for line in txt.lines() {
-            let trimmed = line.trim();
-            if let Some(rest) = trimmed.strip_prefix('>') {
-                if let Some(id) = cur_id.take() {
-                    order.push(id.clone());
-                    map.insert(id, cur_seq);
-                    cur_seq = Vec::new();
-                }
-                let id_tok = rest.split_whitespace().next().unwrap_or("").to_string();
-                cur_id = Some(id_tok);
-            } else if !trimmed.is_empty() {
-                for b in trimmed.bytes() {
-                    cur_seq.push(b.to_ascii_uppercase());
-                }
-            }
-        }
-        if let Some(id) = cur_id {
-            order.push(id.clone());
-            map.insert(id, cur_seq);
-        }
+    let raw = fs::read_to_string(path).unwrap_or_default();
+    let pairs = crate::fetch::parse_multi_fasta_pairs(
+        &raw,
+        "",
+        crate::fetch::FastaSeqMode::UppercaseTrimmed,
+    );
+    let mut order = Vec::with_capacity(pairs.len());
+    let mut map = HashMap::with_capacity(pairs.len());
+    for (id, seq) in pairs {
+        order.push(id.clone());
+        map.insert(id, seq.into_bytes());
     }
     (order, map)
 }

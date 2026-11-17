@@ -1,0 +1,135 @@
+{
+  "benchmark_id": "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS",
+  "title": "U.S. Agricultural Arthropod Pests Across Fruit/Specialty Crops, Rangeland/Livestock & Stored Grain (Acari Outgroup; Orthoptera; Thysanoptera; Hemiptera; Hymenoptera; Coleoptera; Diptera; Lepidoptera)",
+  "taxon_group": "Arthropoda",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 12,
+  "loci": [
+    "COI", "COII", "COIII", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6", "ATP6",
+    "rrnL_16S", "rrnS_12S", "SSU_18S", "LSU_28S"
+  ],
+  "sampling_families": {
+    "A_Acari_Outgroup": ["Ixodidae", "Tetranychidae"],
+    "B_Polyneoptera_Rangeland": ["Tettigoniidae", "Acrididae"],
+    "C_Paraneoptera_SapRasping": ["Thripidae", "Liviidae", "Fulgoridae", "Pseudococcidae"],
+    "D_Hymenoptera_Formicidae": ["Formicidae"],
+    "E_Coleoptera_CropGrain": ["Chrysomelidae", "Curculionidae", "Bostrichidae", "Tenebrionidae"],
+    "F_Diptera_SoftFruitLivestock": ["Drosophilidae", "Calliphoridae", "Muscidae"],
+    "G_Lepidoptera_OrchardGrain": ["Plutellidae", "Tortricidae", "Pyralidae", "Noctuidae"]
+  },
+  "species_per_family": {
+    "Ixodidae": 2,
+    "Tetranychidae": 4,
+    "Tettigoniidae": 2,
+    "Acrididae": 4,
+    "Thripidae": 4,
+    "Liviidae": 3,
+    "Fulgoridae": 2,
+    "Pseudococcidae": 5,
+    "Formicidae": 5,
+    "Chrysomelidae": 3,
+    "Curculionidae": 4,
+    "Bostrichidae": 2,
+    "Tenebrionidae": 2,
+    "Drosophilidae": 4,
+    "Calliphoridae": 3,
+    "Muscidae": 2,
+    "Plutellidae": 2,
+    "Tortricidae": 3,
+    "Pyralidae": 4,
+    "Noctuidae": 5
+  },
+  "scored_clades": [
+    {
+      "id": "C1_AcariOutgroup",
+      "name": "Chelicerata Acari Outgroup (Cattle Fever Ticks Ixodidae + Spider Mites Tetranychidae)",
+      "families": ["Ixodidae", "Tetranychidae"]
+    },
+    {
+      "id": "C2_OrthopteraRangeland",
+      "name": "Polyneoptera Rangeland Orthoptera (Tettigoniidae + Acrididae)",
+      "families": ["Tettigoniidae", "Acrididae"]
+    },
+    {
+      "id": "C3_ParaneopteraVectors",
+      "name": "Paraneoptera Thrips, Citrus Psyllid, Lanternfly & Mealybugs",
+      "families": ["Thripidae", "Liviidae", "Fulgoridae", "Pseudococcidae"]
+    },
+    {
+      "id": "C4_HymenopteraFireAnts",
+      "name": "Hymenoptera Formicidae Fire Ants (Solenopsis)",
+      "families": ["Formicidae"]
+    },
+    {
+      "id": "C5_ColeopteraCropGrain",
+      "name": "Coleoptera Crop & Stored-Grain Beetles (Chrysomelidae + Curculionidae + Bostrichidae + Tenebrionidae)",
+      "families": ["Chrysomelidae", "Curculionidae", "Bostrichidae", "Tenebrionidae"]
+    },
+    {
+      "id": "C6_DipteraSoftFruitLivestock",
+      "name": "Diptera Spotted Wing Drosophila & Livestock Myiasis/Biting Flies",
+      "families": ["Drosophilidae", "Calliphoridae", "Muscidae"]
+    },
+    {
+      "id": "C7_LepidopteraOrchardGrain",
+      "name": "Lepidoptera Orchard, Brassica & Stored-Product Moths",
+      "families": ["Plutellidae", "Tortricidae", "Pyralidae", "Noctuidae"]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "C8_HolometabolaCore",
+      "name": "Holometabola Core ([D]+[E]+[F]+[G])",
+      "families": ["Formicidae", "Chrysomelidae", "Curculionidae", "Bostrichidae", "Tenebrionidae", "Drosophilidae", "Calliphoridae", "Muscidae", "Plutellidae", "Tortricidae", "Pyralidae", "Noctuidae"],
+      "why_not_scored": "Rooted internal resolution summary across four holometabolous pest orders."
+    },
+    {
+      "id": "C9_PanorpidaMecopterida",
+      "name": "Antliophora + Amphiesmenoptera (Diptera + Lepidoptera)",
+      "families": ["Drosophilidae", "Calliphoridae", "Muscidae", "Plutellidae", "Tortricidae", "Pyralidae", "Noctuidae"],
+      "why_not_scored": "Sister-group benchmark across sister orders Diptera and Lepidoptera."
+    }
+  ],
+  "sources": [
+    {
+      "key": "White2026_RuNIE",
+      "citation": "White, B. P. (2026). RuNIE Phylogenomic Synthesis Framework.",
+      "doi": "10.5281/zenodo.23969275"
+    },
+    {
+      "key": "Chernomor2016_Partition",
+      "citation": "Chernomor, O., von Haeseler, A., & Minh, B. Q. (2016). Terrace Aware Data Structure for Phylogenomic Inference from Supermatrices. Systematic Biology, 65(6), 997-1008.",
+      "doi": "10.1093/sysbio/syw037"
+    },
+    {
+      "key": "Kalyaanamoorthy2017_ModelFinder",
+      "citation": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589.",
+      "doi": "10.1038/nmeth.4285"
+    },
+    {
+      "key": "Misof2014_Insects",
+      "citation": "Misof, B., Liu, S., Meusemann, K., et al. (2014). Phylogenomics resolves the timing and pattern of insect evolution. Science, 346(6210), 763-767.",
+      "doi": "10.1126/science.1257570"
+    },
+    {
+      "key": "Schoville2018_CPB",
+      "citation": "Schoville, S. D., Chen, Y. H., Andersson, M. N., et al. (2018). A model species for agricultural pest genomics: the genome of the Colorado potato beetle, Leptinotarsa decemlineata. Scientific Reports, 8, 1931.",
+      "doi": "10.1038/s41598-018-20154-1"
+    },
+    {
+      "key": "Wan2019_CodlingMoth",
+      "citation": "Wan, F., Yin, C., Tang, R., et al. (2019). A chromosome-level genome assembly of Cydia pomonella provides insights into chemical ecology and insecticide resistance. Nature Communications, 10, 4237.",
+      "doi": "10.1038/s41467-019-12175-9"
+    },
+    {
+      "key": "Chiu2013_SWD",
+      "citation": "Chiu, J. C., Jiang, X., Zhao, L., et al. (2013). Genome of Drosophila suzukii, the spotted wing drosophila. G3, 3(12), 2257-2271.",
+      "doi": "10.1534/g3.113.008185"
+    },
+    {
+      "key": "Wurm2011_RIFA",
+      "citation": "Wurm, Y., Wang, J., Riba-Grognuz, O., et al. (2011). The genome of the fire ant Solenopsis invicta. Proceedings of the National Academy of Sciences, 108(14), 5679-5684.",
+      "doi": "10.1073/pnas.1009690108"
+    }
+  ]
+}

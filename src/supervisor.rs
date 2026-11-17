@@ -2070,6 +2070,55 @@ pub fn run_autonomous_supervisor(
         return Ok(manifest);
     }
 
+    if crate::supervisor_us_ag_pests::is_us_ag_pests_study_target(
+        spec.preset_name.as_deref(),
+        &spec.run_id,
+    ) {
+        let t0_cap = Instant::now();
+        let run_dir = runs_root_dir.join(&spec.run_id);
+        let (mut manifest, report) =
+            crate::supervisor_us_ag_pests::execute_us_ag_pests_supervisor_study(
+                spec,
+                cache,
+                runs_root_dir,
+            )?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
+        let report_path = run_dir.join("multi-compartment-report.json");
+        if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
+            let _ = fs::write(&report_path, rep_json);
+        }
+        if spec.generate_figures_and_preprint {
+            let t_fig = Instant::now();
+            let ws_root = resolve_crv_workspace_root();
+            let labs_fig_dir = ws_root.join("labs").join("figures");
+            crate::supervisor_figures::generate_us_ag_pests_locked_figures(
+                &mut manifest,
+                &report,
+                &run_dir,
+                Some(labs_fig_dir.as_path()),
+            )?;
+            crate::supervisor_us_ag_pests_manuscript::export_us_ag_pests_manuscript_and_staged_bundle(
+                &report,
+                &mut manifest,
+                &ws_root,
+                &run_dir,
+            )?;
+            manifest.stage_figures_tex_ms = t_fig.elapsed().as_millis().max(1);
+        }
+        manifest.total_wall_clock_ms = t0_cap.elapsed().as_millis().max(1);
+        let manifest_path = run_dir.join("run-manifest.json");
+        let manifest_json =
+            serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+        fs::write(&manifest_path, manifest_json).map_err(|e| e.to_string())?;
+        eprintln!(
+            "[bio-suite-supervisor] Multi-Compartment Run '{}' completed in {} ms -> {}",
+            manifest.run_id,
+            manifest.total_wall_clock_ms,
+            manifest_path.display()
+        );
+        return Ok(manifest);
+    }
+
     if crate::supervisor_china_aus_pests::is_china_aus_pests_study_target(
         spec.preset_name.as_deref(),
         &spec.run_id,
@@ -3331,6 +3380,14 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                        } else if crate::supervisor_us_ag_pests::is_us_ag_pests_study_target(Some(v.as_str()), "") {
+                            spec.run_id = "runie-native-us-ag-pests-30".to_string();
+                            spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            spec.bootstrap_replicates = 500;
+                            spec.enable_haplotype_clusters = true;
+                            if spec.mcmc_generations == 10_000 {
+                                spec.mcmc_generations = 25_000;
+                            }
                         } else if crate::supervisor_china_aus_pests::is_china_aus_pests_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-china-australia-pests-29".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3457,6 +3514,16 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             )?;
             println!("[bio-suite-supervisor] Generated P28 supermatrix diagnostic SVG: {}", out_svg);
             return Ok(());
+        } else if crate::supervisor_us_ag_pests::is_us_ag_pests_study_target(
+            spec.preset_name.as_deref(),
+            &spec.run_id,
+        ) {
+            let out_svg = crate::supervisor_us_ag_pests::run_us_ag_pests_supermatrix_viz_refresh(
+                &cache,
+                &runs_root,
+            )?;
+            println!("[bio-suite-supervisor] Refreshed P30 supermatrix coverage SVG: {}", out_svg);
+            return Ok(());
         } else if crate::supervisor_china_aus_pests::is_china_aus_pests_study_target(
             spec.preset_name.as_deref(),
             &spec.run_id,
@@ -3515,6 +3582,19 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         Some(labs_fig_dir.as_path()),
                     )?;
                     crate::supervisor_acanthochitonidae::export_acanthochitonidae_manuscript_and_staged_bundle(
+                        &rep,
+                        &mut m,
+                        &ws_root,
+                        &run_dir,
+                    )?;
+                } else if crate::supervisor_us_ag_pests::is_us_ag_pests_study_target(None, &m.run_id) {
+                    crate::supervisor_figures::generate_us_ag_pests_locked_figures(
+                        &mut m,
+                        &rep,
+                        &run_dir,
+                        Some(labs_fig_dir.as_path()),
+                    )?;
+                    crate::supervisor_us_ag_pests_manuscript::export_us_ag_pests_manuscript_and_staged_bundle(
                         &rep,
                         &mut m,
                         &ws_root,

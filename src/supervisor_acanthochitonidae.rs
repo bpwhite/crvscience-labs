@@ -5024,6 +5024,8 @@ fn assemble_acanthochitonidae_multilocus_matrix(
             start_col_1based: span_cursor,
             end_col_1based: span_cursor + *cols_l - 1,
             taxa_present: map.len(),
+            winning_model: None,
+            rate_multiplier: None,
         });
         span_cursor += *cols_l;
     }

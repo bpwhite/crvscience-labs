@@ -1301,6 +1301,8 @@ pub fn execute_china_aus_pests_supervisor_study(
             start_col_1based: cursor_1b,
             end_col_1based: end_1b,
             taxa_present: pmap.len(),
+            winning_model: None,
+            rate_multiplier: None,
         });
         cursor_1b = end_1b + 1;
         if *is_nuc {
@@ -2629,6 +2631,8 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
             start_col_1based: p["start"].as_u64().unwrap_or(1) as usize,
             end_col_1based: p["end"].as_u64().unwrap_or(1) as usize,
             taxa_present: p["taxa_present"].as_u64().unwrap_or(0) as usize,
+            winning_model: None,
+            rate_multiplier: None,
         });
     }
 

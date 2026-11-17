@@ -869,22 +869,22 @@ fn encode_nt_mask(b: u8) -> u8 {
 }
 
 #[derive(Debug, Clone)]
-struct CompressedAlignment {
-    _n_taxa: usize,
-    n_sites: usize,
-    invariant_fraction: f64,
-    patterns: Vec<Vec<u8>>,
-    weights: Vec<f64>,
-    is_invariant_base: Vec<Option<usize>>,
-    pi: [f64; 4],
-    kappa_ct: f64,
-    kappa_ag: f64,
-    kappa_overall: f64,
-    gtr_rates: [f64; 6],
-    tim2_rates: [f64; 6],
+pub(crate) struct CompressedAlignment {
+    pub(crate) _n_taxa: usize,
+    pub(crate) n_sites: usize,
+    pub(crate) invariant_fraction: f64,
+    pub(crate) patterns: Vec<Vec<u8>>,
+    pub(crate) weights: Vec<f64>,
+    pub(crate) is_invariant_base: Vec<Option<usize>>,
+    pub(crate) pi: [f64; 4],
+    pub(crate) kappa_ct: f64,
+    pub(crate) kappa_ag: f64,
+    pub(crate) kappa_overall: f64,
+    pub(crate) gtr_rates: [f64; 6],
+    pub(crate) tim2_rates: [f64; 6],
 }
 
-fn compress_alignment_and_estimate_rates(seqs: &[String]) -> CompressedAlignment {
+pub(crate) fn compress_alignment_and_estimate_rates(seqs: &[String]) -> CompressedAlignment {
     let n_taxa = seqs.len();
     let n_sites = seqs.first().map(|s| s.len()).unwrap_or(0);
     let mut pattern_map: HashMap<Vec<u8>, usize> = HashMap::new();
@@ -1027,7 +1027,7 @@ fn compress_alignment_and_estimate_rates(seqs: &[String]) -> CompressedAlignment
     }
 }
 
-fn build_rate_matrix_q_for_run_model(
+pub(crate) fn build_rate_matrix_q_for_run_model(
     model: PhyloRunModel,
     aln: &CompressedAlignment,
 ) -> ([[f64; 4]; 4], [f64; 4]) {
@@ -1171,19 +1171,19 @@ fn rate_categories_for_run_model(
 // ============================================================================
 
 #[derive(Debug, Clone)]
-struct MlTreeNode {
-    _id: usize,
-    label: Option<String>,
-    left: Option<usize>,
-    right: Option<usize>,
-    branch_len: f64,
-    support_pct: f64,
+pub(crate) struct MlTreeNode {
+    pub(crate) _id: usize,
+    pub(crate) label: Option<String>,
+    pub(crate) left: Option<usize>,
+    pub(crate) right: Option<usize>,
+    pub(crate) branch_len: f64,
+    pub(crate) support_pct: f64,
 }
 
 /// Detect columns that are binary purine/pyrimidine (`RY`-recoded, saturation ceiling 0.50) vs.
 /// standard 4-state nucleotide columns (`A/C/G/T`, saturation ceiling 0.75).
 /// Supports both literal IUPAC `R`/`Y` columns and `recode_ry3` (`A`/`C` at 3rd codon position).
-fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
+pub(crate) fn detect_binary_ry_columns(seqs: &[String]) -> Vec<bool> {
     let seq_len = seqs.first().map(|s| s.len()).unwrap_or(0);
     if seqs.is_empty() || seq_len == 0 {
         return Vec::new();
@@ -1577,7 +1577,7 @@ fn felsenstein_postorder(
 /// (summed over discrete rate categories + invariant category via LogSumExp) for all compressed
 /// alignment patterns in `aln`. Shared by total tree likelihood evaluation and RELL/UFBoot2 scoring.
 #[allow(clippy::too_many_arguments)]
-fn evaluate_site_pattern_lnls(
+pub(crate) fn evaluate_site_pattern_lnls(
     nodes: &[MlTreeNode],
     aln: &CompressedAlignment,
     q: &[[f64; 4]; 4],
@@ -1680,7 +1680,7 @@ fn evaluate_tree_log_likelihood(
 }
 
 /// Sequential variant of `evaluate_tree_log_likelihood` for use inside outer Rayon replicate workers.
-fn evaluate_tree_log_likelihood_seq(
+pub(crate) fn evaluate_tree_log_likelihood_seq(
     nodes: &[MlTreeNode],
     aln: &CompressedAlignment,
     q: &[[f64; 4]; 4],
@@ -1812,7 +1812,7 @@ fn run_native_ml_tree_builder_fast(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn finalize_tree_metrics(
+pub(crate) fn finalize_tree_metrics(
     engine_name: &str,
     model: PhyloRunModel,
     n_taxa: usize,
@@ -1944,7 +1944,7 @@ fn reg_lower_gamma(a: f64, x: f64) -> f64 {
 
 /// Exact Yang (1994, *J. Mol. Evol.* 39:306–314, Eq. 5–6) 4-category discrete Gamma category means:
 /// $r_k(\alpha) = 4 \cdot [P(\alpha + 1, u_k) - P(\alpha + 1, u_{k-1})]$, where $P(\alpha, u_k) = k / 4$.
-fn yang_exact_discrete_gamma4_rates(alpha: f64) -> [f64; 4] {
+pub(crate) fn yang_exact_discrete_gamma4_rates(alpha: f64) -> [f64; 4] {
     let a = alpha.clamp(0.06, 50.0);
     let mut u_bounds = [0.0f64; 5];
     u_bounds[4] = f64::INFINITY;
@@ -1987,7 +1987,7 @@ fn yang_exact_discrete_gamma4_rates(alpha: f64) -> [f64; 4] {
 }
 
 /// Build normalized 4x4 rate matrix $Q$ from explicit 6-exchangeability vector `[AC, AG, AT, CG, CT, GT]` and base frequencies `pi`.
-fn build_q_from_exch_and_pi(ex: &[f64; 6], pi: &[f64; 4]) -> [[f64; 4]; 4] {
+pub(crate) fn build_q_from_exch_and_pi(ex: &[f64; 6], pi: &[f64; 4]) -> [[f64; 4]; 4] {
     let sym = [
         [0.0, ex[0], ex[1], ex[2]],
         [ex[0], 0.0, ex[3], ex[4]],
@@ -2017,7 +2017,7 @@ fn build_q_from_exch_and_pi(ex: &[f64; 6], pi: &[f64; 4]) -> [[f64; 4]; 4] {
 }
 
 /// Build rate categories `(pinv, Vec<(rate, weight)>)` from optimized `(alpha, pinv, freerate_w1, freerate_r1)`.
-fn build_rate_cats_from_params(
+pub(crate) fn build_rate_cats_from_params(
     model: PhyloRunModel,
     alpha: f64,
     pinv: f64,
@@ -2092,7 +2092,7 @@ fn translate_vertebrate_mt_codon(c0: u8, c1: u8, c2: u8) -> u8 {
 /// `1` = transversion-heavy distance, `2` = codon 1st/2nd + 3rd-transversion distance,
 /// `3` = amino-acid Grishin + transversion + K2P tie-breaker, `4` = AA + 1st/2nd codon hierarchy.
 /// Preserves exact pairwise weights on multinomial bootstrap replicates (`col_weights`).
-fn build_weighted_bionj_pool(
+pub(crate) fn build_weighted_bionj_pool(
     seqs: &[String],
     labels: &[String],
     model: PhyloRunModel,
@@ -2516,7 +2516,7 @@ fn propagate_cl_across_branch(
 /// 2. Quartet-polished Nearest-Neighbor Interchange (`NNI`) topology moves at every internal edge
 ///    (when `do_nni == true`).
 #[allow(clippy::too_many_arguments)]
-fn run_inside_outside_pulley_pass(
+pub(crate) fn run_inside_outside_pulley_pass(
     nodes: &mut [MlTreeNode],
     n_taxa: usize,
     aln: &CompressedAlignment,
@@ -2894,10 +2894,31 @@ fn run_inside_outside_pulley_pass(
 
 /// Optimize substitution model parameters $(Q, \alpha, p_{\text{inv}}, R2)$ directly on the phylogenetic tree
 /// via coordinate golden-section line search, returning `(q, pi, pinv, rate_cats, best_lnl)`.
-fn optimize_substitution_model_on_tree(
+pub(crate) fn optimize_substitution_model_on_tree(
     nodes: &[MlTreeNode],
     aln: &CompressedAlignment,
     model: PhyloRunModel,
+) -> ([[f64; 4]; 4], [f64; 4], f64, Vec<(f64, f64)>, f64) {
+    optimize_substitution_model_on_tree_inner(nodes, aln, model, true, false)
+}
+
+/// Sequential variant of `optimize_substitution_model_on_tree` (for outer Rayon workers),
+/// with optional `force_no_inv` to evaluate `GTR+F+G4` (`pinv = 0.0`, 4-cat Gamma) cleanly.
+pub(crate) fn optimize_substitution_model_on_tree_seq(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    model: PhyloRunModel,
+    force_no_inv: bool,
+) -> ([[f64; 4]; 4], [f64; 4], f64, Vec<(f64, f64)>, f64) {
+    optimize_substitution_model_on_tree_inner(nodes, aln, model, false, force_no_inv)
+}
+
+fn optimize_substitution_model_on_tree_inner(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    model: PhyloRunModel,
+    parallel: bool,
+    force_no_inv: bool,
 ) -> ([[f64; 4]; 4], [f64; 4], f64, Vec<(f64, f64)>, f64) {
     let pi = match model {
         PhyloRunModel::JcUniform | PhyloRunModel::K80Gamma4 => [0.25, 0.25, 0.25, 0.25],
@@ -2907,7 +2928,7 @@ fn optimize_substitution_model_on_tree(
     if matches!(model, PhyloRunModel::JcUniform) {
         let q = build_q_from_exch_and_pi(&[1.0; 6], &pi);
         let (pinv, cats) = build_rate_cats_from_params(model, 1.0, 0.0, 0.5, 0.2);
-        let lnl = evaluate_tree_log_likelihood(nodes, aln, &q, &pi, pinv, &cats, 1.0);
+        let lnl = evaluate_tree_log_likelihood_inner(nodes, aln, &q, &pi, pinv, &cats, 1.0, parallel);
         return (q, pi, pinv, cats, lnl);
     }
 
@@ -2929,12 +2950,18 @@ fn optimize_substitution_model_on_tree(
         | PhyloRunModel::GtrFreeRate2 => aln.gtr_rates,
     };
 
+    let no_inv = force_no_inv || matches!(model, PhyloRunModel::K80Gamma4 | PhyloRunModel::GtrFreeRate2);
+    let effective_rate_model = if force_no_inv && !matches!(model, PhyloRunModel::GtrFreeRate2 | PhyloRunModel::JcUniform) {
+        PhyloRunModel::K80Gamma4
+    } else {
+        model
+    };
     let mut alpha = if matches!(model, PhyloRunModel::K80Gamma4) {
         0.26
     } else {
         0.58
     };
-    let mut pinv = if matches!(model, PhyloRunModel::K80Gamma4 | PhyloRunModel::GtrFreeRate2) {
+    let mut pinv = if no_inv {
         0.0
     } else {
         (aln.invariant_fraction * 0.78).clamp(0.25, 0.46)
@@ -2944,17 +2971,25 @@ fn optimize_substitution_model_on_tree(
 
     let mut best_q = build_q_from_exch_and_pi(&ex, &pi);
     let (mut best_pinv, mut best_cats) =
-        build_rate_cats_from_params(model, alpha, pinv, fr_w1, fr_r1);
-    let mut best_lnl =
-        evaluate_tree_log_likelihood(nodes, aln, &best_q, &pi, best_pinv, &best_cats, 1.0);
+        build_rate_cats_from_params(effective_rate_model, alpha, pinv, fr_w1, fr_r1);
+    let mut best_lnl = evaluate_tree_log_likelihood_inner(
+        nodes,
+        aln,
+        &best_q,
+        &pi,
+        best_pinv,
+        &best_cats,
+        1.0,
+        parallel,
+    );
 
     // 1. Optimize rate heterogeneity parameters (alpha & pinv, or FreeRate w1 & r1) on the tree
     if matches!(model, PhyloRunModel::GtrFreeRate2) {
         for &cand_w1 in &[0.52, 0.60, 0.66, 0.72, 0.78] {
             for &cand_r1 in &[0.02, 0.05, 0.09, 0.14, 0.22] {
                 let (p_i, cats) =
-                    build_rate_cats_from_params(model, alpha, pinv, cand_w1, cand_r1);
-                let lnl = evaluate_tree_log_likelihood(nodes, aln, &best_q, &pi, p_i, &cats, 1.0);
+                    build_rate_cats_from_params(effective_rate_model, alpha, pinv, cand_w1, cand_r1);
+                let lnl = evaluate_tree_log_likelihood_inner(nodes, aln, &best_q, &pi, p_i, &cats, 1.0, parallel);
                 if lnl > best_lnl {
                     best_lnl = lnl;
                     best_pinv = p_i;
@@ -2964,12 +2999,12 @@ fn optimize_substitution_model_on_tree(
         }
     } else {
         // Optimize pinv (if +I model) and Gamma shape alpha
-        if !matches!(model, PhyloRunModel::K80Gamma4) {
+        if !no_inv {
             let max_p = (aln.invariant_fraction * 0.96).min(0.475);
             for &cand_p in &[0.18, 0.26, 0.34, 0.40, max_p] {
                 let (p_i, cats) =
-                    build_rate_cats_from_params(model, alpha, cand_p, fr_w1, fr_r1);
-                let lnl = evaluate_tree_log_likelihood(nodes, aln, &best_q, &pi, p_i, &cats, 1.0);
+                    build_rate_cats_from_params(effective_rate_model, alpha, cand_p, fr_w1, fr_r1);
+                let lnl = evaluate_tree_log_likelihood_inner(nodes, aln, &best_q, &pi, p_i, &cats, 1.0, parallel);
                 if lnl > best_lnl {
                     best_lnl = lnl;
                     pinv = cand_p;
@@ -2979,8 +3014,8 @@ fn optimize_substitution_model_on_tree(
             }
         }
         for &cand_a in &[0.18, 0.24, 0.32, 0.42, 0.55, 0.72, 0.95, 1.25] {
-            let (p_i, cats) = build_rate_cats_from_params(model, cand_a, pinv, fr_w1, fr_r1);
-            let lnl = evaluate_tree_log_likelihood(nodes, aln, &best_q, &pi, p_i, &cats, 1.0);
+            let (p_i, cats) = build_rate_cats_from_params(effective_rate_model, cand_a, pinv, fr_w1, fr_r1);
+            let lnl = evaluate_tree_log_likelihood_inner(nodes, aln, &best_q, &pi, p_i, &cats, 1.0, parallel);
             if lnl > best_lnl {
                 best_lnl = lnl;
                 alpha = cand_a;
@@ -2989,7 +3024,7 @@ fn optimize_substitution_model_on_tree(
             }
         }
         // Joint fine-tuning of (pinv, alpha)
-        let pinv_grid = if matches!(model, PhyloRunModel::K80Gamma4) {
+        let pinv_grid = if no_inv {
             vec![0.0]
         } else {
             vec![
@@ -3001,8 +3036,8 @@ fn optimize_substitution_model_on_tree(
         for &cand_p in &pinv_grid {
             for &mult in &[0.86, 0.94, 1.0, 1.06, 1.15] {
                 let cand_a = (alpha * mult).clamp(0.10, 3.0);
-                let (p_i, cats) = build_rate_cats_from_params(model, cand_a, cand_p, fr_w1, fr_r1);
-                let lnl = evaluate_tree_log_likelihood(nodes, aln, &best_q, &pi, p_i, &cats, 1.0);
+                let (p_i, cats) = build_rate_cats_from_params(effective_rate_model, cand_a, cand_p, fr_w1, fr_r1);
+                let lnl = evaluate_tree_log_likelihood_inner(nodes, aln, &best_q, &pi, p_i, &cats, 1.0, parallel);
                 if lnl > best_lnl {
                     best_lnl = lnl;
                     alpha = cand_a;
@@ -3022,8 +3057,9 @@ fn optimize_substitution_model_on_tree(
                 let cand_k = (base_k * mult).clamp(0.8, 35.0);
                 let cand_ex = [1.0, cand_k, 1.0, 1.0, cand_k, 1.0];
                 let q = build_q_from_exch_and_pi(&cand_ex, &pi);
-                let lnl =
-                    evaluate_tree_log_likelihood(nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0);
+                let lnl = evaluate_tree_log_likelihood_inner(
+                    nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0, parallel,
+                );
                 if lnl > best_lnl {
                     best_lnl = lnl;
                     best_q = q;
@@ -3038,8 +3074,8 @@ fn optimize_substitution_model_on_tree(
                     let mut cand_ex = ex;
                     cand_ex[idx] = (base_v * mult).clamp(0.5, 45.0);
                     let q = build_q_from_exch_and_pi(&cand_ex, &pi);
-                    let lnl = evaluate_tree_log_likelihood(
-                        nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0,
+                    let lnl = evaluate_tree_log_likelihood_inner(
+                        nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0, parallel,
                     );
                     if lnl > best_lnl {
                         best_lnl = lnl;
@@ -3058,8 +3094,9 @@ fn optimize_substitution_model_on_tree(
                 cand_ex[0] = v;
                 cand_ex[2] = v;
                 let q = build_q_from_exch_and_pi(&cand_ex, &pi);
-                let lnl =
-                    evaluate_tree_log_likelihood(nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0);
+                let lnl = evaluate_tree_log_likelihood_inner(
+                    nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0, parallel,
+                );
                 if lnl > best_lnl {
                     best_lnl = lnl;
                     ex = cand_ex;
@@ -3072,8 +3109,8 @@ fn optimize_substitution_model_on_tree(
                     let mut cand_ex = ex;
                     cand_ex[idx] = (base_v * mult).clamp(0.5, 45.0);
                     let q = build_q_from_exch_and_pi(&cand_ex, &pi);
-                    let lnl = evaluate_tree_log_likelihood(
-                        nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0,
+                    let lnl = evaluate_tree_log_likelihood_inner(
+                        nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0, parallel,
                     );
                     if lnl > best_lnl {
                         best_lnl = lnl;
@@ -3088,8 +3125,9 @@ fn optimize_substitution_model_on_tree(
         | PhyloRunModel::GtrFreeRate2 => {
             // Ensure GTR starts from the better of `aln.gtr_rates` or nested `aln.tim2_rates`
             let q_tim2 = build_q_from_exch_and_pi(&aln.tim2_rates, &pi);
-            let lnl_tim2 =
-                evaluate_tree_log_likelihood(nodes, aln, &q_tim2, &pi, best_pinv, &best_cats, 1.0);
+            let lnl_tim2 = evaluate_tree_log_likelihood_inner(
+                nodes, aln, &q_tim2, &pi, best_pinv, &best_cats, 1.0, parallel,
+            );
             if lnl_tim2 > best_lnl {
                 best_lnl = lnl_tim2;
                 ex = aln.tim2_rates;
@@ -3103,8 +3141,8 @@ fn optimize_substitution_model_on_tree(
                         let mut cand_ex = ex;
                         cand_ex[idx] = (base_v * mult).clamp(0.05, 50.0);
                         let q = build_q_from_exch_and_pi(&cand_ex, &pi);
-                        let lnl = evaluate_tree_log_likelihood(
-                            nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0,
+                        let lnl = evaluate_tree_log_likelihood_inner(
+                            nodes, aln, &q, &pi, best_pinv, &best_cats, 1.0, parallel,
                         );
                         if lnl > best_lnl {
                             best_lnl = lnl;
@@ -3121,20 +3159,20 @@ fn optimize_substitution_model_on_tree(
 }
 
 /// Solved 4-stage ML tree together with its fitted substitution & rate-heterogeneity state `(Q, pi, pinv, rate_cats)`.
-struct FittedMlTreeState {
-    metrics: SingleTreeRunMetrics,
-    nodes: Vec<MlTreeNode>,
-    q: [[f64; 4]; 4],
-    pi: [f64; 4],
-    pinv: f64,
-    rate_cats: Vec<(f64, f64)>,
-    best_pool_idx: usize,
+pub(crate) struct FittedMlTreeState {
+    pub(crate) metrics: SingleTreeRunMetrics,
+    pub(crate) nodes: Vec<MlTreeNode>,
+    pub(crate) q: [[f64; 4]; 4],
+    pub(crate) pi: [f64; 4],
+    pub(crate) pinv: f64,
+    pub(crate) rate_cats: Vec<(f64, f64)>,
+    pub(crate) best_pool_idx: usize,
 }
 
 /// Upgraded 4-Stage Native Rust Maximum-Likelihood Tree Builder (`TreeBuilderMode::Native`),
 /// returning both final metrics and the fitted `(Q, pi, p_inv, rate_cats, best_pool_idx)` state
 /// so downstream bootstrap estimators use the exact same substitution & rate heterogeneity regime.
-fn solve_native_ml_tree_with_fit(
+pub(crate) fn solve_native_ml_tree_with_fit(
     seqs: &[String],
     labels: &[String],
     aln: &CompressedAlignment,
@@ -3368,7 +3406,7 @@ fn run_native_ml_tree_builder(
     solve_native_ml_tree_with_fit(seqs, labels, aln, model).metrics
 }
 
-fn format_ml_newick(nodes: &[MlTreeNode], idx: usize) -> String {
+pub(crate) fn format_ml_newick(nodes: &[MlTreeNode], idx: usize) -> String {
     let nd = &nodes[idx];
     if let Some(lbl) = &nd.label {
         format!("{}:{:.5}", lbl, nd.branch_len)
@@ -3830,7 +3868,7 @@ fn pearson_r(xs: &[f64], ys: &[f64]) -> f64 {
 /// Extract canonical nontrivial bipartitions (`Vec<u64>` bitmasks with bit 0 cleared and popcount
 /// in `2..=n_taxa-2`) and all matching internal node indices `(canon_mask, node_indices)` from `MlTreeNode`s
 /// by recursively traversing post-order from `root_id = nodes.len() - 1` (safe after arbitrary NNI swaps).
-fn extract_canonical_splits_from_ml_nodes(
+pub(crate) fn extract_canonical_splits_from_ml_nodes(
     nodes: &[MlTreeNode],
     n_taxa: usize,
 ) -> (Vec<(Vec<u64>, Vec<usize>)>, BTreeSet<Vec<u64>>) {
@@ -4017,7 +4055,7 @@ pub fn extract_canonical_splits_from_newick(
     splits
 }
 
-fn canonical_split_concordance_and_rf(
+pub(crate) fn canonical_split_concordance_and_rf(
     ref_splits: &BTreeSet<Vec<u64>>,
     alt_splits: &BTreeSet<Vec<u64>>,
 ) -> (usize, f64) {
@@ -4030,7 +4068,7 @@ fn canonical_split_concordance_and_rf(
     (rf, pct)
 }
 
-fn map_columns_to_patterns(seqs: &[String], aln: &CompressedAlignment) -> Vec<usize> {
+pub(crate) fn map_columns_to_patterns(seqs: &[String], aln: &CompressedAlignment) -> Vec<usize> {
     let n_taxa = seqs.len();
     let pat_lookup: HashMap<&[u8], usize> = aln
         .patterns
@@ -4050,7 +4088,7 @@ fn map_columns_to_patterns(seqs: &[String], aln: &CompressedAlignment) -> Vec<us
     col_to_pat
 }
 
-fn compact_weighted_alignment(aln: &CompressedAlignment, pat_weights: &[f64]) -> CompressedAlignment {
+pub(crate) fn compact_weighted_alignment(aln: &CompressedAlignment, pat_weights: &[f64]) -> CompressedAlignment {
     let mut patterns = Vec::with_capacity(aln.patterns.len());
     let mut weights = Vec::with_capacity(aln.patterns.len());
     let mut is_invariant_base = Vec::with_capacity(aln.patterns.len());
@@ -4079,7 +4117,7 @@ fn compact_weighted_alignment(aln: &CompressedAlignment, pat_weights: &[f64]) ->
 
 /// Perturbs a solved ML tree by `n_swaps` random valid Nearest-Neighbor Interchange (NNI) moves
 /// along internal branches (`u <-> child_id >= n_taxa`), preserving binary rooted invariant and leaf coverage.
-fn apply_stochastic_nni_perturbation(
+pub(crate) fn apply_stochastic_nni_perturbation(
     nodes: &[MlTreeNode],
     n_taxa: usize,
     n_swaps: usize,

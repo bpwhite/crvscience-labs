@@ -12,6 +12,8 @@ pub struct SupermatrixPartitionSpan {
     pub start_col_1based: usize,
     pub end_col_1based: usize,
     pub taxa_present: usize,
+    pub winning_model: Option<String>,
+    pub rate_multiplier: Option<f64>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,6 +51,21 @@ fn short_locus_label(name: &str) -> String {
         "LSU_28S" => "28S".to_string(),
         other => other.to_string(),
     }
+}
+
+fn compact_partition_model_tag(model: &str, r: f64) -> String {
+    let short_m = match model {
+        "GTR+F+I+G4" => "GTR+I+G",
+        "GTR+F+G4" => "GTR+G4",
+        "GTR+F+R2" => "GTR+R2",
+        "TIM2+F+I+G4" => "TIM2+I+G",
+        "TN+F+I+G4" => "TN+I+G",
+        "HKY+F+I+G4" => "HKY+I+G",
+        "K80+G4" => "K80+G4",
+        "JC" => "JC",
+        other => other,
+    };
+    format!("{} {:.2}x", short_m, r)
 }
 
 fn sector_accent_color(sector: &str) -> &'static str {
@@ -218,9 +235,10 @@ pub fn render_supermatrix_positional_coverage_svg(
         pi_pct
     ));
 
-    // Partition Ribbon (`y = 66..88`) with staggered gene labels at `y = 49` / `y = 61`
+    let has_partition_models = partitions.iter().any(|p| p.winning_model.is_some());
+    // Partition Ribbon with staggered gene labels above narrow spans + optional model/rate sub-labels
     let y_rib = 66.0f64;
-    let h_rib = 20.0f64;
+    let h_rib = if has_partition_models { 24.0f64 } else { 20.0f64 };
     for (pi, p) in partitions.iter().enumerate() {
         let s0 = p.start_col_1based.saturating_sub(1) as f64;
         let e0 = p.end_col_1based.min(total_cols) as f64;
@@ -234,18 +252,39 @@ pub fn render_supermatrix_positional_coverage_svg(
             "#0f766e"
         };
         let opacity = if pi % 2 == 0 { "0.92" } else { "0.74" };
+        let title_extra = match (&p.winning_model, p.rate_multiplier) {
+            (Some(m), Some(r)) => format!(" | Model: {} (r={:.2}x)", m, r),
+            (Some(m), None) => format!(" | Model: {}", m),
+            _ => String::new(),
+        };
         out.push_str(&format!(
-            "<rect x=\"{:.2}\" y=\"{:.1}\" width=\"{:.2}\" height=\"{:.1}\" fill=\"{}\" fill-opacity=\"{}\" stroke=\"#ffffff\" stroke-width=\"0.9\"><title>{} ({}..{} bp, {}/{} taxa)</title></rect>\n",
+            "<rect x=\"{:.2}\" y=\"{:.1}\" width=\"{:.2}\" height=\"{:.1}\" fill=\"{}\" fill-opacity=\"{}\" stroke=\"#ffffff\" stroke-width=\"0.9\"><title>{} ({}..{} bp, {}/{} taxa{})</title></rect>\n",
             rx, y_rib, rw, h_rib, fill, opacity,
-            xml_escape(&p.locus_name), p.start_col_1based, p.end_col_1based, p.taxa_present, n_taxa
+            xml_escape(&p.locus_name), p.start_col_1based, p.end_col_1based, p.taxa_present, n_taxa, xml_escape(&title_extra)
         ));
         let lbl = short_locus_label(&p.locus_name);
         let cx = rx + rw * 0.5;
+        let sub_tag = match (&p.winning_model, p.rate_multiplier) {
+            (Some(m), Some(r)) if rw >= 66.0 => Some(compact_partition_model_tag(m, r)),
+            (Some(_), Some(r)) if rw >= 46.0 => Some(format!("{:.2}x", r)),
+            _ => None,
+        };
         if rw >= 34.0 {
-            out.push_str(&format!(
-                "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"9.5\" font-weight=\"700\" fill=\"#ffffff\">{}</text>\n",
-                cx, y_rib + 13.5, xml_escape(&lbl)
-            ));
+            if let Some(st) = sub_tag {
+                out.push_str(&format!(
+                    "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"9.0\" font-weight=\"700\" fill=\"#ffffff\">{}</text>\n",
+                    cx, y_rib + 10.5, xml_escape(&lbl)
+                ));
+                out.push_str(&format!(
+                    "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"7.3\" font-weight=\"600\" fill=\"#e0f2fe\">{}</text>\n",
+                    cx, y_rib + 20.5, xml_escape(&st)
+                ));
+            } else {
+                out.push_str(&format!(
+                    "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"9.5\" font-weight=\"700\" fill=\"#ffffff\">{}</text>\n",
+                    cx, y_rib + if has_partition_models { 15.5 } else { 13.5 }, xml_escape(&lbl)
+                ));
+            }
         } else {
             let ly = if pi % 2 == 0 { 50.0 } else { 61.0 };
             out.push_str(&format!(
@@ -259,8 +298,8 @@ pub fn render_supermatrix_positional_coverage_svg(
         }
     }
 
-    // Stacked Positional Profile Plot (`y = 96..280`, height = 184)
-    let y_p0 = 96.0f64;
+    // Stacked Positional Profile Plot (`y = 96/99..280`)
+    let y_p0 = if has_partition_models { 99.0f64 } else { 96.0f64 };
     let y_p1 = 280.0f64;
     let ph = y_p1 - y_p0;
     out.push_str(&format!(
@@ -739,6 +778,8 @@ mod tests {
                 start_col_1based: 1,
                 end_col_1based: 120,
                 taxa_present: 2,
+                winning_model: None,
+                rate_multiplier: None,
             },
             SupermatrixPartitionSpan {
                 locus_name: "CYTB".to_string(),
@@ -748,6 +789,8 @@ mod tests {
                 start_col_1based: 121,
                 end_col_1based: 240,
                 taxa_present: 1,
+                winning_model: None,
+                rate_multiplier: None,
             },
         ];
         let full_row = format!("{}{}", "ACGT".repeat(30), "ACGT".repeat(30));

@@ -881,6 +881,92 @@ pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "china-australia-pests-supp-s3-cox1-ry3-alignview",
 };
 
+pub(crate) const US_AG_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [118.0, 145.0, 272.0, 96.0, 108.0, 72.0, 98.0],
+    backbone_node_ages: [148.0, 288.0, 328.0, 356.0, 378.0, 545.0],
+    fig1_max_ma: 580.0,
+    fig1_eras: ARTHROPODA_ERAS_580,
+    fig1_ticks: &[550, 450, 350, 250, 150, 50, 0],
+    fig1_node_y_slots: [8.0, 16.0, 26.5, 39.0, 31.0, 46.5, 52.0, 58.0],
+    fig1_clade_cards: &[
+        ("[A]", 0, 5, "Chelicerata: Acari Outgroup (n=6)", "Rhipicephalus microplus, R. annulatus, Tetranychus urticae, T. pacificus, Panonychus ulmi", "Cattle fever ticks + spider mites outgroup & VGSC/CYP392 evolution"),
+        ("[B]", 6, 11, "Polyneoptera: Rangeland Orthoptera (n=6)", "Anabrus simplex, Melanoplus sanguinipes, M. differentialis, Schistocerca americana", "Mormon cricket + migratory rangeland grasshoppers (CSP/Hsp70)"),
+        ("[C]", 12, 24, "Paraneoptera: Thrips/Psyllids/SLF/Mealybugs (n=13)", "Frankliniella occidentalis, Thrips tabaci, Diaphorina citri, Lycorma delicatula, Antonina graminis", "HLB vector, spotted lanternfly & pasture mealybugs (CYP6/acetylcholinesterase)"),
+        ("[D]", 25, 29, "Hymenoptera: Formicidae Fire Ants (n=5)", "Solenopsis invicta, S. richteri, S. geminata, S. xyloni, Linepithema humile", "Red imported fire ant Southern U.S. range expansion & Gp-9/CYP6"),
+        ("[E]", 30, 40, "Coleoptera: Crop & Stored-Grain Beetles (n=11)", "Leptinotarsa decemlineata, Diabrotica virgifera, Sitophilus granarius, S. oryzae, Rhyzopertha dominica", "Colorado potato beetle & internal grain-kernel borers/weevils"),
+        ("[F]", 41, 49, "Diptera: Soft-Fruit & Livestock Flies (n=9)", "Drosophila suzukii, Cochliomyia hominivorax, C. macellaria, Haematobia irritans, Stomoxys calcitrans", "Spotted wing drosophila, New World screwworm & horn/stable flies"),
+        ("[G]", 50, 63, "Lepidoptera: Orchard, Brassica & Grain Moths (n=14)", "Cydia pomonella, Plutella xylostella, Trichoplusia ni, Plodia interpunctella, Spodoptera frugiperda", "Codling moth, DBM, cabbage looper & Indianmeal moth detoxification"),
+    ],
+    fig1_web_svg: "us-ag-pests-fig1-vertical-chronogram.svg",
+    fig1_title: "Calibrated Relaxed-Clock Chronogram Across >=80%-Gated Multi-Locus U.S. Agricultural Arthropod Pests (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) inferred under edge-linked partitioned per-locus ModelTest across >=80% supermatrix-coverage Acari outgroups and U.S. Hexapoda pest guilds ([A]-[G]; sparse/single-locus OTUs excluded to Figure 3/4/7).",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 5, "Acari Outgroup // (n=6)", ""),
+        ("[B]", 6, 11, "Rangeland Orthoptera (n=6)", "8,4"),
+        ("[C]", 12, 24, "Paraneoptera Vectors (n=13)", ""),
+        ("[D]", 25, 29, "Formicidae Fire Ants (n=5)", "9,3,2,3"),
+        ("[E]", 30, 40, "Crop & Grain Coleoptera (n=11)", "5,3"),
+        ("[F]", 41, 49, "Soft-Fruit & Livestock Diptera (n=9)", ""),
+        ("[G]", 50, 63, "Orchard & Grain Lepidoptera (n=14)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "us-ag-pests-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Empirical Patristic Phylogram Across >=80%-Gated U.S. Agricultural Arthropod Pests",
+    fig2_caption: "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) inferred under edge-linked proportional partitioned ModelTest across >=80%-gated U.S. pest OTUs displaying Chelicerata [A] outgroup // stem break and B&W taxonomic sectors.",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T001", 0),
+        ("Node II", "B:T007", 1),
+        ("Node III", "C:T017", 2),
+        ("Node IV", "D:T026", 3),
+        ("Node V", "E:T031", 4),
+        ("Node VI", "F:T042", 5),
+        ("Node VII", "G:T053", 6),
+        ("Node VIII", "G:T060", 7),
+    ],
+    fig3_abba_arc_tips: ("E:T035", "E:T036"),
+    fig3_web_svg: "us-ag-pests-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    fig3_caption: "Complete 64-species bifurcating multi-locus ASTRAL-equivalent quartet coalescent species tree (all 64 species including <80%/single-locus OTUs) with empirical CU branch lengths, 61-split q1 concordance, and U.S. pest ABBA-BABA introgression tests.",
+    fig4a_web_svg: "us-ag-pests-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across U.S. Fruit, Rangeland & Stored-Grain Pests (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six single-species U.S. regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across Drosophila suzukii, Leptinotarsa decemlineata, Cydia pomonella, Diaphorina citri, Solenopsis invicta, and Sitophilus oryzae.",
+    fig4b_web_svg: "us-ag-pests-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 28S/ITS1 rDNA (4Ne) vs. Target-Site ace-1 & Clan-3 CYP6 Resistance Loci (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Six single-species U.S. multi-locus skylines contrasting maternal mtDNA expansion from diploid Katoh E-INS-i rDNA buffering (L2, L5) and resistance-sweep coding trajectories at ace-1 (L3) and Clan-3 CYP6 (L6).",
+    fig5_short_fam_titles: [
+        "Neurotoxic Target-Site Acetylcholinesterase / Sodium Channel (ace-1 / VGSC)",
+        "Host-Finding & Swarming Chemosensory Proteins (CSP / OBP)",
+        "Overwintering Diapause & Arid Thermal Chaperones (Hsp70 / HSP90)",
+        "Xenobiotic & Insecticide Resistance Cytochrome P450s (CYP6 Clan-3 Subfamily)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Target-Site AChE (ace-1)",
+        "FAM-02: Chemosensory (CSP/OBP)",
+        "FAM-03: Thermal Diapause (Hsp70)",
+        "FAM-04: Resistance P450 (CYP6, 1TQN)",
+    ],
+    fig5_panel_d_header: "Panel D | Arthropod CYP6 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D Clan-3 Microsomal P450 Fold (461 Ca Threaded with Leptinotarsa CYP6)",
+    fig5_web_svg: "us-ag-pests-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP6 Heme-Thiolate Pocket",
+    fig5_caption: "Translated amino-acid motif alignments across 48 U.S. pest NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D insect CYP6 structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
+    fig6_web_svg: "us-ag-pests-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Partitioned vs. Unpartitioned Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    fig6_caption: "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and 0-Beaker control (4th), alongside Pipeline B (12 single-species skylines, N = 432).",
+    fig6_clade_label: "U.S. Agricultural Pests",
+    fig6_p450_label: "CYP6 / ace-1 / CSP / Hsp70",
+    fig6_its_label: "D. suzukii & D. citri rDNA",
+    supp_s1_fasta_name: "supp_s1_cyp6_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Microsomal Cytochrome P450 CDS (U.S. Agricultural Pest CYP6 Tight Subfamily)",
+    supp_s1_source: "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS (FAM-04)",
+    supp_s1_stem: "us-ag-pests-supp-s1-cyp6-alignview",
+    supp_s2_title: "Cohort L2 U.S. Specialty Crop Pest Nuclear 28S/ITS1 rDNA (Katoh E-INS-i Core)",
+    supp_s2_source: "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS (Cohort L2)",
+    supp_s2_stem: "us-ag-pests-supp-s2-rdna-einsi-alignview",
+    supp_s3_title: "U.S. Agricultural Arthropod Pests Phased Mitochondrial COX1 (Clades A-G)",
+    supp_s3_source: "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS (COX1 Mito Code 5)",
+    supp_s3_stem: "us-ag-pests-supp-s3-cox1-ry3-alignview",
+};
+
 fn count_tree_leaves(n: &EmpiricalBifNode) -> usize {
     if n.children.is_empty() {
         1
@@ -4735,6 +4821,39 @@ pub fn generate_china_aus_pests_locked_figures(
             cn[4].age_ma.min(cn[3].age_ma - 12.0).max(24.0),
             (cn[5].age_ma * 0.36).max(24.0).min(cn[5].age_ma - 15.0),
             (cn[6].age_ma * 0.48).max(18.0).min(cn[6].age_ma - 10.0),
+            cn[7].age_ma.min(cn[6].age_ma - 8.0).max(14.0),
+        ];
+    }
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
+}
+
+/// Generates synchronized locked figures (Figures 1-6 + Supplemental S1-S3) for
+/// `PREPRINT-30` (`VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS`), dynamically
+/// locking `backbone_node_ages` and `sec_crown_ages` directly from `manifest.calibrated_nodes`.
+pub fn generate_us_ag_pests_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    let mut theme = US_AG_PESTS_THEME;
+    if manifest.calibrated_nodes.len() >= 8 {
+        let cn = &manifest.calibrated_nodes;
+        theme.backbone_node_ages = [
+            cn[6].age_ma,
+            cn[5].age_ma,
+            cn[3].age_ma,
+            cn[2].age_ma,
+            cn[1].age_ma,
+            cn[0].age_ma,
+        ];
+        theme.sec_crown_ages = [
+            (cn[0].age_ma * 0.24).max(45.0).min(cn[0].age_ma - 25.0),
+            (cn[1].age_ma * 0.44).max(40.0).min(cn[1].age_ma - 20.0),
+            (cn[2].age_ma * 0.72).max(40.0).min(cn[2].age_ma - 18.0),
+            cn[4].age_ma.min(cn[3].age_ma - 12.0).max(24.0),
+            (cn[5].age_ma * 0.40).max(24.0).min(cn[5].age_ma - 15.0),
+            (cn[6].age_ma * 0.50).max(18.0).min(cn[6].age_ma - 10.0),
             cn[7].age_ma.min(cn[6].age_ma - 8.0).max(14.0),
         ];
     }

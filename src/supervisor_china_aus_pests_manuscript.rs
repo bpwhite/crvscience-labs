@@ -8,6 +8,11 @@ use crate::haplotype::{
     HaplotypeClusterCohortReport, HaplotypeHubSummary,
 };
 use crate::fetch::FastaRecord;
+use crate::supermatrix_audit_util::{
+    load_partitioned_summary, normalize_manuscript_prose, render_canonical_table_3c_html,
+    render_canonical_table_3d_html, render_canonical_table_3d_tex,
+    write_standardized_release_telemetry_json,
+};
 use crate::supervisor::{GeneratedFigureArtifact, SupervisorRunManifest};
 use crate::supervisor_acanthochitonidae::load_inline_svg;
 use crate::supervisor_manuscript::{
@@ -154,6 +159,7 @@ pub fn canonical_china_aus_pests_references() -> Vec<ManuscriptReference> {
     ]
 }
 
+#[allow(dead_code)]
 fn write_china_aus_pests_release_telemetry_json(
     report: &MultiCompartmentStudyReport,
     manifest: &SupervisorRunManifest,
@@ -640,6 +646,12 @@ fn build_china_aus_pests_main_tables_html(
     let cox1_only_l = cov_sum["single_gene_cox1_cols"].as_u64().unwrap_or(615) as usize;
     let cox1_only_boot = cov_sum["single_gene_ufboot_pct"].as_f64().unwrap_or(79.1);
     let unphased_gotoh = cov_sum["unphased_mitogenome_gotoh_cols"].as_u64().unwrap_or(55702) as usize;
+    let part_opt = load_partitioned_summary(run_dir_opt);
+    let table3d = render_canonical_table_3d_html(part_opt.as_ref(), n_part_loci);
+    let table3c = render_canonical_table_3c_html(
+        &report.combinatorial_sweep_32_chains,
+        (report.stage_modeltest_ms as f64) / 1000.0,
+    );
 
     format!(
 r#"<div class="labs-copy-box" data-copy-mode="table">
@@ -693,13 +705,15 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 </div>
 
 <div class="labs-copy-box" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Table 3A. 9-Column RuNIE Pipeline Comparison: {n_phy_t}-OTU (&gt;=80%-Gated) China &amp; Australia Pest Supermatrix</span></div>
+  <div class="labs-copy-header"><span>Table 3A. RuNIE Pipeline Comparison Table: Partitioned vs. Unpartitioned {n_phy_t}-OTU (&gt;=80%-Gated) China &amp; Australia Pest Supermatrix</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = 500)</th><th>Posterior Z</th><th>CPU Time</th></tr></thead>
     <tbody>{t3a_rows}</tbody>
   </table>
-  <div class="labs-box-tool-footer"><span>Primary Engine: bio-suite-supervisor (4-Stage ML + Estimator-Matched UFBoot2 B=500; Dual-Pass |Delta Z| = 0.00)</span></div>
+  <div class="labs-box-tool-footer"><span>Primary Engine: partitioned_modeltest + bio-suite-supervisor (Edge-Linked Proportional Partitioned ML + Estimator-Matched UFBoot2 B=500; Dual-Pass |Delta Z| = 0.00)</span></div>
 </div>
+
+{table3d}
 
 <div class="labs-copy-box" data-copy-mode="table">
   <div class="labs-copy-header"><span>Table 3B. RuNIE Pipeline Comparison Table: 12 Regional &amp; Multi-Locus Coalescent Cohorts (N = 432)</span></div>
@@ -714,6 +728,8 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
   </table>
   <div class="labs-box-tool-footer"><span>Bootstrap Source: Actual Native Rust UFBoot2 replicates across deduplicated multi-SNP cohort representatives (B = {b_coh}/cohort) across all 4 regimes</span></div>
 </div>
+
+{table3c}
 
 <div class="labs-copy-box" data-copy-mode="table">
   <div class="labs-copy-header"><span>Table 4A. 61-State Goldman-Yang Codon Selection Summary Across Nuclear Resistance &amp; Plasticity Loci (48 CDS)</span></div>
@@ -753,6 +769,8 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
         rcfv_c12 = report.rcfv_codon12,
         nuc_l = fmt_commas_usize(report.nuclear_aligned_cols),
         t3a_rows = t3a_rows,
+        table3d = table3d,
+        table3c = table3c,
         sum_ry3 = sum_ry3,
         sum_c12 = sum_c12,
         sum_unr = sum_unr,
@@ -905,7 +923,7 @@ r#"<h2 id="supplemental-data" class="supplemental-section-heading">Supplemental 
 <figure id="supp-fig-s4" class="labs-figure-card labs-figure-card--print-full">
   <div class="labs-copy-header"><span>Supplemental Figure S4. Supermatrix Partition Architecture, Positional Occupancy Map (80% Phylogram Gate) &amp; Circular Mitogenome COX1 Phasing ({n_phy} Gated vs. {n_pop} PopGen/Coalescent-Only OTUs)</span></div>
   <div class="labs-inline-svg-figure">{s4_svg}</div>
-  <figcaption>Three-panel graphical depiction of the 64-species China/Australia pest supermatrix: <strong>(A)</strong> locus partition ribbon and stacked per-position base occupancy (ACGT), internal alignment indels (-), missing locus blocks (?), and parsimony-informative %; <strong>(B)</strong> taxon-by-position occupancy heatmap synced column-for-column with Panel A across sectors [A]-[G] showing the vertical dashed <strong>80% Gate</strong> dividing {n_phy} &gt;=80%-coverage multi-locus OTUs retained in concatenated ML/chronogram trees (<strong>Figures 1-2</strong>, <strong>Table 3A</strong>) from {n_pop} sparse/single-locus OTUs retained in <strong>Figure 3</strong> Quartet MSC, <strong>Table 2B</strong> ABBA-BABA, <strong>Figures 4A-4B</strong> Skylines, and <strong>Figures 7A-7B</strong> Haplotype Networks; and <strong>(C)</strong> empirical circular mitogenome positional occupancy before versus after Table-5 COX1 codon-1 rotation alongside single-gene COX1, unfiltered 64-OTU, and &gt;=80%-gated UFBoot2 recovery.</figcaption>
+  <figcaption>Three-panel graphical depiction of the 64-species China/Australia pest supermatrix: <strong>(A)</strong> locus partition ribbon annotated with per-locus winning <code>ModelTest</code> models and edge-linked proportional rate multipliers (<em>r</em><sub>p</sub>) over stacked per-position base occupancy (ACGT), internal alignment indels (-), missing locus blocks (?), and parsimony-informative %; <strong>(B)</strong> taxon-by-position occupancy heatmap synced column-for-column with Panel A across sectors [A]-[G] showing the vertical dashed <strong>80% Gate</strong> dividing {n_phy} &gt;=80%-coverage multi-locus OTUs retained in concatenated ML/chronogram trees (<strong>Figures 1-2</strong>, <strong>Table 3A</strong>) from {n_pop} sparse/single-locus OTUs retained in <strong>Figure 3</strong> Quartet MSC, <strong>Table 2B</strong> ABBA-BABA, <strong>Figures 4A-4B</strong> Skylines, and <strong>Figures 7A-7B</strong> Haplotype Networks; and <strong>(C)</strong> empirical circular mitogenome positional occupancy before versus after Table-5 COX1 codon-1 rotation alongside single-gene COX1, unfiltered 64-OTU, and &gt;=80%-gated UFBoot2 recovery.</figcaption>
 </figure>
 
 <div class="labs-copy-box labs-table-multipage" data-copy-mode="table">
@@ -1341,7 +1359,7 @@ r#"<section class="labs-study-section">
         supp_html = supp_html,
     );
 
-    Ok(sanitize_no_scratch_extensions(&raw_body))
+    Ok(normalize_manuscript_prose(&sanitize_no_scratch_extensions(&raw_body)))
 }
 
 pub fn export_china_aus_pests_manuscript_and_staged_bundle(
@@ -1469,7 +1487,7 @@ pub fn export_china_aus_pests_manuscript_and_staged_bundle(
 
     // 1. Release Telemetry JSON
     let release_json_path = labs_releases_dir.join("china-australia-arthropod-pests-native-biosuite.json");
-    write_china_aus_pests_release_telemetry_json(report, manifest, &release_json_path)?;
+    write_standardized_release_telemetry_json(report, manifest, Some(run_dir), &release_json_path)?;
     written.push(release_json_path.to_string_lossy().to_string());
 
     // Abstract, Summary, Key Points
@@ -1775,6 +1793,7 @@ r#"<!DOCTYPE html>
             report.functional_families[1].selection_result.m0_omega
         )
     };
+    let t3d_tex = render_canonical_table_3d_tex(load_partitioned_summary(Some(run_dir)).as_ref());
     let main_tex = format!(
 "\\documentclass[10pt,letterpaper]{{article}}
 \\usepackage[margin=0.65in]{{geometry}}
@@ -1793,7 +1812,10 @@ r#"<!DOCTYPE html>
 \\section{{Introduction}}
 Agricultural agroecosystems in China and Australia share sixteen major arthropod pest complexes spanning Tetranychidae spider mites, Acrididae locusts, Thripidae, Aleyrodidae whiteflies, Aphididae wheat aphids, Delphacidae rice planthoppers, \\textit{{Euwallacea}} ambrosia borers, Tephritidae fruit flies, Yponomeutoidea brassica moths, and Obtectomera defoliators \\cite{{ref1,ref2,ref14,ref15,ref17,ref18,ref19}}. Using 100\\% Native Rust pipelines in \\texttt{{bio-suite-supervisor}} and \\texttt{{bio-suite-seqnet}}, we synthesize {tot_r} verified NCBI records ({tot_bp} raw bp; $L = {sup_l}$ aligned columns) plus {quar_cnt} autonomously quarantined outlier assemblies in {tot_s:.2} s.
 \\section{{Autonomous Validation, $\\ge 80\\%$ Supermatrix Gate, Timetree \\& Quartet Coalescence}}
-Evaluating 32 RuNIE chains and carrying the ModelTest winner directly into $B = 500$ estimator-matched ultrafast bootstraps across {n_phy} $\\ge 80\\%$-gated multi-locus OTUs ($L = {sup_l}$ cols, {n_part_top} loci) selects \\texttt{{{best_m_tex}}} ($\\ln L = {lnl_r1}$, RCFV = {rcfv_r1:.4}; UFBoot2 = {sup_boot_tex:.1}\\% vs. {unfilt_boot_tex:.1}\\% unfiltered 64-OTU), dating Root Arthropoda to {n1:.2} Ma and Crown Noctuidae pests to {n8:.2} Ma \\cite{{ref5,ref7,ref23,ref24}}. Across {msc_loci} independent per-locus alignments spanning all 64 species ({n_pop} sparse/single-locus OTUs included here) and {msc_quartets} quartets, \\texttt{{runie-quartet-coalescent}} recovers $Q = {q_norm:.4}$ (mean LPP = {q_lpp:.4}) \\cite{{ref25}}.
+Evaluating per-locus BIC ModelTest + 32 RuNIE chains under an edge-linked proportional rate constraint ($\\bar{{r}} = 1.0$) and carrying the partitioned winner into $B = 500$ estimator-matched ultrafast bootstraps across {n_phy} $\\ge 80\\%$-gated multi-locus OTUs ($L = {sup_l}$ cols, {n_part_top} loci) selects \\texttt{{{best_m_tex}}} ($\\ln L = {lnl_r1}$, RCFV = {rcfv_r1:.4}; UFBoot2 = {sup_boot_tex:.1}\\% vs. {unfilt_boot_tex:.1}\\% unfiltered 64-OTU), dating Root Arthropoda to {n1:.2} Ma and Crown Noctuidae pests to {n8:.2} Ma \\cite{{ref5,ref7,ref23,ref24}}. Across {msc_loci} independent per-locus alignments spanning all 64 species ({n_pop} sparse/single-locus OTUs included here) and {msc_quartets} quartets, \\texttt{{runie-quartet-coalescent}} recovers $Q = {q_norm:.4}$ (mean LPP = {q_lpp:.4}) \\cite{{ref25}}.
+
+{t3d_tex}
+
 \\section{{Xenobiotic Selection, Coalescent Skylines \\& Stage 3C Haplotype Networks}}
 {sel_tex_s3} \\cite{{ref21,ref27,ref29}}, while 12 $\\times$ 25,000-generation Bayesian skylines and radiative-forcing Stage 3C TCS/MSN networks map trans-hemispheric China--Australia corridors \\cite{{ref26,ref30,ref31,ref32}}.
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.82\\textwidth]{{figures/china-australia-pests-fig1-vertical-chronogram.pdf}}\\caption{{Relaxed-clock chronogram across {n_phy} >=80\\%-gated pest OTUs (Nodes I--VIII).}}\\end{{figure}}
@@ -1834,6 +1856,7 @@ Evaluating 32 RuNIE chains and carrying the ModelTest winner directly into $B = 
         msc_quartets = tex_esc(&msc_q_top),
         q_norm = report.msc_regime1_ry3.normalized_quartet_score,
         q_lpp = report.msc_regime1_ry3.mean_local_posterior_pp1,
+        t3d_tex = t3d_tex,
         sel_tex_s3 = sel_tex_s3,
     );
 

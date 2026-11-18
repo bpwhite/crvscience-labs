@@ -63,6 +63,7 @@ pub mod runie_tools;
 pub mod splicing_crispr_calibration;
 pub mod super_blast;
 pub mod super_blast_calibration;
+pub mod supermatrix_audit_util;
 pub mod supermatrix_viz;
 pub mod supervisor;
 pub mod supervisor_acanthochitonidae;

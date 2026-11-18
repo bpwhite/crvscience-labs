@@ -11,6 +11,9 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    let _ = rayon::ThreadPoolBuilder::new()
+        .stack_size(16 * 1024 * 1024)
+        .build_global();
     let args: Vec<String> = env::args().collect();
     let cache_dir = env::current_dir()
         .ok()

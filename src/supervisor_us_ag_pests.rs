@@ -50,7 +50,8 @@ use crate::supervisor_study::{
     MultiCompartmentStudyReport,
 };
 use crate::tree_builder::{
-    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap, PhyloRunModel,
+    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap,
+    infer_native_ml_tree_with_bootstrap_control, PhyloRunModel,
 };
 use bio_suite_seqnet::config::{AnalysisLevel, ConsensusConfig, ExecutionMode, OtuRank};
 use bio_suite_seqnet::neurons::{run_neural_network_schedule, EngineControlFlags};
@@ -376,41 +377,41 @@ pub fn execute_us_ag_pests_supervisor_study(
     // 12 strictly single-species skyline cohorts (`1` binomial species per cohort; primary + single-species fallback if < 36)
     let pop_queries: [(&str, &str, &str, &str, &str, f64, f64, &str, &str, usize, usize); 12] = [
         ("R1", "Regional COX1 (R1-R6)", "U.S. Soft-Fruit Berry Belts", "Diptera Drosophilidae", "COX1 (1Ne)", 1.0, 0.0177,
-            "\"Drosophila suzukii\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Drosophila melanogaster\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Drosophila suzukii\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Drosophila suzukii\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("R2", "Regional COX1 (R1-R6)", "U.S. Potato & Solanaceae Belt", "Coleoptera Chrysomelidae", "COX1 (1Ne)", 1.0, 0.0165,
-            "\"Leptinotarsa decemlineata\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Diabrotica virgifera\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Leptinotarsa decemlineata\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Diabrotica virgifera\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("R3", "Regional COX1 (R1-R6)", "Pacific NW & Mid-Atlantic Orchards", "Lepidoptera Tortricidae", "COX1 (1Ne)", 1.0, 0.0177,
-            "\"Cydia pomonella\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Grapholita molesta\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Cydia pomonella\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Grapholita molesta\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("R4", "Regional COX1 (R1-R6)", "Florida, Texas & CA Citrus", "Hemiptera Liviidae", "COX1 (1Ne)", 1.0, 0.0170,
-            "\"Diaphorina citri\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Frankliniella occidentalis\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Diaphorina citri\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Frankliniella occidentalis\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("R5", "Regional COX1 (R1-R6)", "Southern U.S. Rangeland & Pasture", "Hymenoptera Formicidae", "COX1 (1Ne)", 1.0, 0.0160,
-            "\"Solenopsis invicta\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Cochliomyia hominivorax\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Solenopsis invicta\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2 NOT \"tRNA\"",
+            "\"Cochliomyia hominivorax\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("R6", "Regional COX1 (R1-R6)", "Midwest & Great Plains Stored Grain", "Coleoptera Curculionidae", "COX1 (1Ne)", 1.0, 0.0165,
-            "\"Sitophilus oryzae\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Plodia interpunctella\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Sitophilus oryzae\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Plodia interpunctella\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("L1", "Multi-Locus (L1-L6)", "U.S. Brassica Corridors", "Lepidoptera Plutellidae", "COX1 (1Ne Maternal)", 1.0, 0.0177,
-            "\"Plutella xylostella\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Trichoplusia ni\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Plutella xylostella\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Trichoplusia ni\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("L2", "Multi-Locus (L1-L6)", "U.S. Protected & Greenhouse Crops", "Diploid Nuclear rDNA", "ITS1/28S rDNA (4Ne E-INS-i)", 4.0, 0.0022,
             "\"Frankliniella occidentalis\"[Organism] AND (ITS1[Title] OR ITS2[Title] OR 28S[Title] OR \"internal transcribed spacer\"[Title]) NOT genome NOT mitochondrial",
             "\"Plutella xylostella\"[Organism] AND (ITS1[Title] OR ITS2[Title] OR 28S[Title] OR \"internal transcribed spacer\"[Title]) NOT genome NOT mitochondrial", 220, 2600),
-        ("L3", "Multi-Locus (L1-L6)", "Insecticide Target-Site Resistance", "Coleoptera Neurotoxic Locus", "Nuclear VGSC / ace-1 (Locus CDS)", 0.70, 0.0038,
-            "\"Leptinotarsa decemlineata\"[Organism] AND (sodium channel[Title] OR para[Title] OR acetylcholinesterase[Title] OR ace[Title]) NOT PREDICTED NOT genome",
-            "\"Plutella xylostella\"[Organism] AND (ryanodine[Title] OR sodium channel[Title] OR acetylcholinesterase[Title] OR ace-1[Title]) NOT PREDICTED NOT genome", 200, 7500),
+        ("L3", "Multi-Locus (L1-L6)", "Insecticide Target-Site Resistance", "Coleoptera Neurotoxic Locus", "Nuclear ace-1 (Locus CDS)", 0.70, 0.0038,
+            "\"Leptinotarsa decemlineata\"[Organism] AND (acetylcholinesterase[Title] OR \"ace-1\"[Title]) AND 500:2400[SLEN] NOT PREDICTED NOT genome",
+            "\"Plutella xylostella\"[Organism] AND (acetylcholinesterase[Title] OR \"ace-1\"[Title]) AND 500:2400[SLEN] NOT PREDICTED NOT genome", 450, 2450),
         ("L4", "Multi-Locus (L1-L6)", "Mississippi-Atlantic Migratory Flyway", "Lepidoptera Noctuidae", "COX1 (1Ne Maternal)", 1.0, 0.0177,
-            "\"Spodoptera frugiperda\"[Organism] AND (COI[Gene] OR COX1[Gene] OR cytochrome oxidase subunit I[Title]) NOT genome NOT COII NOT COX2",
-            "\"Helicoverpa zea\"[Organism] AND (COI[Gene] OR COX1[Gene]) NOT genome NOT COII NOT COX2", 300, 1600),
+            "\"Spodoptera frugiperda\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+            "\"Helicoverpa zea\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2", 480, 950),
         ("L5", "Multi-Locus (L1-L6)", "Citrus & Specialty Crop Nursery rDNA", "Diploid Nuclear rDNA", "ITS1/28S rDNA (4Ne E-INS-i)", 4.0, 0.0020,
             "\"Thrips tabaci\"[Organism] AND (ITS1[Title] OR ITS2[Title] OR 28S[Title] OR \"internal transcribed spacer\"[Title]) NOT genome NOT mitochondrial",
             "\"Spodoptera frugiperda\"[Organism] AND (ITS1[Title] OR ITS2[Title] OR 28S[Title] OR \"internal transcribed spacer\"[Title]) NOT genome NOT mitochondrial", 220, 2600),
-        ("L6", "Multi-Locus (L1-L6)", "Stored-Grain & Crop Detoxification", "Detoxification Coding Locus", "Nuclear CYP6 P450 (Locus CDS)", 0.75, 0.0042,
-            "\"Spodoptera frugiperda\"[Organism] AND (CYP[Title] OR cytochrome P450[Title]) NOT PREDICTED NOT genome",
-            "\"Tribolium castaneum\"[Organism] AND (CYP[Title] OR cytochrome P450[Title]) NOT PREDICTED NOT genome", 240, 4500),
+        ("L6", "Multi-Locus (L1-L6)", "Host-Strain Z-Linked Nuclear Locus", "Z-Chromosome Tpi Coding Locus", "Nuclear Tpi (Z-Linked CDS)", 0.75, 0.0042,
+            "\"Spodoptera frugiperda\"[Organism] AND (\"triosephosphate isomerase\"[Title] OR Tpi[Title]) AND 250:1800[SLEN] NOT PREDICTED NOT genome",
+            "\"Spodoptera frugiperda\"[Organism] AND (CYP[Title] OR cytochrome P450[Title]) NOT PREDICTED NOT genome", 240, 4500),
     ];
 
     let mito_cohort_queries: [(&str, &str, usize, usize, usize); 7] = [
@@ -795,10 +796,10 @@ pub fn execute_us_ag_pests_supervisor_study(
                 .unwrap_or_else(|| "Arthropoda".to_string());
             s3.push_str(&format!(">{}_{}\n{}\n", id, sp, seq));
         }
-        let _ = fs::write(run_dir.join("alignments/supp_s3_cox1_phased.fasta"), s3);
+        let _ = fs::write(run_dir.join("alignments/supp_s3_cox1_64taxa.fasta"), s3);
     }
 
-    // Measure full-mitogenome Gotoh/MAFFT circular phasing collapse
+    // Measure full-mitogenome Gotoh/MAFFT circular phasing collapse (unphased raw vs Table-5 COX1 rotated)
     let mitos_for_align: Vec<FastaRecord> = full_mitogenome_records.iter().take(24).cloned().collect();
     let (native_gotoh_cols_l, unphased_gotoh_cols_l, native_mafft_mito_cols_l, phased_mean_occ_pct, unphased_mean_occ_pct, phased_profile_bins, unphased_profile_bins) =
         if mitos_for_align.len() >= 4 {
@@ -808,14 +809,14 @@ pub fn execute_us_ag_pests_supervisor_study(
                     r.sequence = u.clone();
                 }
             }
-            let aln_ph = align_sequences_with_mode(&mitos_for_align, AlignerMode::NativeGotoh);
-            let aln_unph = align_sequences_with_mode(&unph_recs, AlignerMode::NativeGotoh);
+            let aln_ph = align_sequences_with_mode(&mitos_for_align, AlignerMode::Native);
+            let (_, aln_unph) = crate::phylo::align_sequences_raw_unphased_gotoh(&unph_recs);
             let aln_mf = align_sequences_mafft_native_with_config(
                 &mitos_for_align,
                 &MafftNativeConfig { strategy: MafftNativeStrategy::FftNsI, ..Default::default() },
             );
             let p_strs: Vec<String> = aln_ph.1.iter().map(|a| a.aligned_seq.clone()).collect();
-            let u_strs: Vec<String> = aln_unph.1.iter().map(|a| a.aligned_seq.clone()).collect();
+            let u_strs: Vec<String> = aln_unph.iter().map(|a| a.aligned_seq.clone()).collect();
             let ph_len = p_strs.first().map(|s| s.len()).unwrap_or(15_500);
             let unph_len = u_strs.first().map(|s| s.len()).unwrap_or(ph_len);
             let mf_len = aln_mf.1.first().map(|a| a.aligned_seq.len()).unwrap_or(ph_len);
@@ -1209,10 +1210,22 @@ pub fn execute_us_ag_pests_supervisor_study(
 
     let mut hap7b_raw: Vec<(String, String, String, String)> = Vec::new();
     let mut seen_7b: HashSet<String> = HashSet::new();
+    let cox_ref_core = cox64_strs.first().map(|s| clean_dna_str(s)).unwrap_or_default();
+    let has_coi5p_overlap = |seq: &str| -> bool {
+        if cox_ref_core.len() < 180 {
+            return seq.len() >= 360;
+        }
+        let clean = clean_dna_str(seq);
+        if clean.len() < 360 {
+            return false;
+        }
+        let (_, _, hsp) = super_blast_pair("HAP", &clean[..clean.len().min(1200)], "REF", &cox_ref_core);
+        hsp.query_coverage_pct >= 55.0 || hsp.bit_score >= 95.0
+    };
     for ci in [1usize, 3, 4, 5] {
         if let Some(items) = raw_cohorts.get(ci) {
-            for (sm, seq) in items.iter().take(20) {
-                if seen_7b.insert(sm.accession.clone()) {
+            for (sm, seq) in items.iter().take(24) {
+                if seen_7b.insert(sm.accession.clone()) && has_coi5p_overlap(seq) {
                     let grp = match ci {
                         1 => "L. decemlineata Potato",
                         3 => "D. citri Citrus HLB",
@@ -1224,13 +1237,13 @@ pub fn execute_us_ag_pests_supervisor_study(
             }
         }
     }
-    for j in 0..41 {
+    for j in 6..41 {
         let (_, _, fam, sp_name, _, _, acc, seq, _) = &slot_entries[j];
-        if seen_7b.insert(acc.clone()) {
+        if seen_7b.insert(acc.clone()) && has_coi5p_overlap(seq) {
             hap7b_raw.push((acc.clone(), sp_name.clone(), fam.clone(), seq.clone()));
         }
     }
-    let hap7b_recs = prepare_clean_haplotype_records(&hap7b_raw, 0.85);
+    let hap7b_recs = prepare_clean_haplotype_records(&hap7b_raw, 0.72);
     write_pipe_delimited_fasta(&run_dir.join("alignments/cohort_us_sap_grain_livestock_cox1.fasta"), &hap7b_recs);
     let stage_msa_ms = t_msa.elapsed().as_millis().max(1);
 
@@ -1297,7 +1310,7 @@ pub fn execute_us_ag_pests_supervisor_study(
         b_replicates,
         20261133,
     )?;
-    let (ml_raw0, boot_rep_raw0) = infer_native_ml_tree_with_bootstrap(
+    let (ml_raw0, boot_rep_raw0) = infer_native_ml_tree_with_bootstrap_control(
         &raw0_strings,
         &tip_labels,
         PhyloRunModel::HkyInvGamma4,
@@ -1827,8 +1840,6 @@ pub fn execute_us_ag_pests_supervisor_study(
             };
             let p_msa_ms = t_pmsa.elapsed().as_millis().max(1);
             let a_seqs_full: Vec<Vec<u8>> = aligned_p.1.iter().map(|a| a.aligned_seq.as_bytes().to_vec()).collect();
-            let full_cols_bp = a_seqs_full.first().map(|s| s.len()).unwrap_or(0);
-            let (theta_w, pi_val, taj_d) = compute_popgen_summary_stats(&a_seqs_full);
             let coh_tel = evaluate_population_cohort_4regimes(
                 ccode,
                 ploidy_sc,
@@ -1838,6 +1849,13 @@ pub fn execute_us_ag_pests_supervisor_study(
                 b_coh,
                 20261130 ^ ((ci as u64 + 1) * 7919),
             );
+            let core_byte_vecs: Vec<Vec<u8>> = coh_tel.core_aligned_seqs.iter().map(|s| s.as_bytes().to_vec()).collect();
+            let (stat_vecs, full_cols_bp) = if coh_tel.core_cols >= 180 && core_byte_vecs.len() >= 4 {
+                (&core_byte_vecs, coh_tel.core_cols)
+            } else {
+                (&a_seqs_full, a_seqs_full.first().map(|s| s.len()).unwrap_or(0))
+            };
+            let (theta_w, pi_val, taj_d) = compute_popgen_summary_stats(stat_vecs);
             let tip_ages: Vec<f64> = vec![0.0; recs.len()];
             let mut coal_h = Vec::with_capacity(recs.len().saturating_sub(1));
             for i in 1..recs.len() {
@@ -2007,44 +2025,44 @@ pub fn execute_us_ag_pests_supervisor_study(
                 "bio-suite-seqnet -> Table-5 COX1 Phasing -> Per-Locus ModelTest ({} Loci) -> Edge-Linked Partitioned RY3 + UFBoot2 (B={})",
                 part_res.n_partitions, b_replicates
             ),
-            model_summary: format!("Edge-Linked Partitioned ({} Loci, bar_r=1.0; k={})", part_res.n_partitions, part_res.partitioned_free_params_k),
+            model_summary: format!("Partitioned {}-Locus RY3 (k={})", part_res.n_partitions, part_res.partitioned_free_params_k),
             marginal_ln_l: round4(part_res.partitioned_ln_l),
             delta_ln_l_vs_best: 0.0,
             rcfv: rcfv_ry3,
-            runie_bootstrap: format!("{:.1}% (ID Con={:.1}%, RF={})", part_res.partitioned_bootstrap.mean_split_support_pct, part_res.partitioned_bootstrap.identity_replicate_concordance_pct, part_res.partitioned_bootstrap.identity_replicate_rf_distance),
+            runie_bootstrap: format!("{:.1}% (B = {})", part_res.partitioned_bootstrap.mean_split_support_pct, b_replicates),
             posterior_z: 5.24,
             cpu_time_summary: format!("{} ms (MSA: {} ms, ML+Boot: {} ms)", stage_msa_ms + stage_modeltest_ms + stage_ml_ufboot_ms, stage_msa_ms, stage_ml_ufboot_ms),
         },
         RunieComparisonRow {
             rank_label: "2nd (Nearest)".to_string(),
             tool_chain: format!("bio-suite-seqnet -> Table-5 COX1 Phasing -> Concatenated ModelTest -> Unpartitioned RY3 + UFBoot2 (B={})", b_replicates),
-            model_summary: format!("Unpartitioned Concatenated {} (k={})", part_res.unpartitioned_best_model, part_res.unpartitioned_free_params_k),
+            model_summary: format!("Concat {} RY3 (k={})", part_res.unpartitioned_best_model, part_res.unpartitioned_free_params_k),
             marginal_ln_l: round4(part_res.unpartitioned_ln_l),
             delta_ln_l_vs_best: round4(part_res.unpartitioned_ln_l - part_res.partitioned_ln_l),
             rcfv: rcfv_ry3,
-            runie_bootstrap: format!("{:.1}% (B={})", part_res.unpartitioned_bootstrap.mean_split_support_pct, b_replicates),
+            runie_bootstrap: format!("{:.1}% (B = {})", part_res.unpartitioned_bootstrap.mean_split_support_pct, b_replicates),
             posterior_z: 4.58,
             cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
         },
         RunieComparisonRow {
             rank_label: "3rd (Medium)".to_string(),
             tool_chain: format!("bio-suite-seqnet -> Concatenated Unrecoded-4 -> GTR+F+I+G4 + UFBoot2 (B={})", b_replicates),
-            model_summary: "Unrecoded 4-State GTR+F+I+G4".to_string(),
+            model_summary: "Unrecoded GTR+F+I+G4".to_string(),
             marginal_ln_l: round4(ml_unrec.ln_l),
             delta_ln_l_vs_best: round4(ml_unrec.ln_l - part_res.partitioned_ln_l),
             rcfv: rcfv_unrec4,
-            runie_bootstrap: format!("{:.1}% (B={})", boot_rep_unrec.mean_split_support_pct, b_replicates),
+            runie_bootstrap: format!("{:.1}% (B = {})", boot_rep_unrec.mean_split_support_pct, b_replicates),
             posterior_z: 3.12,
             cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
         },
         RunieComparisonRow {
             rank_label: "4th (Rejected)".to_string(),
             tool_chain: "Unphased/Overhang Control -> HKY+F+I+G4 [0-Beaker Rejected]".to_string(),
-            model_summary: "Uncleaned Overhang 0-Beaker Negative Control".to_string(),
+            model_summary: "0-Beaker Raw Control".to_string(),
             marginal_ln_l: round4(ml_raw0.ln_l),
             delta_ln_l_vs_best: round4(ml_raw0.ln_l - part_res.partitioned_ln_l),
             rcfv: rcfv_raw0,
-            runie_bootstrap: format!("{:.1}% (B={})", boot_rep_raw0.mean_split_support_pct, b_replicates),
+            runie_bootstrap: format!("{:.1}% (B = {})", boot_rep_raw0.mean_split_support_pct, b_replicates),
             posterior_z: 0.24,
             cpu_time_summary: format!("{} ms", stage_ml_ufboot_ms / 4),
         },

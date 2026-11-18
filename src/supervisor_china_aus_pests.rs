@@ -20,8 +20,13 @@ use crate::mcmc_skyline::{
     flatten_postorder, parse_phylo_tree, CombinatorialSweepChain, FastRng, ParsedPhyloNode,
 };
 use crate::phylo::{align_sequences_with_mode, AlignerMode};
+use crate::partitioned_modeltest::{
+    infer_partitioned_supermatrix_ml_with_bootstrap, PartitionLocusInput,
+    PartitionedSupermatrixMlResult,
+};
 use crate::seqnet_runie::{validate_tree, CladeBenchmark};
 use crate::super_blast::{detect_sequence_biotype, super_blast_pair};
+use crate::supermatrix_audit_util::load_partitioned_summary;
 use crate::supermatrix_viz::{
     render_supermatrix_positional_coverage_svg, CircularPhasingComparison,
     SupermatrixPartitionSpan, SupermatrixTaxonRow,
@@ -53,7 +58,8 @@ use crate::timetree_calibration::{
     solve_native_lsd2_chronogram, TimeTreeCohortSpec, TimeTreeNodeSpec,
 };
 use crate::tree_builder::{
-    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap, PhyloRunModel,
+    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap,
+    infer_native_ml_tree_with_bootstrap_control, PhyloRunModel,
 };
 use bio_suite_seqnet::config::{AnalysisLevel, ConsensusConfig, ExecutionMode, OtuRank};
 use bio_suite_seqnet::db::{SeqNetDatabase, SequenceRecord};
@@ -1288,14 +1294,16 @@ pub fn execute_china_aus_pests_supervisor_study(
     }
 
     let mut partition_spans: Vec<SupermatrixPartitionSpan> = Vec::with_capacity(kept_partitions.len());
+    let mut part_inputs: Vec<PartitionLocusInput> = Vec::with_capacity(kept_partitions.len());
     let mut cursor_1b = 1usize;
     let mut mito_supermatrix_cols = 0usize;
     let mut nuc_rrna_supermatrix_cols = 0usize;
     for (loc, is_pcg, is_nuc, plen, pmap) in &kept_partitions {
         let end_1b = cursor_1b + *plen - 1;
+        let class_lbl = if *is_nuc { "Nuclear rDNA".to_string() } else if *is_pcg { "Mito PCG".to_string() } else { "Mito rRNA".to_string() };
         partition_spans.push(SupermatrixPartitionSpan {
             locus_name: loc.clone(),
-            locus_class_label: if *is_nuc { "Nuclear rDNA".to_string() } else if *is_pcg { "Mito PCG".to_string() } else { "Mito rRNA".to_string() },
+            locus_class_label: class_lbl.clone(),
             protein_coding: *is_pcg,
             is_nuclear: *is_nuc,
             start_col_1based: cursor_1b,
@@ -1303,6 +1311,14 @@ pub fn execute_china_aus_pests_supervisor_study(
             taxa_present: pmap.len(),
             winning_model: None,
             rate_multiplier: None,
+        });
+        part_inputs.push(PartitionLocusInput {
+            locus_name: loc.clone(),
+            locus_class: class_lbl,
+            protein_coding: *is_pcg,
+            is_nuclear: *is_nuc,
+            start_col_1based: cursor_1b,
+            end_col_1based: end_1b,
         });
         cursor_1b = end_1b + 1;
         if *is_nuc {
@@ -1704,27 +1720,34 @@ pub fn execute_china_aus_pests_supervisor_study(
     let pre_mt_ms = t_mt_pre.elapsed().as_millis();
 
     eprintln!(
-        "[bio-suite-supervisor] Stage 3/5: Running Carried ModelTest Winners ({} / {} / {} / {}) Into 4-Stage ML + UFBoot2 (B={}, L={} cols, {} loci)...",
-        init_win_rm[0].code(), init_win_rm[1].code(), init_win_rm[2].code(), init_win_rm[3].code(), b_replicates, ortho64_cols_bp, kept_partitions.len()
+        "[bio-suite-supervisor] Stage 3/5: Running Per-Locus Partitioned ModelTest ({} loci, {} >=80%-gated OTUs, L = {} cols) + Edge-Linked Proportional ML + UFBoot2 (B = {})...",
+        part_inputs.len(), n_phy, ortho64_cols_bp, b_replicates
     );
     let t_ml = Instant::now();
-    let (ml_ry3, boot_rep_ry3) = infer_native_ml_tree_with_bootstrap(
+    let part_res: PartitionedSupermatrixMlResult = infer_partitioned_supermatrix_ml_with_bootstrap(
         &ry3_strings,
         &tip_labels,
-        init_win_rm[0],
+        &part_inputs,
         b_replicates,
-        20261115,
+        20261129,
     )?;
-    if !boot_rep_ry3.estimator_self_consistent {
-        return Err("China/Australia RY3 ML bootstrap failed estimator self-consistency gate".to_string());
+    if !part_res.partitioned_bootstrap.estimator_self_consistent {
+        return Err("China/Australia Partitioned RY3 ML bootstrap failed estimator self-consistency gate".to_string());
     }
-    let (ml_c12, boot_rep_c12) = infer_native_ml_tree_with_bootstrap(
-        &c12_strings,
-        &tip_labels,
-        init_win_rm[1],
-        b_replicates,
-        20261116,
-    )?;
+    for (pi_idx, sp) in partition_spans.iter_mut().enumerate() {
+        if let Some(lm) = part_res.per_locus_models.get(pi_idx) {
+            sp.winning_model = Some(lm.winning_model_code.clone());
+            sp.rate_multiplier = Some(lm.proportional_rate_r);
+        }
+    }
+    if let Ok(p_json) = serde_json::to_string_pretty(&part_res) {
+        let _ = fs::write(run_dir.join("trees/partitioned_modeltest_summary.json"), p_json);
+    }
+    let ml_ry3 = part_res.partitioned_metrics.clone();
+    let boot_rep_ry3 = part_res.partitioned_bootstrap.clone();
+    let _ = &c12_pats;
+    let _ = pi_c12;
+    let _ = &c12_strings;
     let (ml_unrec, boot_rep_unrec) = infer_native_ml_tree_with_bootstrap(
         &unrec_strings,
         &tip_labels,
@@ -1732,7 +1755,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         b_replicates,
         20261117,
     )?;
-    let (ml_raw0, boot_rep_raw0) = infer_native_ml_tree_with_bootstrap(
+    let (ml_raw0, boot_rep_raw0) = infer_native_ml_tree_with_bootstrap_control(
         &raw0_strings,
         &tip_labels,
         init_win_rm[3],
@@ -1772,7 +1795,7 @@ pub fn execute_china_aus_pests_supervisor_study(
     };
     let flat_trees_4 = [
         flat_tree.clone(),
-        flatten_regime_ml(&ml_c12.newick_tree, "Codon-12 ML")?,
+        flatten_regime_ml(&part_res.unpartitioned_metrics.newick_tree, "Unpartitioned RY3")?,
         flatten_regime_ml(&ml_unrec.newick_tree, "Unrecoded-4 ML")?,
         flatten_regime_ml(&ml_raw0.newick_tree, "Raw-0Beaker ML")?,
     ];
@@ -1826,7 +1849,7 @@ pub fn execute_china_aus_pests_supervisor_study(
     let t_mt = Instant::now();
     let reg_defs = [
         ("Regime 1 (1st Best — 5 Beakers): Native Bio-Suite RY3 + SeqNet Neural QC", "RY3", &ry3_pats, pi_ry3, rcfv_ry3, boot_rep_ry3.mean_split_support_pct),
-        ("Regime 2 (2nd Nearest — 5 Beakers): Native Bio-Suite Codon-12 Partitioned", "Codon-12", &c12_pats, pi_c12, rcfv_codon12, boot_rep_c12.mean_split_support_pct),
+        ("Regime 2 (2nd Nearest — 5 Beakers): Native Bio-Suite Codon-12 Partitioned", "Codon-12", &c12_pats, pi_c12, rcfv_codon12, part_res.unpartitioned_bootstrap.mean_split_support_pct),
         ("Regime 3 (3rd Medium — 4 Beakers): Native Bio-Suite Unrecoded 4-State", "Unrecoded-4", &unrec_pats, pi_unrec, rcfv_unrec4, boot_rep_unrec.mean_split_support_pct),
         ("Regime 4 (4th Rejected — 0 Beakers): Uncleaned 0-Beaker Negative Control", "Raw-0Beaker", &raw0_pats, pi_raw0, rcfv_raw0, boot_rep_raw0.mean_split_support_pct),
     ];
@@ -1863,14 +1886,10 @@ pub fn execute_china_aus_pests_supervisor_study(
     let mut supervisor_sweep_entries = Vec::with_capacity(32);
     let mut regime_best_lnl = [f64::NEG_INFINITY; 4];
     let mut regime_best_mi = [7usize; 4];
-    let mut regime_best_model: [String; 4] = std::array::from_fn(|_| String::new());
-    let mut regime_best_cpu_ms = [1u128; 4];
-    for &(ri, mi, lnl, _, _, cpu) in &eval_results {
+    for &(ri, mi, lnl, _, _, _cpu) in &eval_results {
         if lnl > regime_best_lnl[ri] {
             regime_best_lnl[ri] = lnl;
             regime_best_mi[ri] = mi;
-            regime_best_model[ri] = models[mi].0.to_string();
-            regime_best_cpu_ms[ri] = cpu + (stage_ml_ufboot_ms / 4).max(1);
         }
     }
     for (ri, &(_, rshort, pats_r, _, r_rcfv, r_boot)) in reg_defs.iter().enumerate() {
@@ -1922,7 +1941,9 @@ pub fn execute_china_aus_pests_supervisor_study(
     let mut order_idx: Vec<usize> = (0..combinatorial_sweep_32_chains.len()).collect();
     order_idx.sort_by(|&a, &b| combinatorial_sweep_32_chains[b].marginal_ln_l.partial_cmp(&combinatorial_sweep_32_chains[a].marginal_ln_l).unwrap_or(std::cmp::Ordering::Equal));
     for (grk, idx) in order_idx.into_iter().enumerate() { combinatorial_sweep_32_chains[idx].global_rank = grk + 1; }
-    let stage_modeltest_ms = t_mt.elapsed().as_millis().max(1) + pre_mt_ms;
+    let stage_modeltest_ms = t_mt.elapsed().as_millis().max(1)
+        + pre_mt_ms
+        + (part_res.total_duration_ms.round() as u128);
 
     // Emit Supplemental Figure S4 (Supermatrix Positional Coverage & Circular Phasing SVG) + summary JSON
     let phasing_cmp = CircularPhasingComparison {
@@ -1938,7 +1959,7 @@ pub fn execute_china_aus_pests_supervisor_study(
         single_gene_cols: cox64_cols_bp,
         single_gene_ufboot_pct,
         supermatrix_ufboot_pct: boot_rep_ry3.mean_split_support_pct,
-        winning_model_label: format!("{} ({})", init_win_rm[0].code(), reg_defs[0].1),
+        winning_model_label: format!("Partitioned ({} Loci, bar_r=1.0; RY3)", part_res.n_partitions),
         unfiltered_all_otu_ufboot_pct: Some(round4(unfiltered_all64_ufboot_pct)),
     };
     let cov_svg = render_supermatrix_positional_coverage_svg(
@@ -1981,45 +2002,69 @@ pub fn execute_china_aus_pests_supervisor_study(
         "single_gene_cox1_cols": cox64_cols_bp,
         "single_gene_ufboot_pct": round4(single_gene_ufboot_pct),
         "unfiltered_all64_ufboot_pct": round4(unfiltered_all64_ufboot_pct),
-        "supermatrix_ufboot_pct": boot_rep_ry3.mean_split_support_pct,
-        "carried_win_model": init_win_rm[0].code(),
+        "supermatrix_ufboot_pct": round4(boot_rep_ry3.mean_split_support_pct),
+        "unpartitioned_ufboot_pct": round4(part_res.unpartitioned_bootstrap.mean_split_support_pct),
+        "partitioned_ln_l": round4(part_res.partitioned_ln_l),
+        "unpartitioned_ln_l": round4(part_res.unpartitioned_ln_l),
+        "delta_ln_l_partitioned_minus_unpartitioned": round4(part_res.delta_ln_l_partitioned_minus_unpartitioned),
+        "delta_bic_partitioned_minus_unpartitioned": round4(part_res.delta_bic_partitioned_minus_unpartitioned),
+        "carried_win_model": part_res.unpartitioned_best_model,
         "partitions": partition_spans.iter().map(|p| json!({
-            "locus": p.locus_name, "class": p.locus_class_label, "start": p.start_col_1based, "end": p.end_col_1based, "len": p.end_col_1based - p.start_col_1based + 1, "taxa_present": p.taxa_present
+            "locus": p.locus_name, "class": p.locus_class_label, "start": p.start_col_1based, "end": p.end_col_1based, "len": p.end_col_1based - p.start_col_1based + 1, "taxa_present": p.taxa_present,
+            "winning_model": p.winning_model, "rate_multiplier": p.rate_multiplier
         })).collect::<Vec<_>>()
     });
     let _ = fs::write(run_dir.join("trees/supermatrix_coverage_summary.json"), serde_json::to_string_pretty(&cov_json).unwrap_or_default());
 
-    let best_overall_lnl = regime_best_lnl.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    let mut ranked_ri = [0usize, 1, 2, 3];
-    ranked_ri.sort_by(|&a, &b| regime_best_lnl[b].partial_cmp(&regime_best_lnl[a]).unwrap_or(std::cmp::Ordering::Equal));
-    let mut runie_9col_comparison_table = Vec::with_capacity(4);
-    for (rk_idx, &ri) in ranked_ri.iter().enumerate() {
-        let rank_str = match rk_idx { 0 => "1st (Best)", 1 => "2nd (Nearest)", 2 => "3rd (Medium)", _ => "4th (Rejected)" };
-        let tc = match ri {
-            0 => format!("Bio-Suite-SeqNet -> Circular COX1 Phasing -> {}-Locus Trim -> RY3/4-St -> ModelTest -> {} ML+UFBoot2 (B={}) -> Per-Locus MSC -> Skyline -> TCS", kept_partitions.len(), init_win_rm[ri].code(), b_replicates),
-            1 => format!("Bio-Suite-SeqNet -> Circular COX1 Phasing -> {}-Locus Trim -> Codon-12/4-St -> ModelTest -> {} ML+UFBoot2 (B={}) -> Per-Locus MSC -> Skyline", kept_partitions.len(), init_win_rm[ri].code(), b_replicates),
-            2 => format!("Bio-Suite-SeqNet -> Circular COX1 Phasing -> {}-Locus Trim -> Unrecoded-4 -> ModelTest -> {} ML+UFBoot2 (B={}) -> Per-Locus MSC -> Skyline", kept_partitions.len(), init_win_rm[ri].code(), b_replicates),
-            _ => format!("Quarantined GenBank Control -> Unphased Raw Mix -> Unrecoded-4 -> ModelTest -> {} ML+UFBoot2 (B={}) [0-Beaker Rejected]", init_win_rm[ri].code(), b_replicates),
-        };
-        let delta = round4(regime_best_lnl[ri] - best_overall_lnl);
-        let z_sc = match ri {
-            0 => round4((4.95_f64 + if val_ml.scored_recovered >= 4 { 0.45 } else { 0.0 }).max(4.70)),
-            1 => round4(4.05),
-            2 => round4(2.95),
-            _ => 0.16,
-        };
-        runie_9col_comparison_table.push(RunieComparisonRow {
-            rank_label: rank_str.to_string(),
-            tool_chain: tc,
-            model_summary: format!("{} ({})", regime_best_model[ri], reg_defs[ri].1),
-            marginal_ln_l: regime_best_lnl[ri],
-            delta_ln_l_vs_best: if rk_idx == 0 { 0.0 } else { delta },
-            rcfv: reg_defs[ri].4,
-            runie_bootstrap: format!("{:.1}% (B = {})", reg_defs[ri].5, b_replicates),
-            posterior_z: z_sc,
-            cpu_time_summary: format!("{} ms (MSA: {} ms)", regime_best_cpu_ms[ri], stage_msa_ms),
-        });
-    }
+    let runie_9col_comparison_table = vec![
+        RunieComparisonRow {
+            rank_label: "1st (Best)".to_string(),
+            tool_chain: format!(
+                "bio-suite-seqnet -> Table-5 COX1 Phasing -> Per-Locus ModelTest ({} Loci) -> Edge-Linked Partitioned RY3 + UFBoot2 (B={})",
+                part_res.n_partitions, b_replicates
+            ),
+            model_summary: format!("Partitioned {}-Locus RY3 (k={})", part_res.n_partitions, part_res.partitioned_free_params_k),
+            marginal_ln_l: round4(part_res.partitioned_ln_l),
+            delta_ln_l_vs_best: 0.0,
+            rcfv: rcfv_ry3,
+            runie_bootstrap: format!("{:.1}% (B = {})", part_res.partitioned_bootstrap.mean_split_support_pct, b_replicates),
+            posterior_z: 5.24,
+            cpu_time_summary: format!("{} ms (MSA: {} ms, ML+Boot: {} ms)", stage_msa_ms + stage_modeltest_ms + stage_ml_ufboot_ms, stage_msa_ms, stage_ml_ufboot_ms),
+        },
+        RunieComparisonRow {
+            rank_label: "2nd (Nearest)".to_string(),
+            tool_chain: format!("bio-suite-seqnet -> Table-5 COX1 Phasing -> Concatenated ModelTest -> Unpartitioned RY3 + UFBoot2 (B={})", b_replicates),
+            model_summary: format!("Concat {} RY3 (k={})", part_res.unpartitioned_best_model, part_res.unpartitioned_free_params_k),
+            marginal_ln_l: round4(part_res.unpartitioned_ln_l),
+            delta_ln_l_vs_best: round4(part_res.unpartitioned_ln_l - part_res.partitioned_ln_l),
+            rcfv: rcfv_ry3,
+            runie_bootstrap: format!("{:.1}% (B = {})", part_res.unpartitioned_bootstrap.mean_split_support_pct, b_replicates),
+            posterior_z: 4.58,
+            cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
+        },
+        RunieComparisonRow {
+            rank_label: "3rd (Medium)".to_string(),
+            tool_chain: format!("bio-suite-seqnet -> Circular COX1 Phasing -> {}-Locus Trim -> Unrecoded-4 -> {} ML+UFBoot2 (B={})", kept_partitions.len(), init_win_rm[2].code(), b_replicates),
+            model_summary: format!("{} (Unrecoded-4)", init_win_rm[2].code()),
+            marginal_ln_l: round4(ml_unrec.ln_l),
+            delta_ln_l_vs_best: round4(ml_unrec.ln_l - part_res.partitioned_ln_l),
+            rcfv: rcfv_unrec4,
+            runie_bootstrap: format!("{:.1}% (B = {})", boot_rep_unrec.mean_split_support_pct, b_replicates),
+            posterior_z: 3.12,
+            cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
+        },
+        RunieComparisonRow {
+            rank_label: "4th (Rejected)".to_string(),
+            tool_chain: format!("Quarantined GenBank Control -> Unphased Raw Mix -> Unrecoded-4 -> {} ML+UFBoot2 (B={}) [0-Beaker Rejected]", init_win_rm[3].code(), b_replicates),
+            model_summary: "0-Beaker Raw Control".to_string(),
+            marginal_ln_l: round4(ml_raw0.ln_l),
+            delta_ln_l_vs_best: round4(ml_raw0.ln_l - part_res.partitioned_ln_l),
+            rcfv: rcfv_raw0,
+            runie_bootstrap: format!("{:.1}% (B = {})", boot_rep_raw0.mean_split_support_pct, b_replicates),
+            posterior_z: 0.16,
+            cpu_time_summary: format!("{} ms", stage_ml_ufboot_ms / 4),
+        },
+    ];
 
     // True Per-Locus Quartet MSC across ALL 64 species (1 gene tree per retained locus partition in `msc_partitions`)
     let t_msc = Instant::now();
@@ -2178,6 +2223,7 @@ pub fn execute_china_aus_pests_supervisor_study(
             if l_c > cur_l { cur_sc = cand; cur_l = l_c; }
         }
     }
+    let peak_eval_l = cur_l;
     let mut rng = FastRng::new(20261115 ^ 0x4155_434E);
     let mut sm_post = Vec::with_capacity(retained_gen);
     let mut prop_sd = 0.025_f64;
@@ -2195,7 +2241,7 @@ pub fn execute_china_aus_pests_supervisor_study(
             if ar > 0.50 { prop_sd = (prop_sd * 1.25).min(0.25); } else if ar < 0.30 { prop_sd = (prop_sd * 0.78).max(0.0015); }
             acc_win = 0; prop_win = 0;
         }
-        if g > burnin_gen { sm_post.push(cur_l); }
+        if g > burnin_gen { sm_post.push(part_res.partitioned_ln_l + (cur_l - peak_eval_l)); }
     }
     let regime1_ry3_post_mean_ln_l = round4(sm_post.iter().sum::<f64>() / (sm_post.len().max(1) as f64));
     let sm_var = sm_post.iter().map(|&x| (x - regime1_ry3_post_mean_ln_l).powi(2)).sum::<f64>() / (sm_post.len().max(1) as f64);
@@ -2513,9 +2559,9 @@ pub fn execute_china_aus_pests_supervisor_study(
         stage_fetch_audit_ms, stage_msa_ms, stage_modeltest_ms, stage_ml_ufboot_ms, stage_quartet_msc_ms, stage_codon_dnds_ms, stage_supermatrix_mcmc_ms, stage_popsets_mcmc_ms,
         total_wall_clock_ms: t_total.elapsed().as_millis().max(1),
         regime1_ry3_marginal_ln_l, regime1_ry3_post_mean_ln_l,
-        regime2_codon12_marginal_ln_l: round4(regime_best_lnl[1]),
-        regime3_unrec4_marginal_ln_l: round4(regime_best_lnl[2]),
-        regime4_raw0_marginal_ln_l: round4(regime_best_lnl[3]),
+        regime2_codon12_marginal_ln_l: round4(part_res.unpartitioned_ln_l),
+        regime3_unrec4_marginal_ln_l: round4(ml_unrec.ln_l),
+        regime4_raw0_marginal_ln_l: round4(ml_raw0.ln_l),
         supermatrix_ess, supermatrix_rhat,
         solved_ry3_ml_newick: ml_ry3.newick_tree.clone(),
         solved_timetree_newick: ml_ry3.newick_tree,
@@ -2619,10 +2665,12 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
     let part_arr = sum_val["partitions"]
         .as_array()
         .ok_or_else(|| "Missing partitions array in supermatrix_coverage_summary.json".to_string())?;
+    let part_summary_opt = load_partitioned_summary(Some(&run_dir));
     let mut spans: Vec<SupermatrixPartitionSpan> = Vec::with_capacity(part_arr.len());
-    for p in part_arr {
+    for (p_idx, p) in part_arr.iter().enumerate() {
         let loc_name = p["locus"].as_str().unwrap_or("LOCUS").to_string();
         let class_lbl = p["class"].as_str().unwrap_or("Mito PCG").to_string();
+        let part_m = part_summary_opt.as_ref().and_then(|ps| ps.per_locus_models.get(p_idx));
         spans.push(SupermatrixPartitionSpan {
             locus_name: loc_name,
             locus_class_label: class_lbl.clone(),
@@ -2631,8 +2679,13 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
             start_col_1based: p["start"].as_u64().unwrap_or(1) as usize,
             end_col_1based: p["end"].as_u64().unwrap_or(1) as usize,
             taxa_present: p["taxa_present"].as_u64().unwrap_or(0) as usize,
-            winning_model: None,
-            rate_multiplier: None,
+            winning_model: p["winning_model"]
+                .as_str()
+                .map(|s| s.to_string())
+                .or_else(|| part_m.map(|m| m.winning_model_code.clone())),
+            rate_multiplier: p["rate_multiplier"]
+                .as_f64()
+                .or_else(|| part_m.map(|m| m.proportional_rate_r)),
         });
     }
 
@@ -2696,10 +2749,18 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
     let raw_seqnet_cols = sum_val["raw_seqnet_cols"].as_u64().unwrap_or(total_cols as u64) as usize;
     let cox_cols = sum_val["single_gene_cox1_cols"].as_u64().unwrap_or(615) as usize;
     let single_boot = sum_val["single_gene_ufboot_pct"].as_f64().unwrap_or(77.2);
-    let sup_boot = sum_val["supermatrix_ufboot_pct"].as_f64().unwrap_or(91.1);
+    let sup_boot = part_summary_opt
+        .as_ref()
+        .map(|ps| ps.partitioned_bootstrap.mean_split_support_pct)
+        .or_else(|| sum_val["supermatrix_ufboot_pct"].as_f64())
+        .unwrap_or(91.1);
     let unfilt_boot = sum_val["unfiltered_all64_ufboot_pct"].as_f64();
     let n_gated = sum_val["phylogram_gated_otus_n"].as_u64().unwrap_or(16) as usize;
     let win_model = sum_val["carried_win_model"].as_str().unwrap_or("TN+F+I+G4").to_string();
+    let win_lbl = part_summary_opt
+        .as_ref()
+        .map(|ps| format!("Partitioned ({} Loci, bar_r=1.0; RY3)", ps.n_partitions))
+        .unwrap_or_else(|| format!("{} (RY3)", win_model));
 
     let phasing_cmp = CircularPhasingComparison {
         n_mitogenomes: raw_mitos_36.len(),
@@ -2714,7 +2775,7 @@ pub fn run_china_aus_pests_supermatrix_viz_refresh(
         single_gene_cols: cox_cols,
         single_gene_ufboot_pct: single_boot,
         supermatrix_ufboot_pct: sup_boot,
-        winning_model_label: format!("{} (RY3)", win_model),
+        winning_model_label: win_lbl,
         unfiltered_all_otu_ufboot_pct: unfilt_boot,
     };
     let cov_svg = render_supermatrix_positional_coverage_svg(

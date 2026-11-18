@@ -1512,6 +1512,9 @@ fn dispatch_pipeline(
 }
 
 fn main() {
+    let _ = rayon::ThreadPoolBuilder::new()
+        .stack_size(16 * 1024 * 1024)
+        .build_global();
     let args: Vec<String> = env::args().collect();
     let cmd = args.get(1).map(|s| s.as_str()).unwrap_or("help");
 

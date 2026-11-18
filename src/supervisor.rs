@@ -3399,18 +3399,24 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         } else if is_nematoda_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-nematoda-pests-27".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            spec.bootstrap_replicates = 500;
+                            spec.enable_haplotype_clusters = true;
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
                         } else if is_isoptera_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-isoptera-global-26".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            spec.bootstrap_replicates = 500;
+                            spec.enable_haplotype_clusters = true;
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
                         } else if is_nudibranchs_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-nudibranch-global-25".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            spec.bootstrap_replicates = 500;
+                            spec.enable_haplotype_clusters = true;
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }

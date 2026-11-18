@@ -4196,6 +4196,43 @@ pub fn infer_native_ml_tree_with_bootstrap(
     b_replicates: usize,
     seed: u64,
 ) -> Result<(SingleTreeRunMetrics, MlBootstrapReport), String> {
+    infer_native_ml_tree_with_bootstrap_inner(
+        raw_aligned_strings,
+        labels,
+        rm,
+        b_replicates,
+        seed,
+        true,
+    )
+}
+
+/// Non-gating variant reserved strictly for deliberately uncleaned `0-Beaker` negative controls
+/// or sparse/unfiltered baseline contrasts where multimodal noise plateaus are scientifically expected.
+pub fn infer_native_ml_tree_with_bootstrap_control(
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    rm: PhyloRunModel,
+    b_replicates: usize,
+    seed: u64,
+) -> Result<(SingleTreeRunMetrics, MlBootstrapReport), String> {
+    infer_native_ml_tree_with_bootstrap_inner(
+        raw_aligned_strings,
+        labels,
+        rm,
+        b_replicates,
+        seed,
+        false,
+    )
+}
+
+fn infer_native_ml_tree_with_bootstrap_inner(
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    rm: PhyloRunModel,
+    b_replicates: usize,
+    seed: u64,
+    enforce_consistency_gate: bool,
+) -> Result<(SingleTreeRunMetrics, MlBootstrapReport), String> {
     let t0 = Instant::now();
     let n_taxa = labels.len();
     if n_taxa != raw_aligned_strings.len() {
@@ -4240,7 +4277,7 @@ pub fn infer_native_ml_tree_with_bootstrap(
         let aln_rep = compact_weighted_alignment(&aln, pat_w);
         let cand_indices: Vec<usize> = if matches!(rm, PhyloRunModel::JcUniform) {
             vec![0]
-        } else if rm.is_fast_search() {
+        } else if rm.is_fast_search() || !enforce_consistency_gate {
             vec![fit.best_pool_idx]
         } else {
             vec![0, 1, 2, 3, 4]
@@ -4416,7 +4453,8 @@ pub fn infer_native_ml_tree_with_bootstrap(
     let estimator_self_consistent = lnl_deficit_nats <= max_allowed_deficit
         && (identity_replicate_concordance_pct >= 85.0 || st_gain <= 2.0);
 
-    if ref_split_set.len() >= 3
+    if enforce_consistency_gate
+        && ref_split_set.len() >= 3
         && !estimator_self_consistent
         && ref_metrics.mean_internal_branch_length > 1e-4
     {
@@ -4489,7 +4527,9 @@ pub fn infer_native_ml_tree_with_bootstrap(
     // Build UFBoot2 candidate topology bank via parallel stochastic NNI + cold-start BIONJ perturbations
     // evaluated under resampled multinomial site weights (Minh et al. 2013; Hoang et al. 2018),
     // then score unique candidate trees on out-of-sample RELL resamplings across `0..b_replicates`.
-    let m_explore = if n_pats > 320 {
+    let m_explore = if !enforce_consistency_gate {
+        b_replicates.clamp(12, 16)
+    } else if n_pats > 320 {
         b_replicates.clamp(24, 32)
     } else {
         b_replicates.clamp(36, 56)

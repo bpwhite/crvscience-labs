@@ -887,7 +887,7 @@ pub(crate) const US_AG_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
     fig1_max_ma: 580.0,
     fig1_eras: ARTHROPODA_ERAS_580,
     fig1_ticks: &[550, 450, 350, 250, 150, 50, 0],
-    fig1_node_y_slots: [8.0, 16.0, 26.5, 39.0, 31.0, 46.5, 52.0, 58.0],
+    fig1_node_y_slots: [6.0, 11.5, 17.5, 23.0, 29.0, 35.0, 39.5, 42.5],
     fig1_clade_cards: &[
         ("[A]", 0, 5, "Chelicerata: Acari Outgroup (n=6)", "Rhipicephalus microplus, R. annulatus, Tetranychus urticae, T. pacificus, Panonychus ulmi", "Cattle fever ticks + spider mites outgroup & VGSC/CYP392 evolution"),
         ("[B]", 6, 11, "Polyneoptera: Rangeland Orthoptera (n=6)", "Anabrus simplex, Melanoplus sanguinipes, M. differentialis, Schistocerca americana", "Mormon cricket + migratory rangeland grasshoppers (CSP/Hsp70)"),
@@ -3863,10 +3863,11 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         bx += bw + 10;
     }
 
+    let n_chrono_int = n_phy.saturating_sub(1);
     svg.push_str(&format!(
         r##"  <text x="28" y="164" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene &amp; Full-Length Alignment: Quarantines {} defective GenBank UNVERIFIED mitogenomes in Iteration 1 and aligns L = {} supermatrix columns ({} PI sites) in {:.2} s.</text>
   <text x="28" y="180" font-size="7.8" font-weight="700" fill="#065f46">• 32-Chain Combinatorial Sweep (Table 3A/3C): 1st {} (ln L = {:.2}, BIC = {:.2}) beats 2nd {} ({:.2}) and 3rd {} ({:.2}) by {:+.2} nats.</text>
-  <text x="28" y="196" font-size="7.8" font-weight="600" fill="#047857">• Quartet Multispecies Coalescent &amp; Relaxed Clock: Satisfies {} / {} quartets (Q = {:.4}, LPP = {:.4}) and resolves all 63 internal chronogram nodes with strictly interior two-sided 95% HPDs.</text>
+  <text x="28" y="196" font-size="7.8" font-weight="600" fill="#047857">• Quartet Multispecies Coalescent &amp; Relaxed Clock: Satisfies {} / {} quartets (Q = {:.4}, LPP = {:.4}) and reconstructs all {} internal chronogram nodes with strictly interior two-sided 95% HPDs.</text>
   <text x="28" y="212" font-size="7.8" font-weight="600" fill="#334155">• 61-State Codon Selection &amp; 1TQN Structural Threading: Identifies diversifying selection on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.05 Å crystal template 1TQN_A.</text>
 "##,
         study.quarantined_records_on_disk,
@@ -3885,6 +3886,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         msc_q_tot,
         study.msc_regime1_ry3.normalized_quartet_score,
         study.msc_regime1_ry3.mean_local_posterior_pp1,
+        n_chrono_int,
         xml_esc(theme.fig6_p450_label),
         f4_w2
     ));
@@ -4025,7 +4027,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     }
 
     svg.push_str(&format!(
-        r##"  <text x="28" y="406" font-size="7.8" font-weight="600" fill="#1e293b">• Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = 216): Resolves Pleistocene refugial stability vs. historical founder bottlenecks and modern agro-ecological expansions.</text>
+        r##"  <text x="28" y="406" font-size="7.8" font-weight="600" fill="#1e293b">• Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = 216): Separates Pleistocene refugial stability from historical founder bottlenecks and modern agro-ecological expansions.</text>
   <text x="28" y="422" font-size="7.8" font-weight="700" fill="#1e3a8a">• Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.</text>
   <text x="28" y="438" font-size="7.8" font-weight="600" fill="#1d4ed8">• 12-Cohort Aggregate Likelihoods (Table 3B): 1st Codon/E-INS-i Core (ln L = {:.2}) beats 2nd Codon-12/K80 ({:.2}), 3rd gotoh-msa ({:.2}), and 4th 0-Beaker Unaligned ({:.2}).</text>
   <text x="28" y="454" font-size="7.8" font-weight="600" fill="#334155">• End-to-End Multi-Compartment Execution: All 544 active verified NCBI records (+ 6 quarantined UNVERIFIED anomalies) completed in {:.2} s total wall-clock time.</text>
@@ -4217,7 +4219,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             "Codon / E-INS-i Core".to_string(),
             format!("super-blast → Frame/E-INS-i Core → ModelTest → UFBoot2 + 25k Skyline MCMC"),
             format!(
-                "432 conspecific isolates (R1–R6 & L1–L6); ESS > 480, R-hat = 1.000; resolves regional vs. sweep Ne"
+                "432 conspecific isolates (R1–R6 & L1–L6); ESS > 480, R-hat = 1.000; contrasts regional vs. sweep Ne"
             ),
             format!("{:.2}", pop_ry3_lnl),
             format!("{:.2}", pop_bic_ry3),
@@ -4719,6 +4721,29 @@ pub fn generate_snails_locked_figures(
     generate_locked_figures_with_theme(manifest, study, &SNAILS_THEME, run_dir, web_figures_dir)
 }
 
+fn sync_theme_chronogram_ages(theme: &mut FigureStudyTheme, manifest: &SupervisorRunManifest) {
+    if manifest.calibrated_nodes.len() >= 8 {
+        let cn = &manifest.calibrated_nodes;
+        theme.backbone_node_ages = [
+            cn[6].age_ma,
+            cn[5].age_ma,
+            cn[3].age_ma,
+            cn[2].age_ma,
+            cn[1].age_ma,
+            cn[0].age_ma,
+        ];
+        theme.sec_crown_ages = [
+            (cn[0].age_ma * 0.52).min(cn[0].age_ma - 16.0).max(24.0),
+            (cn[1].age_ma * 0.56).min(cn[1].age_ma - 14.0).max(20.0),
+            (cn[2].age_ma * 0.62).min(cn[2].age_ma - 12.0).max(18.0),
+            cn[4].age_ma.min(cn[3].age_ma - 8.0).max(14.0),
+            (cn[5].age_ma * 0.64).min(cn[5].age_ma - 8.0).max(12.0),
+            (cn[6].age_ma * 0.58).min(cn[6].age_ma - 6.0).max(8.0),
+            cn[7].age_ma.min(cn[6].age_ma - 5.0).max(5.0),
+        ];
+    }
+}
+
 /// Generates all 6 Preprint-25 (`Global Nudibranch Radiation`) locked-format figures (`.svg` + `.png` + `.pdf`)
 /// plus 3 Native Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
 pub fn generate_nudibranchs_locked_figures(
@@ -4727,7 +4752,9 @@ pub fn generate_nudibranchs_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    generate_locked_figures_with_theme(manifest, study, &NUDIBRANCHS_THEME, run_dir, web_figures_dir)
+    let mut theme = NUDIBRANCHS_THEME;
+    sync_theme_chronogram_ages(&mut theme, manifest);
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
 
 /// Generates all 6 Preprint-26 (`Global Isoptera Radiation`) locked-format figures (`.svg` + `.png` + `.pdf`)
@@ -4738,7 +4765,9 @@ pub fn generate_isoptera_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    generate_locked_figures_with_theme(manifest, study, &ISOPTERA_THEME, run_dir, web_figures_dir)
+    let mut theme = ISOPTERA_THEME;
+    sync_theme_chronogram_ages(&mut theme, manifest);
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
 
 /// Generates all 6 Preprint-27 (`Nematoda Agricultural Pests`) locked-format figures (`.svg` + `.png` + `.pdf`)
@@ -4749,7 +4778,9 @@ pub fn generate_nematoda_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    generate_locked_figures_with_theme(manifest, study, &NEMATODA_THEME, run_dir, web_figures_dir)
+    let mut theme = NEMATODA_THEME;
+    sync_theme_chronogram_ages(&mut theme, manifest);
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
 
 /// Generates synchronized locked figures (Figures 1-6 + Supplemental S1-S3) for
@@ -4840,8 +4871,8 @@ pub fn generate_us_ag_pests_locked_figures(
     if manifest.calibrated_nodes.len() >= 8 {
         let cn = &manifest.calibrated_nodes;
         theme.backbone_node_ages = [
-            cn[6].age_ma,
             cn[5].age_ma,
+            cn[4].age_ma,
             cn[3].age_ma,
             cn[2].age_ma,
             cn[1].age_ma,
@@ -4854,7 +4885,7 @@ pub fn generate_us_ag_pests_locked_figures(
             cn[4].age_ma.min(cn[3].age_ma - 12.0).max(24.0),
             (cn[5].age_ma * 0.40).max(24.0).min(cn[5].age_ma - 15.0),
             (cn[6].age_ma * 0.50).max(18.0).min(cn[6].age_ma - 10.0),
-            cn[7].age_ma.min(cn[6].age_ma - 8.0).max(14.0),
+            cn[6].age_ma.min(cn[5].age_ma - 10.0).max(20.0),
         ];
     }
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)

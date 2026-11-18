@@ -9,6 +9,7 @@ use crate::haplotype::{
     HaplotypeClusterCohortReport, HaplotypeHubSummary,
 };
 use crate::partitioned_modeltest::PartitionedSupermatrixMlResult;
+use crate::supermatrix_audit_util::{normalize_manuscript_prose, render_canonical_table_3c_html};
 use crate::supervisor::{GeneratedFigureArtifact, SupervisorRunManifest};
 use crate::supervisor_acanthochitonidae::load_inline_svg;
 use crate::supervisor_manuscript::{
@@ -519,6 +520,10 @@ fn build_us_ag_pests_main_tables_html(
     let cox1_only_l = cov_sum["single_gene_cox1_cols"].as_u64().unwrap_or(615) as usize;
     let cox1_only_boot = cov_sum["single_gene_ufboot_pct"].as_f64().unwrap_or(72.0);
     let unphased_gotoh = cov_sum["unphased_mitogenome_gotoh_cols"].as_u64().unwrap_or(42000) as usize;
+    let table3c = render_canonical_table_3c_html(
+        &report.combinatorial_sweep_32_chains,
+        (report.stage_modeltest_ms as f64) / 1000.0,
+    );
 
     format!(
 r#"<div class="labs-copy-box" data-copy-mode="table">
@@ -561,7 +566,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
   <table id="diagnostic-power-profile" class="labs-data-table labs-compact-table">
     <thead><tr><th>Marker / Compartment</th><th>Alignment &amp; State Space</th><th>RCFV</th><th>Taxonomic Resolution Window</th><th>Saturation / Failure Mode Guarded</th></tr></thead>
     <tbody>
-      <tr><td><strong>Edge-Linked Partitioned {n_phy_t}-OTU (&gt;=80%-Gated) Supermatrix</strong></td><td>L = {sup_l} cols ({n_part_loci} independently modeled loci, RY3 PCGs + 4-State rRNA)</td><td>{rcfv_ry3:.4}</td><td>Ordinal backbone &amp; calibrated chronogram across {n_phy_t} &gt;=80% multi-locus OTUs ({n_pop_t} sparse OTUs to Fig 3/4/7)</td><td>80% supermatrix gate + per-locus BIC ModelTest &amp; r_p rate scalars prevent among-locus rate &amp; composition bias</td></tr>
+      <tr><td><strong>Edge-Linked Partitioned {n_phy_t}-OTU (&gt;=80%-Gated) Supermatrix</strong></td><td>L = {sup_l} cols ({n_part_loci} independently modeled loci, RY3 PCGs + 4-State rRNA)</td><td>{rcfv_ry3:.4}</td><td>Ordinal backbone &amp; calibrated chronogram across {n_phy_t} &gt;=80% multi-locus OTUs ({n_pop_t} sparse OTUs to Fig 3/4/7)</td><td>80% supermatrix gate + per-locus BIC ModelTest &amp; <em>r</em><sub>p</sub> rate scalars prevent among-locus rate &amp; composition bias</td></tr>
       <tr><td><strong>Single-Locus COX1 Control</strong></td><td>L = {cox1_only_l} bp (64 taxa; UFBoot2 = {cox1_only_boot:.1}%)</td><td>Single-locus</td><td>Species barcoding across orchard, stored-grain, &amp; rangeland complexes</td><td>Insufficient PI sites per deep branch for ordinal bootstrap stability</td></tr>
       <tr><td><strong>Complete Circular Mitogenomes</strong></td><td>gotoh-msa L = {g_l} / mafft L = {m_l} (Unphased: {unphased_gl})</td><td>{rcfv_c12:.4}</td><td>Multi-locus mitochondrial extraction across 12 PCGs + 16S/12S</td><td>Table-5 COX1 origin rotation removes arbitrary GenBank start stagger</td></tr>
       <tr><td><strong>Ribosomal 18S / 28S / ITS1 rDNA</strong></td><td>Katoh E-INS-i (Cohorts L2, L5; 4Ne + SSU/LSU rRNA)</td><td>Buffered (4Ne)</td><td>Deep Hexapoda backbone anchors &amp; diploid demographic baseline vs. maternal COX1 (1Ne)</td><td>Retained strictly 4-state unrecoded in supermatrix with separate per-locus Q/Gamma</td></tr>
@@ -572,7 +577,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 </div>
 
 <div class="labs-copy-box" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Table 3A. 9-Column RuNIE Pipeline Comparison: Partitioned vs. Unpartitioned {n_phy_t}-OTU (&gt;=80%-Gated) Supermatrix</span></div>
+  <div class="labs-copy-header"><span>Table 3A. RuNIE Pipeline Comparison Table: Partitioned vs. Unpartitioned {n_phy_t}-OTU (&gt;=80%-Gated) Supermatrix</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = 500)</th><th>Posterior Z</th><th>CPU Time</th></tr></thead>
     <tbody>{t3a_rows}</tbody>
@@ -583,7 +588,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 <div class="labs-copy-box labs-table-multipage" data-copy-mode="table">
   <div class="labs-copy-header"><span>Table 3D. Per-Locus Partitioned ModelTest Selection, Edge-Linked Proportional Rate Multipliers &amp; BIC Fit Across {n_part_loci} Supermatrix Loci</span></div>
   <table class="labs-data-table labs-compact-table">
-    <thead><tr><th>Locus</th><th>Class &amp; Alphabet</th><th>Span (L)</th><th>Taxa</th><th>Patterns (Inv%)</th><th>RCFV</th><th>Winning Model</th><th>Runner-Up (Delta BIC)</th><th>Rate r_p</th><th>kappa / pinv / +G4</th><th>Locus ln L / BIC</th></tr></thead>
+    <thead><tr><th>Locus</th><th>Class &amp; Alphabet</th><th>Span (L)</th><th>Taxa</th><th>Patterns (Inv%)</th><th>RCFV</th><th>Winning Model</th><th>Runner-Up (Delta BIC)</th><th>Rate <em>r</em><sub>p</sub></th><th>kappa / pinv / +G4</th><th>Locus ln L / BIC</th></tr></thead>
     <tbody>{t3d_rows}</tbody>
   </table>
   <div class="labs-box-tool-footer"><span>{t3d_footer}</span></div>
@@ -602,6 +607,8 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
   </table>
   <div class="labs-box-tool-footer"><span>Bootstrap Source: Native Rust UFBoot2 replicates on deduplicated multi-SNP cohort representatives (B = {b_coh}/cohort) across all 4 regimes</span></div>
 </div>
+
+{table3c}
 
 <div class="labs-copy-box" data-copy-mode="table">
   <div class="labs-copy-header"><span>Table 4A. 61-State Goldman-Yang Codon Selection Summary Across Nuclear Resistance &amp; Stress Loci (48 CDS)</span></div>
@@ -630,7 +637,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
         cox1_only_l = fmt_commas_usize(cox1_only_l), cox1_only_boot = cox1_only_boot, unphased_gl = fmt_commas_usize(unphased_gotoh),
         rcfv_ry3 = report.rcfv_ry3, g_l = fmt_commas_usize(manifest.native_gotoh_aligned_cols_l), m_l = fmt_commas_usize(manifest.native_mafft_aligned_cols_l),
         rcfv_c12 = report.rcfv_codon12, nuc_l = fmt_commas_usize(report.nuclear_aligned_cols),
-        t3a_rows = t3a_rows, t3d_rows = t3d_rows, t3d_footer = t3d_footer,
+        t3a_rows = t3a_rows, t3d_rows = t3d_rows, t3d_footer = t3d_footer, table3c = table3c,
         sum_ry3 = sum_ry3, sum_c12 = sum_c12, sum_unr = sum_unr, sum_rw0 = sum_rw0,
         d_c12 = sum_c12 - sum_ry3, d_unr = sum_unr - sum_ry3, d_rw0 = sum_rw0 - sum_ry3,
         mean_rcfv_ry3 = mean_rcfv_ry3, mean_rcfv_c12 = mean_rcfv_c12, mean_rcfv_unr = mean_rcfv_unr, mean_rcfv_rw0 = mean_rcfv_rw0,
@@ -707,7 +714,7 @@ r#"<h2 id="supplemental-data" class="supplemental-section-heading">Supplemental 
 <figure id="supp-fig-s4" class="labs-figure-card labs-figure-card--print-full">
   <div class="labs-copy-header"><span>Supplemental Figure S4. Supermatrix Partitioned ModelTest Ribbon, Positional Occupancy Map (&gt;=80% Gate) &amp; Circular COX1 Phasing ({n_phy} Gated vs. {n_pop} PopGen/Coalescent-Only OTUs)</span></div>
   <div class="labs-inline-svg-figure">{s4_svg}</div>
-  <figcaption>Three-panel diagnostic view of the 64-species U.S. agricultural pest supermatrix: <strong>(A)</strong> per-locus winning ModelTest model and edge-linked proportional rate multiplier (r_p) over stacked nucleotide occupancy; <strong>(B)</strong> column-aligned 64-taxon heatmap across sectors [A]-[G] marking the mandatory <strong>80% Gate</strong> retaining {n_phy} multi-locus OTUs for partitioned ML/chronogram reconstruction (<strong>Figures 1-2</strong>, <strong>Tables 3A &amp; 3D</strong>) while routing {n_pop} sparse/single-locus OTUs solely to <strong>Figure 3</strong> Quartet MSC, <strong>Table 2B</strong> ABBA-BABA, <strong>Figures 4A-4B</strong> Skylines, and <strong>Figures 7A-7B</strong> Haplotype Networks; and <strong>(C)</strong> circular mitogenome Table-5 COX1 origin rotation gains and UFBoot2 stability.</figcaption>
+  <figcaption>Three-panel diagnostic view of the 64-species U.S. agricultural pest supermatrix: <strong>(A)</strong> per-locus winning ModelTest model and edge-linked proportional rate multiplier (<em>r</em><sub>p</sub>) over stacked nucleotide occupancy; <strong>(B)</strong> column-aligned 64-taxon heatmap across sectors [A]-[G] marking the mandatory <strong>80% Gate</strong> retaining {n_phy} multi-locus OTUs for partitioned ML/chronogram reconstruction (<strong>Figures 1-2</strong>, <strong>Tables 3A &amp; 3D</strong>) while routing {n_pop} sparse/single-locus OTUs solely to <strong>Figure 3</strong> Quartet MSC, <strong>Table 2B</strong> ABBA-BABA, <strong>Figures 4A-4B</strong> Skylines, and <strong>Figures 7A-7B</strong> Haplotype Networks; and <strong>(C)</strong> circular mitogenome Table-5 COX1 origin rotation gains and UFBoot2 stability.</figcaption>
 </figure>
 
 <div class="labs-copy-box labs-table-multipage" data-copy-mode="table">
@@ -928,7 +935,7 @@ r#"<section class="labs-study-section">
   <h2>8. Discussion &amp; Evolutionary Synthesis</h2>
   <p>Jointly modeling U.S. agricultural arthropods across fruit/specialty crops, western rangelands, livestock pastures, and stored-grain facilities highlights how independent evolutionary lineages—from Paleozoic Chelicerata cattle fever ticks and spider mites to Cenozoic noctuid and tortricid moths—converge on parallel agroecosystem strategies. While endophagous orchard and stored-grain pests such as <em>Cydia pomonella</em>, <em>Sitophilus granarius</em>, <em>S. oryzae</em>, <em>Rhyzopertha dominica</em>, and <em>Plodia interpunctella</em> reflect commodity-chain dispersal, open-field and pasture taxa including <em>Anabrus simplex</em>, <em>Melanoplus</em> grasshoppers, <em>Solenopsis invicta</em>, and <em>Drosophila suzukii</em> couple seasonal migration or rapid colony growth with distinct mitochondrial versus nuclear evolutionary rates.</p>
   <p>{sel_s8_p2}</p>
-  <p>Methodologically, integrating per-locus BIC <code>ModelTest</code> and edge-linked proportional rate optimization directly inside the supermatrix ML and stratified-by-locus UFBoot2 engine yields substantial likelihood gains (<strong>Delta ln L = {delta_part_lnl:+.2} nats</strong> over unpartitioned concatenation) because protein-coding mitochondrial genes (evolving up to 2-3x faster with strong purine-pyrimidine transition bias under RY3) and slow 4-state ribosomal stems (r_p &lt; 0.5) are no longer forced onto one compromised substitution rate matrix [2,3,24]. Coupling this partitioned backbone with the mandatory &gt;=80% coverage filter and 64-species Quartet MSC preserves statistical rigor on deep ordinal splits while ensuring no sparsely sequenced vector pest is omitted from evolutionary diagnostics.</p>
+  <p>Methodologically, integrating per-locus BIC <code>ModelTest</code> and edge-linked proportional rate optimization directly inside the supermatrix ML and stratified-by-locus UFBoot2 engine yields substantial likelihood gains (<strong>Delta ln L = {delta_part_lnl:+.2} nats</strong> over unpartitioned concatenation) because protein-coding mitochondrial genes (evolving up to 2-3x faster with strong purine-pyrimidine transition bias under RY3) and slow 4-state ribosomal stems (<em>r</em><sub>p</sub> &lt; 0.5) are no longer forced onto one compromised substitution rate matrix [2,3,24]. Coupling this partitioned backbone with the mandatory &gt;=80% coverage filter and 64-species Quartet MSC preserves statistical rigor on deep ordinal splits while ensuring no sparsely sequenced vector pest is omitted from evolutionary diagnostics.</p>
   <p>Finally, as an automated dry-lab bioinformatics synthesis grounded strictly in public NCBI RefSeq and GenBank accessions, inferred effective population sizes and relaxed-clock intervals remain conditional on locus sampling density across states, geographic collection balance in PopSet deposits, and the absence of genome-wide linkage disequilibrium blocks in single-locus surveillance markers. Future U.S. agroecosystem monitoring studies can build directly upon this partitioned baseline by pairing haplotype-network hubs with whole-genome GWAS panels across insecticide-treated and untreated field refuges.</p>
 </section>
 
@@ -961,7 +968,7 @@ r#"<section class="labs-study-section">
         fig1 = fig1_svg, fig2 = fig2_svg, fig3 = fig3_svg, fig4a = fig4a_svg, fig4b = fig4b_svg, fig5 = fig5_svg, fig6 = fig6_svg, fig7a = fig7a_svg, fig7b = fig7b_svg,
         main_tables = main_tables, ascii_blocks = ascii_blocks, refs_block = refs_block, supp_html = supp_html,
     );
-    Ok(sanitize_no_scratch_extensions(&raw_body))
+    Ok(normalize_manuscript_prose(&sanitize_no_scratch_extensions(&raw_body)))
 }
 
 pub fn export_us_ag_pests_manuscript_and_staged_bundle(
@@ -1205,7 +1212,7 @@ r#"<!DOCTYPE html>
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 16, 2026 &nbsp;|&nbsp;
       <strong>Preprint ID:</strong> PREPRINT-30 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
-      <strong>Status:</strong> Staged Preprint (Pending Verification) &nbsp;|&nbsp;
+      <strong>Status:</strong> Staged Preprint (Awaiting Verification) &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>{val_set}</code>
     </div>
     <div class="arxiv-abstract">
@@ -1239,7 +1246,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 16, 2026 \\quad|\\quad Preprint ID: PREPRINT-30 (v1.0.0 Empirical Preprint) \\quad|\\quad Staged Preprint (Pending Verification)}}
+\\date{{November 16, 2026 \\quad|\\quad Preprint ID: PREPRINT-30 (v1.0.0 Empirical Preprint) \\quad|\\quad Staged Preprint (Awaiting Verification)}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

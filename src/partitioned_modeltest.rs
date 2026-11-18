@@ -327,18 +327,68 @@ fn normalize_partition_rates_and_branches(nodes: &mut [MlTreeNode], parts: &mut 
     }
 }
 
+fn is_valid_binary_tree(root: usize, nodes: &[MlTreeNode], n_taxa: usize) -> bool {
+    if root >= nodes.len() || n_taxa == 0 || nodes.len() < n_taxa {
+        return false;
+    }
+    let mut visited = vec![false; nodes.len()];
+    let mut stack = Vec::with_capacity(nodes.len());
+    stack.push(root);
+    let mut leaf_count = 0usize;
+    while let Some(u) = stack.pop() {
+        if u >= nodes.len() || visited[u] {
+            return false;
+        }
+        visited[u] = true;
+        match (nodes[u].left, nodes[u].right) {
+            (None, None) => {
+                if u >= n_taxa {
+                    return false;
+                }
+                leaf_count += 1;
+            }
+            (Some(l), Some(r)) => {
+                if u < n_taxa || l == r {
+                    return false;
+                }
+                stack.push(l);
+                stack.push(r);
+            }
+            _ => return false,
+        }
+    }
+    leaf_count == n_taxa
+}
+
+#[allow(clippy::too_many_arguments)]
 fn try_partitioned_nni_edge(
     u: usize,
     side: u8,
     child_id: usize,
     sib_id: usize,
+    n_taxa: usize,
     nodes: &mut [MlTreeNode],
     parts: &[FittedPartition],
     cur_lnl: &mut f64,
+    eval_cnt: &mut usize,
 ) -> bool {
+    let expected_u_children = if side == 0 {
+        (Some(child_id), Some(sib_id))
+    } else {
+        (Some(sib_id), Some(child_id))
+    };
+    if u >= nodes.len()
+        || child_id >= nodes.len()
+        || sib_id >= nodes.len()
+        || child_id < n_taxa
+        || (nodes[u].left, nodes[u].right) != expected_u_children
+    {
+        return false;
+    }
     let (Some(a_id), Some(b_id)) = (nodes[child_id].left, nodes[child_id].right) else {
         return false;
     };
+    *eval_cnt += 2;
     let orig_bl = nodes[child_id].branch_len;
     let orig_u_l = nodes[u].left;
     let orig_u_r = nodes[u].right;
@@ -364,6 +414,9 @@ fn try_partitioned_nni_edge(
             } else {
                 cand[u].left = Some(a_id);
             }
+        }
+        if !is_valid_binary_tree(cand.len().saturating_sub(1), &cand, n_taxa) {
+            continue;
         }
         let lnl_0 = eval_partitioned_lnl(&cand, parts);
         let mut local_best_lnl = lnl_0;
@@ -399,6 +452,14 @@ fn try_partitioned_nni_edge(
             } else {
                 nodes[u].left = Some(a_id);
             }
+        }
+        if !is_valid_binary_tree(nodes.len().saturating_sub(1), nodes, n_taxa) {
+            nodes[u].left = orig_u_l;
+            nodes[u].right = orig_u_r;
+            nodes[child_id].left = orig_c_l;
+            nodes[child_id].right = orig_c_r;
+            nodes[child_id].branch_len = orig_bl;
+            return false;
         }
         nodes[child_id].branch_len = new_bl;
         *cur_lnl = best_lnl;
@@ -446,12 +507,12 @@ fn optimize_partitioned_topology_and_branches(
         collect_partitioned_internal_edges(root_id, nodes, n_taxa, &mut edges);
         let mut pass_acc = 0usize;
         for (u, side, cid, sid) in edges {
-            eval_cnt += 2;
-            if try_partitioned_nni_edge(u, side, cid, sid, nodes, parts, &mut cur_lnl) {
+            if try_partitioned_nni_edge(u, side, cid, sid, n_taxa, nodes, parts, &mut cur_lnl, &mut eval_cnt) {
                 acc_cnt += 1;
                 pass_acc += 1;
             }
         }
+        debug_assert!(is_valid_binary_tree(root_id, nodes, n_taxa));
         if pass_acc == 0 {
             break;
         }
@@ -945,10 +1006,19 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
     let mut id_edges = Vec::with_capacity(n_taxa);
     collect_partitioned_internal_edges(id_root, &id_nodes, n_taxa, &mut id_edges);
     for (u, side, cid, sid) in id_edges {
-        if try_partitioned_nni_edge(u, side, cid, sid, &mut id_nodes, &fitted_parts, &mut id_lnl) {
+        if try_partitioned_nni_edge(
+            u,
+            side,
+            cid,
+            sid,
+            n_taxa,
+            &mut id_nodes,
+            &fitted_parts,
+            &mut id_lnl,
+            &mut nni_eval,
+        ) {
             nni_acc += 1;
         }
-        nni_eval += 2;
     }
     let (mut ref_split_entries, ref_split_set) =
         extract_canonical_splits_from_ml_nodes(&part_nodes, n_taxa);

@@ -2,7 +2,7 @@
 
 `bio-suite-supervisor` (`src/supervisor.rs`, `src/figure_generator.rs`, `src/bio_suite_gui.rs`) is an autonomous, multi-threaded Rust orchestrator for **CRV Science Labs (`bio-suite` & `RuNIE`)**. It eliminates ad-hoc JavaScript/Python scripts by managing the entire bioinformatics study lifecycle inside compiled Rust:
 
-1. **Flexible Cohort Ingestion**: Accepts NCBI Entrez accession numbers (`--accessions`), local FASTA files (`--fasta`), or built-in gold-standard study presets (`--preset anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `basal-metazoa-05`) combined with a factorial **Model Design** (`3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration`).
+1. **Flexible Cohort Ingestion**: Accepts NCBI Entrez accession numbers (`--accessions`), local FASTA files (`--fasta`), or built-in gold-standard study presets (`--preset anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `nematoda-pests-27`, `acanthochitonidae-28`, `china-australia-pests-29`, `us-ag-pests-30`, `basal-metazoa-05`) combined with a factorial **Model Design** (`3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration`).
 2. **Autonomous `Super-BLAST` Annotation Validation & Self-Healing Loop-Back Engine (95%+ Autonomous)**:
    - Audits every fetched sequence in parallel (`rayon`) via `super_blast` homology scoring against the cohort medoid, strand orientation verification (`--adjustdirection`), full-length completeness gates, 3-frame translation internal stop-codon scans (`NUMT` nuclear pseudogene detection), and terminal `5' C->T / 3' G->A` ancient-DNA deamination checks.
    - Automatically repairs recoverable errors in Rust (reverse-complement strand rescue, terminal deamination `N`-masking) and quarantines severe repository artifacts (e.g., sample swaps such as `PQ585799.1`, nuclear `NUMT` paralogs such as `KU551299.1`, partial fragments, or withdrawn/failed Entrez IDs) into the **`0🧪` Uncleaned Negative Control** track while automatically pulling verified full-length replacement sequences from the reserve pool.
@@ -34,16 +34,19 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 .\target\release\bio-suite-supervisor.exe run --preset coleoptera-function-18 --design 3way-multifactorial
 .\target\release\bio-suite-supervisor.exe run --preset rhinolophus-asia-21 --design 3way-multifactorial
 
-# 2b. Run the Preprint 23–26 Multi-Compartment Native Bio-Suite studies (550 Entrez records -> 544 verified + 6 quarantined UNVERIFIED anomalies, 18-locus Quartet MSC, 12x36 skylines, 61-state codon selection)
+# 2b. Run the Preprint 23–30 Multi-Compartment Native Bio-Suite studies (multi-locus supermatrix, Quartet MSC, 12x36 skylines, 61-state codon selection)
 .\target\release\bio-suite-supervisor.exe run --preset bemisia-global-23 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset invasive-snails-24 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset nudibranchs-global-25 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset isoptera-termites-26 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset nematoda-pests-27 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset acanthochitonidae-28 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset china-australia-pests-29 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset us-ag-pests-30 --design biosuite-only --generations 25000
 
-# 3. Run with custom NCBI Accession numbers and a custom Run ID + Title
+# 3. Run with custom NCBI Accession numbers and a custom Run ID (study title is derived automatically from the preset/accession cohort)
 .\target\release\bio-suite-supervisor.exe run `
   --run-id runie-custom-culicidae-audit `
-  --title "Autonomous 3-Way Multifactorial Audit of Custom Culicidae Mitogenomes" `
   --design 3way-multifactorial `
   --accessions NC_002084.1,MK628480.1,NC_028212.1,NC_028215.1,NC_038158.1,PQ585799.1,KU551299.1 `
   --generations 25000
@@ -88,15 +91,14 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 
 | Flag / Option | Description | Default |
 | :--- | :--- | :--- |
-| `run` / `list` / `inspect` / `figures` / `gui` | Primary supervisor mode | `run` |
-| `--run-id <id>` | Unique identifier for the managed run directory (`runs/<run-id>/`) | Derived from preset or `runie-3way-multifactorial-anopheles-mosquitos` |
-| `--title <title>` | Study title rendered in GUI headers, figures, and `manuscript/main.tex` | Preset title |
-| `--preset <name>` | Built-in dataset preset: `anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `basal-metazoa-05` | `anopheles-3way` |
-| `--design <mode>` | Model design: `3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration` | `3way-multifactorial` |
+| `run` / `list` / `inspect` / `figures` / `gui` | Primary supervisor mode (plus `supermatrix-viz` for Preprint 28/29 diagnostics) | `run` |
+| `--run-id <id>` (`--id`) | Unique identifier for the managed run directory (`runs/<run-id>/`) | Derived from preset or `runie-3way-multifactorial-anopheles-mosquitos` |
+| `--preset <name>` | Built-in dataset preset: `anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `nematoda-pests-27`, `acanthochitonidae-28`, `china-australia-pests-29`, `us-ag-pests-30`, `basal-metazoa-05` | `anopheles-3way` |
+| `--design <mode>` (`--mode`, `--model-design`) | Model design: `3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration` | `3way-multifactorial` |
 | `--accessions <A,B,C>` | Comma-separated NCBI Entrez accession list | Empty (uses preset) |
-| `--fasta <path>` | Path to an input FASTA sequence file | `None` |
-| `--runs-dir <dir>` | Root directory storing managed run units | `runs` |
-| `--generations <N>` | MCMC generations (`-g`) for Bayesian coalescent skylines | `10000` (`25000` for Preprint 23–29 presets) |
+| `--fasta <path>` (`--input`) | Path to an input FASTA sequence file | `None` |
+| `--runs-dir <dir>` (`--out-dir`) | Root directory storing managed run units | `runs` |
+| `--generations <N>` (`-g`) | MCMC generations (`-g`) for Bayesian coalescent skylines | `10000` (`25000` for `basal-metazoa-05` and Preprint 23–30 presets) |
 | `--no-loopback` | Disable autonomous replacement pull during `Super-BLAST` hygiene | Loop-back enabled |
 | `--no-haplotype-clusters` | Disable haplotype cluster computation | Enabled where supported |
 | `--no-figures` | Skip `.svg`/`.png`/`.pdf` figure & LaTeX manuscript generation | Enabled |
@@ -140,13 +142,13 @@ runs/runie-3way-multifactorial-anopheles-mosquitos/
 
 ## 4. Autonomous `Super-BLAST` Hygiene & NCBI Error Reporting
 
-During Stage 1, `bio-suite-supervisor` automatically detects, repairs, or quarantines 6 classes of sequence and repository anomalies and records them in `audit/super_blast_audit_and_anomalies.json` and `Table 2` of `manuscript/main.tex` (note: in the `anopheles-3way` demo preset in `src/supervisor.rs`, `PQ585799.1`, `KU551299.1`, `MT890412.1`, and `KP891004.1` are used as synthetic anomaly-test fixtures—on live NCBI Entrez, `PQ585799.1` is *Toxorhynchites rutilus*, `KU551299.1` is *Ophiostoma kryptum*, `MT890412.1` is *Brachycephalus alipioi*, and `KP891004.1` is an uncultured fungus clone):
+During Stage 1, `bio-suite-supervisor` automatically detects, repairs, or quarantines 6 classes of sequence and repository anomalies and records them in `audit/super_blast_audit_and_anomalies.json` and `Table 2` of `manuscript/main.tex` (note: in the `anopheles-3way` demo preset in `src/supervisor.rs`, `PQ585799.1`, `KU551299.1`, `MT890412.1`, and `KP891004.1` are used as synthetic anomaly-test fixtures—on live NCBI Entrez, `PQ585799.1` is *Toxorhynchites rutilus*, `KU551299.1` is *Ophiostoma kryptum*, `MT890412.1` is *Brachycephalus alipioi*, and `KP891004.1` is an uncultured fungus clone; additionally, two cohort-table labels in `src/supervisor.rs` differ from live NCBI Entrez taxonomy: `MK628480.1` is *Anopheles arabiensis* [611 bp COI fragment, labeled *An. coluzzii* in code] and `NC_028215.1` is *Anopheles coluzzii* [labeled *An. merus* in code]):
 
 1. **`NCBI_SAMPLE_SWAP_DISCOVERED`** *(demonstrated in `anopheles-3way` using `PQ585799.1` as a sample-swap fixture)*:
    - Quarantined into the `0🧪` Uncleaned Negative Control cohort and automatically replaced from the reserve pool (`NC_024740.1`, *Anopheles cruzii*).
 2. **`NCBI_NUMT_NUCLEAR_PSEUDOGENE`** *(demonstrated in `anopheles-3way` using `KU551299.1` as a premature-stop-codon fixture)*:
    - Quarantined into the `0🧪` control track and replaced with verified full-length mitogenome `NC_028223.1` (*Anopheles stephensi*).
-3. **`NCBI_REVERSE_COMPLEMENT_STRAND`** *(e.g., `NC_028215.1` simulated in antisense orientation)*:
+3. **`NCBI_REVERSE_COMPLEMENT_STRAND`** *(demonstrated in `anopheles-3way` on `NC_028215.1` simulated in antisense orientation; live NCBI Entrez taxon is *Anopheles coluzzii*, labeled *An. merus* in `src/supervisor.rs`)*:
    - Automatically reverse-complemented in Rust prior to MSA and retained in the `5🧪` cleaned cohort.
 4. **`TERMINAL_ADNA_DEAMINATION_MASKED`** *(demonstrated in `anopheles-3way` using `MT890412.1` as a `5' C->T` / `3' G->A` deamination fixture)*:
    - Terminal deaminated bases are masked to `N` in the `5🧪` cohort while preserving the unmasked sequence in the `0🧪` control track.

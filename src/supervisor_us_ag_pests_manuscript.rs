@@ -1212,7 +1212,7 @@ r#"<!DOCTYPE html>
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 16, 2026 &nbsp;|&nbsp;
       <strong>Preprint ID:</strong> PREPRINT-30 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
-      <strong>Status:</strong> Staged Preprint (Awaiting Verification) &nbsp;|&nbsp;
+      <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24359245" target="_blank" rel="noopener noreferrer">10.5281/zenodo.24359245</a> &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>{val_set}</code>
     </div>
     <div class="arxiv-abstract">
@@ -1246,7 +1246,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 16, 2026 \\quad|\\quad Preprint ID: PREPRINT-30 (v1.0.0 Empirical Preprint) \\quad|\\quad Staged Preprint (Awaiting Verification)}}
+\\date{{November 16, 2026 \\quad|\\quad Preprint ID: PREPRINT-30 (v1.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24359245}}{{10.5281/zenodo.24359245}}}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

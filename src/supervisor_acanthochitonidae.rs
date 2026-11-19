@@ -4533,11 +4533,11 @@ pub fn export_acanthochitonidae_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "acanthochitonidae-phylogenomics-preprint",
         "preprintId": "PREPRINT-28",
-        "zenodoVersion": "1.2.0",
+        "zenodoVersion": "2.0.0",
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/acanthochitonidae-phylogenomics-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-28 (v1.2.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across {} Verified Polyplacophora NCBI Records", fmt_commas_usize(report.total_records_on_disk)),
+        "subtitle": format!("PREPRINT-28 (v2.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across {} Verified Polyplacophora NCBI Records", fmt_commas_usize(report.total_records_on_disk)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -4617,7 +4617,7 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 15, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-28 (v1.2.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-28 (v2.0.0 Empirical Preprint) &nbsp;|&nbsp;
       <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24263607" target="_blank" rel="noopener noreferrer">10.5281/zenodo.24263607</a> &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>{val_set}</code>
     </div>
@@ -4702,7 +4702,7 @@ r#"\documentclass[11pt]{{article}}
 \usepackage{{hyperref}}
 \title{{{title}}}
 \author{{Bryan P. White \\ CRV Science Labs}}
-\date{{November 15, 2026 \\ \small Preprint ID: PREPRINT-28 (v1.2.0 Empirical Preprint) \quad|\quad DOI: \href{{https://doi.org/10.5281/zenodo.24263607}}{{10.5281/zenodo.24263607}}}}
+\date{{November 15, 2026 \\ \small Preprint ID: PREPRINT-28 (v2.0.0 Empirical Preprint) \quad|\quad DOI: \href{{https://doi.org/10.5281/zenodo.24263607}}{{10.5281/zenodo.24263607}}}}
 \begin{{document}}
 \maketitle
 \begin{{abstract}}

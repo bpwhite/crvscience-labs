@@ -1647,11 +1647,11 @@ pub fn export_china_aus_pests_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "china-australia-arthropod-pests-preprint",
         "preprintId": "PREPRINT-29",
-        "zenodoVersion": "1.0.0",
+        "zenodoVersion": "2.0.0",
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/china-australia-arthropod-pests-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-29 (v1.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across {} Verified Arthropod Crop-Pest NCBI Records", fmt_commas_usize(report.total_records_on_disk)),
+        "subtitle": format!("PREPRINT-29 (v2.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across {} Verified Arthropod Crop-Pest NCBI Records", fmt_commas_usize(report.total_records_on_disk)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -1741,7 +1741,7 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 15, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-29 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-29 (v2.0.0 Empirical Preprint) &nbsp;|&nbsp;
       <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24295798" target="_blank" rel="noopener noreferrer">10.5281/zenodo.24295798</a> &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>{val_set}</code>
     </div>
@@ -1803,7 +1803,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 15, 2026 \\quad|\\quad Preprint ID: PREPRINT-29 (v1.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24295798}}{{10.5281/zenodo.24295798}}}}
+\\date{{November 15, 2026 \\quad|\\quad Preprint ID: PREPRINT-29 (v2.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24295798}}{{10.5281/zenodo.24295798}}}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

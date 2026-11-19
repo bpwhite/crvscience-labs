@@ -2626,7 +2626,7 @@ pub fn export_isoptera_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "isoptera-global-radiation-preprint",
         "preprintId": "PREPRINT-26",
-        "zenodoVersion": "2.0.0",
+        "zenodoVersion": "3.0.0",
         "zenodoConceptId": "24116968",
         "zenodoId": "24220786",
         "conceptDoi": "10.5281/zenodo.24116968",
@@ -2635,7 +2635,7 @@ pub fn export_isoptera_manuscript_and_staged_bundle(
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/isoptera-global-radiation-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-26 (v2.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor + bio-suite-seqnet Across {} Verified NCBI Records ({}-Locus Partitioned ModelTest, L = {} Aligned Columns)", report.total_records_on_disk, n_part_loci, fmt_commas_usize(report.supermatrix_aligned_cols)),
+        "subtitle": format!("PREPRINT-26 (v3.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor + bio-suite-seqnet Across {} Verified NCBI Records ({}-Locus Partitioned ModelTest, L = {} Aligned Columns)", report.total_records_on_disk, n_part_loci, fmt_commas_usize(report.supermatrix_aligned_cols)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -2897,7 +2897,8 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 10, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-26 (v2.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-26 (v3.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24116968" target="_blank" rel="noopener noreferrer">10.5281/zenodo.24116968</a> &nbsp;|&nbsp;
       <strong>Companion:</strong> Lab Discovery #137 &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS</code>
     </div>
@@ -2959,7 +2960,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 10, 2026 \\quad|\\quad Preprint ID: PREPRINT-26 (v2.0.0 Empirical Preprint)}}
+\\date{{November 10, 2026 \\quad|\\quad Preprint ID: PREPRINT-26 (v3.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24116968}}{{10.5281/zenodo.24116968}}}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

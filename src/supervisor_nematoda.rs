@@ -2673,7 +2673,7 @@ pub fn export_nematoda_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "nematoda-agricultural-pests-preprint",
         "preprintId": "PREPRINT-27",
-        "zenodoVersion": "1.0.0",
+        "zenodoVersion": "2.0.0",
         "zenodoConceptId": "24223794",
         "zenodoId": "24223795",
         "conceptDoi": "10.5281/zenodo.24223794",
@@ -2682,7 +2682,7 @@ pub fn export_nematoda_manuscript_and_staged_bundle(
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/nematoda-agricultural-pests-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-27 (v1.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor + bio-suite-seqnet Across {} Verified NCBI Records (L = {} Aligned Columns)", report.total_records_on_disk, fmt_commas_usize(report.supermatrix_aligned_cols)),
+        "subtitle": format!("PREPRINT-27 (v2.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor + bio-suite-seqnet Across {} Verified NCBI Records (L = {} Aligned Columns)", report.total_records_on_disk, fmt_commas_usize(report.supermatrix_aligned_cols)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -2944,7 +2944,8 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 14, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-27 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-27 (v2.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24223794" target="_blank" rel="noopener noreferrer">10.5281/zenodo.24223794</a> &nbsp;|&nbsp;
       <strong>Companion:</strong> CRV Labs Discovery &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS</code>
     </div>
@@ -3006,7 +3007,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 14, 2026 \\quad|\\quad Preprint ID: PREPRINT-27 (v1.0.0 Empirical Preprint)}}
+\\date{{November 14, 2026 \\quad|\\quad Preprint ID: PREPRINT-27 (v2.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24223794}}{{10.5281/zenodo.24223794}}}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

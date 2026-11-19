@@ -2442,7 +2442,7 @@ pub fn export_nudibranchs_manuscript_and_staged_bundle(
     let preprint_draft = json!({
         "slug": "nudibranch-global-radiation-preprint",
         "preprintId": "PREPRINT-25",
-        "zenodoVersion": "1.0.0",
+        "zenodoVersion": "2.0.0",
         "zenodoConceptId": "24107446",
         "zenodoId": "24107447",
         "conceptDoi": "10.5281/zenodo.24107446",
@@ -2451,7 +2451,7 @@ pub fn export_nudibranchs_manuscript_and_staged_bundle(
         "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
         "latexBundleUrl": "/labs/releases/nudibranch-global-radiation-arxiv-upload.tar.gz",
         "title": title,
-        "subtitle": format!("PREPRINT-25 (v1.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across 544 Verified NCBI Records ({}-Locus Partitioned ModelTest, L = {} Aligned Columns)", n_part_loci, fmt_commas_usize(report.supermatrix_aligned_cols)),
+        "subtitle": format!("PREPRINT-25 (v2.0.0 Empirical Preprint) • 100% Native Rust bio-suite-supervisor Across 544 Verified NCBI Records ({}-Locus Partitioned ModelTest, L = {} Aligned Columns)", n_part_loci, fmt_commas_usize(report.supermatrix_aligned_cols)),
         "summary": summary_short,
         "plainAbstract": abstract_text,
         "keyPoints": key_points,
@@ -2714,7 +2714,8 @@ r#"<!DOCTYPE html>
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
       <strong>Date:</strong> November 10, 2026 &nbsp;|&nbsp;
-      <strong>Preprint ID:</strong> PREPRINT-25 (v1.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> PREPRINT-25 (v2.0.0 Empirical Preprint) &nbsp;|&nbsp;
+      <strong>DOI:</strong> <a href="https://doi.org/10.5281/zenodo.24107446" target="_blank" rel="noopener noreferrer">10.5281/zenodo.24107446</a> &nbsp;|&nbsp;
       <strong>Companion:</strong> Lab Discovery #136 &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS</code>
     </div>
@@ -2777,7 +2778,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 10, 2026 \\quad|\\quad Preprint ID: PREPRINT-25 (v1.0.0 Empirical Preprint)}}
+\\date{{November 10, 2026 \\quad|\\quad Preprint ID: PREPRINT-25 (v2.0.0 Empirical Preprint) \\quad|\\quad DOI: \\href{{https://doi.org/10.5281/zenodo.24107446}}{{10.5281/zenodo.24107446}}}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}

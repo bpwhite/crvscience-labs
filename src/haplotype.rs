@@ -51,6 +51,8 @@ pub struct HaplotypeNetworkEdge {
     pub k2p_distance: f64,
     pub edge_type: String, // "intra-cluster-msn", "inter-cluster-bridge", "reticulation-loop"
     pub step_mutations: Vec<String>,
+    #[serde(default)]
+    pub crosses_species_boundary: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,6 +66,8 @@ pub struct HaplotypeClusterGroup {
     pub max_internal_step_radius: usize,
     pub mean_within_cluster_k2p: f64,
     pub dominant_population: String,
+    #[serde(default)]
+    pub dominant_species: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,6 +123,60 @@ pub struct HaplotypePipelineReport {
     pub small_dataset_cohort: HaplotypeClusterCohortReport,
     pub large_dataset_cohort: HaplotypeClusterCohortReport,
     pub emergent_synthesis: Vec<String>,
+}
+
+/// Normalize a raw organism/taxon string into a lowercase canonical species key
+/// (binomial or provisional morphospecies), ignoring pure accessions/OTU IDs.
+pub(crate) fn canonical_species_key(raw: &str) -> String {
+    let normalized = raw.trim().replace('_', " ");
+    let mut toks: Vec<&str> = normalized.split_whitespace().collect();
+    // Strip optional leading sector/OTU prefix such as `A T001 Leptochiton nexus` or `A_T001_...`
+    if toks.len() >= 3
+        && toks[0].len() == 1
+        && matches!(toks[0].as_bytes()[0], b'A'..=b'G')
+        && toks[1].starts_with('T')
+        && toks[1].len() == 4
+        && toks[1][1..].chars().all(|c| c.is_ascii_digit())
+    {
+        toks.drain(0..2);
+    }
+    if toks.is_empty() {
+        return String::new();
+    }
+    let is_code_like = |tok: &str| -> bool {
+        let b = tok.as_bytes();
+        let has_digit = b.iter().any(|c| c.is_ascii_digit());
+        let has_dot = b.contains(&b'.');
+        has_dot || (has_digit && b.len() >= 3)
+    };
+    if toks.len() == 1 {
+        let t0 = toks[0];
+        if is_code_like(t0) {
+            return String::new();
+        }
+        return t0.to_ascii_lowercase();
+    }
+    let g = toks[0].to_ascii_lowercase();
+    if is_code_like(&g) {
+        return String::new();
+    }
+    let t1_raw = toks[1].to_ascii_lowercase();
+    let t1_clean = t1_raw.trim_end_matches('.');
+    if t1_clean == "sp" || t1_clean == "spp" {
+        if let Some(tag) = toks.get(2) {
+            return format!("{} sp. {}", g, tag.to_ascii_lowercase());
+        }
+        return format!("{} sp.", g);
+    }
+    if (t1_clean == "cf" || t1_clean == "aff" || t1_clean == "nr") && toks.len() >= 3 {
+        return format!("{} {}. {}", g, t1_clean, toks[2].to_ascii_lowercase());
+    }
+    if toks[1].chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false)
+        && !matches!(g.as_str(), "species" | "taxon" | "clade")
+    {
+        return String::new();
+    }
+    format!("{} {}", g, t1_raw)
 }
 
 /// Compute exact Hamming SNP differences and list of mutation strings between two aligned sequences.
@@ -280,7 +338,21 @@ fn analyze_haplotype_clusters_from_aligned(
             } else {
                 0.0
             };
-            let primary_taxon = aligned[member_indices[0]].taxon.clone();
+            let mut sp_key_counts: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+            for &m_idx in member_indices {
+                let k = canonical_species_key(&aligned[m_idx].taxon);
+                if !k.is_empty() {
+                    sp_key_counts
+                        .entry(k)
+                        .and_modify(|(c, _)| *c += 1)
+                        .or_insert((1, m_idx));
+                }
+            }
+            let primary_taxon = sp_key_counts
+                .values()
+                .max_by(|a, b| a.0.cmp(&b.0).then_with(|| b.1.cmp(&a.1)))
+                .map(|&(_, first_idx)| aligned[first_idx].taxon.clone())
+                .unwrap_or_else(|| aligned[member_indices[0]].taxon.clone());
             let mut subpop: BTreeMap<String, usize> = BTreeMap::new();
             let mut accessions = Vec::new();
             for &m_idx in member_indices {
@@ -334,6 +406,7 @@ fn analyze_haplotype_clusters_from_aligned(
     let mut visited = vec![false; h_count];
     let mut cluster_assignments = vec![0usize; h_count];
     let mut clusters = Vec::new();
+    let mut cluster_dom_species: Vec<String> = Vec::new();
 
     for start_idx in 0..h_count {
         if visited[start_idx] {
@@ -368,6 +441,7 @@ fn analyze_haplotype_clusters_from_aligned(
 
         let mut total_samples = 0usize;
         let mut pop_totals: BTreeMap<String, usize> = BTreeMap::new();
+        let mut sp_totals: BTreeMap<String, usize> = BTreeMap::new();
         let mut hap_ids = Vec::new();
         let mut max_radius = 0usize;
         let mut within_k2p_sum = 0.0f64;
@@ -377,6 +451,12 @@ fn analyze_haplotype_clusters_from_aligned(
             haplotypes[idx].cluster_id = cluster_id.clone();
             total_samples += haplotypes[idx].sample_count;
             hap_ids.push(haplotypes[idx].haplotype_id.clone());
+            for &m_idx in &seq_groups[idx].1 {
+                let sp_k = canonical_species_key(&aligned[m_idx].taxon);
+                if !sp_k.is_empty() {
+                    *sp_totals.entry(sp_k).or_insert(0) += 1;
+                }
+            }
             for (pop, cnt) in &haplotypes[idx].subpopulation_counts {
                 *pop_totals.entry(pop.clone()).or_insert(0) += *cnt;
             }
@@ -397,6 +477,12 @@ fn analyze_haplotype_clusters_from_aligned(
             .max_by_key(|(_, &cnt)| cnt)
             .map(|(k, _)| k.clone())
             .unwrap_or_else(|| haplotypes[hub_idx].primary_taxon.clone());
+        let dominant_species = sp_totals
+            .iter()
+            .max_by(|a, b| a.1.cmp(b.1).then_with(|| b.0.cmp(a.0)))
+            .map(|(k, _)| k.clone())
+            .unwrap_or_else(|| canonical_species_key(&haplotypes[hub_idx].primary_taxon));
+        cluster_dom_species.push(dominant_species.clone());
 
         clusters.push(HaplotypeClusterGroup {
             cluster_id,
@@ -415,6 +501,7 @@ fn analyze_haplotype_clusters_from_aligned(
                 0.0
             },
             dominant_population: dominant_pop,
+            dominant_species,
         });
     }
 
@@ -447,6 +534,16 @@ fn analyze_haplotype_clusters_from_aligned(
             in_tree[best_v] = true;
             tree_edge_pairs.push((best_u, best_v));
             let same_cluster = haplotypes[best_u].cluster_id == haplotypes[best_v].cluster_id;
+            let sp_u = cluster_dom_species
+                .get(cluster_assignments[best_u])
+                .map(|s| s.as_str())
+                .unwrap_or("");
+            let sp_v = cluster_dom_species
+                .get(cluster_assignments[best_v])
+                .map(|s| s.as_str())
+                .unwrap_or("");
+            let crosses_species_boundary =
+                !same_cluster && !sp_u.is_empty() && !sp_v.is_empty() && sp_u != sp_v;
             msn_edges.push(HaplotypeNetworkEdge {
                 source_haplotype: haplotypes[best_u].haplotype_id.clone(),
                 target_haplotype: haplotypes[best_v].haplotype_id.clone(),
@@ -462,6 +559,7 @@ fn analyze_haplotype_clusters_from_aligned(
                     .take(6)
                     .cloned()
                     .collect(),
+                crosses_species_boundary,
             });
         }
 
@@ -483,6 +581,7 @@ fn analyze_haplotype_clusters_from_aligned(
                         k2p_distance: k2p_matrix[u][v],
                         edge_type: "reticulation-loop".to_string(),
                         step_mutations: mut_labels_matrix[u][v].clone(),
+                        crosses_species_boundary: false,
                     });
                 }
             }
@@ -829,8 +928,24 @@ fn build_adaptive_visualizations(
                 .get(clusters[c_idx + 1].hub_haplotype_id.as_str())
                 .unwrap_or(&0);
             let bridge_steps = step_matrix[hub_idx][next_hub_idx];
+            let sp_a = if cl.dominant_species.is_empty() {
+                canonical_species_key(&hub.primary_taxon)
+            } else {
+                cl.dominant_species.clone()
+            };
+            let sp_b = if clusters[c_idx + 1].dominant_species.is_empty() {
+                canonical_species_key(&haplotypes[next_hub_idx].primary_taxon)
+            } else {
+                clusters[c_idx + 1].dominant_species.clone()
+            };
+            let boundary_tag = if !sp_a.is_empty() && !sp_b.is_empty() && sp_a != sp_b {
+                " [SPECIES BOUNDARY]"
+            } else {
+                ""
+            };
             ascii_net.push_str(&format!(
-                "        │\n        ▼  INTER-CLUSTER MSN BRIDGE: {} <═══[ {} Mutational Steps ]═══> {}\n        │\n",
+                "        │\n        ▼  INTER-CLUSTER MSN BRIDGE{}: {} <═══[ {} Mutational Steps ]═══> {}\n        │\n",
+                boundary_tag,
                 cl.hub_haplotype_id,
                 bridge_steps,
                 clusters[c_idx + 1].hub_haplotype_id
@@ -975,17 +1090,24 @@ fn build_adaptive_visualizations(
         ));
     }
     for edge in msn_edges {
-        let style = if edge.edge_type == "reticulation-loop" {
-            "dashed"
-        } else if edge.edge_type == "inter-cluster-bridge" {
-            "bold"
+        if edge.crosses_species_boundary {
+            dot.push_str(&format!(
+                "  \"{}\" -- \"{}\" [label=\"Species Boundary\\n({} snp)\", style=\"dashed\", color=\"#b91c1c\", fontcolor=\"#991b1b\", penwidth=2.2];\n",
+                edge.source_haplotype, edge.target_haplotype, edge.mutational_steps_snps
+            ));
         } else {
-            "solid"
-        };
-        dot.push_str(&format!(
-            "  \"{}\" -- \"{}\" [label=\"{} snp\", style=\"{}\", color=\"#64748b\"];\n",
-            edge.source_haplotype, edge.target_haplotype, edge.mutational_steps_snps, style
-        ));
+            let style = if edge.edge_type == "reticulation-loop" {
+                "dashed"
+            } else if edge.edge_type == "inter-cluster-bridge" {
+                "bold"
+            } else {
+                "solid"
+            };
+            dot.push_str(&format!(
+                "  \"{}\" -- \"{}\" [label=\"{} snp\", style=\"{}\", color=\"#64748b\"];\n",
+                edge.source_haplotype, edge.target_haplotype, edge.mutational_steps_snps, style
+            ));
+        }
     }
     dot.push_str("}\n");
 
@@ -1189,8 +1311,8 @@ fn layout_radiative_haplotype_network(
     let rx_max = ((plot_x1 - plot_x0) * 0.5 - 38.0).max(60.0);
     let ry_max = ((plot_y1 - plot_y0) * 0.5 - 38.0).max(60.0);
 
-    // Collect resolved edges `(u, v, steps, is_bridge, is_loop)` deduplicated by unordered pair
-    let mut all_edges: Vec<(usize, usize, usize, bool, bool)> = Vec::new();
+    // Collect resolved edges `(u, v, steps, is_bridge, is_loop, is_species_boundary)` deduplicated by unordered pair
+    let mut all_edges: Vec<(usize, usize, usize, bool, bool, bool)> = Vec::new();
     let mut seen_pair: BTreeMap<(usize, usize), usize> = BTreeMap::new();
     for e in msn_edges {
         if let (Some(&u0), Some(&v0)) = (
@@ -1203,13 +1325,14 @@ fn layout_radiative_haplotype_network(
             let key = (u0.min(v0), u0.max(v0));
             let is_bridge = e.edge_type == "inter-cluster-bridge";
             let is_loop = e.edge_type == "reticulation-loop";
+            let is_sp_bound = e.crosses_species_boundary;
             if let Some(&idx) = seen_pair.get(&key) {
                 if !is_loop && all_edges[idx].4 {
-                    all_edges[idx] = (u0, v0, e.mutational_steps_snps, is_bridge, is_loop);
+                    all_edges[idx] = (u0, v0, e.mutational_steps_snps, is_bridge, is_loop, is_sp_bound);
                 }
             } else {
                 seen_pair.insert(key, all_edges.len());
-                all_edges.push((u0, v0, e.mutational_steps_snps, is_bridge, is_loop));
+                all_edges.push((u0, v0, e.mutational_steps_snps, is_bridge, is_loop, is_sp_bound));
             }
         }
     }
@@ -1226,7 +1349,7 @@ fn layout_radiative_haplotype_network(
 
     let mut candidate_order: Vec<usize> = (0..all_edges.len()).collect();
     candidate_order.sort_by_key(|&idx| {
-        let (u, v, steps, is_bridge, is_loop) = all_edges[idx];
+        let (u, v, steps, is_bridge, is_loop, _) = all_edges[idx];
         (is_loop, is_bridge, steps, u.min(v), u.max(v))
     });
 
@@ -1234,7 +1357,7 @@ fn layout_radiative_haplotype_network(
     let mut tree_adj: Vec<Vec<(usize, usize, bool)>> = vec![Vec::new(); n_haps];
     let mut tree_edges: Vec<(usize, usize)> = Vec::with_capacity(n_haps.saturating_sub(1));
     for idx in candidate_order {
-        let (u, v, steps, is_bridge, _) = all_edges[idx];
+        let (u, v, steps, is_bridge, _, _) = all_edges[idx];
         let ru = uf_find(&mut uf_parent, u);
         let rv = uf_find(&mut uf_parent, v);
         if ru != rv {
@@ -1693,14 +1816,15 @@ fn layout_radiative_haplotype_network(
         }
 
         // (c) MSN edge springs (asymmetric bridge springs preserve outward radiative extension)
-        for &(u, v, steps, is_bridge, _) in &all_edges {
+        for &(u, v, steps, is_bridge, _, is_sp_bound) in &all_edges {
             let dx = pos[v].0 - pos[u].0;
             let dy = pos[v].1 - pos[u].1;
             let d = dx.hypot(dy).max(1e-4);
             let target = radii[u]
                 + radii[v]
                 + if is_bridge {
-                    46.0 + (steps.min(16) as f64) * 2.0
+                    let extra_sb = if is_sp_bound && n_haps <= 65 { 14.0 } else { 0.0 };
+                    46.0 + (steps.min(16) as f64) * 2.0 + extra_sb
                 } else {
                     18.0 + (steps.min(6) as f64) * 4.2
                 };
@@ -1756,7 +1880,7 @@ fn layout_radiative_haplotype_network(
                     disp[j].1 += (dy / d) * push;
                 }
             }
-            for &(u, v, _, is_bridge, _) in &all_edges {
+            for &(u, v, _, is_bridge, _, _) in &all_edges {
                 if !is_bridge || cluster_of_hap[u] == c_idx || cluster_of_hap[v] == c_idx {
                     continue;
                 }
@@ -1776,7 +1900,7 @@ fn layout_radiative_haplotype_network(
         }
 
         // (e) Node-to-edge segment electrostatic repulsion so nodes never sit behind non-incident edges
-        for &(u, v, _, _, is_loop) in &all_edges {
+        for &(u, v, _, _, is_loop, _) in &all_edges {
             if is_loop {
                 continue;
             }
@@ -1874,7 +1998,7 @@ fn layout_radiative_haplotype_network(
                 }
             }
         }
-        for &(u, v, _, _, is_loop) in &all_edges {
+        for &(u, v, _, _, is_loop, _) in &all_edges {
             if is_loop {
                 continue;
             }
@@ -1976,17 +2100,84 @@ fn render_standalone_svg_haplotype_network(
         (plot_x0, plot_x1, plot_y0, plot_y1),
     );
 
+    // Compute per-cluster canonical species & haplotype counts for edge-resolution / Species Boundary demarcation
+    let mut cluster_sizes = vec![0usize; clusters.len()];
+    for &ci in &cluster_of_hap {
+        if ci < cluster_sizes.len() {
+            cluster_sizes[ci] += 1;
+        }
+    }
+    let cluster_sp: Vec<String> = clusters
+        .iter()
+        .enumerate()
+        .map(|(c_idx, cl)| {
+            if !cl.dominant_species.is_empty() {
+                return cl.dominant_species.clone();
+            }
+            let mut sp_cnts: BTreeMap<String, usize> = BTreeMap::new();
+            for (i, &ci) in cluster_of_hap.iter().enumerate() {
+                if ci == c_idx {
+                    let k = canonical_species_key(&haplotypes[i].primary_taxon);
+                    if !k.is_empty() {
+                        *sp_cnts.entry(k).or_insert(0) += haplotypes[i].sample_count;
+                    }
+                }
+            }
+            sp_cnts
+                .into_iter()
+                .max_by(|a, b| a.1.cmp(&b.1).then_with(|| b.0.cmp(&a.0)))
+                .map(|(k, _)| k)
+                .unwrap_or_default()
+        })
+        .collect();
+
+    // Pre-resolve edges: `(ui, vi, steps, is_bridge, is_loop, is_species_boundary)`
+    let mut resolved_edges: Vec<(usize, usize, usize, bool, bool, bool)> =
+        Vec::with_capacity(msn_edges.len());
+    for edge in msn_edges {
+        if let (Some(&ui), Some(&vi)) = (
+            hap_idx_by_id.get(edge.source_haplotype.as_str()),
+            hap_idx_by_id.get(edge.target_haplotype.as_str()),
+        ) {
+            if ui != vi {
+                let is_loop = edge.edge_type == "reticulation-loop";
+                let is_bridge = edge.edge_type == "inter-cluster-bridge";
+                let cu = cluster_of_hap[ui];
+                let cv = cluster_of_hap[vi];
+                let sp_u = cluster_sp.get(cu).map(|s| s.as_str()).unwrap_or("");
+                let sp_v = cluster_sp.get(cv).map(|s| s.as_str()).unwrap_or("");
+                let is_sp_bound = edge.crosses_species_boundary
+                    || (is_bridge && cu != cv && !sp_u.is_empty() && !sp_v.is_empty() && sp_u != sp_v);
+                resolved_edges.push((
+                    ui,
+                    vi,
+                    edge.mutational_steps_snps,
+                    is_bridge,
+                    is_loop,
+                    is_sp_bound,
+                ));
+            }
+        }
+    }
+    let has_species_boundaries = resolved_edges.iter().any(|e| e.5);
+
     // 4. Begin clean white publication SVG
+    let boundary_subtitle = if has_species_boundaries {
+        " • Red dashed // = Species Boundary"
+    } else {
+        ""
+    };
     let mut svg = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {:.0} {:.0}\" width=\"100%\" style=\"max-width:1080px;background:#ffffff;border:1px solid #cbd5e1;border-radius:8px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;\">\n\
          <rect x=\"0\" y=\"0\" width=\"{:.0}\" height=\"{:.0}\" fill=\"#ffffff\"/>\n\
          <text x=\"200\" y=\"26\" fill=\"#0f172a\" font-size=\"13.5\" font-weight=\"700\">{}</text>\n\
-         <text x=\"200\" y=\"43\" fill=\"#475569\" font-size=\"10\">TCS / Minimum Spanning Haplotype Network • Pie area ∝ sample size (n) • Dots = inferred mutational steps • Dashed hulls = clusters</text>\n",
+         <text x=\"200\" y=\"43\" fill=\"#475569\" font-size=\"10\">TCS / Minimum Spanning Haplotype Network • Pie area ∝ sample size (n) • Dots = inferred mutational steps • Dashed hulls = clusters{}</text>\n",
         width,
         height,
         width,
         height,
-        xml_escape_haplo(title)
+        xml_escape_haplo(title),
+        boundary_subtitle
     );
 
     // 5. Render padded convex-hull polygons per multi-haplotype cluster (`I, II, III...`)
@@ -2050,31 +2241,67 @@ fn render_standalone_svg_haplotype_network(
         }
     }
 
-    // 6. Render MSN edges + intermediate mutational-step dots / segment-aware step badges
-    let mut resolved_edges: Vec<(usize, usize, usize, &str, &str)> = Vec::with_capacity(msn_edges.len());
-    for edge in msn_edges {
-        if let (Some(&ui), Some(&vi)) = (
-            hap_idx_by_id.get(edge.source_haplotype.as_str()),
-            hap_idx_by_id.get(edge.target_haplotype.as_str()),
-        ) {
-            if ui != vi {
-                let is_loop = edge.edge_type == "reticulation-loop";
-                let is_bridge = edge.edge_type == "inter-cluster-bridge";
-                let stroke = if is_loop {
-                    "#64748b"
-                } else if is_bridge {
-                    "#1d4ed8"
-                } else {
-                    "#1e293b"
-                };
-                let dash = if is_loop { " stroke-dasharray=\"3,2.5\"" } else { "" };
-                resolved_edges.push((ui, vi, edge.mutational_steps_snps, stroke, dash));
-            }
-        }
+    // 6a. Render all MSN edge lines first so step badges and Species Boundary pills sit cleanly on top
+    for &(ui, vi, _steps, is_bridge, is_loop, is_sp_bound) in &resolved_edges {
+        let (x1, y1) = pos[ui];
+        let (x2, y2) = pos[vi];
+        let (stroke, sw, dash) = if is_sp_bound {
+            ("#b91c1c", "1.9", " stroke-dasharray=\"6.5,3.5\"")
+        } else if is_loop {
+            ("#64748b", "1.3", " stroke-dasharray=\"3,2.5\"")
+        } else if is_bridge {
+            ("#1d4ed8", "1.6", "")
+        } else {
+            ("#1e293b", "1.3", "")
+        };
+        svg.push_str(&format!(
+            "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{}\" stroke-width=\"{}\"{}/>\n",
+            x1, y1, x2, y2, stroke, sw, dash
+        ));
     }
 
-    let mut placed_step_badges: Vec<(f64, f64)> = Vec::new();
-    for (edge_idx, &(ui, vi, steps, stroke, dash)) in resolved_edges.iter().enumerate() {
+    // 6b. Render boundary demarcations (`//` + "Species Boundary" pills) & step dots/badges in priority order
+    let mut edge_order: Vec<usize> = (0..resolved_edges.len()).collect();
+    edge_order.sort_by(|&a, &b| {
+        let (ua, va, _, _, _, sba) = resolved_edges[a];
+        let (ub, vb, _, _, _, sbb) = resolved_edges[b];
+        let multi_a = cluster_sizes.get(cluster_of_hap[ua]).copied().unwrap_or(0) >= 2
+            || cluster_sizes.get(cluster_of_hap[va]).copied().unwrap_or(0) >= 2;
+        let multi_b = cluster_sizes.get(cluster_of_hap[ub]).copied().unwrap_or(0) >= 2
+            || cluster_sizes.get(cluster_of_hap[vb]).copied().unwrap_or(0) >= 2;
+        let tier_a = if sba && multi_a { 0u8 } else if sba { 1u8 } else { 2u8 };
+        let tier_b = if sbb && multi_b { 0u8 } else if sbb { 1u8 } else { 2u8 };
+        let len_a = (pos[va].0 - pos[ua].0).hypot(pos[va].1 - pos[ua].1) - radii[ua] - radii[va];
+        let len_b = (pos[vb].0 - pos[ub].0).hypot(pos[vb].1 - pos[ub].1) - radii[ub] - radii[vb];
+        tier_a
+            .cmp(&tier_b)
+            .then_with(|| len_b.partial_cmp(&len_a).unwrap_or(std::cmp::Ordering::Equal))
+            .then_with(|| a.cmp(&b))
+    });
+
+    // `(cx, cy, half_w, half_h)` of placed badges/pills
+    let mut placed_step_badges: Vec<(f64, f64, f64, f64)> = Vec::new();
+    let mut species_boundary_pills_placed = 0usize;
+
+    let draw_boundary_bars = |svg_buf: &mut String, ax: f64, ay: f64, ux: f64, uy: f64, half_bar: f64| {
+        let nx = -uy;
+        let ny = ux;
+        for &along in &[-2.4_f64, 2.4_f64] {
+            let bx = ax + ux * along;
+            let by = ay + uy * along;
+            let x0 = bx - nx * half_bar;
+            let y0 = by - ny * half_bar;
+            let x1 = bx + nx * half_bar;
+            let y1 = by + ny * half_bar;
+            svg_buf.push_str(&format!(
+                "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#ffffff\" stroke-width=\"3.8\" stroke-linecap=\"round\"/>\n  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"1.9\" stroke-linecap=\"round\"/>\n",
+                x0, y0, x1, y1, x0, y0, x1, y1
+            ));
+        }
+    };
+
+    for edge_idx in edge_order {
+        let (ui, vi, steps, is_bridge, is_loop, is_sp_bound) = resolved_edges[edge_idx];
         let (x1, y1) = pos[ui];
         let (x2, y2) = pos[vi];
         let dx = x2 - x1;
@@ -2082,23 +2309,245 @@ fn render_standalone_svg_haplotype_network(
         let dist = dx.hypot(dy).max(1e-4);
         let ux = dx / dist;
         let uy = dy / dist;
-        let is_bridge = stroke == "#1d4ed8";
-
-        svg.push_str(&format!(
-            "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"{}\" stroke-width=\"{}\"{}/>\n",
-            x1,
-            y1,
-            x2,
-            y2,
-            stroke,
-            if is_bridge { "1.6" } else { "1.3" },
-            dash
-        ));
-
-        // Draw inferred median-step dots along visible segment between circle perimeters
         let p_start = radii[ui] + 3.0;
         let p_end = (dist - radii[vi] - 3.0).max(p_start + 2.0);
         let seg_len = p_end - p_start;
+
+        if is_sp_bound {
+            let nx_p = -uy;
+            let ny_p = ux;
+            let pill_hw = 39.0_f64;
+            let pill_hh = if steps > 6 { 10.0_f64 } else { 6.5_f64 };
+            let max_sb_pills = if n_haps > 60 { 12usize } else { 22usize };
+            let mut best_t = 0.50_f64;
+            let mut best_off = 0.0_f64;
+            let mut best_mx = (x1 + ux * ((p_start + p_end) * 0.5))
+                .clamp(plot_x0 + pill_hw + 2.0, plot_x1 - pill_hw - 2.0);
+            let mut best_my = (y1 + uy * ((p_start + p_end) * 0.5))
+                .clamp(plot_y0 + pill_hh + 2.0, plot_y1 - pill_hh - 2.0);
+            let mut best_node_clr = f64::NEG_INFINITY;
+            let mut best_badge_clr = f64::NEG_INFINITY;
+            let mut best_seg_clr = f64::NEG_INFINITY;
+            let mut best_hull_clr = f64::NEG_INFINITY;
+            let mut best_score = f64::NEG_INFINITY;
+
+            for &t_frac in &[0.50_f64, 0.38, 0.62, 0.28, 0.72] {
+                let mid = p_start + seg_len * t_frac;
+                let base_mx = x1 + ux * mid;
+                let base_my = y1 + uy * mid;
+                for &off in &[0.0_f64, 14.0, -14.0, 22.0, -22.0] {
+                    let cx_p =
+                        (base_mx + nx_p * off).clamp(plot_x0 + pill_hw + 2.0, plot_x1 - pill_hw - 2.0);
+                    let cy_p =
+                        (base_my + ny_p * off).clamp(plot_y0 + pill_hh + 2.0, plot_y1 - pill_hh - 2.0);
+                    let node_clr = pos
+                        .iter()
+                        .enumerate()
+                        .map(|(k, &(px, py))| {
+                            let qx = px.clamp(cx_p - pill_hw, cx_p + pill_hw);
+                            let qy = py.clamp(cy_p - pill_hh, cy_p + pill_hh);
+                            (px - qx).hypot(py - qy) - (radii[k] + 4.5)
+                        })
+                        .fold(f64::MAX, f64::min);
+                    let seg_clr = resolved_edges
+                        .iter()
+                        .enumerate()
+                        .filter(|&(j, _)| j != edge_idx)
+                        .map(|(_, &(u2, v2, _, _, _, _))| {
+                            let mut min_s = f64::MAX;
+                            for &sx_off in &[-pill_hw * 0.55, 0.0, pill_hw * 0.55] {
+                                let (d_s, _, _) = point_to_segment_dist_and_proj(
+                                    cx_p + sx_off,
+                                    cy_p,
+                                    pos[u2].0,
+                                    pos[u2].1,
+                                    pos[v2].0,
+                                    pos[v2].1,
+                                );
+                                if d_s < min_s {
+                                    min_s = d_s;
+                                }
+                            }
+                            min_s - (pill_hh + 2.5)
+                        })
+                        .fold(f64::MAX, f64::min);
+                    let badge_clr = placed_step_badges
+                        .iter()
+                        .map(|&(bx, by, bhw, bhh)| {
+                            ((cx_p - bx).abs() - (pill_hw + bhw + 4.0))
+                                .max((cy_p - by).abs() - (pill_hh + bhh + 3.5))
+                        })
+                        .fold(f64::MAX, f64::min);
+                    let hull_clr = hull_specs
+                        .iter()
+                        .map(|&(hx0, hx1, hy0, hy1, _, _, _, _, _)| {
+                            ((hx0 - 2.0) - (cx_p + pill_hw))
+                                .max((cx_p - pill_hw) - (hx1 + 2.0))
+                                .max((hy0 - 2.0) - (cy_p + pill_hh))
+                                .max((cy_p - pill_hh) - (hy1 + 2.0))
+                        })
+                        .fold(f64::MAX, f64::min);
+                    let sc = node_clr.min(badge_clr).min(hull_clr) * 3.0
+                        + seg_clr.min(8.0) * 1.5
+                        - (t_frac - 0.50).abs() * 6.0
+                        - off.abs() * 0.08;
+                    if sc > best_score {
+                        best_score = sc;
+                        best_t = t_frac;
+                        best_off = off;
+                        best_mx = cx_p;
+                        best_my = cy_p;
+                        best_node_clr = node_clr;
+                        best_badge_clr = badge_clr;
+                        best_seg_clr = seg_clr;
+                        best_hull_clr = hull_clr;
+                    }
+                    if node_clr >= 4.0
+                        && seg_clr >= 2.0
+                        && badge_clr >= 2.5
+                        && hull_clr >= 2.0
+                        && off == 0.0
+                        && (t_frac - 0.50).abs() < 0.01
+                    {
+                        break;
+                    }
+                }
+            }
+
+            let anchor_t = p_start + seg_len * best_t;
+            let anchor_mx = x1 + ux * anchor_t;
+            let anchor_my = y1 + uy * anchor_t;
+            let clear_ok = best_node_clr >= 1.0
+                && best_badge_clr >= 2.0
+                && best_seg_clr >= 0.5
+                && best_hull_clr >= 0.0;
+            let draw_full_pill = (clear_ok && species_boundary_pills_placed < max_sb_pills)
+                || species_boundary_pills_placed == 0;
+
+            let bar_half = if seg_len < 10.0 {
+                5.5
+            } else if draw_full_pill && best_off.abs() <= 0.5 && ux.abs() >= 0.45 {
+                pill_hh + 4.5
+            } else {
+                8.5
+            };
+            draw_boundary_bars(&mut svg, anchor_mx, anchor_my, ux, uy, bar_half);
+
+            if draw_full_pill {
+                species_boundary_pills_placed += 1;
+                if best_off.abs() > 0.5 {
+                    svg.push_str(&format!(
+                        "  <line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"0.9\" stroke-dasharray=\"2,1.5\"/>\n",
+                        anchor_mx, anchor_my, best_mx, best_my
+                    ));
+                }
+                svg.push_str(&format!(
+                    "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" rx=\"3\" fill=\"#fef2f2\" fill-opacity=\"0.96\" stroke=\"#b91c1c\" stroke-width=\"0.95\"/>\n",
+                    best_mx - pill_hw,
+                    best_my - pill_hh,
+                    pill_hw * 2.0,
+                    pill_hh * 2.0
+                ));
+                if steps > 6 {
+                    svg.push_str(&format!(
+                        "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#991b1b\" font-size=\"7.4\" font-weight=\"700\" text-anchor=\"middle\">Species Boundary</text>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"7.6\" font-weight=\"700\" text-anchor=\"middle\">({})</text>\n",
+                        best_mx,
+                        best_my - 1.5,
+                        best_mx,
+                        best_my + 7.2,
+                        steps
+                    ));
+                } else {
+                    svg.push_str(&format!(
+                        "  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#991b1b\" font-size=\"7.4\" font-weight=\"700\" text-anchor=\"middle\">Species Boundary</text>\n",
+                        best_mx,
+                        best_my + 2.6
+                    ));
+                }
+                placed_step_badges.push((best_mx, best_my, pill_hw, pill_hh));
+            } else if steps > 6 {
+                // Compact crimson step badge on dense edges where a 78px pill would collide
+                let c_hw = 14.0_f64;
+                let c_hh = 6.5_f64;
+                let mut cb_mx = (x1 + ux * ((p_start + p_end) * 0.5)).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
+                let mut cb_my = (y1 + uy * ((p_start + p_end) * 0.5)).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
+                let mut cb_score = f64::NEG_INFINITY;
+                for &t_frac in &[0.50_f64, 0.35, 0.65, 0.25, 0.75, 0.18, 0.82] {
+                    let mid = p_start + seg_len * t_frac;
+                    let base_mx = x1 + ux * mid;
+                    let base_my = y1 + uy * mid;
+                    for &off in &[0.0_f64, 12.0, -12.0, 20.0, -20.0, 28.0, -28.0] {
+                        let cx_p = (base_mx + nx_p * off).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
+                        let cy_p = (base_my + ny_p * off).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
+                        let node_clr = pos
+                            .iter()
+                            .enumerate()
+                            .map(|(k, &(px, py))| {
+                                let qx = px.clamp(cx_p - c_hw, cx_p + c_hw);
+                                let qy = py.clamp(cy_p - c_hh, cy_p + c_hh);
+                                (px - qx).hypot(py - qy) - (radii[k] + 4.5)
+                            })
+                            .fold(f64::MAX, f64::min);
+                        let seg_clr = resolved_edges
+                            .iter()
+                            .enumerate()
+                            .filter(|&(j, _)| j != edge_idx)
+                            .map(|(_, &(u2, v2, _, _, _, _))| {
+                                let (d_s, _, _) = point_to_segment_dist_and_proj(
+                                    cx_p, cy_p, pos[u2].0, pos[u2].1, pos[v2].0, pos[v2].1,
+                                );
+                                d_s - 9.0
+                            })
+                            .fold(f64::MAX, f64::min);
+                        let badge_clr = placed_step_badges
+                            .iter()
+                            .map(|&(bx, by, bhw, bhh)| {
+                                ((cx_p - bx).abs() - (c_hw + bhw + 3.5))
+                                    .max((cy_p - by).abs() - (c_hh + bhh + 3.0))
+                            })
+                            .fold(f64::MAX, f64::min);
+                        let hull_clr = hull_specs
+                            .iter()
+                            .map(|&(hx0, hx1, hy0, hy1, _, _, _, _, _)| {
+                                (hx0 - (cx_p + c_hw))
+                                    .max((cx_p - c_hw) - hx1)
+                                    .max(hy0 - (cy_p + c_hh))
+                                    .max((cy_p - c_hh) - hy1)
+                            })
+                            .fold(f64::MAX, f64::min);
+                        let sc = node_clr.min(badge_clr) * 3.5
+                            + hull_clr.min(4.0)
+                            + seg_clr.min(8.0)
+                            - (t_frac - 0.50).abs() * 6.0
+                            - off.abs() * 0.06;
+                        if sc > cb_score {
+                            cb_score = sc;
+                            cb_mx = cx_p;
+                            cb_my = cy_p;
+                        }
+                    }
+                }
+                placed_step_badges.push((cb_mx, cb_my, c_hw, c_hh));
+                svg.push_str(&format!(
+                    "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"28\" height=\"13\" rx=\"3\" fill=\"#fef2f2\" fill-opacity=\"0.95\" stroke=\"#b91c1c\" stroke-width=\"0.8\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#991b1b\" font-size=\"8.5\" font-weight=\"700\" text-anchor=\"middle\">({})</text>\n",
+                    cb_mx - c_hw,
+                    cb_my - c_hh,
+                    cb_mx,
+                    cb_my + 3.0,
+                    steps
+                ));
+            }
+            continue;
+        }
+
+        // Draw inferred median-step dots along non-boundary segments (or compact step pill when steps > 6)
+        let stroke = if is_loop {
+            "#64748b"
+        } else if is_bridge {
+            "#1d4ed8"
+        } else {
+            "#1e293b"
+        };
         if steps >= 2 && steps <= 6 && seg_len >= 10.0 {
             let n_dots = steps - 1;
             for d_idx in 1..=n_dots {
@@ -2117,11 +2566,11 @@ fn render_standalone_svg_haplotype_network(
             let mut best_mx = (x1 + ux * ((p_start + p_end) * 0.5)).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
             let mut best_my = (y1 + uy * ((p_start + p_end) * 0.5)).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
             let mut best_score = f64::NEG_INFINITY;
-            for &t_frac in &[0.50_f64, 0.36, 0.64, 0.28, 0.72] {
+            for &t_frac in &[0.50_f64, 0.35, 0.65, 0.25, 0.75, 0.18, 0.82] {
                 let mid = p_start + seg_len * t_frac;
                 let base_mx = x1 + ux * mid;
                 let base_my = y1 + uy * mid;
-                for &off in &[0.0_f64, 10.5, -10.5, 17.5, -17.5] {
+                for &off in &[0.0_f64, 12.0, -12.0, 20.0, -20.0, 28.0, -28.0] {
                     let cx_p = (base_mx + nx_p * off).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
                     let cy_p = (base_my + ny_p * off).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
                     let node_clr = pos
@@ -2137,7 +2586,7 @@ fn render_standalone_svg_haplotype_network(
                         .iter()
                         .enumerate()
                         .filter(|&(j, _)| j != edge_idx)
-                        .map(|(_, &(u2, v2, _, _, _))| {
+                        .map(|(_, &(u2, v2, _, _, _, _))| {
                             let (d_s, _, _) = point_to_segment_dist_and_proj(
                                 cx_p, cy_p, pos[u2].0, pos[u2].1, pos[v2].0, pos[v2].1,
                             );
@@ -2146,11 +2595,15 @@ fn render_standalone_svg_haplotype_network(
                         .fold(f64::MAX, f64::min);
                     let badge_clr = placed_step_badges
                         .iter()
-                        .map(|&(bx, by)| ((cx_p - bx).abs() - 28.0).max((cy_p - by).abs() - 15.0))
+                        .map(|&(bx, by, bhw, bhh)| {
+                            ((cx_p - bx).abs() - (13.0 + bhw + 3.0))
+                                .max((cy_p - by).abs() - (6.5 + bhh + 2.5))
+                        })
                         .fold(f64::MAX, f64::min);
-                    let sc = node_clr.min(seg_clr).min(badge_clr)
+                    let sc = node_clr.min(badge_clr) * 3.0
+                        + seg_clr.min(8.0)
                         - (t_frac - 0.50).abs() * 6.0
-                        - off.abs() * 0.08;
+                        - off.abs() * 0.06;
                     if sc > best_score {
                         best_score = sc;
                         best_mx = cx_p;
@@ -2161,7 +2614,7 @@ fn render_standalone_svg_haplotype_network(
                     }
                 }
             }
-            placed_step_badges.push((best_mx, best_my));
+            placed_step_badges.push((best_mx, best_my, 13.0, 6.5));
             svg.push_str(&format!(
                 "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"26\" height=\"13\" rx=\"3\" fill=\"#ffffff\" fill-opacity=\"0.94\" stroke=\"{}\" stroke-width=\"0.7\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\" font-weight=\"600\" text-anchor=\"middle\">({})</text>\n",
                 best_mx - 13.0,
@@ -2338,7 +2791,10 @@ fn render_standalone_svg_haplotype_network(
 
             let badge_clr = placed_step_badges
                 .iter()
-                .map(|&(bx, by)| ((lx - bx).abs() - (half_w + 15.0)).max((mid_y - by).abs() - 19.0))
+                .map(|&(bx, by, bhw, bhh)| {
+                    ((lx - bx).abs() - (half_w + bhw + 3.0))
+                        .max((mid_y - by).abs() - (12.25 + bhh + 3.0))
+                })
                 .fold(f64::MAX, f64::min);
 
             let prev_lbl_clr = cluster_labels
@@ -2360,7 +2816,7 @@ fn render_standalone_svg_haplotype_network(
 
             let seg_clr = resolved_edges
                 .iter()
-                .map(|&(u, v, _, _, _)| {
+                .map(|&(u, v, _, _, _, _)| {
                     let mut min_s = f64::MAX;
                     for &sy in &[ly - 3.5, ly + 8.0] {
                         for &sx in &[lx - half_w * 0.65, lx, lx + half_w * 0.65] {
@@ -2434,10 +2890,10 @@ fn render_standalone_svg_haplotype_network(
             let hw = lbl_entry.2;
             let own_idx = lbl_entry.3;
             let max_drift = if lbl_entry.4 <= 22.0 { 22.0 } else { (lbl_entry.4 + 12.0).min(54.0) };
-            for &(bx, by) in &placed_step_badges {
+            for &(bx, by, bhw, bhh) in &placed_step_badges {
                 let dx = lbl_entry.0 - bx;
                 let dy = (lbl_entry.1 + 2.25) - by;
-                if dx.abs() < hw + 15.0 && dy.abs() < 19.0 {
+                if dx.abs() < hw + bhw + 3.0 && dy.abs() < 12.25 + bhh + 3.0 {
                     lbl_entry.1 += if dy >= 0.0 { 1.4 } else { -1.4 };
                     lbl_entry.0 += if dx >= 0.0 { 1.0 } else { -1.0 };
                 }
@@ -2535,7 +2991,8 @@ fn render_standalone_svg_haplotype_network(
 
     // Nested sample-size scale (`n = 1, 5, 10, 20`) with non-overlapping top-tangent leader ticks
     let max_sr = (4.8 + (20.0_f64).sqrt() * 5.0).clamp(6.0, 42.0);
-    let scale_bottom = (30.0 + legend_h + 2.0 * max_sr + 18.0).min(height - 16.0);
+    let edge_key_h = if has_species_boundaries { 78.0 } else { 58.0 };
+    let scale_bottom = (30.0 + legend_h + 2.0 * max_sr + 18.0).min(height - edge_key_h - 24.0);
     let scale_cx = 72.0;
     svg.push_str(&format!(
         "  <text x=\"18\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"10\" font-weight=\"700\">Sample Size Scale</text>\n",
@@ -2559,6 +3016,48 @@ fn render_standalone_svg_haplotype_network(
             top_y + 3.0,
             sample_n
         ));
+    }
+
+    // Left-sidebar Network Edges Key (`Intra-cluster`, `Inter-cluster`, and `Species Boundary`)
+    let edge_key_y = scale_bottom + 14.0;
+    if edge_key_y + edge_key_h <= height - 8.0 {
+        let y_intra = edge_key_y + 32.0;
+        let y_inter = edge_key_y + 49.0;
+        svg.push_str(&format!(
+            "  <rect x=\"14\" y=\"{:.1}\" width=\"182\" height=\"{:.1}\" rx=\"4\" fill=\"#ffffff\" stroke=\"#0f172a\" stroke-width=\"1.0\"/>\n\
+             <text x=\"24\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"10.0\" font-weight=\"700\">NETWORK EDGES</text>\n\
+             <line x1=\"24\" y1=\"{:.1}\" x2=\"50\" y2=\"{:.1}\" stroke=\"#1e293b\" stroke-width=\"1.4\"/>\n\
+             <circle cx=\"37\" cy=\"{:.1}\" r=\"2.0\" fill=\"#0f172a\"/>\n\
+             <text x=\"57\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\">Intra-cluster MSN</text>\n\
+             <line x1=\"24\" y1=\"{:.1}\" x2=\"50\" y2=\"{:.1}\" stroke=\"#1d4ed8\" stroke-width=\"1.7\"/>\n\
+             <text x=\"57\" y=\"{:.1}\" fill=\"#0f172a\" font-size=\"8.5\">Inter-cluster (same sp.)</text>\n",
+            edge_key_y,
+            edge_key_h,
+            edge_key_y + 16.0,
+            y_intra,
+            y_intra,
+            y_intra,
+            y_intra + 3.0,
+            y_inter,
+            y_inter,
+            y_inter + 3.0
+        ));
+        if has_species_boundaries {
+            let y_sb = edge_key_y + 66.0;
+            svg.push_str(&format!(
+                "  <line x1=\"24\" y1=\"{:.1}\" x2=\"50\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"1.9\" stroke-dasharray=\"5,2.5\"/>\n\
+                 <line x1=\"35.0\" y1=\"{:.1}\" x2=\"35.0\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>\n\
+                 <line x1=\"39.0\" y1=\"{:.1}\" x2=\"39.0\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"1.8\" stroke-linecap=\"round\"/>\n\
+                 <text x=\"57\" y=\"{:.1}\" fill=\"#991b1b\" font-size=\"8.5\" font-weight=\"700\">Species Boundary</text>\n",
+                y_sb,
+                y_sb,
+                y_sb - 4.0,
+                y_sb + 4.0,
+                y_sb - 4.0,
+                y_sb + 4.0,
+                y_sb + 3.0
+            ));
+        }
     }
 
     svg.push_str("</svg>");
@@ -3210,5 +3709,97 @@ mod tests {
                     .expect("write acanthochitonidae-fig7b-radiative.svg");
             }
         }
+    }
+
+    #[test]
+    fn test_species_boundary_demarcation_on_inter_species_bridges() {
+        let mk_seq = |mutations: &[(usize, u8)]| -> String {
+            let mut b = vec![b'A'; 30];
+            for &(pos, ch) in mutations {
+                b[pos] = ch;
+            }
+            String::from_utf8(b).unwrap()
+        };
+        let mk_rec = |id: &str, taxon: &str, pop: &str, seq: String| FastaRecord {
+            id: id.to_string(),
+            accession: id.to_string(),
+            taxon: taxon.to_string(),
+            common_name: String::new(),
+            family: pop.to_string(),
+            gene: "COX1".to_string(),
+            sequence: seq,
+            description: format!("{} {}", id, taxon),
+            cached_from_disk: true,
+        };
+
+        let s_c1_hub = mk_seq(&[]);
+        let s_c1_sat = mk_seq(&[(0, b'C')]);
+        let s_c2_hub = mk_seq(&[(0, b'G'), (1, b'G'), (2, b'G'), (3, b'G'), (4, b'G'), (5, b'G')]);
+        let s_c2_sat = mk_seq(&[(0, b'G'), (1, b'G'), (2, b'G'), (3, b'G'), (4, b'G'), (5, b'G'), (6, b'C')]);
+        let s_c3_hub = mk_seq(&[
+            (10, b'T'), (11, b'T'), (12, b'T'), (13, b'T'), (14, b'T'), (15, b'T'), (16, b'T'),
+            (17, b'T'), (18, b'T'), (19, b'T'), (20, b'T'), (21, b'T'), (22, b'T'), (23, b'T'),
+        ]);
+
+        // Case A: Cluster 1 (Species alpha + subspecies trinomial) --[6 SNPs, same sp.]--> Cluster 2 (Species alpha)
+        //     and Cluster 1 --[14 SNPs, new sp.]--> Cluster 3 (Species beta)
+        let recs_multi = vec![
+            mk_rec("A1", "Species alpha", "Pop_North", s_c1_hub.clone()),
+            mk_rec("A2", "Species alpha", "Pop_North", s_c1_hub.clone()),
+            mk_rec("A3", "Species alpha sub", "Pop_North", s_c1_sat.clone()),
+            mk_rec("B1", "Species alpha", "Pop_South", s_c2_hub.clone()),
+            mk_rec("B2", "Species alpha", "Pop_South", s_c2_hub.clone()),
+            mk_rec("B3", "Species alpha", "Pop_South", s_c2_sat.clone()),
+            mk_rec("C1", "Species beta", "Outgroup_Pop", s_c3_hub.clone()),
+            mk_rec("C2", "Species beta", "Outgroup_Pop", s_c3_hub.clone()),
+        ];
+
+        let rep_multi = analyze_haplotype_clusters_prealigned(
+            "test-species-boundary-multi",
+            "Multi-Species Boundary Test",
+            &recs_multi,
+            3,
+        );
+        assert_eq!(rep_multi.clusters.len(), 3);
+        let boundary_cnt = rep_multi
+            .msn_edges
+            .iter()
+            .filter(|e| e.crosses_species_boundary)
+            .count();
+        let same_sp_bridge_cnt = rep_multi
+            .msn_edges
+            .iter()
+            .filter(|e| e.edge_type == "inter-cluster-bridge" && !e.crosses_species_boundary)
+            .count();
+        assert_eq!(boundary_cnt, 1, "Expected exactly 1 inter-species bridge edge");
+        assert_eq!(same_sp_bridge_cnt, 1, "Expected exactly 1 same-species inter-cluster bridge edge");
+        assert!(rep_multi.visualizations.svg_vector_network.contains("Species Boundary"));
+        assert!(rep_multi.visualizations.svg_vector_network.contains("#b91c1c"));
+        assert!(rep_multi.visualizations.ascii_cluster_network_viewpoint.contains("SPECIES BOUNDARY"));
+        assert!(rep_multi.visualizations.graphviz_dot_network.contains("Species Boundary"));
+        verify_layout_invariants(&rep_multi, "species-boundary-multi");
+
+        // Case B: Purely intraspecific cohort (all Species alpha across 3 divergent clusters -> 0 species boundaries)
+        let recs_single: Vec<FastaRecord> = recs_multi
+            .into_iter()
+            .map(|mut r| {
+                r.taxon = "Species alpha".to_string();
+                r
+            })
+            .collect();
+        let rep_single = analyze_haplotype_clusters_prealigned(
+            "test-species-boundary-single",
+            "Single-Species Control Test",
+            &recs_single,
+            3,
+        );
+        assert_eq!(rep_single.clusters.len(), 3);
+        assert_eq!(
+            rep_single.msn_edges.iter().filter(|e| e.crosses_species_boundary).count(),
+            0
+        );
+        assert!(!rep_single.visualizations.svg_vector_network.contains("Species Boundary"));
+        assert!(!rep_single.visualizations.ascii_cluster_network_viewpoint.contains("SPECIES BOUNDARY"));
+        assert!(!rep_single.visualizations.graphviz_dot_network.contains("Species Boundary"));
     }
 }

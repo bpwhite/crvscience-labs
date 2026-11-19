@@ -11,7 +11,7 @@ Every study in CRV Science Labs is classified into one of three explicit **Resea
 | Scope Tier | Badge | Dataset Policy & Scientific Objective |
 | :--- | :---: | :--- |
 | **Tier 1: Exploratory** | `🧭 Tier 1: Exploratory` | Seeks out and explores a mix of newly acquired, classic reference, or previously unseen datasets, or applies an existing validation cohort in a new analytical way during tool calibration sweeps (`*-compare`). |
-| **Tier 2: Validation** | `🎯 Tier 2: Validation` | Uses curated validation datasets (`VAL-SET-001` through `VAL-SET-067`, with `VAL-SET-066` unallocated) partitioned into strict **Development (`Dev` — parameter tuning)** and **Untouched Reserve (`Res` — frozen parameter verification)** splits, with primary literature replication and optional **Dual-Pass Blinded `SHA-256` Validation**. |
+| **Tier 2: Validation** | `🎯 Tier 2: Validation` | Uses curated validation datasets (`VAL-SET-001` through `VAL-SET-069`, with `VAL-SET-066` unallocated) partitioned into strict **Development (`Dev` — parameter tuning)** and **Untouched Reserve (`Res` — frozen parameter verification)** splits, with primary literature replication and optional **Dual-Pass Blinded `SHA-256` Validation**. |
 | **Tier 3: Scientific** | `🔬 Tier 3: Scientific` | Combines established validation cohorts with newly expanded empirical datasets ($\ge 1.0\text{ Mb}$) across 5–8 chained `RuNIE` modules to test multiple mechanistic hypotheses (`H1`–`H3`) alongside a dedicated **Hypothesis Falsification Control (`H4`)**, producing inline vector `.svg` Graphical Reports and 3D PDB structure bundles. |
 
 ---
@@ -59,7 +59,7 @@ All systematics and barcoding pipelines evaluate markers against their empirical
 
 ---
 
-## 5. Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-067`, `VAL-SET-066` unallocated)
+## 5. Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-069`, `VAL-SET-066` unallocated)
 
 <!-- AUTO-VALSET-TABLE:START -->
 | Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |

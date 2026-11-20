@@ -103,7 +103,7 @@ In **`PREPRINT-01` (`v2.0.2`, Master Concept DOI: [`10.5281/zenodo.23969275`](ht
 | **`PREPRINT-29` (`v1`)** | [`10.5281/zenodo.24295798`](https://doi.org/10.5281/zenodo.24295798) | [Figshare 35032495](https://figshare.com/articles/preprint/Phylogenomics_Xenobiotic_Resistance_Selection_and_Trans-Hemispheric_Invasion_Networks_of_China_and_Australia_Arthropod_Crop_Pests/35032495) | *Phylogenomics, Xenobiotic Resistance Selection, and Trans-Hemispheric Invasion Networks of China and Australia Arthropod Crop Pests* |
 | **`PREPRINT-30` (`v1`)** | [`10.5281/zenodo.24359245`](https://doi.org/10.5281/zenodo.24359245) | `--` | *Partitioned Per-Locus ModelTest Phylogenomics, Xenobiotic Resistance Selection, and Coalescent Phylodynamics of U.S. Agricultural Arthropod Pests* |
 
-> **Catalog Synchronization (`PREPRINT-01`–`PREPRINT-30`)**: All `30` cataloged `v2.0.2` preprints use canonical Zenodo Concept DOIs alongside verified Figshare article URLs (`PREPRINT-01`–`PREPRINT-04` also carry minted Figshare DOIs; `PREPRINT-30` awaits Figshare indexing).
+> **Catalog Synchronization (`PREPRINT-01`–`PREPRINT-30`)**: All `30` cataloged `v2.0.2` preprints use canonical Zenodo Concept DOIs alongside verified Figshare article URLs (`PREPRINT-01`–`PREPRINT-04` also carry minted Figshare DOIs; `PREPRINT-30` awaits Figshare indexing). Note that persistent Figshare URL path slugs retain initial pre-correction working phrases (e.g., `440_0_Ma_Crown_Tetrapoda` on `PREPRINT-09` and `318_4_to_0_0_Ma` on `PREPRINT-13`), whereas current Zenodo records and web discoveries incorporate calibrated estimates (`346.63 Ma` Crown Tetrapoda and `292.0–295.0 Ma` Crown Coleoptera, respectively).
 
 ---
 

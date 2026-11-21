@@ -5,13 +5,13 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`30`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`91` Total Reports)
+## Validated Preprints (`30`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`92` Total Reports)
 
-- **Total Lab Discovery Entries**: **91** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **92** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-30`, `v2.0.2`)**: **30** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **0** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
-  - **Curated Validation Dataset Registry**: **68** datasets (`VAL-SET-001` through `VAL-SET-068`)
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **1** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **Curated Validation Dataset Registry**: **69** datasets (`VAL-SET-001` through `VAL-SET-069`)
 
 #### ✅ 30 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-30`, `v2.0.2`)
 
@@ -48,10 +48,11 @@
 | **#109** `✅ Verified Preprint` | **[Archosauria-to-Crown-Aves Divergence, K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss Under Relaxed-Clock and Coalescent Models](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-CROWN-AVES-TIMETREE-114RECORDS` |
 | **#108** `✅ Verified Preprint` | **[Phylogenomic Divergence, Hominoid Rate Slowdown, and Pleistocene Tip-Dating Across Primates Under Relaxed-Clock and Coalescent Models](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-EUARCHONTOGLIRES-TIMETREE-116RECORDS` |
 
-#### Latest 12 Lab Discovery Entries (`#132`–`#145`)
+#### Latest 12 Lab Discovery Entries (`#133`–`#146`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#146** `🔬 Pipeline Benchmark` | [Partitioned ModelTest Phylogenomics, Cell-Wall Evolution, and Coalescent Dynamics Across Gram-Positive Bacteria (Bacillota and Actinomycetota)](https://crvscience.com/labs/discoveries/gram-positive-bacteria-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 21, 2026 |
 | **#145** `✅ Verified Preprint` | [Partitioned Per-Locus ModelTest Phylogenomics, Xenobiotic Resistance Selection, and Coalescent Phylodynamics of U.S. Agricultural Arthropod Pests](https://crvscience.com/labs/discoveries/us-agricultural-arthropod-pests) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 16, 2026 |
 | **#144** `✅ Verified Preprint` | [Phylogenomics, Xenobiotic Resistance Selection, and Trans-Hemispheric Invasion Networks of China and Australia Arthropod Crop Pests](https://crvscience.com/labs/discoveries/china-australia-arthropod-pests) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 15, 2026 |
 | **#142** `✅ Verified Preprint` | [Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora](https://crvscience.com/labs/discoveries/acanthochitonidae-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 15, 2026 |
@@ -63,9 +64,8 @@
 | **#136** `✅ Verified Preprint` | [Phylogenomic Radiation and Invasion Genomics of Introduced Snails Across Australia and New Zealand (Gastropoda: Stylommatophora & Caenogastropoda): Native Rust Quartet Coalescent Species-Tree Inference, Aestivation and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/invasive-snails-au-nz-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
 | **#134** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Bemisia Whiteflies and Allied Aleyrodidae (Hemiptera: Sternorrhyncha), Native Rust Quartet Coalescent Species-Tree Inference, Symbiotic and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/bemisia-whitefly-global-radiation) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
 | **#133** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Anopheles Mosquitoes (Culicidae: Anophelinae), Native Rust Quartet Coalescent Species-Tree Inference, Chemosensory and Insecticide-Resistance Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/anopheles-global-radiation-native-biosuite) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
-| **#132** `✅ Verified Preprint` | [Phylogenomic Evolution of Asian Horseshoe Bats (Rhinolophidae), Quartet Coalescent Species-Tree Inference (*ASTRAL vs. Native Rust), Acoustic and Sarbecovirus Receptor Co-Evolution, and Single-Species Karst Population Dynamics](https://crvscience.com/labs/discoveries/rhinolophidae-asia-radiation-astral-skyline) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 8, 2026 |
 
-#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-068`)
+#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-069`)
 
 | Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |
 | :--- | :--- | :--- | :--- | :--- |
@@ -137,4 +137,5 @@
 | `VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS` | Polyplacophora, Acanthochitonina, Cryptoplacoidea & Acanthochitonidae Global Phylogenomics, Autonomous bio-suite-supervisor Loop-Back Data Hygiene, Quartet Multispecies Coalescent Species Trees, Magnetite Ferritin/alpha-CA/HSPA12/CYP3A Selection, 12-Cohort Regional/Multi-Locus Phylodynamics & TCS/MSN Haplotype Cluster Networks | `acanthochitonidae-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (BLIND-ACAN-*, &#124;Delta Z&#124; = 0.0000 SD, Polyplacophora compositional heterogeneity RCFV collapsed 84.3% from 0.0764 [0.1214 in 0-Beaker control] to 0.0120 via RY3 recoding + autonomous quarantine of 6 UNVERIFIED mitogenomes) across 16 Stratified Development and 16 Untouched Reserve sub-cohorts | [`acanthochitonidae-phylogenomics`](https://crvscience.com/labs/discoveries/acanthochitonidae-phylogenomics) |
 | `VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS` | Arthropoda Agricultural Pests (China & Australia Agroecosystems), Autonomous bio-suite-seqnet & Super-BLAST Hygiene, Quartet Multispecies Coalescent Species Trees, CYP6/ace-1/CSP/Hsp70 Codon Selection, 12-Cohort Phylodynamics & Stage 3C Radiative-Forcing Haplotype Graphs | `china-australia-pests-tier1` | Dual-Pass SHA-256 Blinded Dry-Lab Validation (&#124;Delta Z&#124; = 0.0000 SD, RCFV collapsed 67.4% from 0.1639 unrecoded [0.1659 in 0-Beaker control] to 0.0535 under RY3 + autonomous quarantine of 2,149 anomalous records) evaluated across 16 Stratified Development and 16 Untouched Reserve sub-cohorts | [`china-australia-arthropod-pests`](https://crvscience.com/labs/discoveries/china-australia-arthropod-pests) |
 | `VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS` | U.S. Agricultural Entomology (Fruit/Specialty Crops, Rangeland/Livestock & Stored Grain), Per-Locus BIC ModelTest & Edge-Linked Proportional Partitioning, Quartet MSC, CYP6/ace-1/CSP/Hsp70 Selection & Single-Species Phylodynamics | `us-ag-pests-partitioned-modeltest` | Dual-Pass SHA-256 Blinded Validation + Estimator-Matched Stratified UFBoot2 (B=500, ID Con=100%, RF=0) across 14 per-locus ModelTest partitions (RCFV collapsed 92.5% from 0.0600 unrecoded [0.0866 0-Beaker] to 0.0045 RY3) | [`us-agricultural-arthropod-pests`](https://crvscience.com/labs/discoveries/us-agricultural-arthropod-pests) |
+| `VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS` | Prokaryote Phylogenomics (Terrabacteria Diderms, Anaerobic Clostridia, Endospore Bacillales, Staphylococcales/Listeriaceae, Lactobacillales LAB, Bifidobacteriales/Corynebacteriales & Soil Actinomycetota), Per-Locus BIC ModelTest & Edge-Linked Proportional Partitioning, Quartet MSC, murA/spo0A/dnaK/CYP102A1 Selection & Single-Species Phylodynamics | `gram-positive-partitioned-modeltest` | Dual-Pass SHA-256 Blinded Validation + Estimator-Matched Stratified UFBoot2 (B=500, ID Con=100%, RF=0) across 10 per-locus Code-11 ModelTest partitions (RCFV collapsed 89.6% from 0.1715 unrecoded [0.1938 0-Beaker] to 0.0179 RY3) | [`gram-positive-bacteria-phylogenomics`](https://crvscience.com/labs/discoveries/gram-positive-bacteria-phylogenomics) |
 <!-- AUTO-LABS-SUMMARY:END -->

@@ -3677,6 +3677,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         &run_dir,
                     )?;
                 } else if crate::supervisor_gram_positive::is_gram_positive_study_target(None, &m.run_id) {
+                    run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
                     crate::supervisor_figures::generate_gram_positive_locked_figures(
                         &mut m,
                         &rep,

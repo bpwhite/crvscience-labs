@@ -110,12 +110,16 @@ pub fn render_supermatrix_positional_coverage_svg(
     let n_taxa = rows.len().max(1);
     let n_bins = 320usize.min(total_cols).max(24);
 
-    // Precompute column compartment type (`0 = mito PCG, 1 = mito rRNA, 2 = nuc`)
+    let is_bacterial = study_subtitle.contains("Gram-Positive") || study_subtitle.contains("Bacterial");
+
+    // Precompute column compartment type (`0 = mito PCG / bact CDS, 1 = rRNA, 2 = nuc`)
     let mut col_comp = vec![0u8; total_cols];
     for p in partitions {
         let s = p.start_col_1based.saturating_sub(1).min(total_cols);
         let e = p.end_col_1based.min(total_cols);
-        let code = if p.is_nuclear {
+        let code = if is_bacterial {
+            if !p.protein_coding { 1u8 } else { 0u8 }
+        } else if p.is_nuclear {
             2u8
         } else if !p.protein_coding {
             1u8
@@ -244,7 +248,13 @@ pub fn render_supermatrix_positional_coverage_svg(
         let e0 = p.end_col_1based.min(total_cols) as f64;
         let rx = x_plot0 + (s0 / total_cols as f64) * plot_w;
         let rw = (((e0 - s0) / total_cols as f64) * plot_w).max(2.0);
-        let fill = if p.is_nuclear {
+        let fill = if is_bacterial {
+            if !p.protein_coding {
+                "#0284c7"
+            } else {
+                "#0f766e"
+            }
+        } else if p.is_nuclear {
             "#7c3aed"
         } else if !p.protein_coding {
             "#0284c7"
@@ -396,15 +406,27 @@ pub fn render_supermatrix_positional_coverage_svg(
     // Panel A Right-Margin Legend (`x = 1324..1456`)
     out.push_str("<rect x=\"1324\" y=\"68\" width=\"132\" height=\"212\" rx=\"6\" fill=\"#ffffff\" stroke=\"#cbd5e1\" stroke-width=\"1\"/>\n");
     out.push_str("<text x=\"1332\" y=\"85\" font-size=\"10\" font-weight=\"700\" fill=\"#0f172a\">Locus &amp; State Legend</text>\n");
-    let a_items: [(&str, &str); 7] = [
-        ("#0f766e", "Mito PCG (RY3)"),
-        ("#0284c7", "Mito rRNA (4-St)"),
-        ("#7c3aed", "Nuclear (4-St)"),
-        ("#0d9488", "Valid ACGT %"),
-        ("#f97316", "Indel Gap (-) %"),
-        ("#e2e8f0", "Missing Locus (?)"),
-        ("#1e1b4b", "Parsim. Inf. (PI %)"),
-    ];
+    let a_items: [(&str, &str); 7] = if is_bacterial {
+        [
+            ("#0f766e", "Bacterial CDS (RY3)"),
+            ("#0284c7", "Bacterial rRNA (4-St)"),
+            ("#7c3aed", "Chromosomal Locus"),
+            ("#0d9488", "Valid ACGT %"),
+            ("#f97316", "Indel Gap (-) %"),
+            ("#e2e8f0", "Missing Locus (?)"),
+            ("#1e1b4b", "Parsim. Inf. (PI %)"),
+        ]
+    } else {
+        [
+            ("#0f766e", "Mito PCG (RY3)"),
+            ("#0284c7", "Mito rRNA (4-St)"),
+            ("#7c3aed", "Nuclear (4-St)"),
+            ("#0d9488", "Valid ACGT %"),
+            ("#f97316", "Indel Gap (-) %"),
+            ("#e2e8f0", "Missing Locus (?)"),
+            ("#1e1b4b", "Parsim. Inf. (PI %)"),
+        ]
+    };
     for (idx, &(col_hex, label)) in a_items.iter().enumerate() {
         let ly = 96.0 + (idx as f64) * 25.0;
         if idx == 6 {
@@ -465,7 +487,11 @@ pub fn render_supermatrix_positional_coverage_svg(
         "<text x=\"28\" y=\"347\" font-size=\"12.5\" font-weight=\"700\" fill=\"#0f172a\">Panel B | {}-Taxon x Position Occupancy ({} Phylogram &gt;=80%; {} Coalescent/PopGen-Only)</text>\n",
         n_taxa, n_gated_in, n_popgen_only
     ));
-    out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Mito PCG | Blue = Mito rRNA | Purple = Nuclear | Orange = Gap (-) | Slate = Missing (?)</text>\n");
+    if is_bacterial {
+        out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Bacterial CDS | Blue = Bacterial rRNA | Orange = Gap (-) | Slate = Missing (?)</text>\n");
+    } else {
+        out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Mito PCG | Blue = Mito rRNA | Purple = Nuclear | Orange = Gap (-) | Slate = Missing (?)</text>\n");
+    }
 
     let y_m0 = 363.0f64;
     let y_m1 = 724.0f64;
@@ -491,9 +517,10 @@ pub fn render_supermatrix_positional_coverage_svg(
             sy0, (sy1 - sy0).max(2.0), sc
         ));
         let mid_y = 0.5 * (sy0 + sy1) + 3.5;
+        let short_sec = sec.split_whitespace().next().unwrap_or(sec);
         out.push_str(&format!(
             "<text x=\"34\" y=\"{:.1}\" font-size=\"9.5\" font-weight=\"700\" fill=\"{}\">{} (n={})</text>\n",
-            mid_y, sc, xml_escape(sec), r1 - r0 + 1
+            mid_y, sc, xml_escape(short_sec), r1 - r0 + 1
         ));
         if *r0 > 0 {
             out.push_str(&format!(
@@ -614,8 +641,6 @@ pub fn render_supermatrix_positional_coverage_svg(
         gate_x, y_m0 - 2.5
     ));
     out.push_str("<text x=\"1376\" y=\"737\" text-anchor=\"middle\" font-size=\"9.2\" font-weight=\"700\" fill=\"#334155\">Completeness (Green &gt;=80%)</text>\n");
-
-    let is_bacterial = study_subtitle.contains("Gram-Positive") || study_subtitle.contains("Bacterial");
 
     // ================= PANEL C =================
     out.push_str("<rect x=\"16\" y=\"756\" width=\"1448\" height=\"250\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");

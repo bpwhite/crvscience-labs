@@ -2472,6 +2472,8 @@ fn render_standalone_svg_haplotype_network(
                 let mut cb_mx = (x1 + ux * ((p_start + p_end) * 0.5)).clamp(plot_x0 + 18.0, plot_x1 - 18.0);
                 let mut cb_my = (y1 + uy * ((p_start + p_end) * 0.5)).clamp(plot_y0 + 10.0, plot_y1 - 10.0);
                 let mut cb_score = f64::NEG_INFINITY;
+                let mut cb_best_node_clr = f64::NEG_INFINITY;
+                let mut cb_best_badge_clr = f64::NEG_INFINITY;
                 for &t_frac in &[0.50_f64, 0.35, 0.65, 0.25, 0.75, 0.18, 0.82] {
                     let mid = p_start + seg_len * t_frac;
                     let base_mx = x1 + ux * mid;
@@ -2524,18 +2526,22 @@ fn render_standalone_svg_haplotype_network(
                             cb_score = sc;
                             cb_mx = cx_p;
                             cb_my = cy_p;
+                            cb_best_node_clr = node_clr;
+                            cb_best_badge_clr = badge_clr;
                         }
                     }
                 }
-                placed_step_badges.push((cb_mx, cb_my, c_hw, c_hh));
-                svg.push_str(&format!(
-                    "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"28\" height=\"13\" rx=\"3\" fill=\"#fef2f2\" fill-opacity=\"0.95\" stroke=\"#b91c1c\" stroke-width=\"0.8\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#991b1b\" font-size=\"8.5\" font-weight=\"700\" text-anchor=\"middle\">({})</text>\n",
-                    cb_mx - c_hw,
-                    cb_my - c_hh,
-                    cb_mx,
-                    cb_my + 3.0,
-                    steps
-                ));
+                if cb_best_node_clr >= 0.5 && cb_best_badge_clr >= 1.5 {
+                    placed_step_badges.push((cb_mx, cb_my, c_hw, c_hh));
+                    svg.push_str(&format!(
+                        "  <rect x=\"{:.1}\" y=\"{:.1}\" width=\"28\" height=\"13\" rx=\"3\" fill=\"#fef2f2\" fill-opacity=\"0.95\" stroke=\"#b91c1c\" stroke-width=\"0.8\"/>\n  <text x=\"{:.1}\" y=\"{:.1}\" fill=\"#991b1b\" font-size=\"8.5\" font-weight=\"700\" text-anchor=\"middle\">({})</text>\n",
+                        cb_mx - c_hw,
+                        cb_my - c_hh,
+                        cb_mx,
+                        cb_my + 3.0,
+                        steps
+                    ));
+                }
             }
             continue;
         }
@@ -2973,8 +2979,8 @@ fn render_standalone_svg_haplotype_network(
     for (pop_name, cnt) in pop_list.iter().take(18) {
         let color = pop_color_map.get(pop_name).copied().unwrap_or("#0891b2");
         let char_cnt = pop_name.chars().count();
-        let trunc = if char_cnt > 24 {
-            format!("{}…", pop_name.chars().take(23).collect::<String>())
+        let trunc = if char_cnt > 28 {
+            format!("{}…", pop_name.chars().take(27).collect::<String>())
         } else {
             pop_name.clone()
         };

@@ -995,7 +995,7 @@ pub(crate) const GRAM_POSITIVE_THEME: FigureStudyTheme = FigureStudyTheme {
     fig1_title: "Precambrian-to-Paleozoic Calibrated Chronogram Across >=80%-Gated Gram-Positive Bacteria (Nodes I-VIII)",
     fig1_caption: "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) across >=80% supermatrix-coverage Terrabacteria outgroups [A], low-GC Bacillota ([B]-[E]), and high-GC Actinomycetota ([F]-[G]) using Bacterial Genetic Code 11.",
     fig2_sec_ranges: &[
-        ("[A]", 0, 5, "Terrabacteria Outgroup // (n=6)", ""),
+        ("[A]", 0, 5, "Terrabacteria Outgroups (n=6)", ""),
         ("[B]", 6, 13, "Clostridia Anaerobes (n=8)", ""),
         ("[C]", 14, 24, "Endospore Bacillales (n=11)", "8,4"),
         ("[D]", 25, 31, "Staphylococcales / Listeria (n=7)", ""),
@@ -1005,7 +1005,7 @@ pub(crate) const GRAM_POSITIVE_THEME: FigureStudyTheme = FigureStudyTheme {
     ],
     fig2_web_svg: "gram-positive-fig2-circular-phylogram.svg",
     fig2_title: "Circular Patristic Phylogram Across >=80%-Gated Gram-Positive Bacteria (Bacillota & Actinomycetota)",
-    fig2_caption: "Dominant circular patristic phylogram inferred under edge-linked proportional partitioned ModelTest (RY3) displaying Terrabacteria [A] outgroup // break and monoderm phyla [B]-[G].",
+    fig2_caption: "Dominant circular patristic phylogram inferred under edge-linked proportional partitioned ModelTest (RY3) displaying Terrabacteria [A] outgroup root and monoderm phyla [B]-[G].",
     fig3_sec_tip_anchors: [
         ("Node I", "A:T001", 0),
         ("Node II", "B:T007", 1),
@@ -1022,7 +1022,7 @@ pub(crate) const GRAM_POSITIVE_THEME: FigureStudyTheme = FigureStudyTheme {
     fig3_caption: "Complete 64-species bifurcating multi-locus quartet coalescent species tree across bacterial housekeeping CDS + rRNA loci with CU branch lengths and HGT Patterson's D contrasts.",
     fig4a_web_svg: "gram-positive-fig4a-regional-skyline-matrix.svg",
     fig4a_title: "Single-Species Housekeeping gyrB/rpoB/groEL Coalescent Skyline Matrix Across Monoderm Bacteria (Cohorts R1-R6; N = 216)",
-    fig4a_caption: "Six single-species bacterial chromosomal coalescent skylines (25,000 MCMC generations) across Bacillus subtilis, B. velezensis, Lactiplantibacillus plantarum, Staphylococcus epidermidis, Bifidobacterium longum, and Corynebacterium glutamicum.",
+    fig4a_caption: "Six single-species bacterial chromosomal coalescent skylines (25,000 MCMC generations) across Bacillus subtilis, B. velezensis, Lactiplantibacillus plantarum, Staphylococcus epidermidis, Bifidobacterium longum, and Streptomyces griseus.",
     fig4b_web_svg: "gram-positive-fig4b-multilocus-skyline-matrix.svg",
     fig4b_title: "Bacterial Multi-Locus Coalescent Contrast: Rapid Housekeeping rpoB/recA vs. Slow-Clock 16S rRNA (Cohorts L1-L6; N = 216)",
     fig4b_caption: "Six single-species bacterial skylines contrasting fast-evolving coding housekeeping trajectories (L1, L3, L6) against deeply buffered Katoh E-INS-i 16S rRNA structural stems (L2, L4, L5).",
@@ -1490,7 +1490,7 @@ fn render_bemisia_fig1_chronogram(
 
     // Render highlighted two-sided 95% HPD error bars + non-overlapping white badges for Nodes I..VIII
     let node_y_slots = theme.fig1_node_y_slots;
-    let mut placed_badges: Vec<(f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
+    let mut bar_coords: Vec<(f64, f64, f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
     for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
         let bx = x_ma(cn.age_ma);
         let x_lo = x_ma(cn.ci_max_ma);
@@ -1505,6 +1505,12 @@ fn render_bemisia_fig1_chronogram(
             fallback_slot
         };
         let by = y_of(exact_slot);
+        bar_coords.push((bx, by, x_lo, x_hi));
+    }
+
+    let mut placed_badges: Vec<(f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
+    for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
+        let (bx, by, x_lo, x_hi) = bar_coords[idx];
         let bar_w = (x_hi - x_lo).max(6.0);
         svg.push_str(&format!(
             r##"<rect x="{:.1}" y="{:.1}" width="{:.1}" height="7.6" rx="2.5" fill="#2563eb" fill-opacity="0.32" stroke="#1e3a8a" stroke-width="1.3"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.4" stroke-linecap="butt"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.0"/><line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#0f172a" stroke-width="2.0"/><circle cx="{:.1}" cy="{:.1}" r="3.6" fill="#ffffff" stroke="#0f172a" stroke-width="1.8"/>"##,
@@ -1532,21 +1538,54 @@ fn render_bemisia_fig1_chronogram(
             6 => (-88.0, -22.0),
             _ => (-104.0, -22.0),
         };
-        let badge_cx = (bx + dx).clamp(x_root + badge_w * 0.5 + 2.0, x_tips - badge_w * 0.5 - 6.0);
+        let extra_offsets: [(f64, f64); 10] = [
+            (0.0, 0.0),
+            (0.0, -34.0),
+            (-96.0, -24.0),
+            (96.0, -24.0),
+            (0.0, 34.0),
+            (-96.0, 26.0),
+            (96.0, 26.0),
+            (0.0, -64.0),
+            (-145.0, -22.0),
+            (145.0, -22.0),
+        ];
+        let mut badge_cx = (bx + dx).clamp(x_root + badge_w * 0.5 + 2.0, x_tips - badge_w * 0.5 - 6.0);
         let mut badge_cy = (by + dy).clamp(52.0, 1152.0);
-        for _ in 0..8 {
-            if let Some(&(_, oy)) = placed_badges
+        let mut best_clear = f64::NEG_INFINITY;
+        for &(edx, edy) in &extra_offsets {
+            let cx = (bx + dx + edx).clamp(x_root + badge_w * 0.5 + 2.0, x_tips - badge_w * 0.5 - 6.0);
+            let cy = (by + dy + edy).clamp(52.0, 1152.0);
+            let badge_hit = placed_badges
                 .iter()
-                .find(|&&(ox, oy)| (badge_cx - ox).abs() < badge_w + 4.0 && (badge_cy - oy).abs() < badge_h + 5.0)
-            {
-                let next_down = oy + badge_h + 6.0;
-                badge_cy = if next_down <= 1152.0 {
-                    next_down
-                } else {
-                    (oy - badge_h - 6.0).max(52.0)
-                };
-            } else {
+                .any(|&(ox, oy)| (cx - ox).abs() < badge_w + 5.0 && (cy - oy).abs() < badge_h + 6.0);
+            let bar_hit = bar_coords.iter().any(|&(_nbx, nby, nx_lo, nx_hi)| {
+                cx + badge_w * 0.5 > nx_lo - 4.0
+                    && cx - badge_w * 0.5 < nx_hi + 4.0
+                    && (cy - nby).abs() < badge_h * 0.5 + 8.0
+            });
+            if !badge_hit && !bar_hit {
+                badge_cx = cx;
+                badge_cy = cy;
                 break;
+            }
+            let badge_clr = placed_badges
+                .iter()
+                .map(|&(ox, oy)| ((cx - ox).abs() - (badge_w + 5.0)).max((cy - oy).abs() - (badge_h + 6.0)))
+                .fold(f64::MAX, f64::min);
+            let bar_clr = bar_coords
+                .iter()
+                .map(|&(_nbx, nby, nx_lo, nx_hi)| {
+                    ((nx_lo - 4.0) - (cx + badge_w * 0.5))
+                        .max((cx - badge_w * 0.5) - (nx_hi + 4.0))
+                        .max((cy - nby).abs() - (badge_h * 0.5 + 8.0))
+                })
+                .fold(f64::MAX, f64::min);
+            let clr = badge_clr.min(bar_clr);
+            if clr > best_clear {
+                best_clear = clr;
+                badge_cx = cx;
+                badge_cy = cy;
             }
         }
         placed_badges.push((badge_cx, badge_cy));
@@ -3652,13 +3691,23 @@ fn render_bemisia_fig5_selection_and_sweep(
                     sg_xy.0 + 16.0,
                     sy_clamped - 10.0
                 ));
-                svg.push_str(&format!(
-                    r##"<text x="{:.1}" y="{:.1}" font-size="8.2" font-weight="800" fill="#92400e">Cys{} Sγ–Fe³⁺ = {:.2} Å (Thiolate)</text>"##,
-                    sg_xy.0 + 22.0,
-                    sy_clamped + 3.0,
-                    cys_num,
-                    fe_sg_dist
-                ));
+                if is_bacterial {
+                    svg.push_str(&format!(
+                        r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#92400e">Cys400 (ORF Cys{}) Sγ–Fe³⁺ = {:.2} Å</text>"##,
+                        sg_xy.0 + 22.0,
+                        sy_clamped + 3.0,
+                        cys_num,
+                        fe_sg_dist
+                    ));
+                } else {
+                    svg.push_str(&format!(
+                        r##"<text x="{:.1}" y="{:.1}" font-size="8.2" font-weight="800" fill="#92400e">Cys{} Sγ–Fe³⁺ = {:.2} Å (Thiolate)</text>"##,
+                        sg_xy.0 + 22.0,
+                        sy_clamped + 3.0,
+                        cys_num,
+                        fe_sg_dist
+                    ));
+                }
             }
 
             // 4. Atom spheres (`C`, `N`, `O`, `FE`)

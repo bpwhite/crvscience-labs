@@ -1,0 +1,143 @@
+{
+  "benchmark_id": "VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS",
+  "title": "Gram-Positive Monoderm Bacteria (Bacillota and Actinomycetota) Partitioned ModelTest Phylogenomics, Cell-Wall/Sporulation Selection, and Coalescent Dynamics",
+  "taxon_group": "Bacteria",
+  "mitogenome_loci": false,
+  "loci": [
+    "rpoB",
+    "gyrB",
+    "dnaK",
+    "groEL",
+    "recA",
+    "atpD",
+    "tuf",
+    "fusA",
+    "bact_16S",
+    "bact_23S"
+  ],
+  "sampling_families": {
+    "A_Terrabacteria_Outgroup": ["Deinococcaceae", "Thermaceae", "Synechococcaceae", "Nostocaceae"],
+    "B_Bacillota_Clostridia": ["Clostridiaceae", "Oscillospiraceae"],
+    "C_Bacillota_Bacillales": ["Bacillaceae", "Paenibacillaceae"],
+    "D_Bacillota_NonSporulating": ["Staphylococcaceae", "Listeriaceae"],
+    "E_Bacillota_Lactobacillales": ["Lactobacillaceae", "Streptococcaceae", "Enterococcaceae"],
+    "F_Actinomycetota_Basal": ["Bifidobacteriaceae", "Corynebacteriaceae", "Mycobacteriaceae", "Nocardiaceae"],
+    "G_Actinomycetota_Crown": ["Streptomycetaceae", "Micromonosporaceae", "Micrococcaceae", "Frankiaceae"]
+  },
+  "species_per_family": {
+    "Deinococcaceae": 3,
+    "Thermaceae": 1,
+    "Synechococcaceae": 1,
+    "Nostocaceae": 1,
+    "Clostridiaceae": 6,
+    "Oscillospiraceae": 2,
+    "Bacillaceae": 7,
+    "Paenibacillaceae": 4,
+    "Staphylococcaceae": 5,
+    "Listeriaceae": 2,
+    "Lactobacillaceae": 5,
+    "Streptococcaceae": 3,
+    "Enterococcaceae": 2,
+    "Bifidobacteriaceae": 4,
+    "Corynebacteriaceae": 3,
+    "Mycobacteriaceae": 2,
+    "Nocardiaceae": 2,
+    "Streptomycetaceae": 6,
+    "Micromonosporaceae": 2,
+    "Micrococcaceae": 2,
+    "Frankiaceae": 1
+  },
+  "scored_clades": [
+    {
+      "id": "C1_TerrabacteriaOutgroup",
+      "name": "Terrabacteria Diderm Outgroups (Deinococcota + Cyanobacteriota)",
+      "families": ["Deinococcaceae", "Thermaceae", "Synechococcaceae", "Nostocaceae"]
+    },
+    {
+      "id": "C2_Clostridia",
+      "name": "Bacillota Class Clostridia (Clostridiaceae + Oscillospiraceae)",
+      "families": ["Clostridiaceae", "Oscillospiraceae"]
+    },
+    {
+      "id": "C3_BacillalesEndospore",
+      "name": "Bacillota Endospore-Forming Bacillales (Bacillaceae + Paenibacillaceae)",
+      "families": ["Bacillaceae", "Paenibacillaceae"]
+    },
+    {
+      "id": "C4_NonSporulatingBacilli",
+      "name": "Bacillota Non-Sporulating Staphylococcales & Listeriaceae",
+      "families": ["Staphylococcaceae", "Listeriaceae"]
+    },
+    {
+      "id": "C5_Lactobacillales",
+      "name": "Bacillota Order Lactobacillales Lactic Acid Bacteria",
+      "families": ["Lactobacillaceae", "Streptococcaceae", "Enterococcaceae"]
+    },
+    {
+      "id": "C6_ActinomycetotaBasal",
+      "name": "Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "families": ["Bifidobacteriaceae", "Corynebacteriaceae", "Mycobacteriaceae", "Nocardiaceae"]
+    },
+    {
+      "id": "C7_ActinomycetotaCrown",
+      "name": "Actinomycetota Streptomycetales & Soil/Actinorhizal Crown",
+      "families": ["Streptomycetaceae", "Micromonosporaceae", "Micrococcaceae", "Frankiaceae"]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "C8_BacillotaLowGC",
+      "name": "Phylum Bacillota (Low-GC Monoderms: [B]+[C]+[D]+[E])",
+      "families": ["Clostridiaceae", "Oscillospiraceae", "Bacillaceae", "Paenibacillaceae", "Staphylococcaceae", "Listeriaceae", "Lactobacillaceae", "Streptococcaceae", "Enterococcaceae"],
+      "why_not_scored": "Phylum-level monoderm clade spanning anaerobic Clostridia, endospore-forming Bacillales, and lactic acid/commensal lineages."
+    },
+    {
+      "id": "C9_ActinomycetotaHighGC",
+      "name": "Phylum Actinomycetota (High-GC Monoderms: [F]+[G])",
+      "families": ["Bifidobacteriaceae", "Corynebacteriaceae", "Mycobacteriaceae", "Nocardiaceae", "Streptomycetaceae", "Micromonosporaceae", "Micrococcaceae", "Frankiaceae"],
+      "why_not_scored": "Phylum-level high-GC monoderm clade spanning Bifidobacteriaceae, Corynebacteriales mycolata, and filamentous soil actinomycetes."
+    }
+  ],
+  "sources": [
+    {
+      "key": "White2026_RuNIE",
+      "citation": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs.",
+      "doi": "10.5281/zenodo.23969275"
+    },
+    {
+      "key": "Chernomor2016_Partition",
+      "citation": "Chernomor, O., von Haeseler, A., & Minh, B. Q. (2016). Terrace Aware Data Structure for Phylogenomic Inference from Supermatrices. Systematic Biology, 65(6), 997-1008.",
+      "doi": "10.1093/sysbio/syw037"
+    },
+    {
+      "key": "Kalyaanamoorthy2017_ModelFinder",
+      "citation": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589.",
+      "doi": "10.1038/nmeth.4285"
+    },
+    {
+      "key": "Battistuzzi2004_ProkaryoteClock",
+      "citation": "Battistuzzi, F. U., Feijao, A., & Hedges, S. B. (2004). A genomic timescale of prokaryote evolution: insights into the origin of methanogenesis, phototrophy, and the colonization of land. BMC Evolutionary Biology, 4, 44.",
+      "doi": "10.1186/1471-2148-4-44"
+    },
+    {
+      "key": "Coleman2021_BacteriaRoot",
+      "citation": "Coleman, G. A., Davin, A. A., Mahendrarajah, T. A., et al. (2021). A rooted phylogeny resolves early bacterial evolution. Science, 372(6542), eabe0511.",
+      "doi": "10.1126/science.abe0511"
+    },
+    {
+      "key": "Moody2024_LUCA",
+      "citation": "Moody, E. R. R., Alvarez-Carretero, S., Mahendrarajah, T. A., et al. (2024). The nature of the last universal common ancestor and its impact on the early Earth system. Nature Ecology & Evolution, 8, 1654-1666.",
+      "doi": "10.1038/s41559-024-02461-1"
+    },
+    {
+      "key": "Parks2018_GTDB",
+      "citation": "Parks, D. H., Chuvochina, M., Waite, D. W., et al. (2018). A standardized bacterial taxonomy based on genome phylogeny substantially revises the tree of life. Nature Biotechnology, 36(10), 996-1004.",
+      "doi": "10.1038/nbt.4229"
+    },
+    {
+      "key": "Galperin2022_Sporulation",
+      "citation": "Galperin, M. Y., Yutin, N., Wolf, Y. I., et al. (2022). Contentious phylogenetic position of sporulating Firmicutes and independent losses of endospore formation. Nucleic Acids Research, 50(21), 12004-12018.",
+      "doi": "10.1093/nar/gkac1007"
+    }
+  ]
+}

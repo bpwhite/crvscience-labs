@@ -171,10 +171,34 @@ impl ConsensusConfig {
     }
 }
 
-/// Builds a panel from canonical locus names (see `build_locus_panel` for the catalogue).
+/// Builds a panel from canonical locus names (see `build_locus_panel` and bacterial core loci).
 /// Unknown names are skipped; panel order follows `names`.
 pub fn build_named_locus_panel(names: &[String], invert_mito: bool) -> Vec<LocusSpec> {
-    let catalogue = build_locus_panel(25, 15, invert_mito);
+    let mut catalogue = build_locus_panel(25, 15, invert_mito);
+    // Canonical bacterial core housekeeping CDS (Genetic Code 11) and 16S/23S rRNA markers.
+    let core_prokaryote: &[(&str, bool, usize, usize, &[&str])] = &[
+        ("rpoB", true, 350, 4200, &["rpoB", "RNA polymerase beta subunit", "RNA polymerase subunit beta"]),
+        ("gyrB", true, 350, 2600, &["gyrB", "DNA gyrase subunit B", "gyrase B"]),
+        ("dnaK", true, 350, 2200, &["dnaK", "chaperone protein DnaK", "molecular chaperone DnaK"]),
+        ("groEL", true, 350, 1900, &["groEL", "groL", "cpn60", "hsp60", "chaperonin GroEL"]),
+        ("recA", true, 300, 1350, &["recA", "recombinase A", "RecA protein"]),
+        ("atpD", true, 350, 1700, &["atpD", "ATP synthase subunit beta", "ATP synthase beta"]),
+        ("tuf", true, 350, 1400, &["tuf", "tufA", "elongation factor Tu"]),
+        ("fusA", true, 350, 2350, &["fusA", "elongation factor G"]),
+        ("bact_16S", false, 700, 1750, &["16S ribosomal RNA", "16S rRNA", "rrs"]),
+        ("bact_23S", false, 700, 3300, &["23S ribosomal RNA", "23S rRNA", "rrl"]),
+    ];
+    for &(name, coding, min_bp, max_bp, syns) in core_prokaryote {
+        catalogue.push(LocusSpec {
+            canonical_name: name.to_string(),
+            locus_class: LocusClass::Nuclear,
+            protein_coding: coding,
+            genetic_code_table: 11,
+            min_expected_bp: min_bp,
+            max_expected_bp: max_bp,
+            entrez_synonyms: syns.iter().map(|s| (*s).to_string()).collect(),
+        });
+    }
     names
         .iter()
         .filter_map(|n| catalogue.iter().find(|l| l.canonical_name.eq_ignore_ascii_case(n)).cloned())
@@ -328,4 +352,28 @@ pub fn build_locus_panel(n_nuclear: usize, n_mito: usize, invert_mito: bool) -> 
     }
 
     panel
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn named_panel_resolves_bacterial_and_eukaryotic_loci() {
+        let names: Vec<String> = [
+            "rpoB", "gyrB", "dnaK", "groEL", "recA", "atpD", "tuf", "fusA", "bact_16S", "bact_23S",
+        ]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect();
+        let bact = build_named_locus_panel(&names, true);
+        assert_eq!(bact.len(), 10);
+        assert!(bact.iter().all(|l| l.genetic_code_table == 11));
+        assert!(bact.iter().take(8).all(|l| l.protein_coding));
+        assert!(bact.iter().skip(8).all(|l| !l.protein_coding));
+
+        let euk = build_named_locus_panel(&["COI".to_string(), "SSU_18S".to_string()], true);
+        assert_eq!(euk.len(), 2);
+        assert_eq!(euk[0].genetic_code_table, 5);
+    }
 }

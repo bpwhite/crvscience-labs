@@ -967,6 +967,100 @@ pub(crate) const US_AG_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "us-ag-pests-supp-s3-cox1-ry3-alignview",
 };
 
+static BACT_ERAS_3450: &[(&str, f64, f64, &str)] = &[
+    ("Archean", 3450.0, 2500.0, "#f1f5f9"),
+    ("Paleoprot.", 2500.0, 1600.0, "#f8fafc"),
+    ("Mesoprot.", 1600.0, 1000.0, "#f1f5f9"),
+    ("Neoprot.", 1000.0, 538.8, "#f8fafc"),
+    ("Phanerozoic", 538.8, 0.0, "#f1f5f9"),
+];
+
+pub(crate) const GRAM_POSITIVE_THEME: FigureStudyTheme = FigureStudyTheme {
+    sec_crown_ages: [1650.0, 1480.0, 980.0, 740.0, 620.0, 880.0, 460.0],
+    backbone_node_ages: [1420.0, 1240.0, 1620.0, 2240.0, 2680.0, 3120.0],
+    fig1_max_ma: 3450.0,
+    fig1_eras: BACT_ERAS_3450,
+    fig1_ticks: &[3400, 2800, 2200, 1600, 1000, 500, 0],
+    fig1_node_y_slots: [5.5, 13.0, 21.0, 29.0, 36.0, 46.0, 51.0, 58.0],
+    fig1_clade_cards: &[
+        ("[A]", 0, 5, "Terrabacteria Diderm Outgroups (n=6)", "Deinococcus radiodurans, D. geothermalis, Thermus thermophilus, Synechococcus elongatus", "Diderm & cyanobacterial outgroup rooting prior to monoderm peptidoglycan divergence"),
+        ("[B]", 6, 13, "Bacillota: Anaerobic Clostridia (n=8)", "Clostridium acetobutylicum, C. beijerinckii, C. butyricum, Acetivibrio thermocellus", "Strict anaerobic fermenters, solventogenic pathways & ancestral spo0A regulons"),
+        ("[C]", 14, 24, "Bacillota: Endospore Bacillales (n=11)", "Bacillus subtilis, B. licheniformis, B. velezensis, Priestia megaterium, Geobacillus", "Core endospore-forming soil & rhizosphere bacilli (CYP102A1 / spo0A / dnaK)"),
+        ("[D]", 25, 31, "Bacillota: Staphylococcales & Listeriaceae (n=7)", "Staphylococcus epidermidis, S. xylosus, S. carnosus, Listeria innocua, Brochothrix", "Secondary loss of spo0A sporulation along host-associated & food-commensal stems"),
+        ("[E]", 32, 41, "Bacillota: Lactobacillales LAB (n=10)", "Lactobacillus acidophilus, Lactiplantibacillus plantarum, Lactococcus lactis, Enterococcus faecium", "Low-GC lactic acid fermentation bacteria & murine peptidoglycan remodeling"),
+        ("[F]", 42, 52, "Actinomycetota: Bifidobacteria & Corynebacteriales (n=11)", "Bifidobacterium longum, B. breve, Corynebacterium glutamicum, Mycolicibacterium smegmatis", "High-GC gut commensals, amino-acid fermenters & mycolic outer-membrane transition"),
+        ("[G]", 53, 63, "Actinomycetota: Soil & Actinorhizal Crown (n=11)", "Streptomyces coelicolor, S. griseus, S. avermitilis, Salinispora tropica, Frankia alni", "Filamentous aerial-spore actinomycetes & polyketide/terpenoid CYP105/CYP107 arrays"),
+    ],
+    fig1_web_svg: "gram-positive-fig1-vertical-chronogram.svg",
+    fig1_title: "Precambrian-to-Paleozoic Calibrated Chronogram Across >=80%-Gated Gram-Positive Bacteria (Nodes I-VIII)",
+    fig1_caption: "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) across >=80% supermatrix-coverage Terrabacteria outgroups [A], low-GC Bacillota ([B]-[E]), and high-GC Actinomycetota ([F]-[G]) using Bacterial Genetic Code 11.",
+    fig2_sec_ranges: &[
+        ("[A]", 0, 5, "Terrabacteria Outgroup // (n=6)", ""),
+        ("[B]", 6, 13, "Clostridia Anaerobes (n=8)", ""),
+        ("[C]", 14, 24, "Endospore Bacillales (n=11)", "8,4"),
+        ("[D]", 25, 31, "Staphylococcales / Listeria (n=7)", ""),
+        ("[E]", 32, 41, "Lactobacillales LAB (n=10)", "5,3"),
+        ("[F]", 42, 52, "Bifido & Corynebacteriales (n=11)", ""),
+        ("[G]", 53, 63, "Streptomycetales Crown (n=11)", "10,3,2,3"),
+    ],
+    fig2_web_svg: "gram-positive-fig2-circular-phylogram.svg",
+    fig2_title: "Circular Patristic Phylogram Across >=80%-Gated Gram-Positive Bacteria (Bacillota & Actinomycetota)",
+    fig2_caption: "Dominant circular patristic phylogram inferred under edge-linked proportional partitioned ModelTest (RY3) displaying Terrabacteria [A] outgroup // break and monoderm phyla [B]-[G].",
+    fig3_sec_tip_anchors: [
+        ("Node I", "A:T001", 0),
+        ("Node II", "B:T007", 1),
+        ("Node III", "C:T015", 2),
+        ("Node IV", "D:T026", 3),
+        ("Node V", "E:T034", 4),
+        ("Node VI", "F:T043", 5),
+        ("Node VII", "F:T047", 6),
+        ("Node VIII", "G:T054", 7),
+    ],
+    fig3_abba_arc_tips: ("C:T015", "B:T007"),
+    fig3_web_svg: "gram-positive-fig3-quartet-coalescent-species-tree.svg",
+    fig3_title: "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree & ABBA-BABA HGT Tests Across Gram-Positive Bacteria",
+    fig3_caption: "Complete 64-species bifurcating multi-locus quartet coalescent species tree across bacterial housekeeping CDS + rRNA loci with CU branch lengths and HGT Patterson's D contrasts.",
+    fig4a_web_svg: "gram-positive-fig4a-regional-skyline-matrix.svg",
+    fig4a_title: "Single-Species Housekeeping gyrB/rpoB/groEL Coalescent Skyline Matrix Across Monoderm Bacteria (Cohorts R1-R6; N = 216)",
+    fig4a_caption: "Six single-species bacterial chromosomal coalescent skylines (25,000 MCMC generations) across Bacillus subtilis, B. velezensis, Lactiplantibacillus plantarum, Staphylococcus epidermidis, Bifidobacterium longum, and Corynebacterium glutamicum.",
+    fig4b_web_svg: "gram-positive-fig4b-multilocus-skyline-matrix.svg",
+    fig4b_title: "Bacterial Multi-Locus Coalescent Contrast: Rapid Housekeeping rpoB/recA vs. Slow-Clock 16S rRNA (Cohorts L1-L6; N = 216)",
+    fig4b_caption: "Six single-species bacterial skylines contrasting fast-evolving coding housekeeping trajectories (L1, L3, L6) against deeply buffered Katoh E-INS-i 16S rRNA structural stems (L2, L4, L5).",
+    fig5_short_fam_titles: [
+        "Peptidoglycan Cell-Wall Transferase (murA)",
+        "Master Endospore Initiation Regulator (spo0A)",
+        "Thermal & Compositional Stress Chaperone (dnaK / HSP70)",
+        "Soluble & Soil Cytochrome P450s (CYP102A1 / CYP105 / CYP107)",
+    ],
+    fig5_panel_b_fam_names: [
+        "FAM-01: Peptidoglycan (murA)",
+        "FAM-02: Endospore (spo0A)",
+        "FAM-03: Chaperone (dnaK)",
+        "FAM-04: P450 BM3 (CYP102A1, 1BU7)",
+    ],
+    fig5_panel_d_header: "Panel D | Bacterial P450 BM3 Fold & Fe3+-Heme Pocket (1BU7, 1.65 A)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D CYP102A1 Fold (455 Ca Threaded with Priestia megaterium)",
+    fig5_web_svg: "gram-positive-fig5-selection-sweep-alignment.svg",
+    fig5_title: "Pixel-Locked Bacterial Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & 1BU7 CYP102A1 Heme-Thiolate Pocket",
+    fig5_caption: "Translated Table-11 amino-acid motif alignments across 48 bacterial CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Bacillus megaterium P450 BM3 structure threaded on 1BU7 (1.65 A) with Fe3+-Protoporphyrin IX (HEM A 999) and Cys400-Sg thiolate bond.",
+    fig6_web_svg: "gram-positive-fig6-runie-pipeline-architecture.svg",
+    fig6_title: "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Partitioned vs. Unpartitioned Model Comparison Across Gram-Positive Bacteria",
+    fig6_caption: "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and 0-Beaker control (4th), alongside Pipeline B (12 single-species bacterial skylines).",
+    fig6_clade_label: "Gram-Positive Bacteria",
+    fig6_p450_label: "CYP102A1 / murA / spo0A / dnaK",
+    fig6_its_label: "B. subtilis & L. plantarum 16S rRNA",
+    supp_s1_fasta_name: "supp_s1_cyp102a1_p450_cds.fasta",
+    supp_s1_title: "FAM-04 Bacterial Cytochrome P450 CDS (CYP102A1 / CYP105 / CYP107)",
+    supp_s1_source: "VAL-SET-070-GRAM-POSITIVE-BACTERIA (FAM-04 Code 11)",
+    supp_s1_stem: "gram-positive-supp-s1-cyp102a1-alignview",
+    supp_s2_title: "Cohort L5 Lactiplantibacillus 16S Ribosomal RNA (Katoh E-INS-i Core)",
+    supp_s2_source: "VAL-SET-070-GRAM-POSITIVE-BACTERIA (Cohort L5 16S rRNA)",
+    supp_s2_stem: "gram-positive-supp-s2-16s-einsi-alignview",
+    supp_s3_title: "Gram-Positive & Terrabacteria Codon-Locked Housekeeping Core (rpoB / gyrB)",
+    supp_s3_source: "VAL-SET-070-GRAM-POSITIVE-BACTERIA (Bacterial Code 11)",
+    supp_s3_stem: "gram-positive-supp-s3-rpob-ry3-alignview",
+};
+
 fn count_tree_leaves(n: &EmpiricalBifNode) -> usize {
     if n.children.is_empty() {
         1
@@ -2603,11 +2697,24 @@ fn render_bemisia_fig3_quartet_msc(
         0.994
     };
 
+    let is_bacterial = theme.supp_s3_source.contains("Bacterial");
+    let q_dp_lbl = if is_bacterial {
+        format!(
+            "Bitwise DP: {} quartets in {:.2} ms",
+            study.msc_regime1_ry3.total_quartets_evaluated,
+            study.msc_regime1_ry3.wall_clock_ms
+        )
+    } else {
+        format!(
+            "Bitwise DP: 11,436,768 quartets in {:.2} ms",
+            study.msc_regime1_ry3.wall_clock_ms
+        )
+    };
     svg.push_str(&format!(
-        r##"<rect x="994" y="276" width="248" height="44" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.9"/><text x="1004" y="292" font-size="8.4" font-weight="800" fill="#0f172a">● Codon-12 vs. RY3 (r = {:.4}, {} splits)</text><text x="1004" y="305" font-size="8.1" font-weight="700" fill="#2563eb">□ Unrecoded 4-State   |   △ 0-Beaker Control</text><text x="1004" y="316" font-size="7.7" fill="#475569">Bitwise DP: 11,436,768 quartets in {:.2} ms</text>"##,
+        r##"<rect x="994" y="276" width="248" height="44" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.9"/><text x="1004" y="292" font-size="8.4" font-weight="800" fill="#0f172a">● Codon-12 vs. RY3 (r = {:.4}, {} splits)</text><text x="1004" y="305" font-size="8.1" font-weight="700" fill="#2563eb">□ Unrecoded 4-State   |   △ 0-Beaker Control</text><text x="1004" y="316" font-size="7.7" fill="#475569">{}</text>"##,
         pearson_r,
         n_sp,
-        study.msc_regime1_ry3.wall_clock_ms
+        xml_esc(&q_dp_lbl)
     ));
     svg.push_str(r##"<text x="1229" y="636" text-anchor="middle" font-size="9.0" font-weight="800" fill="#0f172a">Regime 1 (RY3 + Hygiene) Main Quartet Support q1</text>"##);
     svg.push_str(r##"<text x="942" y="435" text-anchor="middle" font-size="9.0" font-weight="800" fill="#0f172a" transform="rotate(-90 942 435)">Comparison Regime q1</text>"##);
@@ -3387,15 +3494,25 @@ fn render_bemisia_fig5_selection_and_sweep(
             }
         }
 
+        let is_bacterial = theme.supp_s3_source.contains("Bacterial");
         // Domain legend callouts in Upper Viewport corners
         svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● SRS1 B'-Loop (BEB ω₂)</text>"##);
         svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● F/G Substrate Lid</text>"##);
-        svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGFETSS)</text>"##);
-        svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (PFGDGPRNCIG)</text>"##);
+        if is_bacterial {
+            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGHETTS)</text>"##);
+            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (FGNGQRACIG)</text>"##);
+        } else {
+            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGFETSS)</text>"##);
+            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (PFGDGPRNCIG)</text>"##);
+        }
 
-        // --- Lower Sub-Viewport (`y = 814..1062`): Zoomed Active-Site `Fe³⁺`–Protoporphyrin IX (`HEM A 508`) + `Cys Sγ` ---
+        // --- Lower Sub-Viewport (`y = 814..1062`): Zoomed Active-Site `Fe³⁺`–Protoporphyrin IX + `Cys Sγ` ---
         svg.push_str(r##"<rect x="1106" y="814" width="460" height="248" rx="6" fill="#fffbeb" fill-opacity="0.45" stroke="#cbd5e1" stroke-width="1.1"/>"##);
-        svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 508, 43 Atoms) &amp; Cys–Sγ Bond</text>"##);
+        if is_bacterial {
+            svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 999, 43 Atoms) &amp; Cys400–Sγ</text>"##);
+        } else {
+            svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 508, 43 Atoms) &amp; Cys–Sγ Bond</text>"##);
+        }
 
         if !pdb.het_atoms.is_empty() {
             let find_het = |nm: &str| -> Option<(f64, f64, f64)> {
@@ -3461,9 +3578,14 @@ fn render_bemisia_fig5_selection_and_sweep(
                 r##"<rect x="{:.1}" y="844" width="292" height="20" rx="10" fill="#e0f2fe" fill-opacity="0.82" stroke="#0284c7" stroke-width="1.1" stroke-dasharray="4,2.5"/>"##,
                 h_cx - 146.0
             ));
+            let distal_lbl = if is_bacterial {
+                "Distal O₂ &amp; Substrate Cavity (I-Helix AGHETTS)"
+            } else {
+                "Distal O₂ &amp; Allelochemical Cavity (I-Helix AGFETSS)"
+            };
             svg.push_str(&format!(
-                r##"<text x="{:.1}" y="857" text-anchor="middle" font-size="8.2" font-weight="800" fill="#0369a1">Distal O₂ &amp; Allelochemical Cavity (I-Helix AGFETSS)</text>"##,
-                h_cx
+                r##"<text x="{:.1}" y="857" text-anchor="middle" font-size="8.2" font-weight="800" fill="#0369a1">{}</text>"##,
+                h_cx, distal_lbl
             ));
             svg.push_str(&format!(
                 r##"<line x1="{:.1}" y1="865" x2="{:.1}" y2="{:.1}" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="2.5,2.5"/>"##,
@@ -3572,14 +3694,32 @@ fn render_bemisia_fig5_selection_and_sweep(
         svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Fe³⁺  ● Pyrrole N (NA–ND)  ● Propionate O⁻  ● Thiolate Sγ</text>"##);
         }
 
+        let tpl_footer = if is_bacterial {
+            format!(
+                "Template 1BU7_A (1.65 Å) | {} Cα + {} HEM | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                pdb.atoms.len(),
+                pdb.het_atoms.len(),
+                pdb.kabsch_rmsd_angstrom,
+                pdb.tm_score
+            )
+        } else {
+            format!(
+                "Template 1TQN_A (2.05 Å) | 461 Cα + 43 HEM | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                pdb.kabsch_rmsd_angstrom,
+                pdb.tm_score
+            )
+        };
         svg.push_str(&format!(
-            r##"<text x="1336" y="1080" text-anchor="middle" font-size="8.8" font-weight="800" fill="#0f172a">Template 1TQN_A (2.05 Å) | 461 Cα + 43 HEM | Kabsch RMSD = {:.3} Å | TM = {:.4}</text>"##,
-            pdb.kabsch_rmsd_angstrom,
-            pdb.tm_score
+            r##"<text x="1336" y="1080" text-anchor="middle" font-size="8.8" font-weight="800" fill="#0f172a">{}</text>"##,
+            xml_esc(&tpl_footer)
         ));
+        let fe_sg_val = pdb
+            .proximal_cys_sg
+            .map(|p| p.4)
+            .unwrap_or(if is_bacterial { 2.38 } else { 2.35 });
         svg.push_str(&format!(
-            r##"<text x="1336" y="1096" text-anchor="middle" font-size="8.6" fill="#475569">Active-Site Pocket Volume = {:.1} Å³ | Fe–Sγ = 2.35 Å | Affinity = {:.2} kcal/mol</text>"##,
-            pdb.pocket_volume_a3, pdb.docking_affinity_kcal_mol
+            r##"<text x="1336" y="1096" text-anchor="middle" font-size="8.6" fill="#475569">Active-Site Pocket Volume = {:.1} Å³ | Fe–Sγ = {:.2} Å | Affinity = {:.2} kcal/mol</text>"##,
+            pdb.pocket_volume_a3, fe_sg_val, pdb.docking_affinity_kcal_mol
         ));
     }
 
@@ -3748,13 +3888,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         Some(860),
     );
 
+    let is_bacterial = theme.supp_s3_source.contains("Bacterial");
     let a_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
         (
             "A1. Entrez + Blind Audit",
             if n_phy < 64 {
                 format!("• {} >=80% OTUs / 64 Quartet", n_phy)
+            } else if is_bacterial {
+                "• 64 Taxa + 48 Bact CDS".to_string()
             } else {
-                format!("• 64 Mito + 48 Nuc CDS")
+                "• 64 Mito + 48 Nuc CDS".to_string()
             },
             format!("• SHA-256 Pass 1/2 |ΔZ|=0"),
             format!("• Quarantined {} UNVERIFIED", study.quarantined_records_on_disk),
@@ -3765,9 +3908,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "A2. Gotoh + Katoh MSA",
-            format!("• Phased COX1 Origin"),
-            format!("• Mito: {} cols", study.mito_aligned_cols),
-            format!("• Nuclear: {} cols", study.nuclear_aligned_cols),
+            if is_bacterial { "• Code-11 Strand Phasing".to_string() } else { "• Phased COX1 Origin".to_string() },
+            if is_bacterial { format!("• rpoB/16S: {} cols", study.mito_aligned_cols) } else { format!("• Mito: {} cols", study.mito_aligned_cols) },
+            if is_bacterial { format!("• Supermatrix: {} cols", study.nuclear_aligned_cols) } else { format!("• Nuclear: {} cols", study.nuclear_aligned_cols) },
             format!("• L = {} cols ({:.2} s)", study.supermatrix_aligned_cols, msa_s),
             "#f8fafc",
             "#64748b",
@@ -3864,11 +4007,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     }
 
     let n_chrono_int = n_phy.saturating_sub(1);
+    let fig6_tpl_desc = if is_bacterial {
+        "61-State Codon Selection &amp; 1BU7 Structural Threading: Identifies selection regimes on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 1.65 Å crystal template 1BU7_A."
+    } else {
+        "61-State Codon Selection &amp; 1TQN Structural Threading: Identifies diversifying selection on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.05 Å crystal template 1TQN_A."
+    };
     svg.push_str(&format!(
-        r##"  <text x="28" y="164" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene &amp; Full-Length Alignment: Quarantines {} defective GenBank UNVERIFIED mitogenomes in Iteration 1 and aligns L = {} supermatrix columns ({} PI sites) in {:.2} s.</text>
+        r##"  <text x="28" y="164" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene &amp; Full-Length Alignment: Quarantines {} defective GenBank submissions in Iteration 1 and aligns L = {} supermatrix columns ({} PI sites) in {:.2} s.</text>
   <text x="28" y="180" font-size="7.8" font-weight="700" fill="#065f46">• 32-Chain Combinatorial Sweep (Table 3A/3C): 1st {} (ln L = {:.2}, BIC = {:.2}) beats 2nd {} ({:.2}) and 3rd {} ({:.2}) by {:+.2} nats.</text>
   <text x="28" y="196" font-size="7.8" font-weight="600" fill="#047857">• Quartet Multispecies Coalescent &amp; Relaxed Clock: Satisfies {} / {} quartets (Q = {:.4}, LPP = {:.4}) and reconstructs all {} internal chronogram nodes with strictly interior two-sided 95% HPDs.</text>
-  <text x="28" y="212" font-size="7.8" font-weight="600" fill="#334155">• 61-State Codon Selection &amp; 1TQN Structural Threading: Identifies diversifying selection on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.05 Å crystal template 1TQN_A.</text>
+  <text x="28" y="212" font-size="7.8" font-weight="600" fill="#334155">• {}</text>
 "##,
         study.quarantined_records_on_disk,
         study.supermatrix_aligned_cols,
@@ -3887,8 +4035,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         study.msc_regime1_ry3.normalized_quartet_score,
         study.msc_regime1_ry3.mean_local_posterior_pp1,
         n_chrono_int,
-        xml_esc(theme.fig6_p450_label),
-        f4_w2
+        fig6_tpl_desc.replacen("{}", &xml_esc(theme.fig6_p450_label), 1).replacen("{:.2}", &format!("{:.2}", f4_w2), 1)
     ));
 
     // =========================================================================
@@ -4026,18 +4173,32 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         bx_b += bw + 10;
     }
 
+    let (axis_a_txt, axis_b_txt, recs_tot_lbl) = if is_bacterial {
+        (
+            "Axis A Chromosomal Housekeeping Skylines (Cohorts R1–R6, N = 216): Reconstructs single-species gyrB, rpoB, recA &amp; groEL coalescent histories across Bacillota and Actinomycetota.",
+            format!("Axis B Multi-Locus Contrast (Cohorts L1–L6, N = 216): Contrasts fast housekeeping rpoB/recA evolution against deeply buffered Katoh E-INS-i {}.", xml_esc(theme.fig6_its_label)),
+            format!("End-to-End Multi-Compartment Execution: {} active verified bacterial NCBI records completed in {:.2} s total wall-clock time.", study.total_records_on_disk, tot_s),
+        )
+    } else {
+        (
+            "Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = 216): Separates Pleistocene refugial stability from historical founder bottlenecks and modern agro-ecological expansions.",
+            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.", xml_esc(theme.fig6_its_label)),
+            format!("End-to-End Multi-Compartment Execution: All 544 active verified NCBI records (+ 6 quarantined UNVERIFIED anomalies) completed in {:.2} s total wall-clock time.", tot_s),
+        )
+    };
     svg.push_str(&format!(
-        r##"  <text x="28" y="406" font-size="7.8" font-weight="600" fill="#1e293b">• Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = 216): Separates Pleistocene refugial stability from historical founder bottlenecks and modern agro-ecological expansions.</text>
-  <text x="28" y="422" font-size="7.8" font-weight="700" fill="#1e3a8a">• Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.</text>
+        r##"  <text x="28" y="406" font-size="7.8" font-weight="600" fill="#1e293b">• {}</text>
+  <text x="28" y="422" font-size="7.8" font-weight="700" fill="#1e3a8a">• {}</text>
   <text x="28" y="438" font-size="7.8" font-weight="600" fill="#1d4ed8">• 12-Cohort Aggregate Likelihoods (Table 3B): 1st Codon/E-INS-i Core (ln L = {:.2}) beats 2nd Codon-12/K80 ({:.2}), 3rd gotoh-msa ({:.2}), and 4th 0-Beaker Unaligned ({:.2}).</text>
-  <text x="28" y="454" font-size="7.8" font-weight="600" fill="#334155">• End-to-End Multi-Compartment Execution: All 544 active verified NCBI records (+ 6 quarantined UNVERIFIED anomalies) completed in {:.2} s total wall-clock time.</text>
+  <text x="28" y="454" font-size="7.8" font-weight="600" fill="#334155">• {}</text>
 "##,
-        xml_esc(theme.fig6_its_label),
+        axis_a_txt,
+        axis_b_txt,
         pop_ry3_lnl,
         pop_cod_lnl,
         pop_unr_lnl,
         pop_raw_lnl,
-        tot_s
+        recs_tot_lbl
     ));
 
     // =========================================================================
@@ -4434,6 +4595,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         Ok(())
     };
 
+    let is_bacterial = theme.supp_s3_source.contains("Bacterial");
+
     // --- Supplemental Figure S1: FAM-04 CYP450 Heme-Thiolate Loop (Table 1, Dual DNA+AA) ---
     let s1_fasta = aln_dir.join(theme.supp_s1_fasta_name);
     if s1_fasta.is_file() {
@@ -4446,11 +4609,21 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         )?;
         ws.title = theme.supp_s1_title.to_string();
         ws.source_path = theme.supp_s1_source.to_string();
-        ws.alignment_method = "Codon-Locked Katoh L-INS-i + PAL2NAL (Standard Code 1)".to_string();
+        ws.alignment_method = if is_bacterial {
+            "Codon-Locked Katoh L-INS-i + PAL2NAL (Bacterial Genetic Code 11)"
+        } else {
+            "Codon-Locked Katoh L-INS-i + PAL2NAL (Standard Code 1)"
+        }
+        .to_string();
+        let s1_motifs: &[&str] = if is_bacterial {
+            &["GQRAC", "GNGQR", "QRACI", "ACIGQ", "FGNGQ", "GPRLC", "FGDGP"]
+        } else {
+            &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC"]
+        };
         let (s1, e1, hcol) = find_codon_motif_window(
             &ws,
             GeneticCodeTable::Standard1,
-            &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC"],
+            s1_motifs,
             22,
         );
         ws.features.insert(
@@ -4458,13 +4631,21 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             crate::align_viewer::AlignmentFeatureAnnotation {
                 feature_id: "CYP450-HEME".to_string(),
                 feature_type: "Catalytic_Motif".to_string(),
-                label: "Heme-Thiolate Cys-Loop (PFGDGPRNCIG)".to_string(),
+                label: if is_bacterial {
+                    "Bacterial P450 Heme-Thiolate Cys-Loop (FGNGQRACIG)".to_string()
+                } else {
+                    "Heme-Thiolate Cys-Loop (PFGDGPRNCIG)".to_string()
+                },
                 start_col_1based: s1,
                 end_col_1based: e1,
                 strand: '+',
                 score: 99.4,
                 color_rgb: (245, 158, 11),
-                description: "Proximal Cys axial thiolate coordinating catalytic Fe3+ (2.35 A)".to_string(),
+                description: if is_bacterial {
+                    "Proximal Cys400 axial thiolate coordinating catalytic Fe3+ (1BU7 2.38 A)".to_string()
+                } else {
+                    "Proximal Cys axial thiolate coordinating catalytic Fe3+ (2.35 A)".to_string()
+                },
             },
         );
         let mut state = AlignmentViewerState::new(ws);
@@ -4478,8 +4659,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.hover_row_idx = Some(0);
         state.hover_col_1based = Some(hcol);
         state.status_message = format!(
-            "runie-align-view | {} Heme-Thiolate Signature Window ({}..{} bp, Standard Code 1)",
-            theme.supp_s1_title, s1, e1
+            "runie-align-view | {} Heme-Thiolate Signature Window ({}..{} bp, {})",
+            theme.supp_s1_title, s1, e1, if is_bacterial { "Bacterial Code 11" } else { "Standard Code 1" }
         );
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s1_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s1_stem));
@@ -4551,15 +4732,23 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
-                feature_id: "ITS1-5.8S".to_string(),
+                feature_id: if is_bacterial { "16S-rRNA".to_string() } else { "ITS1-5.8S".to_string() },
                 feature_type: "Conserved_Block".to_string(),
-                label: "ITS1 Spacer Indel / 5.8S rRNA Stem Junction".to_string(),
+                label: if is_bacterial {
+                    "Bacterial 16S rRNA Variable/Stem Junction".to_string()
+                } else {
+                    "ITS1 Spacer Indel / 5.8S rRNA Stem Junction".to_string()
+                },
                 start_col_1based: s1,
                 end_col_1based: e1,
                 strand: '+',
                 score: 98.1,
                 color_rgb: (56, 189, 248),
-                description: "Katoh E-INS-i preserves 5.8S stem homology across flanking ITS1 indels".to_string(),
+                description: if is_bacterial {
+                    "Katoh E-INS-i preserves 16S rRNA stem homology across variable loop indels".to_string()
+                } else {
+                    "Katoh E-INS-i preserves 5.8S stem homology across flanking ITS1 indels".to_string()
+                },
             },
         );
         let mut state = AlignmentViewerState::new(ws);
@@ -4572,48 +4761,77 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.selected_col_range_1based = Some((s1, e1));
         state.hover_row_idx = Some(0);
         state.hover_col_1based = Some((s1 + e1) / 2);
-        state.status_message = format!(
-            "runie-align-view | mafft-native Katoh E-INS-i Nuclear ITS1-5.8S Junction ({}..{} bp)",
-            s1, e1
-        );
+        state.status_message = if is_bacterial {
+            format!(
+                "runie-align-view | mafft-native Katoh E-INS-i Bacterial 16S rRNA Stem Junction ({}..{} bp)",
+                s1, e1
+            )
+        } else {
+            format!(
+                "runie-align-view | mafft-native Katoh E-INS-i Nuclear ITS1-5.8S Junction ({}..{} bp)",
+                s1, e1
+            )
+        };
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s2_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s2_stem));
         state.capture_current_viewport_snapshots(1640, Some(&svg_out), Some(&png_out))?;
         mirror_pair(&svg_out, &png_out, theme.supp_s2_stem)?;
     }
 
-    // --- Supplemental Figure S3: 26-Species Phased Mitochondrial COX1 (Invertebrate Mito Table 5!) ---
+    // --- Supplemental Figure S3: Phased Coding Locus (Mito Table 5 or Bacterial Code 11) ---
     let s3_fasta = aln_dir.join("supp_s3_cox1_64taxa.fasta");
     if s3_fasta.is_file() {
+        let gcode = if is_bacterial {
+            GeneticCodeTable::Standard1
+        } else {
+            GeneticCodeTable::InvertebrateMito5
+        };
         let mut ws = AlignmentWorkspace::from_file(
             &s3_fasta,
             None,
-            GeneticCodeTable::InvertebrateMito5,
+            gcode,
             1,
             false,
         )?;
         ws.title = theme.supp_s3_title.to_string();
         ws.source_path = theme.supp_s3_source.to_string();
-        ws.alignment_method = "COX1-Phased Codon MSA (Invertebrate Mitochondrial Code Table 5: TGA=W, AGA=S)".to_string();
+        ws.alignment_method = if is_bacterial {
+            "Codon-Locked Housekeeping MSA (Bacterial Genetic Code 11: TAA/TAG/TGA Stops)".to_string()
+        } else {
+            "COX1-Phased Codon MSA (Invertebrate Mitochondrial Code Table 5: TGA=W, AGA=S)".to_string()
+        };
 
+        let s3_motifs: &[&str] = if is_bacterial {
+            &["QLSQF", "TQLSQ", "GERVL", "EGDSA", "VEGDS", "PLRGK"]
+        } else {
+            &["FPRMN", "APDMA", "GFGNW", "GHPEV", "WLLPP"]
+        };
         let (s1, e1, hcol) = find_codon_motif_window(
             &ws,
-            GeneticCodeTable::InvertebrateMito5,
-            &["FPRMN", "APDMA", "GFGNW", "GHPEV", "WLLPP"],
+            gcode,
+            s3_motifs,
             22,
         );
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
-                feature_id: "COX1-CORE".to_string(),
+                feature_id: if is_bacterial { "RPOB-CORE".to_string() } else { "COX1-CORE".to_string() },
                 feature_type: "Catalytic_Motif".to_string(),
-                label: "COX1 Heme-Cu Core & 3rd-Pos RY3 Transitions".to_string(),
+                label: if is_bacterial {
+                    "Bacterial rpoB/gyrB Catalytic Core & 3rd-Pos RY3 Transitions".to_string()
+                } else {
+                    "COX1 Heme-Cu Core & 3rd-Pos RY3 Transitions".to_string()
+                },
                 start_col_1based: s1,
                 end_col_1based: e1,
                 strand: '+',
                 score: 99.7,
                 color_rgb: (16, 185, 129),
-                description: "Zero internal stops under Invertebrate Mito Table 5; heavy 3rd-pos AT transitions".to_string(),
+                description: if is_bacterial {
+                    "Zero internal stops under Bacterial Code 11 across low-GC Bacillota & high-GC Actinomycetota".to_string()
+                } else {
+                    "Zero internal stops under Invertebrate Mito Table 5; heavy 3rd-pos AT transitions".to_string()
+                },
             },
         );
         let focus_row = ws
@@ -4622,7 +4840,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             .position(|s| s.id.starts_with("G_T"))
             .unwrap_or(0);
         let mut state = AlignmentViewerState::new(ws);
-        state.genetic_code = GeneticCodeTable::InvertebrateMito5;
+        state.genetic_code = gcode;
         state.mode = ViewAlphabetMode::DualDnaAndAminoAcid;
         state.color_scheme = AlignmentColorScheme::RunieConservation;
         state.match_mode = ConsensusMatchMode::ShowAllCharacters;
@@ -4631,10 +4849,17 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.selected_col_range_1based = Some((s1, e1));
         state.hover_row_idx = Some(focus_row);
         state.hover_col_1based = Some(hcol);
-        state.status_message = format!(
-            "runie-align-view | Phased COX1 ({}..{} bp, Invertebrate Mito Table 5: TGA=W, AGA=S — 0 Stops)",
-            s1, e1
-        );
+        state.status_message = if is_bacterial {
+            format!(
+                "runie-align-view | Phased Bacterial Core ({}..{} bp, Bacterial Code 11 — 0 Internal Stops)",
+                s1, e1
+            )
+        } else {
+            format!(
+                "runie-align-view | Phased COX1 ({}..{} bp, Invertebrate Mito Table 5: TGA=W, AGA=S — 0 Stops)",
+                s1, e1
+            )
+        };
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s3_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s3_stem));
         state.capture_current_viewport_snapshots(1560, Some(&svg_out), Some(&png_out))?;
@@ -4886,6 +5111,39 @@ pub fn generate_us_ag_pests_locked_figures(
             (cn[5].age_ma * 0.40).max(24.0).min(cn[5].age_ma - 15.0),
             (cn[6].age_ma * 0.50).max(18.0).min(cn[6].age_ma - 10.0),
             cn[6].age_ma.min(cn[5].age_ma - 10.0).max(20.0),
+        ];
+    }
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
+}
+
+/// Generates synchronized locked figures (Figures 1-6 + Supplemental S1-S3) for
+/// `PREPRINT-31` (`VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS`), dynamically
+/// locking `backbone_node_ages` and `sec_crown_ages` directly from `manifest.calibrated_nodes`.
+pub fn generate_gram_positive_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    let mut theme = GRAM_POSITIVE_THEME;
+    if manifest.calibrated_nodes.len() >= 8 {
+        let cn = &manifest.calibrated_nodes;
+        theme.backbone_node_ages = [
+            cn[5].age_ma,
+            cn[4].age_ma,
+            cn[3].age_ma,
+            cn[2].age_ma,
+            cn[1].age_ma,
+            cn[0].age_ma,
+        ];
+        theme.sec_crown_ages = [
+            (cn[0].age_ma * 0.52).max(400.0).min(cn[0].age_ma - 120.0),
+            (cn[2].age_ma * 0.62).max(320.0).min(cn[2].age_ma - 100.0),
+            (cn[3].age_ma * 0.60).max(260.0).min(cn[3].age_ma - 90.0),
+            (cn[4].age_ma * 0.60).max(200.0).min(cn[4].age_ma - 80.0),
+            (cn[4].age_ma * 0.50).max(160.0).min(cn[4].age_ma - 80.0),
+            cn[6].age_ma.min(cn[5].age_ma - 90.0).max(180.0),
+            cn[7].age_ma.min(cn[5].age_ma - 110.0).max(140.0),
         ];
     }
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)

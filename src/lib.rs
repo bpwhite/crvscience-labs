@@ -73,6 +73,8 @@ pub mod supervisor_basal_metazoa_manuscript;
 pub mod supervisor_china_aus_pests;
 pub mod supervisor_china_aus_pests_manuscript;
 pub mod supervisor_figures;
+pub mod supervisor_gram_positive;
+pub mod supervisor_gram_positive_manuscript;
 pub mod supervisor_isoptera;
 pub mod supervisor_manuscript;
 pub mod supervisor_nematoda;

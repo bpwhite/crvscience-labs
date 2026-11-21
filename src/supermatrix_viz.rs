@@ -615,9 +615,15 @@ pub fn render_supermatrix_positional_coverage_svg(
     ));
     out.push_str("<text x=\"1376\" y=\"737\" text-anchor=\"middle\" font-size=\"9.2\" font-weight=\"700\" fill=\"#334155\">Completeness (Green &gt;=80%)</text>\n");
 
+    let is_bacterial = study_subtitle.contains("Gram-Positive") || study_subtitle.contains("Bacterial");
+
     // ================= PANEL C =================
     out.push_str("<rect x=\"16\" y=\"756\" width=\"1448\" height=\"250\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");
-    out.push_str("<text x=\"28\" y=\"776\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel C | Circular Mitogenome Origin-Position Phasing (Table-5 COX1 Rotation) &amp; Partitioned UFBoot2 Recovery</text>\n");
+    if is_bacterial {
+        out.push_str("<text x=\"28\" y=\"776\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel C | Strand-Oriented Codon Table-11 Phasing &amp; Partitioned UFBoot2 Recovery</text>\n");
+    } else {
+        out.push_str("<text x=\"28\" y=\"776\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel C | Circular Mitogenome Origin-Position Phasing (Table-5 COX1 Rotation) &amp; Partitioned UFBoot2 Recovery</text>\n");
+    }
 
     // Sub-panel C1 (`x = 70..830, y = 796..972`): Unphased vs COX1-Rotated Positional Occupancy Profile
     let cx0 = 76.0f64;
@@ -630,7 +636,11 @@ pub fn render_supermatrix_positional_coverage_svg(
         "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" fill=\"#ffffff\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n",
         cx0, cy0, cw, ch
     ));
-    out.push_str("<text x=\"82\" y=\"797\" font-size=\"10.5\" font-weight=\"700\" fill=\"#1e293b\">C1. Mitogenome gotoh-msa Positional Occupancy Before vs. After COX1 Codon-1 Rotation</text>\n");
+    if is_bacterial {
+        out.push_str("<text x=\"82\" y=\"797\" font-size=\"10.5\" font-weight=\"700\" fill=\"#1e293b\">C1. Bacterial Locus gotoh-msa Occupancy Before vs. After Strand/Codon Phasing</text>\n");
+    } else {
+        out.push_str("<text x=\"82\" y=\"797\" font-size=\"10.5\" font-weight=\"700\" fill=\"#1e293b\">C1. Mitogenome gotoh-msa Positional Occupancy Before vs. After COX1 Codon-1 Rotation</text>\n");
+    }
     for pct in [0, 50, 100] {
         let yy = cy1 - (pct as f64 / 100.0) * ch;
         out.push_str(&format!(
@@ -671,18 +681,26 @@ pub fn render_supermatrix_positional_coverage_svg(
     } else {
         0.0
     };
-    out.push_str(&format!(
-        "<text x=\"{:.1}\" y=\"988\" text-anchor=\"middle\" font-size=\"9.5\" fill=\"#334155\">Normalized Mitogenome Alignment Coordinate (0% -&gt; 100% of Aligned Columns; n = {} Complete Mitogenomes)</text>\n",
-        0.5 * (cx0 + cx1), phasing.n_mitogenomes
-    ));
+    if is_bacterial {
+        out.push_str(&format!(
+            "<text x=\"{:.1}\" y=\"988\" text-anchor=\"middle\" font-size=\"9.5\" fill=\"#334155\">Normalized Bacterial Alignment Coordinate (0% -&gt; 100% of Aligned Columns; n = {} Loci/OTUs)</text>\n",
+            0.5 * (cx0 + cx1), phasing.n_mitogenomes
+        ));
+    } else {
+        out.push_str(&format!(
+            "<text x=\"{:.1}\" y=\"988\" text-anchor=\"middle\" font-size=\"9.5\" fill=\"#334155\">Normalized Mitogenome Alignment Coordinate (0% -&gt; 100% of Aligned Columns; n = {} Complete Mitogenomes)</text>\n",
+            0.5 * (cx0 + cx1), phasing.n_mitogenomes
+        ));
+    }
     out.push_str("<rect x=\"514\" y=\"812\" width=\"302\" height=\"56\" rx=\"5\" fill=\"#ffffff\" fill-opacity=\"0.94\" stroke=\"#cbd5e1\" stroke-width=\"0.9\"/>\n");
     out.push_str(&format!(
         "<line x1=\"524\" y1=\"829\" x2=\"546\" y2=\"829\" stroke=\"#dc2626\" stroke-width=\"2.1\" stroke-dasharray=\"6,4\"/><text x=\"552\" y=\"833\" font-size=\"9.3\" font-weight=\"700\" fill=\"#991b1b\">Unphased Start: L = {} cols (occ {:.1}%)</text>\n",
         phasing.unphased_aligned_cols, phasing.unphased_mean_occ_pct
     ));
+    let phased_lbl = if is_bacterial { "Strand-Phased:" } else { "COX1-Rotated:" };
     out.push_str(&format!(
-        "<line x1=\"524\" y1=\"851\" x2=\"546\" y2=\"851\" stroke=\"#0f766e\" stroke-width=\"2.1\"/><text x=\"552\" y=\"855\" font-size=\"9.3\" font-weight=\"700\" fill=\"#0f766e\">COX1-Rotated: L = {} cols ({:.1}% | -{:.0}% bloat)</text>\n",
-        phasing.phased_aligned_cols, phasing.phased_mean_occ_pct, pct_drop
+        "<line x1=\"524\" y1=\"851\" x2=\"546\" y2=\"851\" stroke=\"#0f766e\" stroke-width=\"2.1\"/><text x=\"552\" y=\"855\" font-size=\"9.3\" font-weight=\"700\" fill=\"#0f766e\">{} L = {} cols ({:.1}% | -{:.0}% bloat)</text>\n",
+        phased_lbl, phasing.phased_aligned_cols, phasing.phased_mean_occ_pct, pct_drop
     ));
 
     // Sub-panel C2 (`x = 846..1452, y = 788..994`): Diagnostic Resolution Comparison
@@ -691,7 +709,7 @@ pub fn render_supermatrix_positional_coverage_svg(
 
     let mut cards: Vec<(String, String, f64, &str)> = vec![
         (
-            "Legacy 1-Locus Truncated COX1 Only".to_string(),
+            if is_bacterial { "Legacy 1-Locus 16S rRNA Only" } else { "Legacy 1-Locus Truncated COX1 Only" }.to_string(),
             format!(
                 "{} bp aligned | UFBoot2 = {:.1}%",
                 phasing.single_gene_cols, phasing.single_gene_ufboot_pct

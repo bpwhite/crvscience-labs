@@ -214,6 +214,252 @@ fn discover_with_retry(
     Err(last_err)
 }
 
+fn url_encode_entrez(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 32);
+    for &b in s.as_bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            out.push(b as char);
+        } else if b == b' ' {
+            out.push_str("%20");
+        } else {
+            out.push_str(&format!("%{:02X}", b));
+        }
+    }
+    out
+}
+
+fn entrez_get_text_retry(url: &str) -> Option<String> {
+    let api_key = std::env::var("NCBI_API_KEY")
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty());
+    let full_url = if let Some(ref k) = api_key {
+        let sep = if url.contains('?') { '&' } else { '?' };
+        format!("{}{}api_key={}", url, sep, url_encode_entrez(k))
+    } else {
+        url.to_string()
+    };
+    let rate_ms = if api_key.is_some() { 140 } else { 360 };
+    for attempt in 0..4u64 {
+        let wait_ms = if attempt == 0 { rate_ms } else { 900u64 << (attempt - 1) };
+        std::thread::sleep(std::time::Duration::from_millis(wait_ms));
+        if let Ok(resp) = ureq::get(&full_url)
+            .set(
+                "User-Agent",
+                "crvscience-bio-suite-supervisor/0.4.0 (+https://crvscience.com/labs; GPL-3.0)",
+            )
+            .timeout(std::time::Duration::from_secs(30))
+            .call()
+        {
+            if let Ok(txt) = resp.into_string() {
+                if !txt.trim().is_empty() {
+                    return Some(txt);
+                }
+            }
+        }
+    }
+    None
+}
+
+fn classify_refseq_gene_hit(name: &str, desc: &str, len: usize) -> Option<&'static str> {
+    let n = name.trim().to_ascii_lowercase();
+    let d = desc.to_ascii_lowercase();
+    if (d.contains("16s ribosomal rna") || d.contains("16s rrna")) && (1150..=1900).contains(&len) {
+        return Some("bact_16S");
+    }
+    if (d.contains("23s ribosomal rna") || d.contains("23s rrna")) && (2200..=3500).contains(&len) {
+        return Some("bact_23S");
+    }
+    if (n == "rpob"
+        || (d.contains("rna polymerase")
+            && d.contains("subunit beta")
+            && !d.contains("beta'")
+            && !d.contains("beta prime")
+            && !d.contains("beta-prime")))
+        && (2200..=4800).contains(&len)
+    {
+        return Some("rpoB");
+    }
+    if (n == "gyrb"
+        || (d.contains("gyrase") && d.contains("subunit b"))
+        || (d.contains("topoisomerase") && d.contains("subunit b") && !d.contains("iv")))
+        && (1400..=3200).contains(&len)
+    {
+        return Some("gyrB");
+    }
+    if (n == "dnak" || (d.contains("chaperone") && d.contains("dnak")))
+        && (1300..=2600).contains(&len)
+    {
+        return Some("dnaK");
+    }
+    if (n == "groel"
+        || n == "grol"
+        || d.contains("chaperonin groel")
+        || d.contains("60 kda chaperonin"))
+        && (1100..=2200).contains(&len)
+    {
+        return Some("groEL");
+    }
+    if (n == "reca" || d.contains("recombinase reca") || d.contains("recombinase a"))
+        && (750..=1700).contains(&len)
+    {
+        return Some("recA");
+    }
+    if ((n == "atpd" && !d.contains("v-type") && !d.contains("subunit d"))
+        || (d.contains("atp synthase") && d.contains("subunit beta")))
+        && (1050..=2000).contains(&len)
+    {
+        return Some("atpD");
+    }
+    if (n == "tuf" || n == "tufa" || n == "tufb" || d.contains("elongation factor tu"))
+        && (850..=1650).contains(&len)
+    {
+        return Some("tuf");
+    }
+    if (n == "fusa" || d.contains("elongation factor g")) && (1650..=2800).contains(&len) {
+        return Some("fusA");
+    }
+    None
+}
+
+fn fetch_bacterial_refseq_gene_panel(
+    safe_k: &str,
+    tip_code: &str,
+    sp_name: &str,
+    org_clause: &str,
+    cache_dir: &Path,
+) -> Vec<(String, String, String)> {
+    let cache_path = cache_dir.join(format!("refseq_gene_panel_{}.json", safe_k));
+    if let Ok(raw) = fs::read_to_string(&cache_path) {
+        if let Ok(parsed) = serde_json::from_str::<Vec<(String, String, String)>>(&raw) {
+            return parsed;
+        }
+    }
+    let gene_term = format!(
+        "{} AND (rpoB[Gene Name] OR gyrB[Gene Name] OR dnaK[Gene Name] OR groEL[Gene Name] OR groL[Gene Name] OR recA[Gene Name] OR atpD[Gene Name] OR tuf[Gene Name] OR tufA[Gene Name] OR fusA[Gene Name] OR \"DNA-directed RNA polymerase subunit beta\"[Title] OR \"DNA gyrase subunit B\"[Title] OR \"molecular chaperone DnaK\"[Title] OR \"chaperonin GroEL\"[Title] OR \"recombinase RecA\"[Title] OR \"elongation factor Tu\"[Title] OR \"elongation factor G\"[Title] OR \"F0F1 ATP synthase subunit beta\"[Title] OR \"16S ribosomal RNA\"[Title] OR \"23S ribosomal RNA\"[Title])",
+        org_clause
+    );
+    let esearch_url = format!(
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&retmode=json&retmax=60&tool=bio-suite-supervisor&email=labs@crvscience.com&term={}",
+        url_encode_entrez(&gene_term)
+    );
+    let Some(search_txt) = entrez_get_text_retry(&esearch_url) else {
+        return Vec::new();
+    };
+    let Ok(search_json) = serde_json::from_str::<serde_json::Value>(&search_txt) else {
+        return Vec::new();
+    };
+    let id_vals = search_json
+        .get("esearchresult")
+        .and_then(|r| r.get("idlist"))
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let ids: Vec<String> = id_vals
+        .into_iter()
+        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+        .collect();
+    if ids.is_empty() {
+        let _ = fs::write(&cache_path, "[]");
+        return Vec::new();
+    }
+    let esum_url = format!(
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&retmode=json&tool=bio-suite-supervisor&email=labs@crvscience.com&id={}",
+        ids.join(",")
+    );
+    let Some(sum_txt) = entrez_get_text_retry(&esum_url) else {
+        return Vec::new();
+    };
+    let Ok(sum_json) = serde_json::from_str::<serde_json::Value>(&sum_txt) else {
+        return Vec::new();
+    };
+    let Some(res_obj) = sum_json.get("result").and_then(|v| v.as_object()) else {
+        return Vec::new();
+    };
+
+    let mut best: HashMap<&'static str, (u8, String, u64, u64, u8)> = HashMap::new();
+    for id in &ids {
+        let Some(it) = res_obj.get(id) else { continue };
+        let name = it.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        let desc = it.get("description").and_then(|v| v.as_str()).unwrap_or("");
+        let Some(gi) = it
+            .get("genomicinfo")
+            .and_then(|v| v.as_array())
+            .and_then(|arr| arr.first())
+        else {
+            continue;
+        };
+        let acc = gi.get("chraccver").and_then(|v| v.as_str()).unwrap_or("");
+        let (Some(chrstart), Some(chrstop)) = (
+            gi.get("chrstart").and_then(|v| v.as_u64()),
+            gi.get("chrstop").and_then(|v| v.as_u64()),
+        ) else {
+            continue;
+        };
+        if acc.is_empty() {
+            continue;
+        }
+        let lo = chrstart.min(chrstop);
+        let hi = chrstart.max(chrstop);
+        let len = (hi - lo + 1) as usize;
+        let Some(loc) = classify_refseq_gene_hit(name, desc, len) else {
+            continue;
+        };
+        let priority: u8 = if acc.starts_with("NC_") {
+            3
+        } else if acc.starts_with("NZ_CP") || acc.starts_with("NZ_AP") || acc.starts_with("NZ_LR") {
+            2
+        } else if acc.starts_with("NZ_") {
+            1
+        } else {
+            0
+        };
+        let start_1b = lo + 1;
+        let stop_1b = hi + 1;
+        let strand: u8 = if chrstart <= chrstop { 1 } else { 2 };
+        let replace = best
+            .get(loc)
+            .map(|existing| priority > existing.0)
+            .unwrap_or(true);
+        if replace {
+            best.insert(loc, (priority, acc.to_string(), start_1b, stop_1b, strand));
+        }
+    }
+
+    let mut out: Vec<(String, String, String)> = Vec::with_capacity(best.len());
+    for (loc, (_, acc, start_1b, stop_1b, strand)) in best {
+        let efetch_url = format!(
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&seq_start={}&seq_stop={}&strand={}&rettype=fasta&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
+            url_encode_entrez(&acc),
+            start_1b,
+            stop_1b,
+            strand
+        );
+        if let Some(fa) = entrez_get_text_retry(&efetch_url) {
+            let mut body = String::with_capacity(fa.len());
+            for line in fa.lines() {
+                if !line.starts_with('>') {
+                    body.push_str(line.trim());
+                }
+            }
+            let c = clean_acgt_only(&body);
+            if c.len() >= 600 {
+                out.push((loc.to_string(), acc, c));
+            }
+        }
+    }
+    if let Ok(json_s) = serde_json::to_string(&out) {
+        let _ = fs::write(&cache_path, json_s);
+    }
+    eprintln!(
+        "  [RefSeq Gene Panel] {} ({}) -> {}/10 full-length loci",
+        tip_code,
+        sp_name,
+        out.len()
+    );
+    out
+}
+
 /// Real crystallographic bacterial `1BU7` (*Bacillus megaterium* P450 BM3 `CYP102A1`, `1.65 Å`)
 /// structure parser and `mafft-native` 3D structural homology threader (`HEM A 999` + `Cys400–Sγ`).
 pub(crate) fn build_bacterial_p450_1bu7_pdb_structure(
@@ -788,20 +1034,14 @@ pub fn execute_gram_positive_supervisor_study(
         }
     }
 
-    // Populate targeted species-level bacterial housekeeping CDS & rRNA loci via polite Entrez cache
+    // Populate targeted species-level bacterial housekeeping CDS & rRNA loci via NCBI RefSeq `db=gene` + Entrez fallback
     let specs_64 = gram_positive_slot_64_specs();
     let loc_order = [
         "rpoB", "gyrB", "dnaK", "groEL", "recA", "atpD", "tuf", "fusA", "bact_16S", "bact_23S",
     ];
     for (tip_code, _, _, sp_name) in &specs_64 {
         let sp_k = norm_species_key(sp_name);
-        let present_cnt = loc_order
-            .iter()
-            .filter(|&&l| seqnet_locus_by_sp_and_loc.contains_key(&(sp_k.clone(), l.to_string())))
-            .count();
-        if present_cnt >= 6 {
-            continue;
-        }
+        let genus_low = sp_k.split_whitespace().next().unwrap_or("").to_string();
         let syns = species_entrez_synonyms(sp_name);
         let org_clause = if syns.is_empty() {
             format!("\"{}\"[Organism]", sp_name)
@@ -810,6 +1050,35 @@ pub fn execute_gram_positive_supervisor_study(
             format!("({})", parts.join(" OR "))
         };
         let safe_k = tip_code.replace(':', "_").to_ascii_lowercase();
+
+        // Primary full-length RefSeq chromosome-extracted housekeeping CDS & rRNA coordinates (`db=gene` -> `efetch`)
+        let panel = fetch_bacterial_refseq_gene_panel(&safe_k, tip_code, sp_name, &org_clause, &val_cache_dir);
+        for (loc_tag, acc, seq) in panel {
+            seqnet_locus_by_sp_and_loc.insert((sp_k.clone(), loc_tag.clone()), (acc.clone(), seq.clone()));
+            for &alt_sp in syns {
+                seqnet_locus_by_sp_and_loc
+                    .insert((norm_species_key(alt_sp), loc_tag.clone()), (acc.clone(), seq.clone()));
+            }
+            if !genus_low.is_empty() {
+                let replace_genus = seqnet_locus_by_genus_and_loc
+                    .get(&(genus_low.clone(), loc_tag.clone()))
+                    .map(|(_, _, old_s)| old_s.len() < seq.len())
+                    .unwrap_or(true);
+                if replace_genus {
+                    seqnet_locus_by_genus_and_loc
+                        .insert((genus_low.clone(), loc_tag), (acc, (*sp_name).to_string(), seq));
+                }
+            }
+        }
+
+        let present_cnt = loc_order
+            .iter()
+            .filter(|&&l| seqnet_locus_by_sp_and_loc.contains_key(&(sp_k.clone(), l.to_string())))
+            .count();
+        if present_cnt >= 8 {
+            continue;
+        }
+
         let q_cds = format!(
             "{} AND (rpoB[Gene] OR gyrB[Gene] OR dnaK[Gene] OR groEL[Gene] OR groL[Gene] OR recA[Gene] OR atpD[Gene] OR tuf[Gene] OR fusA[Gene] OR \"RNA polymerase beta\"[Title] OR \"gyrase subunit B\"[Title] OR \"elongation factor\"[Title]) AND 300:4200[SLEN] NOT \"complete genome\"[Title] NOT \"whole genome shotgun\"[Title] NOT chromosome[Title] NOT plasmid[Title]",
             org_clause
@@ -1159,7 +1428,7 @@ pub fn execute_gram_positive_supervisor_study(
                         family: fam.clone(),
                         gene: disp_loc.to_string(),
                         description: format!("{} {}", sp_name, disp_loc),
-                        sequence: if s.len() > 3600 { s[..3600].to_string() } else { s },
+                        sequence: if s.len() > 4600 { s[..4600].to_string() } else { s },
                         cached_from_disk: true,
                     });
                 }
@@ -1170,12 +1439,18 @@ pub fn execute_gram_positive_supervisor_study(
         }
         raw_seqnet_cols += loc_recs.iter().map(|r| r.sequence.len()).max().unwrap_or(0);
         let (aligned_pairs, plen) = if is_pcg {
-            let (nt_p, _, bp, _) = align_and_trim_codon_core_with_min_aa(&loc_recs, false, 0.45, 70);
+            let (nt_p, _, bp, _) = align_and_trim_codon_core_with_min_aa(&loc_recs, false, 0.55, 100);
             (nt_p, bp)
         } else {
-            let (r_p, bp, _) = align_and_trim_rrna_core(&loc_recs, 0.45);
+            let (r_p, bp, _) = align_and_trim_rrna_core(&loc_recs, 0.55);
             (r_p, bp)
         };
+        eprintln!(
+            "  [Stage 2 Alignment] {:8} | kept_taxa={:2} | aligned_cols={}",
+            disp_loc,
+            aligned_pairs.len(),
+            plen
+        );
         if plen >= 120 && aligned_pairs.len() >= 8 {
             let pmap: HashMap<String, String> = aligned_pairs.iter().cloned().collect();
             msc_partitions.push((disp_loc.to_string(), is_pcg, true, plen, pmap.clone()));
@@ -1400,6 +1675,13 @@ pub fn execute_gram_positive_supervisor_study(
             raw0_pairs.push((safe_id, raw0_s));
         }
     }
+    eprintln!(
+        "  [Stage 2 Gate] n_phy={} (>=80%) across {} partitions (L={} bp) | sectors={:?}",
+        ry3_pairs.len(),
+        kept_partitions.len(),
+        supermatrix_cols_bp,
+        gated_otu_by_sector
+    );
     if ry3_pairs.len() < 14 {
         return Err(format!(
             "PREPRINT-31 >=80% supermatrix gate retained only {} bacterial OTUs (<14)",

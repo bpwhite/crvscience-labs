@@ -5,12 +5,12 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`30`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`143` Total Reports)
+## Validated Preprints (`30`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`91` Total Reports)
 
-- **Total Lab Discovery Entries**: **143** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+- **Total Lab Discovery Entries**: **91** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
   - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-30`, `v2.0.2`)**: **30** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
-  - **🔬 Pipeline & Model-Calibration Benchmarks**: **52** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
+  - **🔬 Pipeline & Model-Calibration Benchmarks**: **0** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
   - **Curated Validation Dataset Registry**: **68** datasets (`VAL-SET-001` through `VAL-SET-068`)
 
 #### ✅ 30 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-30`, `v2.0.2`)

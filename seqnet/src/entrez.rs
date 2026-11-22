@@ -72,8 +72,8 @@ pub fn check_reading_frame_clean(seq: &str, genetic_code_table: u8) -> bool {
                 5 => codon == b"TAA" || codon == b"TAG",
                 // Table 2: Vertebrate Mitochondrial (TAA, TAG, AGA, AGG)
                 2 => codon == b"TAA" || codon == b"TAG" || codon == b"AGA" || codon == b"AGG",
-                // Table 1: Standard Nuclear (TAA, TAG, TGA)
-                _ => codon == b"TAA" || codon == b"TAG" || codon == b"TGA",
+                // Table 1 (Standard Nuclear) & Table 11 (Bacterial/Archaeal/Plastid: TAA, TAG, TGA)
+                1 | 11 | _ => codon == b"TAA" || codon == b"TAG" || codon == b"TGA",
             };
             if is_stop {
                 internal_stops += 1;
@@ -895,6 +895,15 @@ mod tests {
         let longi = "Eukaryota; Metazoa; Ecdysozoa; Nematoda; Enoplea; Dorylaimia; Dorylaimida; Dorylaimina; Dorylaimoidea; Longidoridae; Xiphinema";
         assert_eq!(extract_family_or_stratum(longi, &strata, None), "Longidoridae");
         assert!(build_mitogenome_query("Heteroderidae").contains("6500:30000[SLEN]"));
+    }
+
+    #[test]
+    fn table11_treats_tga_as_stop_unlike_table5() {
+        // Contains internal `TGA` in every forward frame (0, 1, and 2) and zero `TAA`/`TAG`.
+        let cds_with_internal_tga = "ATGGCTGCTTGACTGAGTGAGCTGCTGCTGCTGCT";
+        assert!(!check_reading_frame_clean(cds_with_internal_tga, 11));
+        assert!(!check_reading_frame_clean(cds_with_internal_tga, 1));
+        assert!(check_reading_frame_clean(cds_with_internal_tga, 5));
     }
 }
 

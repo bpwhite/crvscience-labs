@@ -498,8 +498,7 @@ pub(crate) fn align_and_trim_codon_core_with_min_aa(
             .collect();
     }
 
-    let mut nt_out = Vec::with_capacity(n_seqs);
-    let mut aa_out = Vec::with_capacity(n_seqs);
+    let mut triples: Vec<(String, String, String)> = Vec::with_capacity(n_seqs);
     for (id, nt_full, aa_full) in &nt_full_rows {
         let nt_bytes = nt_full.as_bytes();
         let aa_bytes = aa_full.as_bytes();
@@ -514,8 +513,27 @@ pub(crate) fn align_and_trim_codon_core_with_min_aa(
                 a_trimmed.push(aa_bytes[c] as char);
             }
         }
-        nt_out.push((id.clone(), n_trimmed));
-        aa_out.push((id.clone(), a_trimmed));
+        triples.push((id.clone(), a_trimmed, n_trimmed));
+    }
+
+    let final_indices: Vec<usize> = if triples.len() >= 4 {
+        let (kept_idx, _q) =
+            bio_suite_seqnet::coding_ortholog::audit_aligned_codon_rows(&triples, 0.45, 0.18, 0.35);
+        if kept_idx.len() >= 4 {
+            kept_idx
+        } else {
+            (0..triples.len()).collect()
+        }
+    } else {
+        (0..triples.len()).collect()
+    };
+
+    let mut nt_out = Vec::with_capacity(final_indices.len());
+    let mut aa_out = Vec::with_capacity(final_indices.len());
+    for idx in final_indices {
+        let (id, a_trimmed, n_trimmed) = &triples[idx];
+        nt_out.push((id.clone(), n_trimmed.clone()));
+        aa_out.push((id.clone(), a_trimmed.clone()));
     }
 
     let bp_len = nt_out.first().map(|(_, s)| s.len()).unwrap_or(0);

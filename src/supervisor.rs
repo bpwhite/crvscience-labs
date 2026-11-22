@@ -3643,7 +3643,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             let rep_path = run_dir.join("multi-compartment-report.json");
             if rep_path.is_file() {
                 let rep_txt = fs::read_to_string(&rep_path).map_err(|e| e.to_string())?;
-                let rep: crate::supervisor_study::MultiCompartmentStudyReport =
+                let mut rep: crate::supervisor_study::MultiCompartmentStudyReport =
                     serde_json::from_str(&rep_txt).map_err(|e| e.to_string())?;
                 let ws_root = resolve_crv_workspace_root();
                 let labs_fig_dir = ws_root.join("labs").join("figures");
@@ -3677,6 +3677,12 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         &run_dir,
                     )?;
                 } else if crate::supervisor_gram_positive::is_gram_positive_study_target(None, &m.run_id) {
+                    crate::supervisor_gram_positive::refresh_gram_positive_stage4_in_place(
+                        &mut m,
+                        &mut rep,
+                        cache,
+                        &run_dir,
+                    )?;
                     run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
                     crate::supervisor_figures::generate_gram_positive_locked_figures(
                         &mut m,

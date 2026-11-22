@@ -255,7 +255,7 @@ fn build_gram_positive_ascii_blocks(
     }
     format!(
 r#"<div class="labs-copy-box" data-copy-mode="code">
-  <div class="labs-copy-header"><span>Code Block 1 | FAM-04 Bacterial P450 (CYP102A1/105/107) Active Motif &amp; Partitioned Branch Telemetry</span></div>
+  <div class="labs-copy-header"><span>Code Block 1 | FAM-04 Bacterial P450 (CYP102A / P450 BM3) Active Motif &amp; Partitioned Branch Telemetry</span></div>
   <pre class="labs-code-pre">{fam_lines}--
 {bl_lines}</pre>
   <div class="labs-box-tool-footer"><span>Tool Chain: mafft-native -> goldman-yang-dnds (61-State Code 11) -> Edge-Linked Partitioned ML + UFBoot2 (B=500)</span></div>
@@ -403,6 +403,8 @@ fn build_gram_positive_main_tables_html(
     let cov_sum = load_run_json(run_dir_opt, "trees/supermatrix_coverage_summary.json");
     let sup_l_val = cov_sum["supermatrix_cols"].as_u64().unwrap_or(report.supermatrix_aligned_cols as u64) as usize;
     let n_part_loci = cov_sum["loci_retained"].as_u64().unwrap_or(report.msc_regime1_ry3.gene_tree_count as u64) as usize;
+    let tot_fam_recs: usize = report.functional_families.iter().map(|f| f.num_records).sum();
+    let tot_pop_isos: usize = report.popset_skylines.iter().map(|p| p.num_isolates).sum();
     let n_phy_t = cov_sum["phylogram_gated_otus_n"].as_u64().map(|v| v as usize).filter(|&k| k > 0).unwrap_or(32);
     let n_pop_t = 64usize.saturating_sub(n_phy_t);
     let single_16s_l = cov_sum["single_gene_cox1_cols"].as_u64().unwrap_or(1150) as usize;
@@ -452,7 +454,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
       <tr><td><strong>Edge-Linked Partitioned {n_phy_t}-OTU (&gt;=80%-Gated) Supermatrix</strong></td><td>L = {sup_l} cols ({n_part_loci} loci, RY3 CDS + 4-State rRNA)</td><td>{rcfv_ry3:.4}</td><td>Phylum &amp; class monoderm backbone across {n_phy_t} &gt;=80% multi-locus OTUs ({n_pop_t} sparse OTUs to Fig 3/4/7)</td><td>RY3 third-codon recoding collapses low-GC Bacillota (30-42%) vs. high-GC Actinomycetota (65-73%) compositional convergence</td></tr>
       <tr><td><strong>Legacy Single-Locus 16S rRNA Control</strong></td><td>L = {single_16s_l} bp (UFBoot2 = {single_16s_boot:.1}%)</td><td>4-State Conserved</td><td>Phylum/family ribotype placement &amp; species barcode clustering</td><td>Low deep-branch synapomorphy density across ancient Archean-Proterozoic stems</td></tr>
       <tr><td><strong>Ribosomal 16S &amp; 23S rRNA (Katoh E-INS-i)</strong></td><td>Kept strictly unrecoded 4-state in supermatrix + L2/L4/L5 skylines</td><td>Slow-Clock</td><td>Structural stem anchoring &amp; slow-rate coalescent contrast vs. housekeeping CDS</td><td>E-INS-i affine gap handling preserves stem-loop boundaries across variable helix indels</td></tr>
-      <tr><td><strong>Functional Bacterial CDS (FAM-01..04)</strong></td><td>L = {nuc_l} cols (48 orthologs, 61-state Code 11)</td><td>0.004-0.014</td><td>Cell-wall <em>murA</em>, sporulation <em>spo0A</em>, chaperone <em>dnaK</em> &amp; P450 <em>CYP102A1</em> selection</td><td>PDB 1BU7 structural threading verifies active-site Cys400 thiolate conservation</td></tr>
+      <tr><td><strong>Functional Bacterial CDS (FAM-01..04)</strong></td><td>L = {nuc_l} cols ({tot_fam_recs} orthologs, 61-state Code 11)</td><td>0.004-0.014</td><td>Cell-wall <em>murA</em>, sporulation <em>spo0A</em>, chaperone <em>dnaK</em> &amp; P450 <em>CYP102A / P450 BM3</em> selection</td><td>PDB 1BU7 structural threading verifies active-site Cys400 thiolate conservation</td></tr>
     </tbody>
   </table>
   <div class="labs-box-tool-footer"><span>CRV Marker Diagnostic Power Matrix | VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS</span></div>
@@ -470,7 +472,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 {table3d}
 
 <div class="labs-copy-box" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Table 3B. RuNIE Pipeline Comparison Table: 12 Single-Species Bacterial Coalescent Cohorts (N = 432)</span></div>
+  <div class="labs-copy-header"><span>Table 3B. RuNIE Pipeline Comparison Table: 12 Single-Species Bacterial Coalescent Cohorts (N = {tot_pop_isos})</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = {b_coh}/cohort)</th><th>Posterior Z</th><th>CPU Time</th></tr></thead>
     <tbody>
@@ -486,7 +488,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 {table3c}
 
 <div class="labs-copy-box" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Table 4A. 61-State Goldman-Yang Codon Selection Summary Across Cell-Wall, Sporulation, Chaperone &amp; P450 Loci (48 CDS)</span></div>
+  <div class="labs-copy-header"><span>Table 4A. 61-State Goldman-Yang Codon Selection Summary Across Cell-Wall, Sporulation, Chaperone &amp; P450 Loci ({tot_fam_recs} CDS)</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Family</th><th>Locus &amp; Mechanistic Target</th><th>Orthologs</th><th>Codons</th><th>M0 omega</th><th>M2a omega2</th><th>M0 kappa</th><th>LRT 2*dlnL</th><th>BEB Positively Selected Sites</th></tr></thead>
     <tbody>{t4a_rows}</tbody>
@@ -495,7 +497,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
 </div>
 
 <div class="labs-copy-box" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Table 4B. 12 Single-Species Bacterial Coalescent Skylines (N = 432) &amp; Stage 3C Haplotype Hubs</span></div>
+  <div class="labs-copy-header"><span>Table 4B. 12 Single-Species Bacterial Coalescent Skylines (N = {tot_pop_isos}) &amp; Stage 3C Haplotype Hubs</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Cohort</th><th>Single-Species Taxon</th><th>Locus</th><th>N</th><th>L (bp)</th><th>pi</th><th>Tajima's D</th><th>Ne (LGM -&gt; Hol -&gt; Mod; Expansion)</th><th>MCMC Convergence</th></tr></thead>
     <tbody>{t4b_rows}</tbody>
@@ -511,6 +513,7 @@ r#"<div class="labs-copy-box" data-copy-mode="table">
         sup_l = fmt_commas_usize(sup_l_val), n_part_loci = n_part_loci, n_phy_t = n_phy_t, n_pop_t = n_pop_t,
         single_16s_l = fmt_commas_usize(single_16s_l), single_16s_boot = single_16s_boot,
         rcfv_ry3 = report.rcfv_ry3, nuc_l = fmt_commas_usize(report.nuclear_aligned_cols),
+        tot_fam_recs = tot_fam_recs, tot_pop_isos = tot_pop_isos,
         t3a_rows = t3a_rows, table3d = table3d, table3c = table3c,
         sum_ry3 = sum_ry3, sum_c12 = sum_c12, sum_unr = sum_unr, sum_rw0 = sum_rw0,
         d_c12 = sum_c12 - sum_ry3, d_unr = sum_unr - sum_ry3, d_rw0 = sum_rw0 - sum_ry3,
@@ -538,7 +541,7 @@ fn build_gram_positive_supplemental_tables_html(
 ) -> String {
     let mut imgs = [String::new(), String::new(), String::new()];
     for (idx, &(fname, fig_id, title, cap)) in [
-        ("gram-positive-supp-s1-cyp102a1-alignview.png", "fig-s1", "Supplemental Figure S1. FAM-04 Bacterial Cytochrome P450 (CYP102A1 / CYP105 / CYP107) Amino-Acid Conservation", "Native Rust amino-acid MSA highlighting the conserved bacterial heme-thiolate Cys400 loop (FGNGQRACIG) across Bacillaceae and soil Actinomycetota."),
+        ("gram-positive-supp-s1-cyp102a1-alignview.png", "fig-s1", "Supplemental Figure S1. FAM-04 Bacterial Cytochrome P450 (CYP102A / P450 BM3) Amino-Acid Conservation", "Native Rust amino-acid MSA highlighting the conserved bacterial heme-thiolate Cys400 loop (FGNGQRACIG / FGTGERACIG) across Bacillota and Actinomycetota."),
         ("gram-positive-supp-s2-16s-einsi-alignview.png", "fig-s2", "Supplemental Figure S2. Cohort L5 Lactiplantibacillus 16S Ribosomal RNA Katoh E-INS-i Core Alignment", "Katoh E-INS-i structural rRNA core alignment preserving stem helices across bacterial variable-loop indels."),
         ("gram-positive-supp-s3-rpob-ry3-alignview.png", "fig-s3", "Supplemental Figure S3. Phased 64-Species Bacterial Genetic Code 11 Housekeeping Core (rpoB / gyrB)", "Bacterial housekeeping core translated under Genetic Code 11 (TAA/TAG/TGA stops) with zero internal stops prior to third-codon RY3 recoding."),
     ].iter().enumerate() {
@@ -563,6 +566,8 @@ fn build_gram_positive_supplemental_tables_html(
             s.raw_length_bp, s.gc_percent, s.pct_identity_vs_centroid, html_esc(&s.sha256_prefix), html_esc(&s.audit_verdict),
         ));
     }
+    let tot_fam_recs: usize = report.functional_families.iter().map(|f| f.num_records).sum();
+    let tot_pop_isos: usize = report.popset_skylines.iter().map(|p| p.num_isolates).sum();
     let mut supp_s2_rows = String::new();
     for fam in &report.functional_families {
         for rec in &fam.records_meta {
@@ -591,7 +596,7 @@ fn build_gram_positive_supplemental_tables_html(
 
     format!(
 r#"<h2 id="supplemental-data" class="supplemental-section-heading">Supplemental Figures (S1-S4) &amp; Complete Record Provenance Tables (S1-S4)</h2>
-<p>All verified NCBI sequence accessions across the 64-species bacterial supermatrix, per-locus ModelTest partitions, 48 bacterial CDS orthologs, 32 combinatorial RuNIE chains, and 432 single-species bacterial isolates are archived below for direct reproducibility.</p>
+<p>All verified NCBI sequence accessions across the 64-species bacterial supermatrix, per-locus ModelTest partitions, {tot_fam_recs} bacterial CDS orthologs, 32 combinatorial RuNIE chains, and {tot_pop_isos} single-species bacterial isolates are archived below for direct reproducibility.</p>
 {s1}{s2}{s3}
 <figure id="supp-fig-s4" class="labs-figure-card labs-figure-card--print-full">
   <div class="labs-copy-header"><span>Supplemental Figure S4. Bacterial Supermatrix Partitioned ModelTest Ribbon, Occupancy Map (&gt;=80% Gate) &amp; Code-11 Phasing ({n_phy} Gated vs. {n_pop} Sparse OTUs)</span></div>
@@ -608,7 +613,7 @@ r#"<h2 id="supplemental-data" class="supplemental-section-heading">Supplemental 
 </div>
 
 <div class="labs-copy-box labs-table-multipage" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Supplemental Table S2. Complete 48 Bacterial Functional CDS Orthologs (FAM-01 to FAM-04)</span></div>
+  <div class="labs-copy-header"><span>Supplemental Table S2. Complete {tot_fam_recs} Bacterial Functional CDS Orthologs (FAM-01 to FAM-04)</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Family</th><th>Accession</th><th>Organism</th><th>Annotated Protein Locus</th><th>Raw Len</th><th>GC%</th><th>SHA-256</th></tr></thead>
     <tbody>{supp_s2_rows}</tbody>
@@ -624,14 +629,14 @@ r#"<h2 id="supplemental-data" class="supplemental-section-heading">Supplemental 
 </div>
 
 <div class="labs-copy-box labs-table-multipage" data-copy-mode="table">
-  <div class="labs-copy-header"><span>Supplemental Table S4. Complete 432 Single-Species Regional (R1-R6) &amp; Multi-Locus (L1-L6) Bacterial Isolates</span></div>
+  <div class="labs-copy-header"><span>Supplemental Table S4. Complete {tot_pop_isos} Single-Species Regional (R1-R6) &amp; Multi-Locus (L1-L6) Bacterial Isolates</span></div>
   <table class="labs-data-table labs-compact-table">
     <thead><tr><th>Isolate</th><th>Accession</th><th>Organism</th><th>Locus</th><th>Context</th><th>Strain / Source</th><th>Year</th><th>Length</th></tr></thead>
     <tbody>{supp_s4_rows}</tbody>
   </table>
 </div>"#,
         s1 = imgs[0], s2 = imgs[1], s3 = imgs[2], s4_svg = s4_svg, n_phy = n_phy, n_pop = n_pop,
-        n_part_loci = n_part_loci, sup_l = fmt_commas_usize(sup_l),
+        n_part_loci = n_part_loci, sup_l = fmt_commas_usize(sup_l), tot_fam_recs = tot_fam_recs, tot_pop_isos = tot_pop_isos,
         unphased = fmt_commas_usize(unphased_cols), phased = fmt_commas_usize(phased_cols),
         gb = gated_boot, ub = unpart_boot, uf = unfiltered_boot, sb = single_boot,
         supp_s1_rows = supp_s1_rows, supp_s2_rows = supp_s2_rows, supp_s3_rows = supp_s3_rows, supp_s4_rows = supp_s4_rows,
@@ -718,6 +723,10 @@ pub fn build_gram_positive_manuscript_body_html_with_run_dir(
     let fam1 = &report.functional_families[0];
     let fam2 = &report.functional_families[1];
     let fam3 = &report.functional_families[2];
+    let tot_fam_recs: usize = report.functional_families.iter().map(|f| f.num_records).sum();
+    let tot_pop_isos: usize = report.popset_skylines.iter().map(|p| p.num_isolates).sum();
+    let r_pop_isos: usize = report.popset_skylines.iter().take(6).map(|p| p.num_isolates).sum();
+    let l_pop_isos: usize = report.popset_skylines.iter().skip(6).map(|p| p.num_isolates).sum();
     let hap7a_txt = hap7a.as_ref().map(|r| format!(
         "N = {} sequences across H = {} haplotypes and {} clusters (Hd = {:.4}, pi = {:.4}, Fst = {:.4}, Tajima's D = {:+.3}, k_max = {})",
         r.diversity_metrics.total_sequences_n, r.diversity_metrics.unique_haplotypes_h, r.clusters.len(), r.diversity_metrics.haplotype_diversity_hd, r.diversity_metrics.nucleotide_diversity_pi, r.diversity_metrics.hudson_fst, r.diversity_metrics.tajimas_d, k7a
@@ -767,7 +776,7 @@ r#"<section class="labs-study-section">
 
 <section class="labs-study-section">
   <h2>4. Cell-Wall Peptidoglycan, Endospore Initiation &amp; Bacterial P450 (1BU7) Selection Dynamics</h2>
-  <p>Across 48 verified bacterial orthologs under Genetic Code 11, 61-state Goldman-Yang codon models reveal strong purifying constraint on peptidoglycan biosynthesis transferase <strong>FAM-01: <em>murA</em></strong> (M0 omega = {w0_f1:.4}, kappa = {k_f1:.2}, LRT = {lrt_f1:.2}) [12] alongside master sporulation regulator <strong>FAM-02: <em>spo0A</em></strong> (M0 omega = {w0_f2:.4}, M2a omega_2 = {w2_f2:.2}, LRT = {lrt_f2:.2}) [8,13] and chaperone <strong>FAM-03: <em>dnaK</em></strong> (M0 omega = {w0_f3:.4}, LRT = {lrt_f3:.2}) [21]. Soluble fatty-acid hydroxylases and soil secondary-metabolite cytochrome P450s (<strong>FAM-04: <em>CYP102A1 / CYP105 / CYP107</em></strong>; M0 omega = {w0_f4:.4}, M2a omega_2 = {w2_f4:.2}, LRT = {lrt_f4:.2}) map cleanly onto the 1.65 A crystal structure of <em>Bacillus megaterium</em> P450 BM3 (PDB <code>1BU7</code>), preserving the distal I-helix dioxygen groove (<code>AGHETTS</code>) and proximal <code>Cys400</code> thiolate ligand to <code>HEM A 999</code> (Figure 5, Table 4A) [10,11].</p>
+  <p>Across {tot_fam_recs} verified bacterial orthologs under Genetic Code 11, 61-state Goldman-Yang codon models reveal strong purifying constraint on peptidoglycan biosynthesis transferase <strong>FAM-01: <em>murA</em></strong> (M0 omega = {w0_f1:.4}, kappa = {k_f1:.2}, LRT = {lrt_f1:.2}) [12] alongside master sporulation regulator <strong>FAM-02: <em>spo0A</em></strong> (M0 omega = {w0_f2:.4}, M2a omega_2 = {w2_f2:.2}, LRT = {lrt_f2:.2}) [8,13] and chaperone <strong>FAM-03: <em>dnaK</em></strong> (M0 omega = {w0_f3:.4}, LRT = {lrt_f3:.2}) [21]. Bacterial cytochrome P450 monooxygenases (<strong>FAM-04: <em>CYP102A / P450 BM3</em></strong>; M0 omega = {w0_f4:.4}, M2a omega_2 = {w2_f4:.2}, LRT = {lrt_f4:.2}) map cleanly onto the 1.65 A crystal structure of <em>Bacillus megaterium</em> P450 BM3 (PDB <code>1BU7</code>), preserving the distal I-helix dioxygen groove (<code>AGHETTS</code>) and proximal <code>Cys400</code> thiolate ligand to <code>HEM A 999</code> (Figure 5, Table 4A) [10,11].</p>
   <figure id="fig-5" class="labs-figure-card labs-figure-card--print-full">
     <div class="labs-copy-header"><span>Figure 5. Bacterial Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep &amp; 1BU7 Heme Pocket</span></div>
     <div class="labs-inline-svg-figure">{fig5}</div>
@@ -777,14 +786,14 @@ r#"<section class="labs-study-section">
 
 <section class="labs-study-section">
   <h2>5. Single-Species Bacterial Skylines (Code 11 vs. 16S rRNA) &amp; Stage 3C Species Boundaries</h2>
-  <p>Twelve single-species 25,000-generation Bayesian coalescent skylines (N = 432 bacterial isolates; R-hat &lt;= 1.01) decouple fast-evolving housekeeping CDS loci (<em>gyrB</em>, <em>rpoB</em>, <em>recA</em>, <em>groEL</em>; Cohorts R1-R6, L1, L3, L6; Figure 4A) from slow-clock structural 16S rRNA trajectories (Cohorts L2, L4, L5; Figure 4B) [20]. Radiative-forcing Stage 3C TCS/MSN networks reconstruct inter-cluster connectivity across low-GC Bacillota <em>gyrB</em> (<strong>Panel A</strong>: {hap7a_txt}; Figure 7A) and high-GC Actinomycetota <em>rpoB</em> (<strong>Panel B</strong>: {hap7b_txt}; Figure 7B) with explicit crimson dashed <strong>Species Boundary</strong> demarcations across heterospecific cluster bridges [23,24,25].</p>
+  <p>Twelve single-species 25,000-generation Bayesian coalescent skylines (N = {tot_pop_isos} bacterial isolates; R-hat &lt;= 1.01) decouple fast-evolving housekeeping CDS loci (<em>gyrB</em>, <em>rpoB</em>, <em>recA</em>, <em>groEL</em>; Cohorts R1-R6, L1, L3, L6; Figure 4A) from slow-clock structural 16S rRNA trajectories (Cohorts L2, L4, L5; Figure 4B) [20]. Radiative-forcing Stage 3C TCS/MSN networks reconstruct inter-cluster connectivity across low-GC Bacillota <em>gyrB</em> (<strong>Panel A</strong>: {hap7a_txt}; Figure 7A) and high-GC Actinomycetota <em>rpoB</em> (<strong>Panel B</strong>: {hap7b_txt}; Figure 7B) with explicit crimson dashed <strong>Species Boundary</strong> demarcations across heterospecific cluster bridges [23,24,25].</p>
   <figure id="fig-4a" class="labs-figure-card labs-figure-card--print-full">
-    <div class="labs-copy-header"><span>Figure 4A. Single-Species Bacterial Housekeeping gyrB/rpoB/groEL Skyline Matrix (Cohorts R1-R6; N = 216)</span></div>
+    <div class="labs-copy-header"><span>Figure 4A. Single-Species Bacterial Housekeeping gyrB/rpoB/groEL Skyline Matrix (Cohorts R1-R6; N = {r_pop_isos})</span></div>
     <div class="labs-inline-svg-figure">{fig4a}</div>
     <figcaption>Six single-species bacterial chromosomal coalescent skylines contrasting Carried ModelTest RY3 medians against K80, unrecoded, and raw negative controls.</figcaption>
   </figure>
   <figure id="fig-4b" class="labs-figure-card labs-figure-card--print-full">
-    <div class="labs-copy-header"><span>Figure 4B. Bacterial Multi-Locus Coalescent Contrast: Coding rpoB/recA vs. 16S rRNA (Cohorts L1-L6; N = 216)</span></div>
+    <div class="labs-copy-header"><span>Figure 4B. Bacterial Multi-Locus Coalescent Contrast: Coding rpoB/recA vs. 16S rRNA (Cohorts L1-L6; N = {l_pop_isos})</span></div>
     <div class="labs-inline-svg-figure">{fig4b}</div>
     <figcaption>Paired bacterial multi-locus skylines contrasting rapidly coalescing housekeeping loci against buffered Katoh E-INS-i 16S rRNA trajectories.</figcaption>
   </figure>
@@ -841,6 +850,7 @@ r#"<section class="labs-study-section">
         w0_f2 = fam2.selection_result.m0_omega, w2_f2 = fam2.selection_result.m2a_omega2, lrt_f2 = fam2.selection_result.lrt_m2a_vs_m1a_stat,
         w0_f3 = fam3.selection_result.m0_omega, lrt_f3 = fam3.selection_result.lrt_m2a_vs_m1a_stat,
         w0_f4 = fam4.selection_result.m0_omega, w2_f4 = fam4.selection_result.m2a_omega2, lrt_f4 = fam4.selection_result.lrt_m2a_vs_m1a_stat,
+        tot_fam_recs = tot_fam_recs, tot_pop_isos = tot_pop_isos, r_pop_isos = r_pop_isos, l_pop_isos = l_pop_isos,
         hap7a_txt = html_esc(&hap7a_txt), hap7b_txt = html_esc(&hap7b_txt),
         fig1 = fig1_svg, fig2 = fig2_svg, fig3 = fig3_svg, fig4a = fig4a_svg, fig4b = fig4b_svg, fig5 = fig5_svg, fig6 = fig6_svg, fig7a = fig7a_svg, fig7b = fig7b_svg,
         main_tables = main_tables, ascii_blocks = ascii_blocks, refs_block = refs_block, supp_html = supp_html,
@@ -962,8 +972,8 @@ pub fn export_gram_positive_manuscript_and_staged_bundle(
         format!("Per-locus BIC ModelTest + edge-linked proportional rate optimization across {} bacterial loci improves fit by Delta ln L = {:+.2} nats (Partitioned ln L = {}, RCFV reduced {:.1}% to {:.4}, UFBoot2 = {:.1}%).", n_part, delta_lnl, fmt_lnl(part_lnl), rcfv_drop_pct, report.rcfv_ry3, sup_boot),
         format!("Mandatory >=80% / >=2-loci gate (Supplemental Figure S4) retains {} multi-locus bacterial OTUs in concatenated phylograms while keeping all 64 species ({} sparse OTUs included) in Quartet MSC, ABBA-BABA, Skylines & Haplotype Networks.", n_phy, n_pop),
         format!("64-species {}-locus Quartet MSC ({} quartets, Q = {:.4}) and TimeTreeLSD2 anchor Terrabacteria at {:.1} Ma through Paleozoic Streptomycetales at {:.1} Ma.", report.msc_regime1_ry3.gene_tree_count, fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize), report.msc_regime1_ry3.normalized_quartet_score, n1.age_ma, n8.age_ma),
-        format!("61-state Code-11 codon models quantify murA (omega = {:.4}), spo0A ({:.4}), dnaK ({:.4}), and 1BU7-threaded CYP102A1 ({:.4}) selection regimes.", report.functional_families[0].selection_result.m0_omega, report.functional_families[1].selection_result.m0_omega, report.functional_families[2].selection_result.m0_omega, report.functional_families[3].selection_result.m0_omega),
-        "12 single-species 25,000-generation Bayesian skylines (N = 432) and Stage 3C gyrB/rpoB TCS/MSN networks map Bacillota and Actinomycetota species boundaries.".to_string(),
+        format!("61-state Code-11 codon models quantify murA (omega = {:.4}), spo0A ({:.4}), dnaK ({:.4}), and 1BU7-threaded CYP102A / P450 BM3 ({:.4}) selection regimes.", report.functional_families[0].selection_result.m0_omega, report.functional_families[1].selection_result.m0_omega, report.functional_families[2].selection_result.m0_omega, report.functional_families[3].selection_result.m0_omega),
+        format!("12 single-species 25,000-generation Bayesian skylines (N = {}) and Stage 3C gyrB/rpoB TCS/MSN networks map Bacillota and Actinomycetota species boundaries.", report.popset_skylines.iter().map(|p| p.num_isolates).sum::<usize>()),
     ];
 
     let refs = canonical_gram_positive_references();
@@ -1146,7 +1156,7 @@ Goldman--Yang 61-state Code-11 codon models quantify purifying constraint across
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-fig7a-haplotype-bacillota-gyrb.pdf}}\\caption{{Stage 3C radiative-forcing TCS/MSN network: Low-GC Bacillota gyrB with Species Boundary markers.}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-fig7b-haplotype-actinomycetota-rpob.pdf}}\\caption{{Stage 3C radiative-forcing TCS/MSN network: High-GC Actinomycetota rpoB with Species Boundary markers.}}\\end{{figure}}
 \\section*{{Supplemental Figures}}
-\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-supp-s1-cyp102a1-alignview.png}}\\caption{{Supplemental Figure S1. FAM-04 CYP102A1/105/107 alignment.}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-supp-s1-cyp102a1-alignview.png}}\\caption{{Supplemental Figure S1. FAM-04 Bacterial CYP102A / P450 BM3 Ortholog Alignment.}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-supp-s2-16s-einsi-alignview.png}}\\caption{{Supplemental Figure S2. Cohort L5 16S rRNA Katoh E-INS-i core alignment.}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-supp-s3-rpob-ry3-alignview.png}}\\caption{{Supplemental Figure S3. Phased 64-species Code-11 housekeeping core alignment.}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/gram-positive-supp-s4-supermatrix-coverage.pdf}}\\caption{{Supplemental Figure S4. Per-locus partitioned ModelTest ribbon, 64-taxon occupancy map (80\\% gate), and Code-11 strand phasing.}}\\end{{figure}}

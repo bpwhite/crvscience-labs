@@ -900,7 +900,7 @@ pub fn run_neural_network_schedule(
                         // is not homologous to the locus (e.g. a predicted mRNA or ITS-only record
                         // matched by a keyword) and gets zero core coverage. Repetitive anchors
                         // (complexity < 0.8) cannot place fragments, so the gate stays off.
-                        Some(core) if mapped.len() >= 6 && index.complexity() >= 0.8 => spans
+                        Some(core) if mapped.len() >= (recs.len() / 2).clamp(4, 6) && index.complexity() >= 0.8 => spans
                             .iter()
                             .map(|s| Some(s.map(|s| crate::region::core_coverage(&s, core)).unwrap_or(0.0)))
                             .collect(),

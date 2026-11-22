@@ -3,6 +3,7 @@
 //! priors, species-per-genus chimeric OTU construction, and clean partitioned NEXUS export.
 
 pub mod align_nexus;
+pub mod coding_ortholog;
 pub mod config;
 pub mod db;
 pub mod entrez;

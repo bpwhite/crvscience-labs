@@ -1030,27 +1030,27 @@ pub(crate) const GRAM_POSITIVE_THEME: FigureStudyTheme = FigureStudyTheme {
         "Peptidoglycan Cell-Wall Transferase (murA)",
         "Master Endospore Initiation Regulator (spo0A)",
         "Thermal & Compositional Stress Chaperone (dnaK / HSP70)",
-        "Soluble & Soil Cytochrome P450s (CYP102A1 / CYP105 / CYP107)",
+        "Bacterial Cytochrome P450 Heme Domain (CYP102A / P450 BM3)",
     ],
     fig5_panel_b_fam_names: [
         "FAM-01: Peptidoglycan (murA)",
         "FAM-02: Endospore (spo0A)",
         "FAM-03: Chaperone (dnaK)",
-        "FAM-04: P450 BM3 (CYP102A1, 1BU7)",
+        "FAM-04: P450 BM3 (CYP102A, 1BU7)",
     ],
     fig5_panel_d_header: "Panel D | Bacterial P450 BM3 Fold & Fe3+-Heme Pocket (1BU7, 1.65 A)",
-    fig5_panel_d_upper_subtitle: "Upper: 3D CYP102A1 Fold (455 Ca Threaded with Priestia megaterium)",
+    fig5_panel_d_upper_subtitle: "Upper: 3D CYP102A1 Fold (455 Ca Threaded with Bacillus megaterium)",
     fig5_web_svg: "gram-positive-fig5-selection-sweep-alignment.svg",
     fig5_title: "Pixel-Locked Bacterial Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & 1BU7 CYP102A1 Heme-Thiolate Pocket",
-    fig5_caption: "Translated Table-11 amino-acid motif alignments across 48 bacterial CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Bacillus megaterium P450 BM3 structure threaded on 1BU7 (1.65 A) with Fe3+-Protoporphyrin IX (HEM A 999) and Cys400-Sg thiolate bond.",
+    fig5_caption: "Translated Table-11 amino-acid motif alignments across 46 bacterial CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Bacillus megaterium P450 BM3 structure threaded on 1BU7 (1.65 A) with Fe3+-Protoporphyrin IX (HEM A 999) and Cys400-Sg thiolate bond.",
     fig6_web_svg: "gram-positive-fig6-runie-pipeline-architecture.svg",
     fig6_title: "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Partitioned vs. Unpartitioned Model Comparison Across Gram-Positive Bacteria",
     fig6_caption: "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and 0-Beaker control (4th), alongside Pipeline B (12 single-species bacterial skylines).",
     fig6_clade_label: "Gram-Positive Bacteria",
-    fig6_p450_label: "CYP102A1 / murA / spo0A / dnaK",
+    fig6_p450_label: "CYP102A / murA / spo0A / dnaK",
     fig6_its_label: "B. subtilis & L. plantarum 16S rRNA",
     supp_s1_fasta_name: "supp_s1_cyp102a1_p450_cds.fasta",
-    supp_s1_title: "FAM-04 Bacterial Cytochrome P450 CDS (CYP102A1 / CYP105 / CYP107)",
+    supp_s1_title: "FAM-04 Bacterial Cytochrome P450 Orthologs (CYP102A / P450 BM3)",
     supp_s1_source: "VAL-SET-070-GRAM-POSITIVE-BACTERIA (FAM-04 Code 11)",
     supp_s1_stem: "gram-positive-supp-s1-cyp102a1-alignview",
     supp_s2_title: "Cohort L5 Lactiplantibacillus 16S Ribosomal RNA (Katoh E-INS-i Core)",
@@ -3169,9 +3169,25 @@ fn render_bemisia_fig5_selection_and_sweep(
     // Panel A (Top): Pixel-Locked Amino-Acid Motif Clips (`<text x="...">` per residue!)
     svg.push_str(r##"<rect x="20" y="16" width="1560" height="448" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>"##);
     svg.push_str(r##"<rect x="20" y="16" width="1560" height="36" rx="8" fill="#0f172a"/>"##);
-    svg.push_str(r##"<text x="36" y="39" font-size="12" font-weight="800" fill="#f8fafc">Panel A | Pixel-Locked Translated Amino-Acid Motif Alignments Across 4 Nuclear Coding Families (48 NCBI CDS Orthologs)</text>"##);
+    let tot_fam_orth: usize = study.functional_families.iter().map(|f| f.num_records).sum();
+    let panel_a_family_kind = if theme.fig5_caption.to_ascii_lowercase().contains("bacterial") {
+        "Bacterial Coding Families"
+    } else {
+        "Nuclear Coding Families"
+    };
+    svg.push_str(&format!(
+        r##"<text x="36" y="39" font-size="12" font-weight="800" fill="#f8fafc">Panel A | Pixel-Locked Translated Amino-Acid Motif Alignments Across 4 {} ({} NCBI CDS Orthologs)</text>"##,
+        panel_a_family_kind, tot_fam_orth
+    ));
     fb.fill_rect(20, 16, 1560, 36, (15, 23, 42));
-    fb.draw_text(36, 26, "Panel A | Pixel-Locked Translated Amino-Acid Motif Alignments (48 NCBI CDS)", (56, 189, 248), 1, Some(1520));
+    fb.draw_text(
+        36,
+        26,
+        &format!("Panel A | Pixel-Locked Translated Amino-Acid Motif Alignments ({} NCBI CDS)", tot_fam_orth),
+        (56, 189, 248),
+        1,
+        Some(1520),
+    );
 
     let aa_bg = |ch: char| -> &'static str {
         match ch {
@@ -3202,14 +3218,29 @@ fn render_bemisia_fig5_selection_and_sweep(
 
         for (ri, (rid, clip)) in fam.motif_rows.iter().take(5).enumerate() {
             let ry = by + 14.0 + (ri as f64) * 28.0;
+            let compact_rid = if let Some((left, right)) = rid.split_once(" | ") {
+                let acc = left.split_once('_').map(|(_, a)| a).unwrap_or(left);
+                let mut words = right.split_whitespace();
+                let genus_raw = words.next().unwrap_or("").trim_start_matches(|c: char| c == '\'' || c == '"');
+                let spec_raw = words.next().unwrap_or("").trim_start_matches(|c: char| c == '\'' || c == '"');
+                let g_ch = genus_raw.chars().next();
+                let sp_short: String = spec_raw.chars().take(6).collect();
+                let formatted = match (g_ch, sp_short.is_empty()) {
+                    (Some(g), false) => format!("{} {}. {}", acc, g, sp_short),
+                    _ => acc.to_string(),
+                };
+                formatted.chars().take(21).collect::<String>()
+            } else {
+                rid.chars().take(21).collect::<String>()
+            };
             svg.push_str(&format!(
                 r##"<text x="{:.1}" y="{:.1}" font-size="9.0" font-family="monospace" font-weight="700" fill="#334155">{}</text>"##,
                 bx,
                 ry + 14.0,
-                xml_esc(rid)
+                xml_esc(&compact_rid)
             ));
-            let x_start = bx + 112.0;
-            for (ci, aa_ch) in clip.chars().take(38).enumerate() {
+            let x_start = bx + 132.0;
+            for (ci, aa_ch) in clip.chars().take(37).enumerate() {
                 let cx = x_start + (ci as f64) * 16.2;
                 svg.push_str(&format!(
                     r##"<rect x="{:.1}" y="{:.1}" width="15.0" height="19.0" rx="2" fill="{}"/>"##,

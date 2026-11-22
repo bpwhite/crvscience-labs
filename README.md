@@ -30,7 +30,7 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 To keep this front page concise, detailed mathematical formulations, validation protocols, and full benchmark tables are organized into dedicated documentation pages:
 
 1. **[`docs/RUNIE_ARCHITECTURE_AND_STUDIES.md`](docs/RUNIE_ARCHITECTURE_AND_STUDIES.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **30 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-30`)**, and the **15 Core Documented Multi-Stage Studies (`17` Total Solved by `bio-suite runie`)**.
-2. **[`docs/VALIDATION_AND_CALIBRATION_PROCESS.md`](docs/VALIDATION_AND_CALIBRATION_PROCESS.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate ($B_{\text{prior}} \rightarrow B_{\text{posterior}}$), Dual-Pass Blinded `SHA-256` Validation ($D_{\text{ctx}}$), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **69 Validation Datasets (`VAL-SET-001`–`VAL-SET-069`)**.
+2. **[`docs/VALIDATION_AND_CALIBRATION_PROCESS.md`](docs/VALIDATION_AND_CALIBRATION_PROCESS.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate (B<sub>prior</sub> → B<sub>posterior</sub>), Dual-Pass Blinded `SHA-256` Validation (D<sub>ctx</sub>), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **69 Validation Datasets (`VAL-SET-001`–`VAL-SET-069`)**.
 3. **[`docs/TOOL_BENCHMARK_MATRIX.md`](docs/TOOL_BENCHMARK_MATRIX.md)** — Complete **37-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`, plus `bio-suite-supervisor`) and the active validation queue.
 4. **[`docs/DISCOVERIES_AND_CRITICAL_REPORTS.md`](docs/DISCOVERIES_AND_CRITICAL_REPORTS.md)** — Auto-synced index of all **30 Empirically Verified Preprints**, Lab Discoveries (`#1`–`#145`; `143` cataloged entries), and dataset provenance mappings.
 5. **[`docs/SUPERVISOR_AND_GUI_GUIDE.md`](docs/SUPERVISOR_AND_GUI_GUIDE.md)** — Guide to the autonomous **`bio-suite-supervisor`** study orchestrator, `Super-BLAST` self-healing loop-back engine, and 5-tab native Win32 desktop GUI (`bio-suite-supervisor gui` & `runie-align-view`).
@@ -52,7 +52,7 @@ cargo build --release
 ./target/release/bio-suite runie --out runs/runie-pipeline-inference-report.json
 ```
 
-### 2. Run Step-Up Tier 1 $\rightarrow$ Tier 2 $\rightarrow$ Tier 3 Scientific Syntheses (`1.44–1.52 Mb`)
+### 2. Run Step-Up Tier 1 → Tier 2 → Tier 3 Scientific Syntheses (`1.44–1.52 Mb`)
 ```bash
 # Study #13 (#82, #83 🚩, #84 🚩): Asgard Archaea (Heimdallarchaeia) Eukaryogenesis Synthesis
 ./target/release/bio-suite asgard-tier3 --out runs/asgard-tier3-eukaryogenesis-synthesis.json

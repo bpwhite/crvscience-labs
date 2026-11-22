@@ -6,7 +6,7 @@
 2. **Autonomous `Super-BLAST` Annotation Validation & Self-Healing Loop-Back Engine (95%+ Autonomous)**:
    - Audits every fetched sequence in parallel (`rayon`) via `super_blast` homology scoring against the cohort medoid, strand orientation verification (`--adjustdirection`), full-length completeness gates, 3-frame translation internal stop-codon scans (`NUMT` nuclear pseudogene detection), and terminal `5' C->T / 3' G->A` ancient-DNA deamination checks.
    - Automatically repairs recoverable errors in Rust (reverse-complement strand rescue, terminal deamination `N`-masking) and quarantines severe repository artifacts (e.g., sample swaps such as `PQ585799.1`, nuclear `NUMT` paralogs such as `KU551299.1`, partial fragments, or withdrawn/failed Entrez IDs) into the **`0🧪` Uncleaned Negative Control** track while automatically pulling verified full-length replacement sequences from the reserve pool.
-   - Escalates to the user or LLM (`EscalatedToUserOrLlm`) **only** when unrecoverable cohort-wide failures (>35% unresolvable accessions with an exhausted reserve pool) occur.
+   - Escalates to the user or LLM (`SupervisorEscalationStatus::RequiresHumanOrLlmIntervention`) **only** when unrecoverable cohort-wide failures (>35% unresolvable accessions with an exhausted reserve pool) occur.
 3. **"Run" as the First-Class Unit of Management (`crvscience-labs/runs/<run-id>/`)**:
    - Every run is stored in a self-contained directory containing `run-manifest.json`, `downloads/`, `audit/`, `alignments/`, `trees/`, `pdb/`, `figures/`, and `manuscript/`.
 4. **Locked-Format Figure Generator (`.svg` + `.png` + `.pdf`) & Preprint (`.tex`) Generator**:

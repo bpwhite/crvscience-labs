@@ -5786,7 +5786,7 @@ pub fn execute_declarative_study(
         figures: Vec::<GeneratedFigureArtifact>::new(),
         latex_main_tex_rel_path: "manuscript/main.tex".to_string(),
         html_manuscript_rel_path: "manuscript/single-column-manuscript.html".to_string(),
-        pdf_preprint_rel_path: format!("manuscript/{}.pdf", cfg.preprint_slug),
+        pdf_preprint_rel_path: format!("manuscript/{}-preprint.pdf", spec.run_id),
     };
 
     let study_report = MultiCompartmentStudyReport {
@@ -5796,8 +5796,8 @@ pub fn execute_declarative_study(
         total_records_on_disk,
         quarantined_records_on_disk: iter1_quarantined,
         total_raw_bp_on_disk,
-        mito_aligned_cols: bundle.cox64_cols_bp,
-        nuclear_aligned_cols: nuc_aligned_cols_total,
+        mito_aligned_cols: bundle.mito_aligned_cols,
+        nuclear_aligned_cols: bundle.nuclear_aligned_cols + nuc_aligned_cols_total,
         supermatrix_aligned_cols: bundle.supermatrix_cols_bp.max(1_050),
         distinct_patterns_ry3: st3.distinct_patterns_ry3,
         parsimony_informative_ry3: st3.parsimony_informative_ry3,

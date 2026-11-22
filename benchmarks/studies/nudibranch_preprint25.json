@@ -1,0 +1,1795 @@
+{
+  "study_slug": "STUDY-NUDIBRANCH-GLOBAL-RADIATION-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "nudibranch-global",
+  "run_id": "runie-native-nudibranch-global-25-v3",
+  "preprint_slug": "nudibranch-global-radiation-preprint",
+  "discovery_slug": "nudibranch-global-radiation-phylogenomics",
+  "validation_set_id": "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS",
+  "preprint_label": "PREPRINT-25",
+  "preprint_version": "3.0.0",
+  "concept_doi": "10.5281/zenodo.24107446",
+  "remediation_note": "Version 3.0.0 remediates PREPRINT-25 v2.0.0 through the generalized declarative bio-suite pipeline: (1) added peer-reviewed 23-family, 7-clade benchmark validation (nudibranch_preprint25_design.json) so clade_recovery_summary.json evaluates ML RY3 and Quartet MSC bipartitions directly; (2) split mixed Stage 4 nuclear sets into homogeneous single-family Code-1 panels purged of C-type lectins/chitinases/mucins, DnaJ, KCNC1/mGluR8, and Clan-4/Clan-M P450s (retaining pure cathepsin L CTSL, Hsp70 ATPase chaperones, nAChR alpha subunits, and 12/12 I-helix + Cys-loop Clan-3 CYP3A29/CYP3A24 monooxygenases); (3) upgraded L2 and L5 ribosomal cohorts to strictly single-subunit 16S LSU rRNA; and (4) enforced disable-wiki-links and metadata hygiene guards.",
+  "telemetry_filename": "nudibranch-global-radiation-native-biosuite.json",
+  "companion_label": "Lab Discovery #137",
+  "title": "Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines",
+  "subtitle_prefix": "Global Nudibranchia & Nudipleura Phylogenomics, Homogeneous CTSL/Hsp70/nAChR/CYP3A Selection & Skylines",
+  "category": "Phylogenomics, Multispecies Coalescence & Marine Chemical Ecology",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Coalescent Theory)",
+  "taxonomic_scope": "Gastropoda: Heterobranchia: Nudipleura (Nudibranchia: Cladobranchia [Aeolidioidea, Fionoidea, Dendronotoidea, Tritonioidea, Arminoidea] & Doridina [Chromodoridoidea, Doridoidea, Phyllidioidea, Polyceroidea, Hexabranchidae]; Sister Order Pleurobranchida; and Tectipleura Outgroups)",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/nudibranch_preprint25_design.json",
+  "cache_subdir": "val_set_064_nudibranch_radiation",
+  "seqnet_sqlite_name": "seqnet_nudibranch_preprint25.sqlite",
+  "nexus_filename": "seqnet_nudibranch_supermatrix.nex",
+  "supermatrix_fasta_name": "nudibranchs_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "nudi_nuc_18s_q1",
+      "query": "(Nudipleura[Organism] OR Aplysiida[Organism] OR Sacoglossa[Organism]) AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title] OR \"18S rRNA\"[Title]) AND 450:2200[SLEN] NOT \"28S\"[Title] NOT \"large subunit\"[Title] NOT \"internal transcribed\"[Title] NOT transferase[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 450,
+      "max_bp": 2200
+    },
+    {
+      "cache_key": "nudi_nuc_28s_q1",
+      "query": "(Nudipleura[Organism] OR Aplysiida[Organism] OR Sacoglossa[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 350:3200[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT transferase[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 350,
+      "max_bp": 3200
+    }
+  ],
+  "fallback_mito_accessions": [
+    "NC_005827.1",
+    "NC_024260.1",
+    "NC_077526.1",
+    "NC_010567.1",
+    "NC_015091.1",
+    "OZ505968.1",
+    "OZ560267.1",
+    "KU365728.1",
+    "DQ991929.1",
+    "NC_026988.1",
+    "PZ235484.1",
+    "NC_079703.1",
+    "NC_079704.1",
+    "NC_026987.1",
+    "NC_077625.1",
+    "NC_077633.1",
+    "NC_062675.1",
+    "MT527186.1",
+    "OZ485825.1",
+    "MW027646.1",
+    "LC759638.1",
+    "NC_048494.1",
+    "NC_080250.1",
+    "OZ491268.1",
+    "NC_033968.1",
+    "OZ318190.1",
+    "OZ414277.1",
+    "NC_053882.1",
+    "NC_077576.1",
+    "PV364849.1",
+    "PX421547.1",
+    "OZ493064.1",
+    "NC_015111.1",
+    "NC_068819.1",
+    "QB235896.1",
+    "NC_065089.1",
+    "OZ479089.1",
+    "NC_034920.1",
+    "NC_004321.1",
+    "NC_068821.1",
+    "OZ313420.1",
+    "OZ346426.1",
+    "NC_034006.1",
+    "NC_068820.1",
+    "OZ496563.1",
+    "OZ218150.1",
+    "NC_084457.1",
+    "NC_063667.1",
+    "NC_083999.1",
+    "NC_048495.1",
+    "NC_084003.1",
+    "NC_063124.1",
+    "NC_063125.1",
+    "NC_063126.1",
+    "NC_063123.1",
+    "NC_041196.1",
+    "NC_036426.1",
+    "NC_082038.1",
+    "NC_083151.1",
+    "NC_083963.1",
+    "NC_065090.1",
+    "NC_057611.1",
+    "NC_065091.1",
+    "NC_084209.1"
+  ],
+  "s4_banner_title": "Global Nudibranchia & Nudipleura Radiation",
+  "anchor_species": "Chromodoris annae",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Tectipleura Outgroups",
+      "family": "Aplysiidae",
+      "species": "Aplysia californica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Tectipleura Outgroups",
+      "family": "Aplysiidae",
+      "species": "Aplysia kurodai",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Tectipleura Outgroups",
+      "family": "Plakobranchidae",
+      "species": "Elysia viridis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Tectipleura Outgroups",
+      "family": "Plakobranchidae",
+      "species": "Elysia chlorotica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Pleurobranchida Sister Order",
+      "family": "Pleurobranchidae",
+      "species": "Berthellina sp. TLT-2006",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Pleurobranchida Sister Order",
+      "family": "Pleurobranchidae",
+      "species": "Berthellina edwardsii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Pleurobranchida Sister Order",
+      "family": "Pleurobranchidae",
+      "species": "Pleurobranchus sp. A-P8ZY7MZOX",
+      "synonyms": [
+        "Pleurobranchus sp."
+      ]
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Pleurobranchida Sister Order",
+      "family": "Pleurobranchaeidae",
+      "species": "Pleurobranchaea sp. TY-2016",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Pleurobranchida Sister Order",
+      "family": "Pleurobranchidae",
+      "species": "Berthellina sp. IWP",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T010",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Tritoniidae",
+      "species": "Tritonia tetraquetra",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T011",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Tritoniidae",
+      "species": "Tritonia tetraquetra MH01",
+      "synonyms": [
+        "Tritonia tetraquetra"
+      ]
+    },
+    {
+      "tip_code": "C:T012",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Tritoniidae",
+      "species": "Tritonia iocasica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Tritoniidae",
+      "species": "Tritoniopsis elegans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Tethydidae",
+      "species": "Melibe leonina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Dendronotidae",
+      "species": "Dendronotus frondosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Dotidae",
+      "species": "Doto coronata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Arminidae",
+      "species": "Dermatobranchus otome",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Arminidae",
+      "species": "Dermatobranchus otome NW",
+      "synonyms": [
+        "Dermatobranchus otome"
+      ]
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Cladobranchia Dendronotida",
+      "family": "Janolidae",
+      "species": "Janolus hyalinus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T020",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Aeolidiidae",
+      "species": "Berghia stephanieae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T021",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Aeolidiidae",
+      "species": "Spurilla braziliana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T022",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Facelinidae",
+      "species": "Hermissenda emurai",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T023",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Facelinidae",
+      "species": "Facelina bostoniensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T024",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Facelinidae",
+      "species": "Facelina auriculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T025",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Facelinidae",
+      "species": "Sakuraeolis japonica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Facelinidae",
+      "species": "Cratena peregrina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Facelinidae",
+      "species": "Pruvotfolia pselliotes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Aeolidiidae",
+      "species": "Protaeolidiella atra",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Flabellinidae",
+      "species": "Coryphella verrucosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Cladobranchia Aeolidioidea",
+      "family": "Trinchesiidae",
+      "species": "Phestilla fuscostriata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T031",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Hexabranchidae",
+      "species": "Hexabranchus sanguineus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T032",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Hexabranchidae",
+      "species": "Hexabranchus morsomus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Aegiridae",
+      "species": "Notodoris gardineri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Polyceridae",
+      "species": "Triopha modesta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Polyceridae",
+      "species": "Triopha maculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Polyceridae",
+      "species": "Polycera hedgpethi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Polyceridae",
+      "species": "Polycera quadrilineata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Polyceridae",
+      "species": "Nembrotha kubaryana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Doridina Phanerobranchia",
+      "family": "Polyceridae",
+      "species": "Tyrannodoris europaea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T040",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Dorididae",
+      "species": "Doris odhneri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T041",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Dorididae",
+      "species": "Doris pseudoargus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T042",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Dorididae",
+      "species": "Doris verrucosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Dorididae",
+      "species": "Homoiodoris japonica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Discodorididae",
+      "species": "Carminodoris armata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Discodorididae",
+      "species": "Platydoris argo",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Discodorididae",
+      "species": "Peltodoris atromaculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Dendrodorididae",
+      "species": "Dendrodoris krusensternii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Phyllidiidae",
+      "species": "Phyllidia elegans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Phyllidiidae",
+      "species": "Phyllidia picta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Phyllidiidae",
+      "species": "Phyllidiella pustulosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Doridina Doridoidea & Phyllidioidea",
+      "family": "Phyllidiidae",
+      "species": "Phyllidiopsis shireenae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T052",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Cadlinidae",
+      "species": "Cadlina japonica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T053",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Cadlinidae",
+      "species": "Cadlina koreana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Cadlinidae",
+      "species": "Cadlina umiushi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Cadlinidae",
+      "species": "Aldisa cooperi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Chromodoris orientalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Chromodoris annae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Chromodoris lochi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Chromodoris elisabethina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Chromodoris colemani",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Goniobranchus leopardus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Doriprismatica atromarginata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Glossodoris acosti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Doridina Chromodoridoidea Crown",
+      "family": "Chromodorididae",
+      "species": "Hypselodoris whitei",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Papain-Family Cysteine Protease Cathepsin L Hydrolases (CTSL)",
+      "physiological_role": "Digestive-gland and cnidosac papain-family cysteine peptidase cathepsin L orthologs processing cnidarian and sponge prey tissues across Heterobranchia and Gastropoda",
+      "gene_symbol": "CTSL",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_078910947.1",
+        "XM_078901694.1",
+        "XM_078901693.1",
+        "XM_078891359.1",
+        "XM_013088768.2",
+        "XM_005106737.3",
+        "XM_005105209.2",
+        "XM_013085067.2",
+        "XM_013083198.2",
+        "XM_005096663.2",
+        "XM_035969279.1",
+        "XM_056028379.1",
+        "XM_013081520.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "nudi_fam01_ctsl_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 900,
+        "max_bp": 2000,
+        "max_domain_bp": null,
+        "min_aa_len": 280,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "stephanieae",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.1,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Marine Heatwave & Coral-Bleaching Thermal Stress Chaperones (Hsp70 / Hsc70)",
+      "physiological_role": "ATP-dependent 70 kDa molecular chaperones buffering unfolded protein stress during tropical reef heatwaves and intertidal insolation across Nudibranchia and heterobranch molluscs",
+      "gene_symbol": "Hsp70",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_078923107.1",
+        "XM_078922405.1",
+        "XM_078920416.1",
+        "XM_078890369.1",
+        "XM_078892965.1",
+        "XM_005103777.3",
+        "XM_005100297.3",
+        "XM_005100296.3",
+        "XM_005100299.3",
+        "NM_001311286.1",
+        "XM_056037451.1",
+        "XM_013240929.2",
+        "XM_013226660.2"
+      ],
+      "ortholog_config": {
+        "cache_key": "nudi_fam02_hsp70_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1500,
+        "max_bp": 2900,
+        "max_domain_bp": null,
+        "min_aa_len": 450,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "stephanieae",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "ATPase-Core",
+            "pos_min": 170,
+            "pos_max": 260,
+            "patterns": [
+              "DLGGGTFD"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Rhinophore Chemosensory Pentameric Cys-Loop Nicotinic Acetylcholine Receptors (nAChR Alpha)",
+      "physiological_role": "Neuronal nicotinic acetylcholine receptor alpha-subunits mediating lamellate rhinophore chemosensory signaling and central neural circuits in heterobranch gastropods",
+      "gene_symbol": "nAChR",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_078925624.1",
+        "XM_078925042.1",
+        "XM_078925041.1",
+        "XM_078925040.1",
+        "XM_078922046.1",
+        "XM_078915272.1",
+        "XM_078914043.1",
+        "XM_078912690.1",
+        "XM_013089726.2",
+        "XM_013084571.2",
+        "XM_059283561.1",
+        "XM_059315429.1",
+        "XM_059286953.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "nudi_fam03_nachr_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1200,
+        "max_bp": 2700,
+        "max_domain_bp": null,
+        "min_aa_len": 350,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "stephanieae",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.08,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Dietary Sponge Terpenoid & Xenobiotic Detoxification Clan-3 Cytochrome P450s (CYP3A29 / CYP3A31 / CYP3A24)",
+      "physiological_role": "Microsomal Clan-3 cytochrome P450 monooxygenases oxidizing dietary sponge furanoterpenes and sesquiterpene metabolites prior to Mantle Dermal Formation sequestration",
+      "gene_symbol": "CYP3A29",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_078923867.1",
+        "XM_078923069.1",
+        "XM_078914097.1",
+        "XM_078903215.1",
+        "XM_078897682.1",
+        "XM_005112583.3",
+        "XM_005111996.3",
+        "XM_013090539.2",
+        "XM_005106244.3",
+        "XM_035973662.1",
+        "XM_056028026.1",
+        "XM_056034450.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "nudi_fam04_cyp3a_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1350,
+        "max_bp": 2700,
+        "max_domain_bp": null,
+        "min_aa_len": 400,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "stephanieae",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "I-helix",
+            "pos_min": 260,
+            "pos_max": 410,
+            "patterns": [
+              "AG.ET",
+              "AG.DT",
+              "SG.ET",
+              "SG.DT",
+              "GG.ET"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 390,
+            "pos_max": 530,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.08,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "berghia_cyp3a29_heme_pocket.pdb",
+    "gene_symbol": "CYP3A29",
+    "template_label": "1TQN_A (2.05 A Clan-3 Microsomal P450 + HEM A 508)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (Berghia CYP3A29 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala-Gly-Tyr-Glu-Thr (I-Helix Distal O2 Groove)",
+      "SRS1 B-Prime Region (1TQN 100-126; Sponge Terpenoid Substrate Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Indo-Pacific Coral Triangle Symbiodiniaceae-Hosting Aeolid (Pteraeolidia ianthina)",
+      "clade_lineage": "Pteraeolidia ianthina (Blue Dragon Aeolid)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P25-R1",
+      "locality": "Indo-Pacific Coral Triangle Pteraeolidia",
+      "cache_key": "R1",
+      "query": "\"Pteraeolidia\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Amphi-Pacific Kuroshio & California Current Facelinid Corridor (Hermissenda)",
+      "clade_lineage": "Hermissenda crassicornis / emurai (Opalescent Aeolid)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P25-R2",
+      "locality": "Amphi-Pacific Hermissenda Corridor",
+      "cache_key": "R2",
+      "query": "\"Hermissenda\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Circumtropical Pelagic Neustonic Subtropical Gyre Corridor (Glaucus atlanticus)",
+      "clade_lineage": "Glaucus atlanticus / marginatus (Pelagic Blue Dragon)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0215,
+      "source_id": "P25-R3",
+      "locality": "Circumtropical Subtropical Gyres Glaucus",
+      "cache_key": "R3",
+      "query": "\"Glaucus\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Indo-West Pacific Coral Reef Porostome Spongivore Corridor (Phyllidiella)",
+      "clade_lineage": "Phyllidiella pustulosa (Warty Reef Phyllidiid)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P25-R4",
+      "locality": "Indo-West Pacific Phyllidiella Coral Triangle",
+      "cache_key": "R4",
+      "query": "\"Phyllidiella\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Indo-Pacific & Tethyan Aposematic Spongivore Corridor (Hypselodoris)",
+      "clade_lineage": "Hypselodoris spp. (Furanosesquiterpene Chromodorids)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0212,
+      "source_id": "P25-R5",
+      "locality": "Indo-Pacific & Tethyan Hypselodoris",
+      "cache_key": "R5",
+      "query": "\"Hypselodoris\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Trans-Atlantic & Caribbean Anemone-Feeding Aeolid Corridor (Berghia / Spurilla)",
+      "clade_lineage": "Berghia stephanieae / Spurilla (Kleptocnidae Aeolids)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0214,
+      "source_id": "P25-R6",
+      "locality": "Trans-Atlantic & Caribbean Berghia/Spurilla",
+      "cache_key": "R6",
+      "query": "(\"Berghia\"[Organism] OR \"Spurilla\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Indo-Pacific & Boreal)",
+      "region_label": "Indo-Pacific Coral Reef Mullerian Mimicry Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Chromodoris annae / lochi (Aposematic Chromodorids)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0215,
+      "source_id": "P25-L1",
+      "locality": "Indo-Pacific Coral Reef Chromodoris Deme",
+      "cache_key": "L1",
+      "query": "\"Chromodoris\"[Organism] AND (COX1[Title] OR COI[Title]) AND 550:900[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 960
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Indo-Pacific & Boreal)",
+      "region_label": "Indo-Pacific Coral Reef Mullerian Mimicry Deme (Single-Subunit 16S LSU rRNA 4Ne)",
+      "clade_lineage": "Chromodoris annae / lochi (16S rRNA)",
+      "locus_name": "Single-Subunit 16S LSU rRNA (E-INS-i)",
+      "locus_tag": "rrnL_16S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0086,
+      "source_id": "P25-L2",
+      "locality": "Indo-Pacific Coral Reef Chromodoris Deme",
+      "cache_key": "nudi_pop_l2_16s_v3",
+      "query": "\"Chromodoris\"[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 28S[Title] NOT complete[Title]",
+      "fallback_query": "Chromodorididae[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 28S[Title] NOT complete[Title]",
+      "min_bp": 340,
+      "max_bp": 1150
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Indo-Pacific & Boreal)",
+      "region_label": "Indo-Pacific Coral Reef Mullerian Mimicry Deme (Nuclear Histone H3 Sweep Locus)",
+      "clade_lineage": "Chromodoris annae / lochi (Histone H3 Sweep)",
+      "locus_name": "Nuclear Histone H3 Locus",
+      "locus_tag": "H3",
+      "ploidy_scalar": 0.22,
+      "mu_rate": 0.0108,
+      "source_id": "P25-L3",
+      "locality": "Indo-Pacific Coral Reef Chromodoris Deme",
+      "cache_key": "L3",
+      "query": "\"Chromodoris\"[Organism] AND (\"histone H3\"[Title] OR H3[Title]) AND 280:450[SLEN]",
+      "fallback_query": "",
+      "min_bp": 260,
+      "max_bp": 480
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Indo-Pacific & Boreal)",
+      "region_label": "Amphiboreal North Pacific/Atlantic Kelp & Fjord Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Dendronotus frondosus / dalli (Bushy-Backed Nudibranch)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0218,
+      "source_id": "P25-L4",
+      "locality": "Amphiboreal Kelp & Fjord Dendronotus Deme",
+      "cache_key": "L4",
+      "query": "\"Dendronotus\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Indo-Pacific & Boreal)",
+      "region_label": "Amphiboreal North Pacific/Atlantic Kelp & Fjord Deme (Single-Subunit 16S LSU rRNA 4Ne)",
+      "clade_lineage": "Dendronotus frondosus / dalli (16S rRNA)",
+      "locus_name": "Single-Subunit 16S LSU rRNA (E-INS-i)",
+      "locus_tag": "rrnL_16S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0088,
+      "source_id": "P25-L5",
+      "locality": "Amphiboreal Kelp & Fjord Dendronotus Deme",
+      "cache_key": "nudi_pop_l5_16s_v3",
+      "query": "\"Dendronotus\"[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 28S[Title] NOT ITS[Title] NOT complete[Title]",
+      "fallback_query": "Cladobranchia[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 28S[Title] NOT complete[Title]",
+      "min_bp": 340,
+      "max_bp": 1150
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Indo-Pacific & Boreal)",
+      "region_label": "Amphiboreal North Pacific/Atlantic Kelp & Fjord Deme (Nuclear Histone H3 Coding Sweep Locus)",
+      "clade_lineage": "Dendronotus frondosus / dalli (Histone H3 Sweep)",
+      "locus_name": "Nuclear Histone H3 Coding Locus",
+      "locus_tag": "H3",
+      "ploidy_scalar": 0.19,
+      "mu_rate": 0.011,
+      "source_id": "P25-L6",
+      "locality": "Amphiboreal Kelp & Fjord Dendronotus Deme",
+      "cache_key": "L6",
+      "query": "\"Dendronotus\"[Organism] AND (\"histone H3\"[Title] OR H3[Title]) AND 280:450[SLEN]",
+      "fallback_query": "",
+      "min_bp": 260,
+      "max_bp": 480
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Late Pleistocene MIS 5e Interglacial Highstand",
+      "age_max_ka": 160,
+      "age_min_ka": 65,
+      "period_label": "Pre-LGM Baseline (160-65 ka)",
+      "ecological_context": "High sea-level interglacial reef corridors across the Indo-Pacific Coral Triangle and Tethyan shelves"
+    },
+    {
+      "label": "Last Glacial Maximum (LGM) -120 m Eustatic Lowstand",
+      "age_max_ka": 65,
+      "age_min_ka": 14,
+      "period_label": "Horizon 1: LGM Lowstand Bottleneck (22-14 ka)",
+      "ecological_context": "Emergence of Sunda/Sahul shelves and boreal ice sheets fragmenting shallow coral and kelp habitats"
+    },
+    {
+      "label": "Early-to-Mid Holocene Meltwater Pulse Lagoon Re-Flooding",
+      "age_max_ka": 14,
+      "age_min_ka": 3,
+      "period_label": "Horizon 2: Holocene Lagoon Surge (11-3 ka)",
+      "ecological_context": "Rapid post-glacial inundation of shallow carbonate lagoons and amphiboreal rocky fjords"
+    },
+    {
+      "label": "Late Holocene Boundary-Current Veliger Dispersal",
+      "age_max_ka": 3,
+      "age_min_ka": 0.12,
+      "period_label": "Late Holocene Dispersal (3.0-0.12 ka)",
+      "ecological_context": "Planktotrophic veliger larval exchange along tropical and temperate western boundary currents"
+    },
+    {
+      "label": "20th-Century Coastal Shipping & Suez/Aquarium Founder Bottleneck",
+      "age_max_ka": 0.12,
+      "age_min_ka": 0.03,
+      "period_label": "Horizon 3: Anthropocene Shipping Bottleneck",
+      "ecological_context": "Trans-basin hull-fouling hydroid/bryozoan transport and Lessepsian/aquarium founder bottlenecks"
+    },
+    {
+      "label": "1998-2026 Pantropical Marine Heatwaves & Terpenoid Selection Sweep",
+      "age_max_ka": 0.03,
+      "age_min_ka": 0,
+      "period_label": "Horizon 4: Marine Heatwave & Terpenoid Sweep",
+      "ecological_context": "Recurrent ENSO marine heatwaves paired with thermal Hsp70 and dietary CYP3A29 terpenoid coding sweeps"
+    }
+  ],
+  "supp_s2_cohort_code": "L5",
+  "haplotype_panels": [
+    {
+      "panel_id": "Suborder Cladobranchia Aeolid & Dendronotid Demes (COI-5P)",
+      "fasta_filename": "cohort_nudibranch_cladobranchia_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1,
+        5,
+        9
+      ],
+      "slot_prefixes": [
+        "C:",
+        "D:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "Suborder Doridina Chromodorid & Porostome Demes (COI-5P)",
+      "fasta_filename": "cohort_nudibranch_doridina_cox1.fasta",
+      "cohort_indices": [
+        2,
+        3,
+        4,
+        6
+      ],
+      "slot_prefixes": [
+        "E:",
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Heterobranchia (Tectipleura Outgroups [A] vs. Clade Nudipleura [B-G])",
+      "sector_code": "[A]-[G]",
+      "fossil_or_biogeo_anchor": "Carboniferous-Permian Euthyneura / Heterobranchia split (~262-308 Ma)",
+      "target_age_ma": 284.6,
+      "ci_min_ma": 264.8,
+      "ci_max_ma": 304.2,
+      "trophic_guild": "Tectipleura sea hares & sacoglossans",
+      "key_enzymes_or_loci": "COI-ATP6 / 16S / 12S / 18S-28S / CTSL / CYP3A",
+      "ecosystem_role": "Tectipleura outgroup calibration anchor for Nudipleura crown dating",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Crown Nudipleura Split (Sister Order Pleurobranchida [B] vs. Order Nudibranchia [C-G])",
+      "sector_code": "[B]-[G]",
+      "fossil_or_biogeo_anchor": "Permian-Triassic boundary shell loss & Nudipleura divergence (~215-256 Ma)",
+      "target_age_ma": 236.4,
+      "ci_min_ma": 218.2,
+      "ci_max_ma": 254.8,
+      "trophic_guild": "Side-gilled Pleurobranchida slugs",
+      "key_enzymes_or_loci": "Mantle acid glands / nAChR alpha / Hsp70",
+      "ecosystem_role": "Basal Nudipleura sister order bridging shelled opisthobranchs and naked sea slugs",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Crown Nudibranchia (Suborder Cladobranchia [C-D] vs. Suborder Doridina [E-G])",
+      "sector_code": "[C]-[G]",
+      "fossil_or_biogeo_anchor": "Late Triassic-Early Jurassic Tethyan reef detorsion split (~180-216 Ma)",
+      "target_age_ma": 198.2,
+      "ci_min_ma": 181.6,
+      "ci_max_ma": 214.8,
+      "trophic_guild": "Cerata vs. branchial-plume sea slugs",
+      "key_enzymes_or_loci": "Rhinophore nAChR / CTSL / CYP3A29",
+      "ecosystem_role": "Primary bifurcation between Cladobranchia and Doridina",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Crown Cladobranchia (Dendronotida [C] vs. Aeolidioidea/Fionoidea [D])",
+      "sector_code": "[C]-[D]",
+      "fossil_or_biogeo_anchor": "Middle-Late Jurassic hydrozoan/octocoral reef diversification (~148-181 Ma)",
+      "target_age_ma": 164.8,
+      "ci_min_ma": 149.4,
+      "ci_max_ma": 180.2,
+      "trophic_guild": "Cnidarian-grazing cladobranchs",
+      "key_enzymes_or_loci": "CTSL digestive peptidases / nAChR / Hsp70",
+      "ecosystem_role": "Origin of branched digestive-gland diverticula for cnidarian predation",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Crown Aeolidioidea & Fionoidea (Kleptocnidae Cnidosac-Bearing Aeolids [D])",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Early Cretaceous scleractinian & actiniarian radiation (~98-127 Ma)",
+      "target_age_ma": 112.4,
+      "ci_min_ma": 99.2,
+      "ci_max_ma": 125.8,
+      "trophic_guild": "Kleptocnidae anemone & hydroid predators",
+      "key_enzymes_or_loci": "Cnidosac phagocytosis CTSL / CYP3A29",
+      "ecosystem_role": "Evolution of apical ceratal cnidosacs deploying intact prey nematocysts",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Crown Doridina (Hexabranchidae & Polyceroidea [E] vs. Cryptobranchia + Porostomata [F-G])",
+      "sector_code": "[E]-[G]",
+      "fossil_or_biogeo_anchor": "Jurassic-Cretaceous demosponge & bryozoan reef radiation (~122-155 Ma)",
+      "target_age_ma": 138.6,
+      "ci_min_ma": 124.2,
+      "ci_max_ma": 153.4,
+      "trophic_guild": "Spanish Dancers & phanerobranch polycerids",
+      "key_enzymes_or_loci": "Gill-pocket neuromotor nAChR / CYP3A",
+      "ecosystem_role": "Transition to retractile cryptobranch branchial pockets",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Doridoidea & Radula-Less Porostomata [F] vs. Crown Chromodoridoidea [G]",
+      "sector_code": "[F]-[G]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous Tethyan sponge-reef diversification (~81-108 Ma)",
+      "target_age_ma": 94.8,
+      "ci_min_ma": 83.4,
+      "ci_max_ma": 106.4,
+      "trophic_guild": "Spiculate dorids & suctorial porostomes",
+      "key_enzymes_or_loci": "Sponge metabolite CYP3A / Hsp70",
+      "ecosystem_role": "Divergence of suctorial porostome and aposematic sponge-feeding dorids",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Chromodoridoidea Split (Cadlinidae vs. Aposematic Chromodorididae [G])",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Early Eocene Indo-West Pacific Coral Triangle radiation (~43-62 Ma)",
+      "target_age_ma": 52.8,
+      "ci_min_ma": 44.6,
+      "ci_max_ma": 61.2,
+      "trophic_guild": "Aposematic sponge-terpene specialists",
+      "key_enzymes_or_loci": "MDF terpenoid CYP3A29 / Hsp70 heatwave chaperones",
+      "ecosystem_role": "Indo-Pacific Mullerian mimicry radiation sequestering sponge furanoterpenes",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-01-CHROMODORIS-GONIOBRANCHUS-MIMICRY",
+      "p1_tip": "G_T057",
+      "p2_tip": "G_T058",
+      "p3_tip": "G_T061",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Indo-Pacific Coral Triangle Chromodorididae ancestral polymorphism & introgression across Mullerian mimicry rings"
+    },
+    {
+      "quartet_id": "ABBA-02-BERGHIA-SPURILLA-HERMISSENDA-AEOLID",
+      "p1_tip": "D_T020",
+      "p2_tip": "D_T021",
+      "p3_tip": "D_T022",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Incomplete lineage sorting and historical gene flow across cnidosac-bearing Aeolidiidae and Facelinidae"
+    },
+    {
+      "quartet_id": "ABBA-03-PHYLLIDIA-PHYLLIDIELLA-POROSTOMATA",
+      "p1_tip": "F_T048",
+      "p2_tip": "F_T049",
+      "p3_tip": "F_T050",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Reticulate allele sharing across sympatric Indo-West Pacific radula-less Phyllidiidae spongivores"
+    },
+    {
+      "quartet_id": "ABBA-04-TRITONIA-MELIBE-DENDRONOTUS-CLADOBRANCH",
+      "p1_tip": "C_T010",
+      "p2_tip": "C_T012",
+      "p3_tip": "C_T015",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Deep Mesozoic incomplete lineage sorting across Tritonioidea and Dendronotoidea cladobranchs"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Nudibranchia",
+    "Berghia stephanieae",
+    "Chromodoris",
+    "Glaucus atlanticus",
+    "Kleptocnidae",
+    "Quartet Coalescent",
+    "CTSL",
+    "CYP3A29"
+  ],
+  "genetic_loci_summary": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "16S rRNA",
+    "12S rRNA",
+    "18S rRNA",
+    "28S rRNA",
+    "CTSL",
+    "Hsp70",
+    "nAChR",
+    "CYP3A29"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Wägele, H., & Willan, R. C. (2000). Phylogeny of the Nudibranchia. Zoological Journal of the Linnean Society, 130(1), 83–181. DOI: 10.1111/j.1096-3642.2000.tb02196.x",
+      "url": "https://doi.org/10.1111/j.1096-3642.2000.tb02196.x"
+    },
+    {
+      "text": "Goodheart, J. A., Bazinet, A. L., Valdés, Á., Collins, A. G., & Cummings, M. P. (2017). Prey preference follows phylogeny: evolutionary dietary patterns within the marine gastropod group Cladobranchia (Gastropoda: Heterobranchia: Nudibranchia). BMC Evolutionary Biology, 17(1), 221. DOI: 10.1186/s12862-017-1066-0",
+      "url": "https://doi.org/10.1186/s12862-017-1066-0"
+    },
+    {
+      "text": "Goodheart, J. A., Bleidißel, S., Schillo, D., Strong, E. E., Ayres, D. L., Preisfeld, A., Collins, A. G., Cummings, M. P., & Wägele, H. (2018). Comparative morphology and evolution of the cnidosac in Cladobranchia (Gastropoda: Heterobranchia: Nudibranchia). Frontiers in Zoology, 15(1), 43. DOI: 10.1186/s12983-018-0289-2",
+      "url": "https://doi.org/10.1186/s12983-018-0289-2"
+    },
+    {
+      "text": "Korshunova, T., Martynov, A., Bakken, T., Evertsen, J., Fletcher, K., Mudianta, I. W., Saito, H., Lundin, K., Schrödl, M., & Picton, B. (2017). Polyphyly of the traditional family Flabellinidae affects a major group of Nudibranchia: aeolidacean taxonomic reassessment with descriptions of several new families, genera, and species (Mollusca, Gastropoda). ZooKeys, 717, 1–139. DOI: 10.3897/zookeys.717.21885",
+      "url": "https://doi.org/10.3897/zookeys.717.21885"
+    },
+    {
+      "text": "Johnson, R. F., & Gosliner, T. M. (2012). Traditional taxonomic groupings mask evolutionary history: a molecular phylogeny and new classification of the chromodorid nudibranchs. PLoS ONE, 7(4), e33479. DOI: 10.1371/journal.pone.0033479",
+      "url": "https://doi.org/10.1371/journal.pone.0033479"
+    },
+    {
+      "text": "Layton, K. K. S., Gosliner, T. M., & Wilson, N. G. (2018). Flexible colour patterns obscure identification and mimicry in Indo-Pacific Chromodoris nudibranchs (Gastropoda: Chromodorididae). Molecular Phylogenetics and Evolution, 124, 27–36. DOI: 10.1016/j.ympev.2018.02.008",
+      "url": "https://doi.org/10.1016/j.ympev.2018.02.008"
+    },
+    {
+      "text": "Winters, A. E., White, A. M., Dewi, A. S., Mudianta, I. W., Wilson, N. G., Forster, L. C., Garson, M. J., & Cheney, K. L. (2018). Distribution of defensive metabolites in nudibranch molluscs. Journal of Chemical Ecology, 44(4), 384–396. DOI: 10.1007/s10886-018-0941-5",
+      "url": "https://doi.org/10.1007/s10886-018-0941-5"
+    },
+    {
+      "text": "Pola, M., & Gosliner, T. M. (2010). The first molecular phylogeny of cladobranchian opisthobranchs (Mollusca, Gastropoda, Nudibranchia). Molecular Phylogenetics and Evolution, 56(3), 931–941. DOI: 10.1016/j.ympev.2010.05.013",
+      "url": "https://doi.org/10.1016/j.ympev.2010.05.013"
+    },
+    {
+      "text": "Hallas, J. M., Chichvarkhin, A., & Gosliner, T. M. (2017). Aligning evidence: concerns regarding multiple sequence alignment in estimating the phylogeny of the Nudibranchia suborder Doridina. Royal Society Open Science, 4(10), 171095. DOI: 10.1098/rsos.171095",
+      "url": "https://doi.org/10.1098/rsos.171095"
+    },
+    {
+      "text": "Goodheart, J. A., Rio, R. A., Tarvin, R. D., Majid, S., Lopera, L., & Katz, P. S. (2024). A chromosome-level genome for the nudibranch gastropod Berghia stephanieae helps parse clade-specific gene expression in novel and conserved tissues. BMC Biology, 22(1), 9. DOI: 10.1186/s12915-024-01814-3",
+      "url": "https://doi.org/10.1186/s12915-024-01814-3"
+    },
+    {
+      "text": "Churchill, C. K. C., Valdés, Á., & Ó Foighil, D. (2014). Molecular and morphological systematics of neustonic nudibranchs (Mollusca: Gastropoda: Glaucidae: Glaucus), with descriptions of two new cryptic species. Invertebrate Systematics, 28(2), 174–195. DOI: 10.1071/IS13038",
+      "url": "https://doi.org/10.1071/IS13038"
+    },
+    {
+      "text": "Wilson, N. G., Maschek, J. A., & Baker, B. J. (2013). A species flock driven by predation? Secondary metabolites support diversification of slugs in Antarctica. PLoS ONE, 8(11), e80277. DOI: 10.1371/journal.pone.0080277",
+      "url": "https://doi.org/10.1371/journal.pone.0080277"
+    },
+    {
+      "text": "Zapata, F., Wilson, N. G., Howison, M., Andrade, S. C. S., Jörger, K. M., Schrödl, M., Goetz, F. E., Giribet, G., & Dunn, C. W. (2014). Phylogenomic analyses of deep gastropod relationships reject Orthogastropoda. Proceedings of the Royal Society B: Biological Sciences, 281(1794), 20141739. DOI: 10.1098/rspb.2014.1739",
+      "url": "https://doi.org/10.1098/rspb.2014.1739"
+    },
+    {
+      "text": "Mirarab, S., & Warnow, T. (2015). ASTRAL-II: Coalescent-based species tree estimation with many hundreds of taxa and thousands of genes. Bioinformatics, 31(12), i44–i52. DOI: 10.1093/bioinformatics/btv234",
+      "url": "https://doi.org/10.1093/bioinformatics/btv234"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z., Wong, W. S. W., & Nielsen, R. (2005). Bayes empirical Bayes inference of amino acid sites under positive selection. Molecular Biology and Evolution, 22(4), 1107–1118. DOI: 10.1093/molbev/msi097",
+      "url": "https://doi.org/10.1093/molbev/msi097"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      178,
+      128,
+      108,
+      112.4,
+      96.2,
+      68.4,
+      52.8
+    ],
+    "backbone_node_ages": [
+      94.8,
+      138.6,
+      164.8,
+      198.2,
+      236.4,
+      284.6
+    ],
+    "fig1_max_ma": 300,
+    "fig1_eras": [
+      [
+        "Carbonif-Perm",
+        300,
+        252,
+        "#f1f5f9"
+      ],
+      [
+        "Triassic",
+        252,
+        201,
+        "#f8fafc"
+      ],
+      [
+        "Jurassic",
+        201,
+        145,
+        "#f1f5f9"
+      ],
+      [
+        "Cretaceous",
+        145,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      300,
+      250,
+      200,
+      150,
+      100,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      7.8,
+      14.2,
+      23.4,
+      34,
+      24.5,
+      42.5,
+      50.8,
+      57.5
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        3,
+        "Tectipleura Outgroups (n=4)",
+        "Aplysia californica/kurodai, Elysia viridis/chlorotica",
+        "Euopisthobranchia sea hare & sacoglossan root anchor"
+      ],
+      [
+        "[B]",
+        4,
+        8,
+        "Sister Order Pleurobranchida (n=5)",
+        "Berthellina edwardsii, Pleurobranchus, Pleurobranchaea",
+        "Side-gilled Nudipleura stem + acidic mantle secretion"
+      ],
+      [
+        "[C]",
+        9,
+        18,
+        "Cladobranchia: Dendronotida (n=10)",
+        "Tritonia tetraquetra, Melibe leonina, Dendronotus, Doto",
+        "Octocoral/hydroid grazing + giant swimming neural CPG"
+      ],
+      [
+        "[D]",
+        19,
+        29,
+        "Cladobranchia: Aeolidioidea (n=11)",
+        "Berghia stephanieae, Hermissenda, Facelina, Spurilla",
+        "Cnidosac kleptocnidae uptake + CTSL/CYP3A29 adaptation"
+      ],
+      [
+        "[E]",
+        30,
+        38,
+        "Doridina: Polyceroidea & Hexabranchus (n=9)",
+        "Hexabranchus sanguineus, Polycera, Nembrotha, Triopha",
+        "Phanerobranch bryozoan/ascidian pyrrole alkaloid defense"
+      ],
+      [
+        "[F]",
+        39,
+        50,
+        "Doridina: Doridoidea & Phyllidioidea (n=12)",
+        "Doris pseudoargus, Peltodoris, Phyllidia, Phyllidiella",
+        "Cryptobranch & radula-less porostome sponge isocyanides"
+      ],
+      [
+        "[G]",
+        51,
+        63,
+        "Doridina: Chromodoridoidea Crown (n=13)",
+        "Cadlina, Chromodoris, Goniobranchus, Hypselodoris",
+        "Aposematic Mullerian mimicry + MDF terpene CYP3A29"
+      ]
+    ],
+    "fig1_web_svg": "nudibranch-global-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram of Nudipleura & Global Nudibranchia Radiation (Nodes I-VIII)",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) inferred under edge-linked partitioned per-locus ModelTest across >=80%-gated Nudipleura and Nudibranchia taxa.",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        3,
+        "Tectipleura Outgroups (n=4)",
+        ""
+      ],
+      [
+        "[B]",
+        4,
+        8,
+        "Pleurobranchida (n=5)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        9,
+        18,
+        "Dendronotida & Tritonia (n=10)",
+        ""
+      ],
+      [
+        "[D]",
+        19,
+        29,
+        "Aeolidioidea Kleptocnidae (n=11)",
+        "9,3,2,3"
+      ],
+      [
+        "[E]",
+        30,
+        38,
+        "Polyceroidea & Hexabranchus (n=9)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        39,
+        50,
+        "Doridoidea & Phyllidioidea (n=12)",
+        ""
+      ],
+      [
+        "[G]",
+        51,
+        63,
+        "Chromodoridoidea Crown (n=13)",
+        "10,3,2,3"
+      ]
+    ],
+    "fig2_web_svg": "nudibranch-global-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Empirical Patristic Phylogram Across >=80%-Gated Nudipleura & Nudibranchia Species",
+    "fig2_caption": "Dominant circular patristic phylogram mapping radial coordinate strictly to cumulative root-to-tip patristic substitution distance across Sectors [A]-[G].",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T003",
+        0
+      ],
+      [
+        "Node II",
+        "B:T007",
+        1
+      ],
+      [
+        "Node III",
+        "C:T014",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T022",
+        3
+      ],
+      [
+        "Node V",
+        "D:T026",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T035",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T046",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T057",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T057",
+      "G:T061"
+    ],
+    "fig3_web_svg": "nudibranch-global-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, q1 Concordance & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species bifurcating quartet coalescent species tree across retained loci with empirical CU branch lengths, q1 concordance, and ABBA-BABA introgression.",
+    "fig4a_web_svg": "nudibranch-global-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional Standardized COX1 Bayesian Coalescent Skyline Matrix Across Global Nudibranch Lineages (Cohorts R1-R6; N = 216)",
+    "fig4a_caption": "Six single-species/genus regional COX1 coalescent skylines across Pteraeolidia, Hermissenda, Glaucus, Phyllidiella, Hypselodoris, and Berghia/Spurilla.",
+    "fig4b_web_svg": "nudibranch-global-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Single-Subunit 16S LSU rRNA (4Ne) vs. Nuclear Histone H3 Loci (Cohorts L1-L6; N = 216)",
+    "fig4b_caption": "Paired multi-locus skylines across Indo-Pacific Chromodoris and amphiboreal Dendronotus separating maternal mtDNA expansion from Katoh E-INS-i 16S LSU rRNA and nuclear H3 coding sweeps.",
+    "fig5_short_fam_titles": [
+      "Papain-Family Cysteine Protease Cathepsin L (CTSL)",
+      "Marine Heatwave & Coral-Bleaching Chaperones (Hsp70 / Hsc70)",
+      "Rhinophore Chemosensory nAChR Alpha-Subunit Channels",
+      "Sponge Terpenoid Detoxification Clan-3 Cytochrome P450s (CYP3A29)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Digestive Cathepsin L (CTSL)",
+      "FAM-02: Marine Heatwave Hsp70 Chaperone",
+      "FAM-03: Rhinophore nAChR Alpha",
+      "FAM-04: Clan-3 Terpenoid CYP3A29 (1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | CYP3A29 Structure & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Clan-3 Microsomal P450 Fold (461 Ca Threaded with B. stephanieae CYP3A29)",
+    "fig5_web_svg": "nudibranch-global-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP3A29 Heme-Thiolate Active Site",
+    "fig5_caption": "Translated Universal Standard Code 1 amino-acid motif alignments across 48 single-family Nudibranchia/Heterobranchia NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Berghia stephanieae CYP3A29 structure threaded on 1TQN (2.05 A) with HEM A 508 and Cys442-Sg thiolate coordination.",
+    "fig6_web_svg": "nudibranch-global-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Combinatorial Model Comparison Across Pipeline A & Pipeline B (Nudibranchia)",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and Raw0 unphased control (4th), alongside Pipeline B (12 skylines, N = 432).",
+    "fig6_clade_label": "Nudipleura & Nudibranchia",
+    "fig6_p450_label": "CYP3A29 / CTSL / Hsp70 / nAChR",
+    "fig6_its_label": "Chromodoris & Dendronotus 16S rRNA",
+    "supp_s1_fasta_name": "supp_s1_cyp3a29_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Homogeneous Clan-3 Cytochrome P450 CDS (B. stephanieae CYP3A29 / A. californica CYP3A24, Code 1)",
+    "supp_s1_source": "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS (FAM-04 Clan-3 Code 1)",
+    "supp_s1_stem": "nudibranch-global-supp-s1-cyp3a29-alignview",
+    "supp_s2_title": "Cohort L5 Dendronotus Single-Subunit 16S LSU rRNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS (Cohort L5 16S rRNA)",
+    "supp_s2_stem": "nudibranch-global-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "Nudipleura & Nudibranchia Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "nudibranch-global-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "1. Comparative Scope Across Tectipleura Outgroups, Pleurobranchida, Cladobranchia & Doridina",
+    "section1_p1": "Nudibranch sea slugs and allied Pleurobranchida (Gastropoda: Heterobranchia: Nudipleura) underwent post-larval shell loss and secondary detorsion while radiating into two major suborders: cerata-bearing Cladobranchia (Tritonioidea, Dendronotoidea, Arminoidea, and kleptocnidae-storing Aeolidioidea) and branchial-plume Doridina (Hexabranchidae, Polyceroidea, Doridoidea, suctorial Phyllidioidea, and aposematic sponge-terpene Chromodoridoidea).",
+    "section1_p2": "In Version 3.0.0, all 64 stratified Nudipleura slots ([A]-[G]) run through the generalized declarative bio-suite pipeline, adding peer-reviewed 7-clade recovery scoring, Invertebrate Mitochondrial Code 5 organelle locus extraction, and Universal Standard Code 1 single-family CTSL, Hsp70, nAChR alpha, and Clan-3 CYP3A29/CYP3A24 selection tests.",
+    "section2_title": "2. Per-Locus BIC ModelTest, Edge-Linked Proportional Partitioning & >=80% Supermatrix Gate",
+    "section3_title": "3. 64-Species Multispecies Coalescent Species Tree, Clade Recovery Benchmarks, ABBA-BABA & RuNIE Audit",
+    "section4_title": "4. Homogeneous Prey Digestion, Thermal, Chemosensory & Terpenoid Selection (CTSL, Hsp70, nAChR & CYP3A29 on 1TQN)",
+    "section4_body": "Across verified Universal Code 1 heterobranch nuclear alignments passing strict pre-MSA motif rules and post-MSA codon row auditing, 61-state Goldman-Yang codon models quantify selective constraint across homogeneous papain-family cathepsin L peptidases (FAM-01: CTSL), Hsp70/Hsc70 heatwave chaperones (FAM-02), pentameric Cys-loop nAChR alpha subunits (FAM-03), and Clan-3 CYP3A29/CYP3A24 monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A) with the conserved I-helix dioxygen groove and proximal Cys442 heme-thiolate bond.",
+    "section5_title": "5. Cross-Regional COX1 vs. Single-Subunit 16S LSU rRNA (4Ne) Skylines & Stage 3C Haplotype Networks",
+    "discussion_title": "6. Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Benchmarking all 64 Nudipleura and Nudibranchia taxa against published inter-family and suborder clades recovers foundational Nudipleura, Nudibranchia, Cladobranchia, Aeolidioidea, Doridina, Porostomata, and Chromodoridoidea splits across both partitioned RY3 maximum likelihood and multi-locus Quartet MSC inference.",
+      "Replacing heterogeneous Stage 4 gene mixtures with single-family CTSL, Hsp70, nAChR alpha, and Clan-3 CYP3A alignments resolves the v2.0.0 alignment instability and ensures 100% conserved I-helix and proximal Cys-loop fidelity across the S1 cytochrome P450 panel.",
+      "Pairing single-subunit 16S LSU rRNA E-INS-i cohorts (L2 and L5) with standardized COX1 regional skylines isolates Last Glacial Maximum Sunda-Sahul shelf contractions and Holocene lagoon expansions from Histone H3 coding sweeps conditional on public NCBI sampling."
+    ],
+    "latex_intro": "Nudipleura and Nudibranchia lineages span Tectipleura outgroups [A] through aposematic Chromodoridoidea [G], analyzed under Genetic Codes 5 and 1 in Version 3.0.0.",
+    "seed_base": 20261125
+  }
+}

@@ -2120,6 +2120,8 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
         ("gram_positive_preprint31.json", 10usize, "1BU7", 11u8),
         ("us_ag_pests_preprint30.json", 16usize, "1TQN", 5u8),
         ("nematoda_preprint27.json", 16usize, "1TQN", 5u8),
+        ("isoptera_preprint26.json", 16usize, "1TQN", 5u8),
+        ("nudibranch_preprint25.json", 16usize, "1TQN", 5u8),
     ] {
         let cfg_path = manifest_dir.join("benchmarks/studies").join(fname);
         let cfg = DeclarativeStudyConfig::load(&cfg_path)

@@ -1,0 +1,310 @@
+{
+  "benchmark_id": "nudibranch-preprint25-design-v1",
+  "title": "Nudibranchia & Allied Nudipleura (Gastropoda: Heterobranchia) 64-species x 16-locus design (PREPRINT-25 dimensions) vs. published phylogenomics",
+  "fixed_before_first_run": "2026-11-22",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at the dataset dimensions of PREPRINT-25 (nudibranch-global-radiation-preprint): 64 species and 16 loci, with 14 mitochondrial loci (12 PCGs + 16S rrnL + 12S rrnS) phased from complete/partial mitogenomes plus nuclear 18S (SSU_18S) and 28S (LSU_28S) rRNA. PREPRINT-25 only sets the taxon strata and quotas; it is not a validation source. Final trees are scored against inter-family and suborder clades reported in the peer-reviewed studies below. A clade is testable when the run samples >= 2 tips inside and >= 2 outside it, and recovered when the unrooted tree contains the corresponding bipartition.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-25",
+    "species": 64,
+    "loci": 16,
+    "taxon_design": "4 Tectipleura outgroups (2 Aplysiidae, 2 Plakobranchidae), 5 sister Pleurobranchida (4 Pleurobranchidae, 1 Pleurobranchaeidae), 21 Cladobranchia (4 Tritoniidae, 1 Tethydidae, 1 Dendronotidae, 1 Dotidae, 2 Arminidae, 1 Janolidae, 3 Aeolidiidae, 6 Facelinidae, 1 Flabellinidae, 1 Trinchesiidae), and 34 Doridina (2 Hexabranchidae, 1 Aegiridae, 6 Polyceridae, 4 Dorididae, 3 Discodorididae, 1 Dendrodorididae, 4 Phyllidiidae, 4 Cadlinidae, 9 Chromodorididae).",
+    "taxonomy_note": "NCBI Taxonomy places Bathydoridoidea/Hexabranchus in Hexabranchidae, Coryphella verrucosa in Coryphellidae (grouped here with Flabellinidae following classical aeolid assignments and Goodheart et al. 2017/2018), Janolus hyalinus in Zephyrinidae/Janolidae, and Cadlina/Aldisa under Cadlinidae/Chromodorididae/Dorididae; curated complete mitogenome accessions guarantee full 64-taxon representation alongside live seqnet queries.",
+    "locus_interpretation": "14 mitochondrial loci (12 PCGs COI..ATP6 excluding hypervariable ATP8 + rrnL_16S + rrnS_12S) extracted from verified complete Heterobranchia mitogenomes plus nuclear SSU_18S and LSU_28S rRNA = 16 orthologous phylogenomic loci. Multi-copy physiological nuclear families (cathepsin L, Hsp70, nAChR alpha, Clan-3 CYP3A) remain in Stage 4 codon-selection tests rather than the species-level orthogonal panel."
+  },
+  "sources": [
+    {
+      "key": "Gobbeler2010",
+      "citation": "Gobbeler, K., & Klussmann-Kolb, A. (2010). Out of Antarctica? New insights into the phylogeny and biogeography of the Pleurobranchomorpha (Mollusca, Gastropoda). Molecular Phylogenetics and Evolution, 55(3), 996-1007.",
+      "doi": "10.1016/j.ympev.2009.11.027"
+    },
+    {
+      "key": "Pola2010",
+      "citation": "Pola, M., & Gosliner, T. M. (2010). The first molecular phylogeny of cladobranchian opisthobranchs (Mollusca, Gastropoda, Nudibranchia). Molecular Phylogenetics and Evolution, 56(3), 931-941.",
+      "doi": "10.1016/j.ympev.2010.05.013"
+    },
+    {
+      "key": "Johnson2012",
+      "citation": "Johnson, R. F., & Gosliner, T. M. (2012). Traditional taxonomic groupings mask evolutionary history: a molecular phylogeny and new classification of the chromodorid nudibranchs. PLoS ONE, 7(4), e33479.",
+      "doi": "10.1371/journal.pone.0033479"
+    },
+    {
+      "key": "Goodheart2015",
+      "citation": "Goodheart, J. A., Bazinet, A. L., Collins, A. G., & Cummings, M. P. (2015). Relationships within Cladobranchia (Gastropoda: Nudibranchia) based on RNA-Seq data: an initial investigation. Royal Society Open Science, 2(9), 150196.",
+      "doi": "10.1098/rsos.150196"
+    },
+    {
+      "key": "Goodheart2017",
+      "citation": "Goodheart, J. A., Bazinet, A. L., Valdes, A., Collins, A. G., & Cummings, M. P. (2017). Prey preference follows phylogeny: evolutionary dietary patterns within the marine gastropod group Cladobranchia (Gastropoda: Heterobranchia: Nudibranchia). BMC Evolutionary Biology, 17(1), 221.",
+      "doi": "10.1186/s12862-017-1066-0"
+    },
+    {
+      "key": "Goodheart2018",
+      "citation": "Goodheart, J. A., Bleidissel, S., Schillo, D., Strong, E. E., Ayres, D. L., Preisfeld, A., Collins, A. G., Cummings, M. P., & Wagele, H. (2018). Comparative morphology and evolution of the cnidosac in Cladobranchia (Gastropoda: Heterobranchia: Nudibranchia). Frontiers in Zoology, 15(1), 43.",
+      "doi": "10.1186/s12983-018-0289-2"
+    },
+    {
+      "key": "Korshunova2017",
+      "citation": "Korshunova, T., Martynov, A., Bakken, T., Evertsen, J., Fletcher, K., Mudianta, I. W., Saito, H., Lundin, K., Schrodl, M., & Picton, B. (2017). Polyphyly of the traditional family Flabellinidae affects a major group of Nudibranchia: aeolidacean taxonomic reassessment with descriptions of several new families, genera, and species (Mollusca, Gastropoda). ZooKeys, 717, 1-139.",
+      "doi": "10.3897/zookeys.717.21885"
+    },
+    {
+      "key": "Hallas2017",
+      "citation": "Hallas, J. M., Chichvarkhin, A., & Gosliner, T. M. (2017). Aligning evidence: concerns regarding multiple sequence alignment in estimating the phylogeny of the Nudibranchia suborder Doridina. Royal Society Open Science, 4(10), 171095.",
+      "doi": "10.1098/rsos.171095"
+    },
+    {
+      "key": "Layton2018",
+      "citation": "Layton, K. K. S., Gosliner, T. M., & Wilson, N. G. (2018). Flexible colour patterns obscure identification and mimicry in Indo-Pacific Chromodoris nudibranchs (Gastropoda: Chromodorididae). Molecular Phylogenetics and Evolution, 124, 27-36.",
+      "doi": "10.1016/j.ympev.2018.02.008"
+    }
+  ],
+  "taxon_group": "Heterobranchia",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 18,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Tectipleura_Outgroups": ["Aplysiidae", "Plakobranchidae"],
+    "Pleurobranchida_Sister": ["Pleurobranchidae", "Pleurobranchaeidae"],
+    "Cladobranchia_Dendronotoidea": ["Tritoniidae", "Tethydidae", "Dendronotidae", "Dotidae", "Arminidae", "Janolidae"],
+    "Cladobranchia_Aeolidioidea": ["Aeolidiidae", "Facelinidae", "Flabellinidae", "Trinchesiidae"],
+    "Doridina_Phanerobranchia": ["Hexabranchidae", "Aegiridae", "Polyceridae"],
+    "Doridina_Cryptobranchia_Porostomata": ["Dorididae", "Discodorididae", "Dendrodorididae", "Phyllidiidae"],
+    "Doridina_Chromodoridoidea": ["Cadlinidae", "Chromodorididae"]
+  },
+  "species_per_family": {
+    "Aplysiidae": 2,
+    "Plakobranchidae": 2,
+    "Pleurobranchidae": 4,
+    "Pleurobranchaeidae": 1,
+    "Tritoniidae": 4,
+    "Tethydidae": 1,
+    "Dendronotidae": 1,
+    "Dotidae": 1,
+    "Arminidae": 2,
+    "Janolidae": 1,
+    "Aeolidiidae": 3,
+    "Facelinidae": 6,
+    "Flabellinidae": 1,
+    "Trinchesiidae": 1,
+    "Hexabranchidae": 2,
+    "Aegiridae": 1,
+    "Polyceridae": 6,
+    "Dorididae": 4,
+    "Discodorididae": 3,
+    "Dendrodorididae": 1,
+    "Phyllidiidae": 4,
+    "Cadlinidae": 4,
+    "Chromodorididae": 9
+  },
+  "scored_clades": [
+    {
+      "id": "nudipleura",
+      "name": "Clade Nudipleura (Pleurobranchida + Nudibranchia vs. Tectipleura Outgroups)",
+      "families": [
+        "Pleurobranchidae",
+        "Pleurobranchaeidae",
+        "Tritoniidae",
+        "Tethydidae",
+        "Dendronotidae",
+        "Dotidae",
+        "Arminidae",
+        "Janolidae",
+        "Aeolidiidae",
+        "Facelinidae",
+        "Flabellinidae",
+        "Trinchesiidae",
+        "Hexabranchidae",
+        "Aegiridae",
+        "Polyceridae",
+        "Dorididae",
+        "Discodorididae",
+        "Dendrodorididae",
+        "Phyllidiidae",
+        "Cadlinidae",
+        "Chromodorididae"
+      ],
+      "support": [
+        { "source": "Gobbeler2010", "statement": "Pleurobranchomorpha + Nudibranchia recovered as monophyletic clade Nudipleura sister to remaining euthyneuran outgroups" },
+        { "source": "Goodheart2015", "statement": "Nudipleura maximally supported relative to Aplysia and Elysia outgroups" }
+      ],
+      "note": "With 4 Tectipleura outgroup tips (Aplysiidae + Plakobranchidae), this forms the root Nudipleura split."
+    },
+    {
+      "id": "nudibranchia",
+      "name": "Order Nudibranchia (Cladobranchia + Doridina vs. Pleurobranchida + Tectipleura)",
+      "families": [
+        "Tritoniidae",
+        "Tethydidae",
+        "Dendronotidae",
+        "Dotidae",
+        "Arminidae",
+        "Janolidae",
+        "Aeolidiidae",
+        "Facelinidae",
+        "Flabellinidae",
+        "Trinchesiidae",
+        "Hexabranchidae",
+        "Aegiridae",
+        "Polyceridae",
+        "Dorididae",
+        "Discodorididae",
+        "Dendrodorididae",
+        "Phyllidiidae",
+        "Cadlinidae",
+        "Chromodorididae"
+      ],
+      "support": [
+        { "source": "Pola2010", "statement": "Order Nudibranchia monophyletic sister to Pleurobranchida" },
+        { "source": "Goodheart2017", "statement": "Nudibranchia recovered with full support across transcriptomic matrices" },
+        { "source": "Hallas2017", "statement": "Cladobranchia and Doridina unite cleanly into crown Nudibranchia" }
+      ]
+    },
+    {
+      "id": "cladobranchia",
+      "name": "Suborder Cladobranchia (Dendronotoidea/Tritonioidea/Arminoidea + Aeolidioidea/Fionoidea)",
+      "families": [
+        "Tritoniidae",
+        "Tethydidae",
+        "Dendronotidae",
+        "Dotidae",
+        "Arminidae",
+        "Janolidae",
+        "Aeolidiidae",
+        "Facelinidae",
+        "Flabellinidae",
+        "Trinchesiidae"
+      ],
+      "support": [
+        { "source": "Pola2010", "statement": "Cladobranchia recovered as a strongly supported sister suborder to Doridina" },
+        { "source": "Goodheart2015", "statement": "RNA-Seq phylogenomics maximally supports Cladobranchia monophyly" },
+        { "source": "Goodheart2017", "statement": "Cladobranchia monophyly recovered across all partitioning schemes" }
+      ]
+    },
+    {
+      "id": "aeolidioidea_fionoidea",
+      "name": "Clade Aeolidioidea + Fionoidea (Cnidosac-Bearing Aeolids)",
+      "families": [
+        "Aeolidiidae",
+        "Facelinidae",
+        "Flabellinidae",
+        "Trinchesiidae"
+      ],
+      "support": [
+        { "source": "Goodheart2017", "statement": "Aeolidioidea and Fionoidea form the cnidosac-bearing crown clade inside Cladobranchia" },
+        { "source": "Goodheart2018", "statement": "Single evolutionary origin of kleptocnidae-storing cnidosacs across Aeolidida" },
+        { "source": "Korshunova2017", "statement": "Cnidosac-bearing aeolid superfamilies form a robust crown radiation" }
+      ]
+    },
+    {
+      "id": "doridina",
+      "name": "Suborder Doridina (Bathydoridoidea/Hexabranchus + Polyceroidea + Doridoidea + Phyllidioidea + Chromodoridoidea)",
+      "families": [
+        "Hexabranchidae",
+        "Aegiridae",
+        "Polyceridae",
+        "Dorididae",
+        "Discodorididae",
+        "Dendrodorididae",
+        "Phyllidiidae",
+        "Cadlinidae",
+        "Chromodorididae"
+      ],
+      "support": [
+        { "source": "Hallas2017", "statement": "Doridina recovered as monophyletic sister suborder to Cladobranchia" },
+        { "source": "Johnson2012", "statement": "All dorid superfamilies cluster into Doridina across multi-locus markers" }
+      ]
+    },
+    {
+      "id": "phyllidioidea_porostomata",
+      "name": "Superfamily Phyllidioidea / Porostomata (Dendrodorididae + Phyllidiidae)",
+      "families": [
+        "Dendrodorididae",
+        "Phyllidiidae"
+      ],
+      "support": [
+        { "source": "Hallas2017", "statement": "Radula-less suctorial porostomes Dendrodorididae and Phyllidiidae form a strongly supported clade" },
+        { "source": "Johnson2012", "statement": "Porostomata strongly supported as monophyletic inside Cryptobranchia" }
+      ]
+    },
+    {
+      "id": "chromodoridoidea",
+      "name": "Superfamily Chromodoridoidea (Cadlinidae + Chromodorididae)",
+      "families": [
+        "Cadlinidae",
+        "Chromodorididae"
+      ],
+      "support": [
+        { "source": "Johnson2012", "statement": "Cadlinidae confirmed as sister family to Chromodorididae (Chromodoridoidea)" },
+        { "source": "Layton2018", "statement": "Chromodoridoidea cleanly separated from Dorididae and Porostomata" },
+        { "source": "Hallas2017", "statement": "Cadlinidae + Chromodorididae maximally supported under aligned dorid matrices" }
+      ]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "doridoidea_cryptobranchia",
+      "name": "Doridoidea (Dorididae + Discodorididae)",
+      "families": ["Dorididae", "Discodorididae"],
+      "why_not_scored": "Dorididae + Discodorididae relationships can appear paraphyletic with respect to Porostomata/Chromodoridoidea depending on marker sampling in Hallas2017."
+    },
+    {
+      "id": "chromodorididae",
+      "name": "Chromodorididae",
+      "families": ["Chromodorididae"],
+      "why_not_scored": "Single-family monophyly check."
+    },
+    {
+      "id": "phyllidiidae",
+      "name": "Phyllidiidae",
+      "families": ["Phyllidiidae"],
+      "why_not_scored": "Single-family monophyly check."
+    },
+    {
+      "id": "aeolidiidae",
+      "name": "Aeolidiidae",
+      "families": ["Aeolidiidae"],
+      "why_not_scored": "Single-family monophyly check."
+    },
+    {
+      "id": "facelinidae",
+      "name": "Facelinidae",
+      "families": ["Facelinidae"],
+      "why_not_scored": "Single-family check (Facelinidae is non-monophyletic in Goodheart2017 and Korshunova2017)."
+    },
+    {
+      "id": "polyceridae",
+      "name": "Polyceridae",
+      "families": ["Polyceridae"],
+      "why_not_scored": "Single-family monophyly check."
+    },
+    {
+      "id": "tritoniidae",
+      "name": "Tritoniidae",
+      "families": ["Tritoniidae"],
+      "why_not_scored": "Single-family monophyly check."
+    },
+    {
+      "id": "cadlinidae",
+      "name": "Cadlinidae",
+      "families": ["Cadlinidae"],
+      "why_not_scored": "Single-family check (Aldisa placement varies relative to Cadlina vs. Dorididae in Johnson2012/Hallas2017)."
+    }
+  ]
+}

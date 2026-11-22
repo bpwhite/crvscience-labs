@@ -1,0 +1,1800 @@
+{
+  "study_slug": "STUDY-ISOPTERA-GLOBAL-RADIATION-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "isoptera-global",
+  "run_id": "runie-native-isoptera-global-26-v4",
+  "preprint_slug": "isoptera-global-radiation-preprint",
+  "discovery_slug": "isoptera-global-radiation-phylogenomics",
+  "validation_set_id": "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS",
+  "preprint_label": "PREPRINT-26",
+  "preprint_version": "4.0.0",
+  "concept_doi": "10.5281/zenodo.24116968",
+  "remediation_note": "Version 4.0.0 remediates PREPRINT-26 v3.0.0 through the generalized declarative bio-suite pipeline: (1) split mixed Stage 4 nuclear sets into four homogeneous single-family Code-1 panels purged of laccases, vitellogenins/Notum, Hsp60/Hsp90/Toll, and mitochondrial Clan-M CYP44 (retaining pure GH9 endoglucanases, JHE/FE4 carboxylesterases, Hsp70 ATPase chaperones, and 12/12 I-helix + Cys-loop Clan-4 CYP4G15/CYP4C monooxygenases); (2) restored unphased complete mitogenome controls in Regime 4 Raw-0Beaker eliminating the v3.0.0 bootstrap inversion; (3) upgraded L2 and L5 ribosomal cohorts to strictly single-subunit 16S LSU rRNA; and (4) enforced disable-wiki-links and metadata hygiene guards.",
+  "telemetry_filename": "isoptera-global-radiation-native-biosuite.json",
+  "companion_label": "Lab Discovery #138",
+  "title": "Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines",
+  "subtitle_prefix": "Global Blattodea & Isoptera Multi-Locus Phylogenomics, Homogeneous GH9/JHE/Hsp70/CYP4 Selection & Demographic Skylines",
+  "category": "Phylogenomics, Multispecies Coalescence & Insect Social Evolution",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Coalescent Theory)",
+  "taxonomic_scope": "Blattodea: Isoptera / Termitoidae (Mastotermitidae, Termopsidae, Hodotermitidae, Kalotermitidae, Rhinotermitidae, Termitidae [Macrotermitinae, Apicotermitinae, Termitinae, Cubitermitinae, Nasutitermitinae, Syntermitinae]) rooted on Cryptocercidae and Blattodea Outgroups",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/isoptera_preprint26_design.json",
+  "cache_subdir": "val_set_065_isoptera_radiation",
+  "seqnet_sqlite_name": "seqnet_isoptera_preprint26.sqlite",
+  "nexus_filename": "seqnet_isoptera_supermatrix.nex",
+  "supermatrix_fasta_name": "isoptera_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "iso_mito_blad",
+      "query": "(Termitoidae[Organism] OR Cryptocercidae[Organism] OR Blattidae[Organism] OR Blattellidae[Organism]) AND mitochondrion[Filter] AND 13000:19000[SLEN]",
+      "target_n": 36,
+      "min_bp": 13000,
+      "max_bp": 19000
+    },
+    {
+      "cache_key": "iso_nuc_28s_q1",
+      "query": "(Termitoidae[Organism] OR Blattodea[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 350:3200[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT methyltransferase[Title] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 350,
+      "max_bp": 3200
+    }
+  ],
+  "fallback_mito_accessions": [
+    "NC_016956.1",
+    "NC_012901.1",
+    "NC_018132.1",
+    "NC_030191.1",
+    "NC_018120.1",
+    "NC_024658.1",
+    "NC_018123.1",
+    "NC_018121.1",
+    "NC_068655.1",
+    "NC_077466.1",
+    "NC_056118.1",
+    "NC_045866.1",
+    "MK618724.1",
+    "MT010558.1",
+    "NC_037511.1",
+    "NC_046741.1",
+    "NC_018124.1",
+    "NC_040119.1",
+    "OQ998965.1",
+    "OQ998961.1",
+    "NC_015800.1",
+    "NC_030014.1",
+    "NC_018125.1",
+    "NC_028722.1",
+    "NC_030015.1",
+    "NC_009498.1",
+    "NC_009500.1",
+    "NC_045240.1",
+    "NC_025567.1",
+    "NC_030034.1",
+    "NC_030032.1",
+    "NC_018126.1",
+    "NC_025522.1",
+    "NC_018128.1",
+    "NC_018599.1",
+    "NC_084268.1",
+    "NC_034288.1",
+    "NC_034050.1",
+    "NC_034027.1",
+    "NC_034028.1",
+    "NC_034024.1",
+    "NC_034072.1",
+    "NC_039398.1",
+    "NC_034049.1",
+    "NC_034142.1",
+    "NC_034053.1",
+    "NC_034124.1",
+    "NC_034139.1",
+    "NC_085621.1",
+    "NC_034097.1",
+    "NC_034123.1",
+    "NC_034143.1",
+    "NC_034076.1",
+    "NC_026115.1",
+    "NC_018131.1",
+    "NC_062440.1",
+    "NC_034115.1",
+    "NC_034146.1",
+    "NC_034034.1",
+    "NC_036047.1",
+    "NC_034044.1",
+    "NC_034929.1",
+    "NC_034930.1",
+    "NC_034086.1"
+  ],
+  "s4_banner_title": "Global Blattodea & Isoptera Radiation",
+  "anchor_species": "Coptotermes formosanus",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP8",
+      "display_name": "ATP8",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 120,
+      "max_bp": 350,
+      "min_taxa": 10,
+      "min_aa": 38
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Blattodea & Cryptocercus Outgroups",
+      "family": "Blattidae",
+      "species": "Periplaneta americana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Blattodea & Cryptocercus Outgroups",
+      "family": "Blattellidae",
+      "species": "Blattella germanica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Blattodea & Cryptocercus Outgroups",
+      "family": "Cryptocercidae",
+      "species": "Cryptocercus relictus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Blattodea & Cryptocercus Outgroups",
+      "family": "Cryptocercidae",
+      "species": "Cryptocercus kyebangensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Basal Relictual Isoptera",
+      "family": "Mastotermitidae",
+      "species": "Mastotermes darwiniensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Basal Relictual Isoptera",
+      "family": "Termopsidae",
+      "species": "Zootermopsis nevadensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Basal Relictual Isoptera",
+      "family": "Termopsidae",
+      "species": "Zootermopsis angusticollis",
+      "synonyms": [
+        "Zootermopsis nevadensis angusticollis"
+      ]
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Basal Relictual Isoptera",
+      "family": "Termopsidae",
+      "species": "Porotermes adamsoni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Basal Relictual Isoptera",
+      "family": "Termopsidae",
+      "species": "Porotermes quadricollis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Basal Relictual Isoptera",
+      "family": "Hodotermitidae",
+      "species": "Hodotermes mossambicus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T011",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Cryptotermes havilandi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T012",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Cryptotermes declivis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Cryptotermes brevis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Cryptotermes domesticus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Incisitermes minor",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Neotermes koshunensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Neotermes insularis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Roisinitermes ebogoensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Glyptotermes sp.",
+      "synonyms": [
+        "Glyptotermes sp. isolate H2.1"
+      ]
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Kalotermitidae Drywood",
+      "family": "Kalotermitidae",
+      "species": "Rugitermes sp.",
+      "synonyms": [
+        "Rugitermes sp. A JA-2024a"
+      ]
+    },
+    {
+      "tip_code": "D:T021",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Coptotermes formosanus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T022",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Coptotermes gestroi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T023",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Coptotermes lacteus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T024",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Coptotermes testaceus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T025",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Coptotermes heimi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Reticulitermes flavipes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Reticulitermes virginicus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Reticulitermes lucifugus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Reticulitermes chinensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Heterotermes validus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Heterotermes tenuis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Rhinotermitidae Subterranean",
+      "family": "Rhinotermitidae",
+      "species": "Schedorhinotermes breinli",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Macrotermes natalensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Macrotermes subhyalinus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Macrotermes barneyi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Macrotermes herus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Macrotermes yunnanensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Macrotermes falciger",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Odontotermes obesus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Odontotermes hainanensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Pseudacanthotermes spiniger",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Macrotermitinae Fungus-Growers",
+      "family": "Macrotermitinae",
+      "species": "Microtermes obesi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Termitinae",
+      "species": "Pericapritermes nitobei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Termitinae",
+      "species": "Termes fatalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Termitinae",
+      "species": "Microcerotermes serrula",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Termitinae",
+      "species": "Neocapritermes angusticeps",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Termitinae",
+      "species": "Amitermes obeuntis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Termitinae",
+      "species": "Globitermes sulphureus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Apicotermitinae",
+      "species": "Forficulitermes planifrons",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Apicotermitinae",
+      "species": "Cavitermes tuberosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Apicotermitinae",
+      "species": "Anoplotermes parvus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Cubitermitinae",
+      "species": "Thoracotermes macrothorax",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Apicotermitinae & Termitinae",
+      "family": "Cubitermitinae",
+      "species": "Ophiotermes grandilabius",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Nasutitermes corniger",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Nasutitermes triodiae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Nasutitermes tiantongensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Nasutitermes exitiosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Nasutitermes macrocephalus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Nasutitermes matangensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Hospitalitermes medioflavus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Nasutitermitinae",
+      "species": "Constrictotermes cyphergaster",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Syntermitinae",
+      "species": "Labiotermes labralis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Syntermitinae",
+      "species": "Embiratermes neotenicus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Nasutitermitinae & Syntermitinae Crown",
+      "family": "Syntermitinae",
+      "species": "Cornitermes cumulans",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Endogenous Wood-Lignocellulose Digestion GH9 Cellulases (Endoglucanase A / E-4 / Beta-1,4-Endoglucanase)",
+      "physiological_role": "Salivary-gland and midgut endogenous glycoside hydrolase family 9 (GH9) beta-1,4-endoglucanase cellulose hydrolysis across Blattodea and xylophagous Isoptera",
+      "gene_symbol": "GH9",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_023849161.2",
+        "XM_023849162.2",
+        "XM_023862708.2",
+        "XM_023860828.2",
+        "KP849476.1",
+        "KC714086.1",
+        "KC714087.1",
+        "KC714088.1",
+        "KC714083.1",
+        "KC714084.1",
+        "JQ292846.1",
+        "AF336120.1",
+        "AY572862.2",
+        "XM_069825303.1",
+        "XM_069825302.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "iso_fam01_gh9_v4",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 2700,
+        "max_domain_bp": null,
+        "min_aa_len": 320,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "secundus",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.1,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Eusocial Caste Differentiation & Juvenile Hormone Esterase / Carboxylesterase Regulators (JHE / FE4)",
+      "physiological_role": "Circulating juvenile hormone esterase (JHE) and homologous carboxylesterase hydrolysis regulating soldier-worker polyphenism and reproductive division of labor in termites",
+      "gene_symbol": "JHE",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_022065033.2",
+        "XM_022070135.2",
+        "XM_087342687.1",
+        "KM025026.1",
+        "XM_022071558.2",
+        "XM_022072106.2",
+        "XM_022057202.2",
+        "XM_022073032.2",
+        "XM_023848332.2",
+        "XM_023846152.2",
+        "XM_023870911.2",
+        "XM_023870484.2",
+        "XM_023870477.2",
+        "XM_023860637.2",
+        "XM_023860577.2"
+      ],
+      "ortholog_config": {
+        "cache_key": "iso_fam02_jhe_v4",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1200,
+        "max_bp": 2900,
+        "max_domain_bp": null,
+        "min_aa_len": 350,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "nevadensis",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.08,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Termite Mound Hypoxia & Thermal Buffering Chaperones (Hsp70 / Hsc70-4 / Hsc70-5)",
+      "physiological_role": "Conserved ATP-dependent 70 kDa heat-shock molecular chaperones maintaining proteostasis inside hypercapnic termite mounds and thermally stressed galleries",
+      "gene_symbol": "Hsp70",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_022083061.2",
+        "XM_087342941.1",
+        "XM_022077851.2",
+        "XM_022084026.2",
+        "XM_023870369.2",
+        "XM_023869487.2",
+        "XM_023869486.2",
+        "XM_069831016.1",
+        "XM_069829530.1",
+        "XM_069829529.1",
+        "XM_069818674.1",
+        "XM_069843779.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "iso_fam03_hsp70_v4",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1500,
+        "max_bp": 2800,
+        "max_domain_bp": null,
+        "min_aa_len": 450,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "nevadensis",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "ATPase-Core",
+            "pos_min": 170,
+            "pos_max": 260,
+            "patterns": [
+              "DLGGGTFD"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Cuticular Hydrocarbon Caste Recognition & Termiticide Detoxification Clan-4 Cytochrome P450s (CYP4G15 / CYP4C1 / CYP4C3)",
+      "physiological_role": "Microsomal Clan-4 cytochrome P450 monooxygenases catalyzing oenocyte cuticular hydrocarbon (CHC) nestmate-recognition biosynthesis and termiticide detoxification",
+      "gene_symbol": "CYP4G15",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_022073614.2",
+        "XM_023863871.2",
+        "XM_069818582.1",
+        "XM_022073583.2",
+        "XM_087355338.1",
+        "XM_022073579.2",
+        "XM_022059632.2",
+        "XM_022079101.2",
+        "XM_033751387.1",
+        "XM_023850076.2",
+        "XM_023868011.2",
+        "XM_069836048.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "iso_fam04_cyp4_v4",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1350,
+        "max_bp": 2700,
+        "max_domain_bp": null,
+        "min_aa_len": 400,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "nevadensis",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "I-helix",
+            "pos_min": 270,
+            "pos_max": 370,
+            "patterns": [
+              "EG.DT",
+              "AG.DT",
+              "EG.ET",
+              "AG.ET",
+              "SG.DT",
+              "SG.ET"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 400,
+            "pos_max": 500,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.08,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "zootermopsis_cyp4g_heme_pocket.pdb",
+    "gene_symbol": "CYP4G15",
+    "template_label": "1TQN_A (2.05 A Microsomal P450 + HEM A 508)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (Zootermopsis CYP4G15 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Glu/Ala-Gly-His-Asp-Thr (I-Helix Distal O2 Groove)",
+      "SRS1 B-Prime Region (1TQN 100-126; Long-Chain Fatty Aldehyde Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/COII Standardized)",
+      "region_label": "East Asian Native & Trans-Pacific Invasive Subterranean Corridor (Coptotermes formosanus)",
+      "clade_lineage": "Coptotermes formosanus (Formosan Subterranean Termite)",
+      "locus_name": "mtDNA COX1/COII",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P26-R1",
+      "locality": "East Asian & Trans-Pacific Coptotermes formosanus",
+      "cache_key": "R1",
+      "query": "\"Coptotermes formosanus\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 500:1000[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/COII Standardized)",
+      "region_label": "Southeast Asian & Pantropical Maritime Invasive Corridor (Coptotermes gestroi)",
+      "clade_lineage": "Coptotermes gestroi (Asian Subterranean Termite)",
+      "locus_name": "mtDNA COX1/COII",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P26-R2",
+      "locality": "Southeast Asian & Pantropical Coptotermes gestroi",
+      "cache_key": "R2",
+      "query": "\"Coptotermes gestroi\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 500:1000[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/COII Standardized)",
+      "region_label": "Nearctic Refugial Forest & Trans-Atlantic Urban Corridor (Reticulitermes flavipes)",
+      "clade_lineage": "Reticulitermes flavipes (Eastern Subterranean Termite)",
+      "locus_name": "mtDNA COX1/COII",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0212,
+      "source_id": "P26-R3",
+      "locality": "Nearctic & European Reticulitermes flavipes",
+      "cache_key": "R3",
+      "query": "\"Reticulitermes flavipes\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 500:1000[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/COII Standardized)",
+      "region_label": "Japanese Archipelago & East Asian Temperate Forest Corridor (Reticulitermes speratus)",
+      "clade_lineage": "Reticulitermes speratus (Asexual-Queen-Succession Termite)",
+      "locus_name": "mtDNA COX1/COII",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P26-R4",
+      "locality": "East Asian Temperate Reticulitermes speratus",
+      "cache_key": "R4",
+      "query": "\"Reticulitermes speratus\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 500:1000[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/COII Standardized)",
+      "region_label": "Afrotropical & Indo-Malayan Savanna Cathedral-Mound Corridor (Macrotermes spp.)",
+      "clade_lineage": "Macrotermes spp. (Fungus-Growing Mound Termites)",
+      "locus_name": "mtDNA COX1/COII",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0214,
+      "source_id": "P26-R5",
+      "locality": "Afrotropical & Indo-Malayan Macrotermes",
+      "cache_key": "R5",
+      "query": "\"Macrotermes\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 500:1000[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/COII Standardized)",
+      "region_label": "Neotropical & Australasian Canopy Carton-Nest Corridor (Nasutitermes spp.)",
+      "clade_lineage": "Nasutitermes spp. (Frontal-Gland Nasute Termites)",
+      "locus_name": "mtDNA COX1/COII",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0215,
+      "source_id": "P26-R6",
+      "locality": "Neotropical & Australasian Nasutitermes",
+      "cache_key": "R6",
+      "query": "\"Nasutitermes\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 500:1000[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Paleotropical & Holarctic)",
+      "region_label": "Paleotropical Savanna Fungus-Gardening Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Odontotermes / Macrotermitinae (Fungus-Comb Termites)",
+      "locus_name": "mtDNA COX1/COII (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0215,
+      "source_id": "P26-L1",
+      "locality": "Paleotropical Odontotermes Savanna Deme",
+      "cache_key": "L1",
+      "query": "\"Odontotermes\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title]) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Paleotropical & Holarctic)",
+      "region_label": "Paleotropical Savanna Fungus-Gardening Deme (Single-Subunit 16S LSU rRNA 4Ne)",
+      "clade_lineage": "Odontotermes / Macrotermitinae (16S rRNA)",
+      "locus_name": "Single-Subunit 16S LSU rRNA (E-INS-i)",
+      "locus_tag": "rrnL_16S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0086,
+      "source_id": "P26-L2",
+      "locality": "Paleotropical Odontotermes Savanna Deme",
+      "cache_key": "iso_pop_l2_16s_v4",
+      "query": "\"Odontotermes\"[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 12S[Title] NOT 28S[Title] NOT ITS[Title] NOT complete[Title]",
+      "fallback_query": "Macrotermitinae[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 12S[Title] NOT complete[Title]",
+      "min_bp": 340,
+      "max_bp": 1150
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Paleotropical & Holarctic)",
+      "region_label": "Paleotropical Savanna Fungus-Gardening Deme (Endogenous GH9 Cellulase Sweep Locus)",
+      "clade_lineage": "Odontotermes / Termitoidae (Lignocellulase Sweep)",
+      "locus_name": "Nuclear GH9 Endoglucanase Sweep Locus",
+      "locus_tag": "GH9",
+      "ploidy_scalar": 0.22,
+      "mu_rate": 0.0108,
+      "source_id": "P26-L3",
+      "locality": "Paleotropical Termitoidae Cellulase Deme",
+      "cache_key": "L3",
+      "query": "\"Termitoidae\"[Organism] AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title] OR \"beta-glucosidase\"[Title]) AND 300:2500[SLEN] NOT genome[Title] NOT chromosome[Title]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 2550
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Paleotropical & Holarctic)",
+      "region_label": "Holarctic Temperate Subterranean Forest Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Reticulitermes spp. (Temperate Subterranean Termites)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0218,
+      "source_id": "P26-L4",
+      "locality": "Holarctic Reticulitermes Temperate Forest Deme",
+      "cache_key": "L4",
+      "query": "\"Reticulitermes\"[Organism] AND (COX1[Title] OR COI[Title]) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Paleotropical & Holarctic)",
+      "region_label": "Holarctic Temperate Subterranean Forest Deme (Single-Subunit 16S LSU rRNA 4Ne)",
+      "clade_lineage": "Reticulitermes spp. (16S rRNA)",
+      "locus_name": "Single-Subunit 16S LSU rRNA (E-INS-i)",
+      "locus_tag": "rrnL_16S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0088,
+      "source_id": "P26-L5",
+      "locality": "Holarctic Reticulitermes Temperate Forest Deme",
+      "cache_key": "iso_pop_l5_16s_v4",
+      "query": "\"Reticulitermes\"[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 12S[Title] NOT 28S[Title] NOT ITS[Title] NOT complete[Title]",
+      "fallback_query": "Rhinotermitidae[Organism] AND (\"16S\"[Title] OR \"large subunit ribosomal\"[Title]) AND 350:1100[SLEN] NOT 12S[Title] NOT complete[Title]",
+      "min_bp": 340,
+      "max_bp": 1150
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Paleotropical & Holarctic)",
+      "region_label": "Holarctic Temperate Subterranean Forest Deme (Caste / Cellulase Selective Sweep Locus)",
+      "clade_lineage": "Reticulitermes / Rhinotermitidae (Caste/Cellulase Sweep)",
+      "locus_name": "Nuclear Endoglucanase / Caste Locus",
+      "locus_tag": "JHE",
+      "ploidy_scalar": 0.19,
+      "mu_rate": 0.011,
+      "source_id": "P26-L6",
+      "locality": "Holarctic Rhinotermitidae Coding Sweep Deme",
+      "cache_key": "L6",
+      "query": "(\"Reticulitermes\"[Organism] OR \"Coptotermes\"[Organism] OR \"Rhinotermitidae\"[Organism]) AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title] OR \"hexamerin\"[Title] OR \"transferrin\"[Title] OR \"vitellogenin\"[Title] OR \"laccase\"[Title] OR \"cytochrome P450\"[Title]) AND 300:3000[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 3050
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Late Pleistocene MIS 5e Interglacial Expansion",
+      "age_max_ka": 160,
+      "age_min_ka": 65,
+      "period_label": "Pre-LGM Baseline (160-65 ka)",
+      "ecological_context": "Warm interglacial forest and savanna gallery connectivity across Paleotropical, Neotropical, and Holarctic basins"
+    },
+    {
+      "label": "Last Glacial Maximum (LGM) Refugial Contraction",
+      "age_max_ka": 65,
+      "age_min_ka": 14,
+      "period_label": "Horizon 1: LGM Aridity Bottleneck (22-14 ka)",
+      "ecological_context": "Pleistocene cooling and savanna desiccation contracting subterranean and canopy termite populations into glacial refugia"
+    },
+    {
+      "label": "Early-to-Mid Holocene Humid Period Surge",
+      "age_max_ka": 14,
+      "age_min_ka": 3,
+      "period_label": "Horizon 2: Holocene Monsoon Expansion (11-3 ka)",
+      "ecological_context": "Post-glacial reforestation of North America/East Asia and monsoon expansion of Paleotropical fungus-growing mounds"
+    },
+    {
+      "label": "Late Holocene Regional Riverine & Savanna Corridor",
+      "age_max_ka": 3,
+      "age_min_ka": 0.12,
+      "period_label": "Late Holocene Expansion (3.0-0.12 ka)",
+      "ecological_context": "Sustained regional colony density across tropical savannas and deadwood-rich temperate forests"
+    },
+    {
+      "label": "19th-20th Century Maritime Timber Founder Bottlenecks",
+      "age_max_ka": 0.12,
+      "age_min_ka": 0.03,
+      "period_label": "Horizon 3: Maritime Timber Founder Bottleneck",
+      "ecological_context": "Trans-oceanic ship-timber and potted-plant transport introducing Coptotermes and Reticulitermes bridgehead colonies"
+    },
+    {
+      "label": "1990-2026 Urban Supercolony & Coding Selection Sweep",
+      "age_max_ka": 0.03,
+      "age_min_ka": 0,
+      "period_label": "Horizon 4: Modern Supercolony & Coding Sweep",
+      "ecological_context": "Polygynous urban supercolony proliferation paired with intense selection on cellulase, endocrine, and CYP4 detoxification loci"
+    }
+  ],
+  "supp_s2_cohort_code": "L5",
+  "haplotype_panels": [
+    {
+      "panel_id": "Subterranean & Drywood Termites (Rhinotermitidae & Kalotermitidae COI-5P)",
+      "fasta_filename": "cohort_isoptera_subterranean_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1,
+        2,
+        3,
+        9
+      ],
+      "slot_prefixes": [
+        "C:",
+        "D:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.65
+    },
+    {
+      "panel_id": "Higher Termitidae Fungus-Growing & Nasute Demes (Macrotermitinae & Nasutitermitinae COI-5P)",
+      "fasta_filename": "cohort_isoptera_termitidae_cox1.fasta",
+      "cohort_indices": [
+        4,
+        5,
+        6
+      ],
+      "slot_prefixes": [
+        "E:",
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.65
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Blattodea Outgroups & Sister Wood-Roach Cryptocercus [A] vs. Crown Isoptera [B-G]",
+      "sector_code": "[A]-[G]",
+      "fossil_or_biogeo_anchor": "Triassic-Jurassic Blattodea / Xylophagodea split & Baissatermes crown (~218-256 Ma)",
+      "target_age_ma": 238.4,
+      "ci_min_ma": 221.2,
+      "ci_max_ma": 254.6,
+      "trophic_guild": "Blattodea outgroups & Cryptocercus",
+      "key_enzymes_or_loci": "COI-ATP6 / 16S / 12S / 28S / GH9 / JHE / Hsp70 / CYP4G15",
+      "ecosystem_role": "Xylophagous subsocial wood-roach sister lineage anchoring termite eusociality",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Crown Isoptera Split (Basal Relictual Mastotermitidae/Termopsidae/Hodotermitidae [B] vs. Euisoptera [C-G])",
+      "sector_code": "[B]-[G]",
+      "fossil_or_biogeo_anchor": "Late Jurassic-Berriasian Baissatermes & Valditermes horizon (~136-162 Ma)",
+      "target_age_ma": 148.8,
+      "ci_min_ma": 137.4,
+      "ci_max_ma": 160.4,
+      "trophic_guild": "Basal dampwood & harvester termites",
+      "key_enzymes_or_loci": "Protist hindgut symbiosis / JHE / Hsp70 / CYP4G15",
+      "ecosystem_role": "Origin of obligate eusociality, soldier caste, and proctodeal trophallaxis",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Crown Euisoptera (Kalotermitidae Drywood [C] vs. Clade Neoisoptera [D-G])",
+      "sector_code": "[C]-[G]",
+      "fossil_or_biogeo_anchor": "Early Cretaceous amber Kalotermitidae horizon (~115-138 Ma)",
+      "target_age_ma": 126.4,
+      "ci_min_ma": 116.2,
+      "ci_max_ma": 136.8,
+      "trophic_guild": "Single-piece drywood termites",
+      "key_enzymes_or_loci": "GH9 endoglucanase A / JHE / CYP4C1",
+      "ecosystem_role": "Loss of intracellular Blattabacterium in Neoisoptera vs. drywood water conservation",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Crown Neoisoptera (Rhinotermitidae [D] vs. Higher Termites Termitidae [E-G])",
+      "sector_code": "[D]-[G]",
+      "fossil_or_biogeo_anchor": "Mid-Cretaceous Archeorhinotermes & fontanelle origin (~88-109 Ma)",
+      "target_age_ma": 98.6,
+      "ci_min_ma": 89.2,
+      "ci_max_ma": 108.4,
+      "trophic_guild": "Foraging subterranean termites",
+      "key_enzymes_or_loci": "CYP4G15 CHC synthase / GH9 cellulase",
+      "ecosystem_role": "Evolution of the cephalic frontal gland and subterranean foraging tunnels",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Crown Rhinotermitidae Radiation (Coptotermes/Heterotermes vs. Reticulitermes [D])",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous Boreotropical subterranean radiation (~63-82 Ma)",
+      "target_age_ma": 72.4,
+      "ci_min_ma": 63.8,
+      "ci_max_ma": 81.2,
+      "trophic_guild": "Cosmopolitan subterranean pest genera",
+      "key_enzymes_or_loci": "JHE / CYP4C3 / COI-28S",
+      "ecosystem_role": "Global temperate and tropical wood decomposition and urban bridgehead invasions",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Crown Termitidae (Macrotermitinae [E] vs. Non-Macrotermitinae [F-G])",
+      "sector_code": "[E]-[G]",
+      "fossil_or_biogeo_anchor": "Early Eocene Climatic Optimum loss of gut protists (~47-62 Ma)",
+      "target_age_ma": 54.2,
+      "ci_min_ma": 47.6,
+      "ci_max_ma": 61,
+      "trophic_guild": "Fungus-gardening cathedral mounds",
+      "key_enzymes_or_loci": "Termitomyces exosymbiosis / GH9 / Hsp70",
+      "ecosystem_role": "Replacement of cellulolytic hindgut protists by basidiomycete fungus-comb agriculture",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Humivorous Soil-Feeders Apicotermitinae/Termitinae/Cubitermitinae [F] vs. Crown [G]",
+      "sector_code": "[F]-[G]",
+      "fossil_or_biogeo_anchor": "Middle Eocene Afrotropical-Neotropical soil-feeding radiation (~38-51 Ma)",
+      "target_age_ma": 44.8,
+      "ci_min_ma": 39.2,
+      "ci_max_ma": 50.6,
+      "trophic_guild": "Alkaline P3-gut soil feeders",
+      "key_enzymes_or_loci": "Compartmentalized gut proteases / Hsp70 / CYP4",
+      "ecosystem_role": "Evolution of extreme gut alkalinity unlocking humic soil organic matter",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Nasutitermitinae & Syntermitinae Split (Nasute Defense [G])",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Eocene-Oligocene Transition & Miocene amber Nasutitermes (~28-41 Ma)",
+      "target_age_ma": 34.6,
+      "ci_min_ma": 29.4,
+      "ci_max_ma": 40.2,
+      "trophic_guild": "Diterpene-spraying nasute soldiers",
+      "key_enzymes_or_loci": "Frontal-gland diterpene synthases / CYP4G15 / CYP4C3",
+      "ecosystem_role": "Replacement of biting mandibles with chemical cephalic nozzle (nasus)",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-01-RHINOTERMITIDAE-SYMPATRIC-INTROGRESSION",
+      "p1_tip": "D_T021",
+      "p2_tip": "D_T022",
+      "p3_tip": "D_T023",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Incomplete lineage sorting and secondary contact hybridization across subterranean Rhinotermitidae"
+    },
+    {
+      "quartet_id": "ABBA-02-RHINOTERMITIDAE-TEMPERATE-CORRIDOR",
+      "p1_tip": "D_T026",
+      "p2_tip": "D_T027",
+      "p3_tip": "D_T028",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Rhinotermitidae refugial divergence and interspecific allele sharing across temperate forest corridors"
+    },
+    {
+      "quartet_id": "ABBA-03-MACROTERMITINAE-FUNGUS-COMB",
+      "p1_tip": "E_T033",
+      "p2_tip": "E_T035",
+      "p3_tip": "E_T039",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Ancestral polymorphism and Termitomyces fungus-comb co-diversification across Paleotropical Macrotermitinae"
+    },
+    {
+      "quartet_id": "ABBA-04-NASUTITERMITINAE-SYNTERMITINAE",
+      "p1_tip": "G_T054",
+      "p2_tip": "G_T059",
+      "p3_tip": "G_T060",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Rapid pantropical canopy radiation and incomplete lineage sorting across diterpene-spraying Nasutitermitinae"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "bio-suite-seqnet",
+    "Isoptera",
+    "Termites",
+    "Coptotermes formosanus",
+    "Reticulitermes flavipes",
+    "Macrotermes",
+    "Zootermopsis nevadensis",
+    "GH9 Cellulase",
+    "CYP4G15"
+  ],
+  "genetic_loci_summary": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "ATP8",
+    "16S rRNA",
+    "12S rRNA",
+    "28S rRNA",
+    "GH9",
+    "JHE",
+    "Hsp70",
+    "CYP4G15"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Bourguignon, T., Lo, N., Cameron, S. L., Šobotník, J., Hayashi, Y., Shigenobu, S., Watanabe, D., Roisin, Y., Miura, T., & Evans, T. A. (2015). The evolutionary history of termites as inferred from 66 mitochondrial genomes. Molecular Biology and Evolution, 32(2), 406–421. DOI: 10.1093/molbev/msu308",
+      "url": "https://doi.org/10.1093/molbev/msu308"
+    },
+    {
+      "text": "Bucek, A., Šobotník, J., He, S., Bezdecka, M., Křížková, B., Sillam-Dussès, D., Hyliš, M., Roisin, Y., Evans, T. A., & Bourguignon, T. (2019). Evolution of termite symbiosis informed by transcriptome-based phylogenies. Current Biology, 29(21), 3728–3734. DOI: 10.1016/j.cub.2019.08.076",
+      "url": "https://doi.org/10.1016/j.cub.2019.08.076"
+    },
+    {
+      "text": "Bourguignon, T., Lo, N., Sobotnik, J., Ho, S. Y. W., Iqbal, N., Coissac, E., Lee, M., Jendryka, M. M., Sillam-Dusses, D., Krizkova, B., Roisin, Y., & Evans, T. A. (2017). Mitochondrial phylogenomics resolves the global spread of higher termites, ecosystem engineers of the tropics. Molecular Biology and Evolution, 34(3), 589–597. DOI: 10.1093/molbev/msw253",
+      "url": "https://doi.org/10.1093/molbev/msw253"
+    },
+    {
+      "text": "Inward, D., Beccaloni, G., & Eggleton, P. (2007). Death of an order: a comprehensive molecular phylogenetic study confirms that termites are eusocial cockroaches. Biology Letters, 3(3), 331–335. DOI: 10.1098/rsbl.2007.0102",
+      "url": "https://doi.org/10.1098/rsbl.2007.0102"
+    },
+    {
+      "text": "Terrapon, N., Li, C., Robertson, H. M., Ji, L., Meng, X., Booth, W., Chen, Z., Childers, C. P., Glastad, K. M., Gokhale, K., Gowda, S., Hughes, D. S. T., Jones, J. W., Korb, J., Bornberg-Bauer, E., Wang, J., & Liebig, J. (2014). Molecular traces of alternative social organization in a termite genome. Nature Communications, 5, 3636. DOI: 10.1038/ncomms4636",
+      "url": "https://doi.org/10.1038/ncomms4636"
+    },
+    {
+      "text": "Harrison, M. C., Jongepier, E., Robertson, H. M., Arning, N., Bitard-Feildel, T., Chao, H., Childers, C. P., Dinh, H., Doddapaneni, H., Dugan, S., Gowda, S., Han, Y., Hughes, D. S. T., Liebig, J., Korb, J., & Bornberg-Bauer, E. (2018). Hemimetabolous genomes reveal molecular basis of termite eusociality. Nature Ecology & Evolution, 2(3), 557–566. DOI: 10.1038/s41559-017-0459-1",
+      "url": "https://doi.org/10.1038/s41559-017-0459-1"
+    },
+    {
+      "text": "Poulsen, M., Hu, H., Li, C., Chen, Z., Xu, L., Otani, S., Nygaard, S., Nobre, T., Klaubauf, S., Schindler, P. M., Hauser, F., Pan, H., Yang, Z., Sonnenberg, A. S. M., de Beer, Z. W., Zhang, Y., Wingfield, M. J., Grimmelikhuijzen, C. J. P., de Vries, R. P., Korb, J., Aanen, D. K., Wang, J., Boomsma, J. J., & Zhang, G. (2014). Complementary symbiont contributions to plant decomposition in a fungus-farming termite. Proceedings of the National Academy of Sciences, 111(40), 14500–14505. DOI: 10.1073/pnas.1319718111",
+      "url": "https://doi.org/10.1073/pnas.1319718111"
+    },
+    {
+      "text": "Watanabe, H., Noda, H., Tokuda, G., & Lo, N. (1998). A cellulase gene of termite origin. Nature, 394(6691), 330–331. DOI: 10.1038/28527",
+      "url": "https://doi.org/10.1038/28527"
+    },
+    {
+      "text": "Chouvenc, T., Šobotník, J., Engel, M. S., & Bourguignon, T. (2021). Termite evolution: mutualistic associations, key innovations, and the rise of Termitidae. Cellular and Molecular Life Sciences, 78(6), 2749–2769. DOI: 10.1007/s00018-020-03728-z",
+      "url": "https://doi.org/10.1007/s00018-020-03728-z"
+    },
+    {
+      "text": "Blumenfeld, A. J., Eyer, P. A., Husseneder, C., Mo, J., Johnson, L. N. L., Wang, C., Grace, J. K., Chouvenc, T., Wang, S., & Vargo, E. L. (2021). Bridgehead effect and multiple introductions shape the global invasion history of invasive subterranean termite Coptotermes formosanus. Communications Biology, 4(1), 196. DOI: 10.1038/s42003-021-01725-x",
+      "url": "https://doi.org/10.1038/s42003-021-01725-x"
+    },
+    {
+      "text": "Chouvenc, T., Li, H. F., Austin, J., Bordereau, C., Bourguignon, T., Cameron, S. L., Cancello, E. M., Constantino, R., Costa-Leonardo, A. M., Eggleton, P., Evans, T. A., Forschler, B., Grace, J. K., Husseneder, C., Křeček, J., Lee, C. Y., Lefebvre, T., Lo, N., Messenger, M., Miura, T., Neoh, K. B., Roisin, Y., Scheffrahn, R. H., Sillam-Dussès, D., Šobotník, J., Szalanski, A., Takematsu, Y., Vargo, E. L., Yamada, A., Yoshimura, T., & Su, N. Y. (2016). Revisiting Coptotermes (Isoptera: Rhinotermitidae): a global taxonomic road map for species of economic importance. Systematic Entomology, 41(2), 299–306. DOI: 10.1111/syen.12157",
+      "url": "https://doi.org/10.1111/syen.12157"
+    },
+    {
+      "text": "Dedeine, F., Dupont, S., Guyot, S., Matsuura, K., Wang, C., Habibpour, B., Bagnères, A. G., Mantovani, B., & Luchetti, A. (2016). Historical biogeography of Reticulitermes termites (Isoptera: Rhinotermitidae) inferred from analyses of mitochondrial and nuclear loci. Molecular Phylogenetics and Evolution, 94, 778–790. DOI: 10.1016/j.ympev.2015.10.020",
+      "url": "https://doi.org/10.1016/j.ympev.2015.10.020"
+    },
+    {
+      "text": "Engel, M. S., Grimaldi, D. A., & Krishna, K. (2009). Termites (Isoptera): their phylogeny, classification, and rise to ecological dominance. American Museum Novitates, 3650, 1–27. DOI: 10.1206/651.1",
+      "url": "https://doi.org/10.1206/651.1"
+    },
+    {
+      "text": "Mirarab, S., & Warnow, T. (2015). ASTRAL-II: Coalescent-based species tree estimation with many hundreds of taxa and thousands of genes. Bioinformatics, 31(12), i44–i52. DOI: 10.1093/bioinformatics/btv234",
+      "url": "https://doi.org/10.1093/bioinformatics/btv234"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z., Wong, W. S. W., & Nielsen, R. (2005). Bayes empirical Bayes inference of amino acid sites under positive selection. Molecular Biology and Evolution, 22(4), 1107–1118. DOI: 10.1093/molbev/msi097",
+      "url": "https://doi.org/10.1093/molbev/msi097"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      174.6,
+      114,
+      86,
+      72.4,
+      38.4,
+      36.2,
+      34.6
+    ],
+    "backbone_node_ages": [
+      44.8,
+      54.2,
+      98.6,
+      126.4,
+      148.8,
+      238.4
+    ],
+    "fig1_max_ma": 260,
+    "fig1_eras": [
+      [
+        "Triassic",
+        260,
+        201,
+        "#f1f5f9"
+      ],
+      [
+        "Jurassic",
+        201,
+        145,
+        "#f8fafc"
+      ],
+      [
+        "Cretaceous",
+        145,
+        66,
+        "#f1f5f9"
+      ],
+      [
+        "Paleogene",
+        66,
+        23,
+        "#f8fafc"
+      ],
+      [
+        "Neo-Q",
+        23,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      250,
+      200,
+      150,
+      100,
+      50,
+      25,
+      0
+    ],
+    "fig1_node_y_slots": [
+      7.8,
+      15.2,
+      24.4,
+      36,
+      26.5,
+      44.5,
+      51.8,
+      58
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        3,
+        "Blattodea & Cryptocercus Outgroups (n=4)",
+        "Periplaneta, Blattella, Cryptocercus relictus/kyebangensis",
+        "Xylophagous wood-roach sister & Blattabacterium root"
+      ],
+      [
+        "[B]",
+        4,
+        9,
+        "Basal Relictual Termite Families (n=6)",
+        "Mastotermes, Zootermopsis, Porotermes, Hodotermes",
+        "Parabasalid/oxymonad protist symbioses + dampwood castes"
+      ],
+      [
+        "[C]",
+        10,
+        19,
+        "Drywood Termites: Kalotermitidae (n=10)",
+        "Cryptotermes, Incisitermes, Neotermes, Kalotermes",
+        "Single-piece drywood nidification + nephridial water recycling"
+      ],
+      [
+        "[D]",
+        20,
+        31,
+        "Subterranean Termites: Rhinotermitidae (n=12)",
+        "Coptotermes, Reticulitermes, Heterotermes, Schedorhinotermes",
+        "Foraging gallery networks + frontal-pore fontanelle defense"
+      ],
+      [
+        "[E]",
+        32,
+        41,
+        "Higher Termites I: Macrotermitinae (n=10)",
+        "Macrotermes, Odontotermes, Pseudacanthotermes, Microtermes",
+        "Obligate Termitomyces fungus-comb lignocellulose agriculture"
+      ],
+      [
+        "[F]",
+        42,
+        52,
+        "Higher Termites II: Apicotermitinae & Termitinae (n=11)",
+        "Pericapritermes, Termes, Microcerotermes, Neocapritermes",
+        "Protist-free alkaline P3 gut humivory & asymmetric mandibles"
+      ],
+      [
+        "[G]",
+        53,
+        63,
+        "Higher Termites III: Nasutitermitinae Crown (n=11)",
+        "Nasutitermes, Hospitalitermes, Constrictotermes, Labiotermes",
+        "Diterpene synthase nasute soldiers & arboreal carton nests"
+      ]
+    ],
+    "fig1_web_svg": "isoptera-global-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram of Blattodea & Global Isoptera Radiation (Nodes I-VIII)",
+    "fig1_caption": "Strictly bifurcating 64-taxon relaxed-clock chronogram (TimeTreeLSD2) inferred under edge-linked partitioned per-locus ModelTest across >=80%-gated Blattodea and Isoptera taxa.",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        3,
+        "Blattodea & Cryptocercus (n=4)",
+        ""
+      ],
+      [
+        "[B]",
+        4,
+        9,
+        "Basal Relictual Families (n=6)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        10,
+        19,
+        "Kalotermitidae Drywood (n=10)",
+        ""
+      ],
+      [
+        "[D]",
+        20,
+        31,
+        "Rhinotermitidae Subterranean (n=12)",
+        "9,3,2,3"
+      ],
+      [
+        "[E]",
+        32,
+        41,
+        "Macrotermitinae Fungus-Growers (n=10)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        42,
+        52,
+        "Apicotermitinae & Termitinae (n=11)",
+        ""
+      ],
+      [
+        "[G]",
+        53,
+        63,
+        "Nasutitermitinae & Syntermitinae (n=11)",
+        "10,3,2,3"
+      ]
+    ],
+    "fig2_web_svg": "isoptera-global-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Empirical Patristic Phylogram Across >=80%-Gated Blattodea & Isoptera Species",
+    "fig2_caption": "Dominant circular patristic phylogram mapping radial coordinate strictly to cumulative root-to-tip patristic substitution distance across Sectors [A]-[G].",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T003",
+        0
+      ],
+      [
+        "Node II",
+        "B:T007",
+        1
+      ],
+      [
+        "Node III",
+        "C:T015",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T023",
+        3
+      ],
+      [
+        "Node V",
+        "D:T028",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T037",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T047",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T058",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "D:T021",
+      "D:T022"
+    ],
+    "fig3_web_svg": "isoptera-global-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, q1 Concordance & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species bifurcating quartet coalescent species tree across retained loci with empirical CU branch lengths, q1 concordance, and ABBA-BABA introgression.",
+    "fig4a_web_svg": "isoptera-global-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional Standardized COX1/COII Bayesian Coalescent Skyline Matrix Across Global Isoptera Lineages (Cohorts R1-R6; N = 216)",
+    "fig4a_caption": "Six single-species/genus regional mtDNA COX1/COII coalescent skylines across Coptotermes formosanus, C. gestroi, Reticulitermes flavipes, R. speratus, Macrotermes, and Nasutitermes.",
+    "fig4b_web_svg": "isoptera-global-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Single-Subunit 16S LSU rRNA (4Ne) vs. Nuclear Endoglucanase Loci (Cohorts L1-L6; N = 216)",
+    "fig4b_caption": "Paired multi-locus skylines across fungus-growing Odontotermes and Holarctic Reticulitermes separating maternal mtDNA expansion from Katoh E-INS-i 16S LSU rRNA and nuclear cellulase/caste coding sweeps.",
+    "fig5_short_fam_titles": [
+      "Endogenous GH9 Beta-1,4-Endoglucanases (Endoglucanase A / E-4)",
+      "Caste Differentiation Juvenile Hormone Esterases (JHE / FE4)",
+      "Mound Hypoxia & Thermal Buffering Chaperones (Hsp70 / Hsc70)",
+      "Cuticular Hydrocarbon & Terpenoid Clan-4 Cytochrome P450s (CYP4G15 / CYP4C)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Endogenous GH9 Cellulase",
+      "FAM-02: Caste Juvenile Hormone Esterase",
+      "FAM-03: Mound Hypoxia Hsp70 Chaperone",
+      "FAM-04: Clan-4 CYP4G15 / CYP4C (1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | CYP4G15 Structure & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Microsomal Clan-4 P450 Fold (461 Ca Threaded with Z. nevadensis CYP4G15)",
+    "fig5_web_svg": "isoptera-global-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP4G15 Heme-Thiolate Active Site",
+    "fig5_caption": "Translated Universal Standard Code 1 amino-acid motif alignments across 48 single-family Isoptera NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Zootermopsis nevadensis CYP4G15 structure threaded on 1TQN (2.05 A) with HEM A 508 and Cys442-Sg thiolate coordination.",
+    "fig6_web_svg": "isoptera-global-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Combinatorial Model Comparison Across Pipeline A & Pipeline B (Isoptera)",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and Raw0 unphased control (4th), alongside Pipeline B (12 skylines, N = 432).",
+    "fig6_clade_label": "Blattodea & Isoptera",
+    "fig6_p450_label": "CYP4G15 / GH9 / JHE / Hsp70",
+    "fig6_its_label": "Odontotermes & Reticulitermes 16S rRNA",
+    "supp_s1_fasta_name": "supp_s1_cyp4g15_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Homogeneous Clan-4 Cytochrome P450 CDS (Z. nevadensis CYP4G15 / CYP4C1 / CYP4C3, Code 1)",
+    "supp_s1_source": "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS (FAM-04 Clan-4 Code 1)",
+    "supp_s1_stem": "isoptera-global-supp-s1-cyp4g15-alignview",
+    "supp_s2_title": "Cohort L5 Reticulitermes Single-Subunit 16S LSU rRNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS (Cohort L5 16S rRNA)",
+    "supp_s2_stem": "isoptera-global-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "Blattodea & Isoptera Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "isoptera-global-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "1. Comparative Scope Across Blattodea Outgroups, Relictual Termites & Higher Termitidae",
+    "section1_p1": "Termites (Blattodea: Isoptera) evolved obligate eusociality, soldier morphology, endogenous wood-cellulose hydrolysis, and fungal agriculture across 238 million years of Mesozoic and Cenozoic radiation from Cryptocercus wood-roach ancestors through basal Mastotermitidae, Archotermopsidae, Kalotermitidae, subterranean Rhinotermitidae (Coptotermes, Reticulitermes, Heterotermes), and higher Termitidae (Macrotermitinae, Apicotermitinae, Termitinae, Cubitermitinae, Nasutitermitinae, Syntermitinae).",
+    "section1_p2": "In Version 4.0.0, all 64 stratified Blattodea and Isoptera slots ([A]-[G]) run through the generalized declarative bio-suite pipeline, pairing Invertebrate Mitochondrial Code 5 organelle locus phasing and authentic unphased mitogenome Raw-0Beaker controls with Universal Standard Code 1 single-family GH9, JHE, Hsp70, and Clan-4 CYP4G15/CYP4C selection tests.",
+    "section2_title": "2. Per-Locus BIC ModelTest, Edge-Linked Proportional Partitioning & >=80% Supermatrix Gate",
+    "section3_title": "3. 64-Species Multispecies Coalescent Species Tree, ABBA-BABA & 32-Chain RuNIE Audit",
+    "section4_title": "4. Homogeneous Lignocellulase, Endocrine, Chaperone & Clan-4 P450 Selection (GH9, JHE, Hsp70 & CYP4G15 on 1TQN)",
+    "section4_body": "Across verified Universal Code 1 arthropod nuclear alignments passing strict pre-MSA motif rules and post-MSA codon row auditing, 61-state Goldman-Yang codon models quantify purifying constraint and episodic diversification across homogeneous GH9 beta-1,4-endoglucanases (FAM-01), juvenile hormone esterases and FE4 carboxylesterases (FAM-02), Hsp70/Hsc70 ATPase chaperones (FAM-03), and microsomal Clan-4 CYP4G15/CYP4C monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A) with the conserved I-helix dioxygen groove and proximal Cys442 heme-thiolate coordination.",
+    "section5_title": "5. Cross-Regional COX1 vs. Single-Subunit 16S LSU rRNA (4Ne) Skylines & Stage 3C Haplotype Networks",
+    "discussion_title": "6. Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Integrating 64 Blattodea and Isoptera taxa across basal wood-feeding lineages, subterranean Rhinotermitidae, and specialized higher Termitidae confirms robust deep-node congruence between edge-linked partitioned RY3 maximum likelihood and 64-species ASTRAL-equivalent quartet multispecies coalescence.",
+      "Separating mixed Stage 4 nuclear gene sets into homogeneous GH9 endoglucanase, JHE carboxylesterase, Hsp70 chaperone, and Clan-4 CYP4G15/CYP4C alignments eliminates cross-fold homology noise and confirms 100% proximal Cys-loop and I-helix retention across the S1 cytochrome P450 benchmark.",
+      "Restoring authentic unphased circular mitogenomes to Regime 4 Raw-0Beaker resolves the v3.0.0 bootstrap inversion cleanly while single-subunit 16S LSU rRNA E-INS-i cohorts (L2 and L5) contrast buffered ribosomal diversity against Pleistocene contractions and maritime bridgehead bottlenecks in Coptotermes and Reticulitermes."
+    ],
+    "latex_intro": "Blattodea and Isoptera lineages span Xylophagodea wood-roach outgroups [A] through Nasutitermitinae [G], analyzed under Genetic Codes 5 and 1 in Version 4.0.0.",
+    "seed_base": 20261126
+  }
+}

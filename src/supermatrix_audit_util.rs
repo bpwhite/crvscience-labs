@@ -70,7 +70,7 @@ use crate::supervisor_manuscript::{
 };
 use crate::supervisor_study::{
     aa1_to_aa3, aa3_to_aa1, aa_volume_proxy, align_and_trim_rrna_core,
-    append_zero_star_dump_entry, batch_fetch_ncbi_accessions, build_raw0_control,
+    append_zero_star_dump_entry, batch_fetch_ncbi_accessions,
     compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
     evaluate_population_cohort_4regimes, export_trimmed_supp_s2_rdna_fasta,
     extract_homologous_mito_locus_from_genome, extract_longest_sense_orf, gc_percent,
@@ -1099,6 +1099,11 @@ pub(crate) fn run_partitioned_4regime_stage3(
             .filter(|x| x.0 == ri)
             .map(|x| x.2)
             .fold(f64::NEG_INFINITY, f64::max);
+        let b_eff = if ri == 3 {
+            boot_rep_raw0.b_replicates
+        } else {
+            b_reps
+        };
         let mut r_chains = Vec::with_capacity(8);
         for (mi, &(mname, k_p, _, _, _, _, _, _)) in models.iter().enumerate() {
             let entry = eval_results
@@ -1111,7 +1116,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 global_rank: 0,
                 tool_chain_summary: format!(
                     "Circular COX1 Phasing -> Partitioned ModelTest -> {} -> {} (B={})",
-                    rshort, mname, b_reps
+                    rshort, mname, b_eff
                 ),
                 model_name: mname.to_string(),
                 k_free_params: k_p,
@@ -1452,8 +1457,8 @@ pub(crate) fn run_partitioned_4regime_stage3(
         RunieComparisonRow {
             rank_label: "4th (Rejected)".to_string(),
             tool_chain: format!(
-                "Dense Unphased 0-Beaker Control -> HKY+F+I+G4 + UFBoot2 (B={})",
-                b_reps
+                "Dense Unphased 0-Beaker Control -> HKY+F+I+G4 + Nonparam. Boot (B={})",
+                boot_rep_raw0.b_replicates
             ),
             model_summary: "Unphased 0-Beaker Negative Control".to_string(),
             marginal_ln_l: round4(ml_raw0.ln_l),
@@ -1461,7 +1466,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
             rcfv: rcfv_raw0,
             runie_bootstrap: format!(
                 "{:.1}% (B = {})",
-                boot_rep_raw0.mean_split_support_pct, b_reps
+                boot_rep_raw0.mean_split_support_pct, boot_rep_raw0.b_replicates
             ),
             posterior_z: -4.18,
             cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
@@ -3732,6 +3737,16 @@ pub fn run_functional_families_stage4(
             cfg.min_consensus_dayhoff6_sim,
         );
         all_quarantined.extend(q_rows);
+        if pairs.len() < min_req {
+            return Err(format!(
+                "{} ({}) post-MSA codon QC retained only {} aligned orthologs (<{}; {} quarantined)",
+                fam.family_code,
+                cfg.cache_key,
+                pairs.len(),
+                min_req,
+                rep.accepted.len().saturating_sub(pairs.len())
+            ));
+        }
 
         if fi + 1 == specs.len() {
             if let Some((surv_id, surv_seq)) = pairs.first() {
@@ -5359,19 +5374,71 @@ pub fn execute_declarative_study(
                 s_viz.push_str(&"?".repeat(*plen));
             }
         }
-        let mut raw0_s = build_raw0_control(&raw0_control_records[idx].sequence, idx);
-        while raw0_s.len() < supermatrix_cols_bp {
-            let need = supermatrix_cols_bp - raw0_s.len();
-            let base = raw0_s.clone();
-            if base.is_empty() {
-                break;
+        let mut raw0_buf = String::with_capacity(supermatrix_cols_bp);
+        let base_raw = clean_acgt_only(&raw0_control_records[idx].sequence);
+        if !base_raw.is_empty() {
+            let shift = idx.saturating_mul(1973) % base_raw.len();
+            let mut rot = format!("{}{}", &base_raw[shift..], &base_raw[..shift]);
+            if idx % 2 == 1 {
+                rot = revcomp_dna(&rot);
             }
-            raw0_s.push_str(&base[..base.len().min(need)]);
+            raw0_buf.push_str(&rot);
         }
-        raw0_s.truncate(supermatrix_cols_bp);
-        if raw0_s.len() < supermatrix_cols_bp {
-            raw0_s.push_str(&"-".repeat(supermatrix_cols_bp - raw0_s.len()));
+        if raw0_buf.len() < supermatrix_cols_bp && !full_mitogenome_records.is_empty() {
+            let n_full = full_mitogenome_records.len();
+            for step in 1..=(n_full * 2) {
+                if raw0_buf.len() >= supermatrix_cols_bp {
+                    break;
+                }
+                let rec = &full_mitogenome_records[(idx + step) % n_full];
+                let mut rot = String::new();
+                append_rotated_acgt(
+                    &mut rot,
+                    &rec.sequence,
+                    idx.saturating_mul(2311).saturating_add(step.saturating_mul(997)),
+                );
+                if (idx + step) % 2 == 1 {
+                    rot = revcomp_dna(&rot);
+                }
+                raw0_buf.push_str(&rot);
+            }
         }
+        if raw0_buf.len() < supermatrix_cols_bp && !raw0_control_records.is_empty() {
+            let n_r0 = raw0_control_records.len();
+            for step in 1..n_r0 {
+                if raw0_buf.len() >= supermatrix_cols_bp {
+                    break;
+                }
+                let rec = &raw0_control_records[(idx + step) % n_r0];
+                let mut rot = String::new();
+                append_rotated_acgt(
+                    &mut rot,
+                    &rec.sequence,
+                    idx.saturating_mul(2311).saturating_add(step.saturating_mul(997)),
+                );
+                if (idx + step) % 2 == 1 {
+                    rot = revcomp_dna(&rot);
+                }
+                raw0_buf.push_str(&rot);
+            }
+        }
+        raw0_buf.truncate(supermatrix_cols_bp);
+        if raw0_buf.len() < supermatrix_cols_bp {
+            raw0_buf.push_str(&"-".repeat(supermatrix_cols_bp - raw0_buf.len()));
+        }
+        let mut raw0_bytes = raw0_buf.into_bytes();
+        let r0_len = raw0_bytes.len();
+        for b in raw0_bytes.iter_mut().take(84.min(r0_len)) {
+            if *b == b'C' {
+                *b = b'T';
+            }
+        }
+        for b in raw0_bytes.iter_mut().skip(r0_len.saturating_sub(84)) {
+            if *b == b'G' {
+                *b = b'A';
+            }
+        }
+        let raw0_s = String::from_utf8(raw0_bytes).unwrap_or_default();
 
         all64_labels.push(safe_id.clone());
         all64_ry3_strs.push(s_ry3.clone());

@@ -2181,3 +2181,37 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
     );
 }
 
+#[test]
+fn test_bootstrap_control_no_rell_collapse_on_unaligned_noise() {
+    use bio_suite::prng_util::DeterministicLcg64;
+    use bio_suite::tree_builder::{infer_native_ml_tree_with_bootstrap_control, PhyloRunModel};
+
+    let bases = [b'A', b'C', b'G', b'T'];
+    let mut rng = DeterministicLcg64::new(0x5241_5730_5F54_4553);
+    let mut labels = Vec::with_capacity(12);
+    let mut seqs = Vec::with_capacity(12);
+    for t in 0..12 {
+        labels.push(format!("NOISE_{:02}", t + 1));
+        let mut s = String::with_capacity(1800);
+        for _ in 0..1800 {
+            s.push(bases[rng.gen_range_usize(4)] as char);
+        }
+        seqs.push(s);
+    }
+    let (_, rep) = infer_native_ml_tree_with_bootstrap_control(
+        &seqs,
+        &labels,
+        PhyloRunModel::HkyInvGamma4,
+        40,
+        20261122,
+    )
+    .expect("bootstrap control on unaligned noise must succeed");
+    assert_eq!(rep.b_replicates, 40);
+    assert!(
+        rep.mean_split_support_pct < 55.0,
+        "non-gating control must not suffer RELL collapse on unaligned noise (got {:.2}%)",
+        rep.mean_split_support_pct
+    );
+}
+
+

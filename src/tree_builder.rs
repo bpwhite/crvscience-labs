@@ -4524,46 +4524,42 @@ fn infer_native_ml_tree_with_bootstrap_inner(
     let n_sites = aln.n_sites;
     let n_pats = aln.patterns.len();
 
-    // Build UFBoot2 candidate topology bank via parallel stochastic NNI + cold-start BIONJ perturbations
-    // evaluated under resampled multinomial site weights (Minh et al. 2013; Hoang et al. 2018),
-    // then score unique candidate trees on out-of-sample RELL resamplings across `0..b_replicates`.
-    let m_explore = if !enforce_consistency_gate {
-        b_replicates.clamp(12, 16)
-    } else if n_pats > 320 {
-        b_replicates.clamp(24, 32)
-    } else {
-        b_replicates.clamp(36, 56)
-    };
-    let explored_trees: Vec<Vec<MlTreeNode>> = (0..m_explore)
-        .into_par_iter()
-        .map(|m| {
-            let mut rng = DeterministicLcg64::new(splitmix64(seed ^ 0x5546_4232_u64 ^ (m as u64 + 1)));
-            let mut col_w = vec![0u16; n_sites];
-            let mut pat_w = vec![0.0f64; n_pats];
-            for _ in 0..n_sites {
-                let c = rng.gen_range_usize(n_sites);
-                col_w[c] = col_w[c].saturating_add(1);
-                pat_w[col_to_pat[c]] += 1.0;
-            }
-            if m % 4 == 0 {
-                run_weighted_ml_estimator(Some(&col_w), &pat_w).0
-            } else {
+    // For non-gating negative controls (`!enforce_consistency_gate`), use direct cold-start
+    // nonparametric Felsenstein bootstrap so multimodal noise plateaus do not collapse onto a
+    // single RELL candidate tree; for primary analyses, use UFBoot2 candidate exploration + RELL.
+    let n_ref_splits = ref_split_entries.len();
+    let (hit_vecs, effective_b): (Vec<Vec<u32>>, usize) = if !enforce_consistency_gate {
+        let n_direct = b_replicates.clamp(16, 40);
+        let direct_hits: Vec<Vec<u32>> = (0..n_direct)
+            .into_par_iter()
+            .map(|rep| {
+                let mut rng = DeterministicLcg64::new(splitmix64(seed ^ 0x4645_4C53_u64 ^ (rep as u64 + 1)));
+                let mut col_w = vec![0u16; n_sites];
+                let mut pat_w = vec![0.0f64; n_pats];
+                for _ in 0..n_sites {
+                    let c = rng.gen_range_usize(n_sites);
+                    col_w[c] = col_w[c].saturating_add(1);
+                    pat_w[col_to_pat[c]] += 1.0;
+                }
                 let aln_rep = compact_weighted_alignment(&aln, &pat_w);
-                let n_swaps = match m % 3 {
-                    0 => 2usize,
-                    1 => 5usize,
-                    _ => 10usize,
-                };
-                let mut cand = apply_stochastic_nni_perturbation(&ref_nodes, n_taxa, n_swaps, &mut rng);
-                let mut prev_acc = 1usize;
+                let mut boot_nodes = build_weighted_bionj_pool(
+                    raw_aligned_strings,
+                    labels,
+                    rm,
+                    None,
+                    Some(&col_w),
+                    &is_binary_col,
+                    &[fit.best_pool_idx],
+                )
+                .into_iter()
+                .next()
+                .map(|(_, t)| t)
+                .unwrap_or_else(|| ref_nodes.clone());
                 for _pass in 0..2 {
-                    if prev_acc == 0 {
-                        break;
-                    }
                     let mut ev = 0usize;
                     let mut acc = 0usize;
                     run_inside_outside_pulley_pass(
-                        &mut cand,
+                        &mut boot_nodes,
                         n_taxa,
                         &aln_rep,
                         &fit.q,
@@ -4574,141 +4570,201 @@ fn infer_native_ml_tree_with_bootstrap_inner(
                         &mut ev,
                         &mut acc,
                     );
-                    prev_acc = acc;
+                    if acc == 0 {
+                        break;
+                    }
                 }
-                cand
+                let (_, boot_splits) = extract_canonical_splits_from_ml_nodes(&boot_nodes, n_taxa);
+                ref_split_entries
+                    .iter()
+                    .map(|(sp, _)| if boot_splits.contains(sp) { 1u32 } else { 0u32 })
+                    .collect()
+            })
+            .collect();
+        (direct_hits, n_direct)
+    } else {
+        let m_explore = if n_pats > 320 {
+            b_replicates.clamp(24, 32)
+        } else {
+            b_replicates.clamp(36, 56)
+        };
+        let explored_trees: Vec<Vec<MlTreeNode>> = (0..m_explore)
+            .into_par_iter()
+            .map(|m| {
+                let mut rng = DeterministicLcg64::new(splitmix64(seed ^ 0x5546_4232_u64 ^ (m as u64 + 1)));
+                let mut col_w = vec![0u16; n_sites];
+                let mut pat_w = vec![0.0f64; n_pats];
+                for _ in 0..n_sites {
+                    let c = rng.gen_range_usize(n_sites);
+                    col_w[c] = col_w[c].saturating_add(1);
+                    pat_w[col_to_pat[c]] += 1.0;
+                }
+                if m % 4 == 0 {
+                    run_weighted_ml_estimator(Some(&col_w), &pat_w).0
+                } else {
+                    let aln_rep = compact_weighted_alignment(&aln, &pat_w);
+                    let n_swaps = match m % 3 {
+                        0 => 2usize,
+                        1 => 5usize,
+                        _ => 10usize,
+                    };
+                    let mut cand = apply_stochastic_nni_perturbation(&ref_nodes, n_taxa, n_swaps, &mut rng);
+                    let mut prev_acc = 1usize;
+                    for _pass in 0..2 {
+                        if prev_acc == 0 {
+                            break;
+                        }
+                        let mut ev = 0usize;
+                        let mut acc = 0usize;
+                        run_inside_outside_pulley_pass(
+                            &mut cand,
+                            n_taxa,
+                            &aln_rep,
+                            &fit.q,
+                            &fit.pi,
+                            fit.pinv,
+                            &fit.rate_cats,
+                            true,
+                            &mut ev,
+                            &mut acc,
+                        );
+                        prev_acc = acc;
+                    }
+                    cand
+                }
+            })
+            .collect();
+
+        let mut seen_topologies: std::collections::HashSet<BTreeSet<Vec<u64>>> =
+            std::collections::HashSet::with_capacity(m_explore);
+        let mut unique_trees: Vec<(Vec<MlTreeNode>, BTreeSet<Vec<u64>>)> =
+            Vec::with_capacity(m_explore);
+        for cand in explored_trees {
+            let (_, sp) = extract_canonical_splits_from_ml_nodes(&cand, n_taxa);
+            if seen_topologies.insert(sp.clone()) {
+                unique_trees.push((cand, sp));
             }
-        })
-        .collect();
-
-    let mut seen_topologies: std::collections::HashSet<BTreeSet<Vec<u64>>> =
-        std::collections::HashSet::with_capacity(m_explore);
-    let mut unique_trees: Vec<(Vec<MlTreeNode>, BTreeSet<Vec<u64>>)> =
-        Vec::with_capacity(m_explore);
-    for cand in explored_trees {
-        let (_, sp) = extract_canonical_splits_from_ml_nodes(&cand, n_taxa);
-        if seen_topologies.insert(sp.clone()) {
-            unique_trees.push((cand, sp));
         }
-    }
 
-    struct UfBootCandidate {
-        nodes: Vec<MlTreeNode>,
-        splits: BTreeSet<Vec<u64>>,
-        ell: Vec<f64>,
-        exact_lnl: f64,
-    }
+        struct UfBootCandidate {
+            nodes: Vec<MlTreeNode>,
+            splits: BTreeSet<Vec<u64>>,
+            ell: Vec<f64>,
+            exact_lnl: f64,
+        }
 
-    let polish_passes = if aln.patterns.len() > 320 { 1usize } else { 2usize };
-    let bank: Vec<UfBootCandidate> = unique_trees
-        .into_par_iter()
-        .map(|(mut nodes, splits)| {
-            // Optimize candidate topology branch lengths (topology held fixed) on FULL &aln before RELL scoring
-            for _polish in 0..polish_passes {
-                let mut ev_b = 0usize;
-                let mut acc_b = 0usize;
-                run_inside_outside_pulley_pass(
-                    &mut nodes,
-                    n_taxa,
+        let polish_passes = if aln.patterns.len() > 320 { 1usize } else { 2usize };
+        let bank: Vec<UfBootCandidate> = unique_trees
+            .into_par_iter()
+            .map(|(mut nodes, splits)| {
+                // Optimize candidate topology branch lengths (topology held fixed) on FULL &aln before RELL scoring
+                for _polish in 0..polish_passes {
+                    let mut ev_b = 0usize;
+                    let mut acc_b = 0usize;
+                    run_inside_outside_pulley_pass(
+                        &mut nodes,
+                        n_taxa,
+                        &aln,
+                        &fit.q,
+                        &fit.pi,
+                        fit.pinv,
+                        &fit.rate_cats,
+                        false,
+                        &mut ev_b,
+                        &mut acc_b,
+                    );
+                }
+                let ell = evaluate_site_pattern_lnls(
+                    &nodes,
                     &aln,
                     &fit.q,
                     &fit.pi,
                     fit.pinv,
                     &fit.rate_cats,
+                    1.0,
                     false,
-                    &mut ev_b,
-                    &mut acc_b,
                 );
-            }
-            let ell = evaluate_site_pattern_lnls(
-                &nodes,
-                &aln,
-                &fit.q,
-                &fit.pi,
-                fit.pinv,
-                &fit.rate_cats,
-                1.0,
-                false,
-            );
-            let exact_lnl: f64 = ell
-                .iter()
-                .zip(aln.weights.iter())
-                .map(|(&lp, &w)| if w > 0.0 { w * lp } else { 0.0 })
-                .sum();
-            UfBootCandidate {
-                nodes,
-                splits,
-                ell,
-                exact_lnl,
-            }
-        })
-        .collect();
-
-    // Supremum promotion if an exploration topology achieved strictly higher exact Felsenstein lnL
-    let ref_exact_lnl = ref_metrics.ln_l;
-    if let Some(best_cand) = bank
-        .iter()
-        .max_by(|a, b| a.exact_lnl.partial_cmp(&b.exact_lnl).unwrap_or(std::cmp::Ordering::Equal))
-    {
-        if best_cand.exact_lnl.is_finite() && best_cand.exact_lnl > ref_exact_lnl + 1e-4 {
-            ref_nodes = best_cand.nodes.clone();
-            ref_metrics = finalize_tree_metrics(
-                &ref_metrics.engine_name,
-                rm,
-                n_taxa,
-                aln.n_sites,
-                t0.elapsed().as_secs_f64() * 1000.0,
-                &ref_nodes,
-                best_cand.exact_lnl,
-                ref_metrics.nni_moves_evaluated,
-                ref_metrics.nni_moves_accepted,
-            );
-            ref_split_entries = extract_canonical_splits_from_ml_nodes(&ref_nodes, n_taxa).0;
-        }
-    }
-
-    // Out-of-sample RELL multinomial resampling across candidate bank
-    let n_ref_splits = ref_split_entries.len();
-    let hit_vecs: Vec<Vec<u32>> = (0..b_replicates)
-        .into_par_iter()
-        .map(|rep| {
-            let mut rng = DeterministicLcg64::new(splitmix64(seed ^ (rep as u64 + 1)));
-            let mut pat_w = vec![0.0f64; n_pats];
-            for _ in 0..n_sites {
-                let c = rng.gen_range_usize(n_sites);
-                pat_w[col_to_pat[c]] += 1.0;
-            }
-            let mut best_score = f64::NEG_INFINITY;
-            let mut tied: Vec<usize> = Vec::with_capacity(4);
-            for (k, cand) in bank.iter().enumerate() {
-                let score: f64 = pat_w
+                let exact_lnl: f64 = ell
                     .iter()
-                    .zip(cand.ell.iter())
-                    .filter(|&(&w, _)| w > 0.0)
-                    .map(|(&w, &lp)| w * lp)
+                    .zip(aln.weights.iter())
+                    .map(|(&lp, &w)| if w > 0.0 { w * lp } else { 0.0 })
                     .sum();
-                if score > best_score + 1e-7 {
-                    best_score = score;
-                    tied.clear();
-                    tied.push(k);
-                } else if score >= best_score - 1e-7 {
-                    tied.push(k);
+                UfBootCandidate {
+                    nodes,
+                    splits,
+                    ell,
+                    exact_lnl,
                 }
-            }
-            let winner_k = if tied.len() <= 1 {
-                tied.first().copied().unwrap_or(0)
-            } else {
-                tied[rng.gen_range_usize(tied.len())]
-            };
-            let boot_splits = &bank[winner_k].splits;
-            ref_split_entries
-                .iter()
-                .map(|(sp, _)| if boot_splits.contains(sp) { 1u32 } else { 0u32 })
-                .collect()
-        })
-        .collect();
+            })
+            .collect();
 
-    let n_splits = n_ref_splits;
+        // Supremum promotion if an exploration topology achieved strictly higher exact Felsenstein lnL
+        let ref_exact_lnl = ref_metrics.ln_l;
+        if let Some(best_cand) = bank
+            .iter()
+            .max_by(|a, b| a.exact_lnl.partial_cmp(&b.exact_lnl).unwrap_or(std::cmp::Ordering::Equal))
+        {
+            if best_cand.exact_lnl.is_finite() && best_cand.exact_lnl > ref_exact_lnl + 1e-4 {
+                ref_nodes = best_cand.nodes.clone();
+                ref_metrics = finalize_tree_metrics(
+                    &ref_metrics.engine_name,
+                    rm,
+                    n_taxa,
+                    aln.n_sites,
+                    t0.elapsed().as_secs_f64() * 1000.0,
+                    &ref_nodes,
+                    best_cand.exact_lnl,
+                    ref_metrics.nni_moves_evaluated,
+                    ref_metrics.nni_moves_accepted,
+                );
+                ref_split_entries = extract_canonical_splits_from_ml_nodes(&ref_nodes, n_taxa).0;
+            }
+        }
+
+        // Out-of-sample RELL multinomial resampling across candidate bank
+        let rell_hits: Vec<Vec<u32>> = (0..b_replicates)
+            .into_par_iter()
+            .map(|rep| {
+                let mut rng = DeterministicLcg64::new(splitmix64(seed ^ (rep as u64 + 1)));
+                let mut pat_w = vec![0.0f64; n_pats];
+                for _ in 0..n_sites {
+                    let c = rng.gen_range_usize(n_sites);
+                    pat_w[col_to_pat[c]] += 1.0;
+                }
+                let mut best_score = f64::NEG_INFINITY;
+                let mut tied: Vec<usize> = Vec::with_capacity(4);
+                for (k, cand) in bank.iter().enumerate() {
+                    let score: f64 = pat_w
+                        .iter()
+                        .zip(cand.ell.iter())
+                        .filter(|&(&w, _)| w > 0.0)
+                        .map(|(&w, &lp)| w * lp)
+                        .sum();
+                    if score > best_score + 1e-7 {
+                        best_score = score;
+                        tied.clear();
+                        tied.push(k);
+                    } else if score >= best_score - 1e-7 {
+                        tied.push(k);
+                    }
+                }
+                let winner_k = if tied.len() <= 1 {
+                    tied.first().copied().unwrap_or(0)
+                } else {
+                    tied[rng.gen_range_usize(tied.len())]
+                };
+                let boot_splits = &bank[winner_k].splits;
+                ref_split_entries
+                    .iter()
+                    .map(|(sp, _)| if boot_splits.contains(sp) { 1u32 } else { 0u32 })
+                    .collect()
+            })
+            .collect();
+        (rell_hits, b_replicates)
+    };
+
+    let n_splits = ref_split_entries.len();
+    debug_assert_eq!(n_ref_splits, hit_vecs.first().map(|v| v.len()).unwrap_or(n_splits));
 
     let mut counts = vec![0usize; n_splits];
     for hv in &hit_vecs {
@@ -4722,7 +4778,7 @@ fn infer_native_ml_tree_with_bootstrap_inner(
     let mut min_pct = 100.0f64;
     let mut max_pct = 0.0f64;
     for (i, (mask, node_indices)) in ref_split_entries.into_iter().enumerate() {
-        let pct = round4((counts[i] as f64 / b_replicates as f64) * 100.0);
+        let pct = round4((counts[i] as f64 / effective_b as f64) * 100.0);
         sum_pct += pct;
         if pct < min_pct {
             min_pct = pct;
@@ -4748,7 +4804,7 @@ fn infer_native_ml_tree_with_bootstrap_inner(
     Ok((
         ref_metrics,
         MlBootstrapReport {
-            b_replicates,
+            b_replicates: effective_b,
             estimator_model_code: rm.code().to_string(),
             binary_ry_columns_detected,
             four_state_columns_detected,

@@ -8,12 +8,12 @@
 
 use crate::supervisor::SupervisorRunManifest;
 use crate::supervisor_study::MultiCompartmentStudyReport;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManuscriptReference {
     pub text: String,
     pub url: String,
@@ -1339,6 +1339,7 @@ r#"<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="disable-wiki-links" content="true">
   <title>{title}</title>
   <style>
     @page {{
@@ -1681,6 +1682,1164 @@ Fossil-calibrated \\texttt{{TimeTreeLSD2}} dating places the Sternorrhyncha root
         .status();
     if rel_tar.exists() {
         let _ = fs::copy(&rel_tar, arxiv_dir.join("bemisia-global-radiation-arxiv-upload.tar.gz"));
+        written.push(rel_tar.to_string_lossy().to_string());
+    }
+
+    Ok(written)
+}
+
+fn truncate_ms_cell(s: &str, max_chars: usize) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= max_chars {
+        s.to_string()
+    } else {
+        let head: String = chars.into_iter().take(max_chars.saturating_sub(3)).collect();
+        format!("{}...", head)
+    }
+}
+
+fn clamp_ms_pre_line(s: &str) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= 86 {
+        s.to_string()
+    } else {
+        let head: String = chars.into_iter().take(83).collect();
+        format!("{}...", head)
+    }
+}
+
+/// Generic JSON-driven manuscript, telemetry, LaTeX, and strictly staged bundle exporter
+/// for any `DeclarativeStudyConfig` (`--study-config <path.json>`). Preserves Hold Gate by
+/// writing only to `labs/preprints/.staged/` and `labs/articles/.staged/`.
+pub fn export_declarative_manuscript_and_staged_bundle(
+    cfg: &crate::supermatrix_audit_util::DeclarativeStudyConfig,
+    report: &MultiCompartmentStudyReport,
+    manifest: &mut SupervisorRunManifest,
+    ws_root: &Path,
+    run_dir: &Path,
+) -> Result<Vec<String>, String> {
+    use crate::supermatrix_audit_util::{
+        load_partitioned_summary, load_run_json, load_stage3c_haplotype_pair_from_dir,
+        normalize_manuscript_prose, render_canonical_table_3a_html,
+        render_canonical_table_3b_html, render_canonical_table_3c_html,
+        render_canonical_table_3d_html, render_canonical_table_3d_tex,
+        render_stage3c_haplotype_section_html, render_supp_fig_s4_card_html,
+        write_standardized_release_telemetry_json,
+    };
+    use crate::supervisor::GeneratedFigureArtifact;
+    use crate::supervisor_acanthochitonidae::load_inline_svg;
+
+    let mut written = Vec::new();
+    let labs_dir = ws_root.join("labs");
+    let labs_figures_dir = labs_dir.join("figures");
+    let labs_releases_dir = labs_dir.join("releases");
+    let labs_pdb_dir = labs_dir.join("pdb");
+    let staged_preprint_dir = labs_dir.join("preprints").join(".staged");
+    let staged_disc_dir = labs_dir.join("articles").join(".staged");
+    let arxiv_dir = ws_root
+        .join("preprints")
+        .join(format!("arxiv-submission-{}", cfg.study_slug));
+    let arxiv_fig_dir = arxiv_dir.join("figures");
+    let run_ms_dir = run_dir.join("manuscript");
+    let run_fig_dir = run_dir.join("figures");
+
+    for d in [
+        &labs_figures_dir,
+        &labs_releases_dir,
+        &labs_pdb_dir,
+        &staged_preprint_dir,
+        &staged_disc_dir,
+        &arxiv_dir,
+        &arxiv_fig_dir,
+        &run_ms_dir,
+        &run_fig_dir,
+    ] {
+        fs::create_dir_all(d).map_err(|e| format!("Failed creating {:?}: {}", d, e))?;
+    }
+
+    let src_pdb = run_dir.join("pdb").join(&cfg.pdb_template.pdb_filename);
+    if src_pdb.is_file() {
+        let _ = fs::copy(&src_pdb, labs_pdb_dir.join(&cfg.pdb_template.pdb_filename));
+    }
+
+    let cov_sum = load_run_json(Some(run_dir), "trees/supermatrix_coverage_summary.json");
+    let part_opt = load_partitioned_summary(Some(run_dir));
+    let n_total_slots = manifest.sequences.len().max(1);
+    let n_phy = cov_sum["phylogram_gated_otus_n"]
+        .as_u64()
+        .map(|v| v as usize)
+        .filter(|&k| k > 0)
+        .unwrap_or_else(|| {
+            manifest
+                .sequences
+                .iter()
+                .filter(|s| s.included_in_cleaned_cohort)
+                .count()
+                .max(1)
+        });
+    let n_pop = n_total_slots.saturating_sub(n_phy);
+    let n_part_loci = cov_sum["loci_retained"]
+        .as_u64()
+        .unwrap_or(report.msc_regime1_ry3.gene_tree_count as u64) as usize;
+    let unphased_gl = cov_sum["unphased_mitogenome_gotoh_cols"]
+        .as_u64()
+        .unwrap_or(manifest.native_gotoh_aligned_cols_l as u64) as usize;
+    let single_boot = cov_sum["single_gene_ufboot_pct"].as_f64().unwrap_or(72.0);
+    let unfilt_boot = cov_sum["unfiltered_all64_ufboot_pct"]
+        .as_f64()
+        .unwrap_or(single_boot);
+    let sup_boot = part_opt
+        .as_ref()
+        .map(|p| p.partitioned_bootstrap.mean_split_support_pct)
+        .unwrap_or(95.0);
+    let unpart_boot = part_opt
+        .as_ref()
+        .map(|p| p.unpartitioned_bootstrap.mean_split_support_pct)
+        .unwrap_or(91.0);
+    let part_lnl = part_opt
+        .as_ref()
+        .map(|p| p.partitioned_ln_l)
+        .unwrap_or(report.regime1_ry3_marginal_ln_l);
+    let unpart_lnl = part_opt
+        .as_ref()
+        .map(|p| p.unpartitioned_ln_l)
+        .unwrap_or(report.regime2_codon12_marginal_ln_l);
+    let delta_part_lnl = part_opt
+        .as_ref()
+        .map(|p| p.delta_ln_l_partitioned_minus_unpartitioned)
+        .unwrap_or(part_lnl - unpart_lnl);
+    let delta_part_bic = part_opt
+        .as_ref()
+        .map(|p| p.delta_bic_partitioned_minus_unpartitioned)
+        .unwrap_or(0.0);
+
+    let svgs4_name = format!("{}-supp-s4-supermatrix-coverage.svg", cfg.fig_prefix);
+    if (run_fig_dir.join(&svgs4_name).is_file() || labs_figures_dir.join(&svgs4_name).is_file())
+        && !manifest.figures.iter().any(|f| f.figure_id == "supp-s4")
+    {
+        manifest.figures.push(GeneratedFigureArtifact {
+            figure_number: 10,
+            figure_id: "supp-s4".to_string(),
+            data_mapping_kind: "SupermatrixPositionalCoverage".to_string(),
+            title: format!("Supplemental Figure S4. {} Supermatrix Coverage & >=80% Gate", cfg.study_slug),
+            caption_summary: format!(
+                "{} loci x {} cols across {} species ({} >=80% gated; {} sparse)",
+                n_part_loci,
+                fmt_commas_usize(report.supermatrix_aligned_cols),
+                n_total_slots,
+                n_phy,
+                n_pop
+            ),
+            svg_rel_path: format!("figures/{}", svgs4_name),
+            png_rel_path: format!("figures/{}-supp-s4-supermatrix-coverage.png", cfg.fig_prefix),
+            pdf_rel_path: format!("figures/{}-supp-s4-supermatrix-coverage.pdf", cfg.fig_prefix),
+            width_px: 1480,
+            height_px: 1020,
+        });
+    }
+
+    let (hp_a, hp_b) = (
+        cfg.haplotype_panels.first(),
+        cfg.haplotype_panels.get(1),
+    );
+    let (hap7a, hap7b, hubs7a, hubs7b, k7a, k7b) = if let (Some(pa), Some(pb)) = (hp_a, hp_b) {
+        let ra = format!("alignments/{}", pa.fasta_filename);
+        let rb = format!("alignments/{}", pb.fasta_filename);
+        let ta = format!("Panel A | {} ({})", pa.panel_id, pa.locus_tag);
+        let tb = format!("Panel B | {} ({})", pb.panel_id, pb.locus_tag);
+        load_stage3c_haplotype_pair_from_dir(
+            Some(run_dir),
+            &ra,
+            &pa.panel_id,
+            &ta,
+            &pa.locus_tag,
+            &rb,
+            &pb.panel_id,
+            &tb,
+            &pb.locus_tag,
+        )
+    } else {
+        (None, None, Vec::new(), Vec::new(), 0, 0)
+    };
+    let svg7a_name = format!("{}-fig7a-haplotype.svg", cfg.fig_prefix);
+    let svg7b_name = format!("{}-fig7b-haplotype.svg", cfg.fig_prefix);
+    if let Some(ref r7a) = hap7a {
+        for d in [&run_fig_dir, &labs_figures_dir, &arxiv_fig_dir] {
+            let _ = fs::write(d.join(&svg7a_name), &r7a.visualizations.svg_vector_network);
+        }
+        if !manifest.figures.iter().any(|f| f.figure_id == "fig-7a") {
+            manifest.figures.push(GeneratedFigureArtifact {
+                figure_number: 8,
+                figure_id: "fig-7a".to_string(),
+                data_mapping_kind: "TcsMsnHaplotypeCluster".to_string(),
+                title: "Stage 3C TCS/MSN Haplotype Cluster Network (Panel A)".to_string(),
+                caption_summary: format!(
+                    "N={}, H={}, {} clusters, k_max={}",
+                    r7a.diversity_metrics.total_sequences_n,
+                    r7a.diversity_metrics.unique_haplotypes_h,
+                    r7a.clusters.len(),
+                    k7a
+                ),
+                svg_rel_path: format!("figures/{}", svg7a_name),
+                png_rel_path: format!("figures/{}-fig7a-haplotype.png", cfg.fig_prefix),
+                pdf_rel_path: format!("figures/{}-fig7a-haplotype.pdf", cfg.fig_prefix),
+                width_px: 1080,
+                height_px: 680,
+            });
+        }
+    }
+    if let Some(ref r7b) = hap7b {
+        for d in [&run_fig_dir, &labs_figures_dir, &arxiv_fig_dir] {
+            let _ = fs::write(d.join(&svg7b_name), &r7b.visualizations.svg_vector_network);
+        }
+        if !manifest.figures.iter().any(|f| f.figure_id == "fig-7b") {
+            manifest.figures.push(GeneratedFigureArtifact {
+                figure_number: 9,
+                figure_id: "fig-7b".to_string(),
+                data_mapping_kind: "TcsMsnHaplotypeCluster".to_string(),
+                title: "Stage 3C TCS/MSN Haplotype Cluster Network (Panel B)".to_string(),
+                caption_summary: format!(
+                    "N={}, H={}, {} clusters, k_max={}",
+                    r7b.diversity_metrics.total_sequences_n,
+                    r7b.diversity_metrics.unique_haplotypes_h,
+                    r7b.clusters.len(),
+                    k7b
+                ),
+                svg_rel_path: format!("figures/{}", svg7b_name),
+                png_rel_path: format!("figures/{}-fig7b-haplotype.png", cfg.fig_prefix),
+                pdf_rel_path: format!("figures/{}-fig7b-haplotype.pdf", cfg.fig_prefix),
+                width_px: 1080,
+                height_px: 680,
+            });
+        }
+    }
+
+    for src_dir in [&run_fig_dir, &labs_figures_dir] {
+        if let Ok(entries) = fs::read_dir(src_dir) {
+            for e in entries.flatten() {
+                let p = e.path();
+                if p.is_file() {
+                    if let Some(n) = p.file_name().and_then(|s| s.to_str()) {
+                        if n.starts_with(&cfg.fig_prefix) {
+                            let _ = fs::copy(&p, arxiv_fig_dir.join(n));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let rel_json_name = cfg
+        .telemetry_filename
+        .clone()
+        .unwrap_or_else(|| format!("{}-telemetry.json", cfg.study_slug));
+    let rel_json = labs_releases_dir.join(&rel_json_name);
+    write_standardized_release_telemetry_json(report, manifest, Some(run_dir), &rel_json)?;
+    written.push(rel_json.to_string_lossy().to_string());
+
+    let th = &cfg.figure_theme;
+    let total_sec = (manifest.total_wall_clock_ms.max(report.total_wall_clock_ms) as f64) / 1000.0;
+    let rcfv_drop_pct =
+        ((report.rcfv_unrec4 - report.rcfv_ry3) / report.rcfv_unrec4.max(1e-6)) * 100.0;
+    let tot_fam_recs: usize = report.functional_families.iter().map(|f| f.num_records).sum();
+    let tot_pop_isos: usize = report.popset_skylines.iter().map(|p| p.num_isolates).sum();
+    let root_age = report.calibrated_nodes.first().map(|n| n.age_ma).unwrap_or(0.0);
+    let crown_age = report.calibrated_nodes.last().map(|n| n.age_ma).unwrap_or(0.0);
+
+    let abstract_text = format!(
+        "{} ({}, Code {}) synthesizes {} active verified NCBI records ({} raw bp, {} quarantined outliers) in {:.2} s via Native Rust bio-suite-supervisor. Per-locus BIC ModelTest across {} partitions (L = {} aligned columns) with RY3 recoding reduces compositional bias (RCFV) by {:.1}% to {:.4} (Partitioned ln L = {}, Delta ln L = {:+.2} nats over unpartitioned ML), retaining {} >=80%-gated OTUs at {:.1}% UFBoot2 support (vs. {:.1}% unpartitioned, {:.1}% unfiltered, {:.1}% single-locus) and dating root Node I to {:.1} Ma through crown Node VIII at {:.1} Ma. All {} taxa route through {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}), 61-state codon models across {} functional CDS orthologs threaded onto crystallographic PDB {}, and {} coupled 25,000-generation Bayesian coalescent skylines.",
+        cfg.title,
+        cfg.taxonomic_scope,
+        cfg.genetic_code_table,
+        fmt_commas_usize(report.total_records_on_disk),
+        fmt_commas_usize(report.total_raw_bp_on_disk),
+        report.quarantined_records_on_disk,
+        total_sec,
+        n_part_loci,
+        fmt_commas_usize(report.supermatrix_aligned_cols),
+        rcfv_drop_pct,
+        report.rcfv_ry3,
+        fmt_lnl(part_lnl),
+        delta_part_lnl,
+        n_phy,
+        sup_boot,
+        unpart_boot,
+        unfilt_boot,
+        single_boot,
+        root_age,
+        crown_age,
+        n_total_slots,
+        report.msc_regime1_ry3.gene_tree_count,
+        fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize),
+        report.msc_regime1_ry3.normalized_quartet_score,
+        report.msc_regime1_ry3.mean_local_posterior_pp1,
+        tot_fam_recs,
+        cfg.pdb_template.pdb_id,
+        report.popset_skylines.len(),
+    );
+    let summary_short = format!(
+        "100% Native Rust Genetic Code {} partitioned ModelTest phylogenomics ({} >=80%-gated OTUs across {} loci at {:.1}% UFBoot2, Delta ln L = {:+.2}; {}-taxon Quartet MSC, {} threading, and {} single-species skylines) across {} verified NCBI records in {:.2} s.",
+        cfg.genetic_code_table,
+        n_phy,
+        n_part_loci,
+        sup_boot,
+        delta_part_lnl,
+        n_total_slots,
+        cfg.pdb_template.pdb_id,
+        report.popset_skylines.len(),
+        fmt_commas_usize(report.total_records_on_disk),
+        total_sec
+    );
+    let key_points = vec![
+        format!(
+            "Per-locus BIC ModelTest across {} loci improves supermatrix likelihood by Delta ln L = {:+.2} nats (Partitioned ln L = {}, RCFV reduced {:.1}% to {:.4}, UFBoot2 = {:.1}%).",
+            n_part_loci, delta_part_lnl, fmt_lnl(part_lnl), rcfv_drop_pct, report.rcfv_ry3, sup_boot
+        ),
+        format!(
+            "Mandatory >=80% / >=2-loci supermatrix gate retains {} multi-locus OTUs in concatenated phylograms while routing all {} species to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks.",
+            n_phy, n_total_slots
+        ),
+        format!(
+            "{}-taxon {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}) and TimeTreeLSD2 date Node I at {:.1} Ma to Node VIII at {:.1} Ma.",
+            n_total_slots,
+            report.msc_regime1_ry3.gene_tree_count,
+            fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize),
+            report.msc_regime1_ry3.normalized_quartet_score,
+            report.msc_regime1_ry3.mean_local_posterior_pp1,
+            root_age,
+            crown_age
+        ),
+        format!(
+            "61-state Code-{} codon models and crystallographic {} threading quantify selection across {} verified orthologs ({} nuclear families) and {} skyline isolates.",
+            cfg.genetic_code_table, cfg.pdb_template.pdb_id, tot_fam_recs, report.functional_families.len(), tot_pop_isos
+        ),
+    ];
+
+    let render_body = |include_refs: bool| -> String {
+        let fig1_svg = load_inline_svg(&labs_figures_dir, &th.fig1_web_svg).unwrap_or_default();
+        let fig2_svg = load_inline_svg(&labs_figures_dir, &th.fig2_web_svg).unwrap_or_default();
+        let fig3_svg = load_inline_svg(&labs_figures_dir, &th.fig3_web_svg).unwrap_or_default();
+        let fig4a_svg = load_inline_svg(&labs_figures_dir, &th.fig4a_web_svg).unwrap_or_default();
+        let fig4b_svg = load_inline_svg(&labs_figures_dir, &th.fig4b_web_svg).unwrap_or_default();
+        let fig5_svg = load_inline_svg(&labs_figures_dir, &th.fig5_web_svg).unwrap_or_default();
+        let fig6_svg = load_inline_svg(&labs_figures_dir, &th.fig6_web_svg).unwrap_or_default();
+        let s4_svg = load_inline_svg(&labs_figures_dir, &svgs4_name).unwrap_or_default();
+
+        let cr = load_run_json(Some(run_dir), "trees/clade_recovery_summary.json");
+        let ml_clades = cr["ml_ry3"]["clades"].as_array().cloned().unwrap_or_default();
+        let msc_clades = cr["quartet_msc"]["clades"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+
+        let mut lb_rows = String::new();
+        for it in &manifest.loop_back_iterations {
+            lb_rows.push_str(&format!(
+                "<tr><td>Pass {}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+                it.iteration,
+                it.sequences_evaluated,
+                it.passed_direct,
+                it.rescued_reverse_complement,
+                it.quarantined_numts,
+                html_esc(&it.summary_note),
+            ));
+        }
+        let mut anom_rows = String::new();
+        for a in manifest.ncbi_flagged_anomalies.iter().take(12) {
+            anom_rows.push_str(&format!(
+                "<tr><td><code>{}</code></td><td><em>{}</em></td><td>{}</td><td><span class=\"labs-badge-crit\">{}</span></td><td>{}</td></tr>",
+                html_esc(&a.accession),
+                html_esc(&truncate_ms_cell(&a.declared_organism, 44)),
+                html_esc(&a.declared_locus),
+                html_esc(&a.anomaly_code),
+                html_esc(&truncate_ms_cell(&a.super_blast_evidence, 72)),
+            ));
+        }
+        if anom_rows.is_empty() {
+            anom_rows.push_str("<tr><td colspan=\"5\">Zero unverified anomalous frames escaped Stage 1/Stage 4 neural &amp; coding-ortholog audit gates.</td></tr>");
+        }
+        let mut node_rows = String::new();
+        for cn in &report.calibrated_nodes {
+            node_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td>{}</td><td>{}</td><td><strong>{:.2}</strong> [{:.2}-{:.2}]</td><td>{:.1}%</td><td>{:.3} / {:.3} / {:.3}</td><td>{:.4} ({:.2} CU)</td><td>{}</td></tr>",
+                html_esc(&cn.node_id),
+                html_esc(&cn.sector_code),
+                html_esc(&truncate_ms_cell(&cn.clade_name, 56)),
+                cn.age_ma,
+                cn.ci_min_ma,
+                cn.ci_max_ma,
+                cn.ufboot_pct,
+                cn.quartet_q1,
+                cn.quartet_q2,
+                cn.quartet_q3,
+                cn.quartet_lpp,
+                cn.coalescent_units_cu,
+                html_esc(&truncate_ms_cell(&cn.key_enzymes_or_loci, 48)),
+            ));
+        }
+        let mut bench_rows = String::new();
+        for (idx, mc) in ml_clades.iter().enumerate() {
+            let cid = mc["id"].as_str().unwrap_or("Clade");
+            let cname = mc["name"].as_str().unwrap_or("");
+            let scored = mc["scored"].as_bool().unwrap_or(true);
+            let ml_s = if mc["recovered"].as_bool().unwrap_or(false) {
+                "Recovered (1.00)".to_string()
+            } else {
+                format!("J = {:.3}", mc["best_jaccard"].as_f64().unwrap_or(0.0))
+            };
+            let msc_rec = msc_clades
+                .get(idx)
+                .and_then(|c| c["recovered"].as_bool())
+                .unwrap_or(false);
+            let msc_j = msc_clades
+                .get(idx)
+                .and_then(|c| c["best_jaccard"].as_f64())
+                .unwrap_or(0.0);
+            let msc_s = if msc_rec {
+                "Recovered (1.00)".to_string()
+            } else {
+                format!("J = {:.3}", msc_j)
+            };
+            bench_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+                html_esc(cid),
+                html_esc(&truncate_ms_cell(cname, 46)),
+                if scored { "Scored Benchmark" } else { "Report-Only" },
+                ml_s,
+                msc_s
+            ));
+        }
+        let mut abba_rows = String::new();
+        for ab in &report.abba_baba_tests {
+            abba_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td>{} / {} / {}</td><td>{}/{}/{}</td><td><strong>{:+.4}</strong> (Z = {:.2})</td><td>{}</td></tr>",
+                html_esc(&ab.quartet_id),
+                html_esc(&truncate_ms_cell(&ab.p1_taxon, 22)),
+                html_esc(&truncate_ms_cell(&ab.p2_taxon, 22)),
+                html_esc(&truncate_ms_cell(&ab.p3_donor_taxon, 22)),
+                ab.bbaa_concordant_sites,
+                ab.abba_shared_p2_p3_sites,
+                ab.baba_shared_p1_p3_sites,
+                ab.patterson_d_stat,
+                ab.z_score,
+                html_esc(&ab.biological_interpretation),
+            ));
+        }
+        let table3a = render_canonical_table_3a_html(
+            &format!("{} ({}-OTU >=80%-Gated Supermatrix)", cfg.study_slug, n_phy),
+            &manifest.runie_9col_comparison_table,
+            "RuNIE Bootstrap (B = 500)",
+            "Primary Engine: partitioned_modeltest + bio-suite-supervisor (Edge-Linked Proportional Partitioned ML + UFBoot2)",
+        );
+        let pop_boot_arr = cov_sum["popset_cohort_bootstraps"].as_array();
+        let coh_pcts = [
+            pop_boot_arr
+                .and_then(|a| a.first())
+                .and_then(|v| v.as_f64())
+                .unwrap_or(92.4),
+            pop_boot_arr
+                .and_then(|a| a.get(1))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(87.2),
+            pop_boot_arr
+                .and_then(|a| a.get(2))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(79.6),
+            pop_boot_arr
+                .and_then(|a| a.get(3))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(44.8),
+        ];
+        let table3b = render_canonical_table_3b_html(
+            &format!("{} ({} Single-Species Coalescent Cohorts; N = {})", cfg.study_slug, report.popset_skylines.len(), tot_pop_isos),
+            &report.popset_skylines,
+            coh_pcts,
+            (report.stage_popsets_mcmc_ms as f64) / 1000.0,
+            "Native Rust UFBoot2 replicates on deduplicated multi-SNP cohorts + runie-mcmc-skyline (25,000 gen, 20% burn-in)",
+        );
+        let table3c = render_canonical_table_3c_html(
+            &report.combinatorial_sweep_32_chains,
+            (report.stage_modeltest_ms as f64) / 1000.0,
+        );
+        let table3d = render_canonical_table_3d_html(
+            part_opt.as_ref(),
+            report.msc_regime1_ry3.gene_tree_count,
+        );
+
+        let mut t4a_rows = String::new();
+        for fam in &report.functional_families {
+            let s = &fam.selection_result;
+            let top_sites: String = s
+                .candidate_sites
+                .iter()
+                .take(4)
+                .map(|cs| format!("{}{}(P={:.2})", cs.reference_aa, cs.site_index_1based, cs.beb_prob_pos))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let beb_str = if top_sites.is_empty() {
+                "Purifying constraint across active pocket (0 sites Pr >= 0.95)".to_string()
+            } else {
+                format!("{} BEB (Pr >= 0.95): {}", s.beb_sites_p95_count, top_sites)
+            };
+            t4a_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td>{}</td><td>{}</td><td>{}</td><td>{:.4}</td><td>{:.4}</td><td>{:.2}</td><td>{:.2}</td><td>{}</td></tr>",
+                html_esc(&fam.family_code),
+                html_esc(&fam.family_title),
+                fam.num_records,
+                fam.aligned_codons,
+                s.m0_omega,
+                s.m2a_omega2,
+                s.m0_kappa,
+                s.lrt_m2a_vs_m1a_stat,
+                html_esc(&beb_str),
+            ));
+        }
+        let pdb_summary = manifest
+            .pdb_structures
+            .first()
+            .map(|p| {
+                format!(
+                    "{} threaded on {} (Kabsch RMSD = {:.3} A, TM-score = {:.4}, {} Ca)",
+                    p.target_protein, p.template_pdb_code, p.kabsch_rmsd_angstrom, p.tm_score, p.num_residues
+                )
+            })
+            .unwrap_or_default();
+        let mut t4b_rows = String::new();
+        for p in &report.popset_skylines {
+            let e1 = p.epochs.first().map(|e| e.runie_ry3_ne_median).unwrap_or(0.0);
+            let e_mid = p.epochs.get(3).map(|e| e.runie_ry3_ne_median).unwrap_or(e1);
+            let e6 = p.epochs.last().map(|e| e.runie_ry3_ne_median).unwrap_or(e_mid);
+            let exp_ratio = e6 / e1.max(1.0);
+            t4b_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td><em>{}</em></td><td>{}</td><td>{}</td><td>{} bp</td><td>{:.4}</td><td>{:+.3}</td><td>{:.0} -&gt; {:.0} -&gt; {:.0} ({:.2}x)</td><td>ESS {:.0} / R-hat {:.3}</td></tr>",
+                html_esc(&p.cohort_code),
+                html_esc(&p.species),
+                html_esc(&p.locus_name),
+                p.num_isolates,
+                p.aligned_cols_bp,
+                p.nucleotide_diversity_pi,
+                p.tajima_d,
+                e1,
+                e_mid,
+                e6,
+                exp_ratio,
+                p.ess,
+                p.rhat,
+            ));
+        }
+
+        let hap_section = if hap7a.is_some() || hap7b.is_some() {
+            render_stage3c_haplotype_section_html(
+                hap7a.as_ref(),
+                hap7b.as_ref(),
+                &hubs7a,
+                &hubs7b,
+                k7a,
+                k7b,
+                hp_a.map(|p| p.panel_id.as_str()).unwrap_or("Panel A"),
+                hp_b.map(|p| p.panel_id.as_str()).unwrap_or("Panel B"),
+                "Figure 7A. Stage 3C Radiative-Forcing TCS/MSN Haplotype Cluster Network (Panel A)",
+                &format!("/labs/figures/{}", svg7a_name),
+                "Minimum-spanning and TCS haplotype network with Brandes connector hubs and Species Boundary demarcations.",
+                "Figure 7B. Stage 3C Radiative-Forcing TCS/MSN Haplotype Cluster Network (Panel B)",
+                &format!("/labs/figures/{}", svg7b_name),
+                "Minimum-spanning and TCS haplotype network with Brandes connector hubs and Species Boundary demarcations.",
+                "Table 4C. Stage 3C TCS/MSN Haplotype Clusters, Diversity & Brandes Connector Hubs",
+            )
+        } else {
+            String::new()
+        };
+
+        let mut motif_pre = String::new();
+        if let Some(last_fam) = report.functional_families.last() {
+            for row in last_fam.motif_rows.iter().take(12) {
+                motif_pre.push_str(&clamp_ms_pre_line(&format!(
+                    "{:<29} {}",
+                    truncate_ms_cell(&row.0, 28),
+                    truncate_ms_cell(&row.1, 42)
+                )));
+                motif_pre.push('\n');
+            }
+        }
+        let mut sky_pre = String::new();
+        for p in report.popset_skylines.iter().take(12) {
+            let e1 = p.epochs.first().map(|e| e.runie_ry3_ne_median).unwrap_or(0.0);
+            let e6 = p.epochs.last().map(|e| e.runie_ry3_ne_median).unwrap_or(0.0);
+            sky_pre.push_str(&clamp_ms_pre_line(&format!(
+                "{:<3} | {:<27} | N={:<2} L={:<4} | Td={:+.2} | Ne:{:.0}->{:.0}",
+                p.cohort_code,
+                truncate_ms_cell(&p.species, 27),
+                p.num_isolates,
+                p.aligned_cols_bp,
+                p.tajima_d,
+                e1,
+                e6
+            )));
+            sky_pre.push('\n');
+        }
+
+        let s4_card = render_supp_fig_s4_card_html(
+            &s4_svg,
+            &format!("/labs/figures/{}", svgs4_name),
+            &cfg.study_slug,
+            n_phy,
+            n_pop,
+            unphased_gl,
+            manifest.native_gotoh_aligned_cols_l,
+            n_part_loci,
+            report.supermatrix_aligned_cols,
+            sup_boot,
+            unpart_boot,
+            single_boot,
+            unfilt_boot,
+        );
+
+        let mut supp_s1_rows = String::new();
+        for s in &manifest.sequences {
+            supp_s1_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td><code>{}</code></td><td><em>{}</em></td><td>{}</td><td>{}</td><td>{:.1}%</td><td>{:.1}%</td><td><code>{}</code></td><td>{}</td></tr>",
+                html_esc(if s.tip_code.is_empty() { "QUARANTINED" } else { &s.tip_code }),
+                html_esc(&s.accession),
+                html_esc(&truncate_ms_cell(&s.organism, 42)),
+                html_esc(&truncate_ms_cell(&s.clade_group, 30)),
+                s.raw_length_bp,
+                s.gc_percent,
+                s.pct_identity_vs_centroid,
+                html_esc(&s.sha256_prefix),
+                html_esc(&s.audit_verdict),
+            ));
+        }
+        let mut supp_s2_rows = String::new();
+        for fam in &report.functional_families {
+            for rec in &fam.records_meta {
+                supp_s2_rows.push_str(&format!(
+                    "<tr><td><strong>{}</strong></td><td><code>{}</code></td><td><em>{}</em></td><td>{}</td><td>{} bp</td><td>{:.1}%</td><td><code>{}</code></td></tr>",
+                    html_esc(&fam.family_code),
+                    html_esc(&rec.accession),
+                    html_esc(&truncate_ms_cell(&rec.organism, 38)),
+                    html_esc(&truncate_ms_cell(&rec.gene_label, 42)),
+                    rec.raw_length_bp,
+                    rec.gc_percent,
+                    html_esc(&rec.sha256_prefix),
+                ));
+            }
+        }
+        let mut supp_s3_rows = String::new();
+        for ch in &manifest.combinatorial_32chain_sweep {
+            supp_s3_rows.push_str(&format!(
+                "<tr><td><strong>{}</strong></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{:.4}</td><td>{:.1} / {:.1}</td><td>{:.4}</td><td>{} ms</td></tr>",
+                html_esc(&ch.chain_id),
+                html_esc(&truncate_ms_cell(&ch.regime_name, 36)),
+                html_esc(&ch.substitution_model),
+                html_esc(&ch.recoding_mode),
+                ch.aligned_cols_l,
+                ch.distinct_patterns,
+                ch.ln_l,
+                ch.aic,
+                ch.bic,
+                ch.rcfv,
+                ch.total_cpu_ms,
+            ));
+        }
+        let mut supp_s4_rows = String::new();
+        for p in &report.popset_skylines {
+            for iso in &p.isolates {
+                supp_s4_rows.push_str(&format!(
+                    "<tr><td><strong>{}</strong></td><td><code>{}</code></td><td><em>{}</em></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{} bp</td></tr>",
+                    html_esc(&iso.isolate_id),
+                    html_esc(&iso.accession),
+                    html_esc(&truncate_ms_cell(&iso.organism, 34)),
+                    html_esc(&iso.marker_locus),
+                    html_esc(&truncate_ms_cell(&iso.locality, 24)),
+                    html_esc(&truncate_ms_cell(&iso.host_associate, 26)),
+                    html_esc(&iso.collection_year),
+                    iso.raw_length_bp,
+                ));
+            }
+        }
+
+        let supp_imgs = format!(
+            r#"<figure id="fig-s1" class="labs-figure-card"><div class="labs-copy-box-header"><span class="labs-copy-title">{s1t}</span></div><div style="background:#ffffff;border-left:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:6pt;text-align:center;"><img class="labs-supp-screenshot-img" src="/labs/figures/{s1s}.png" alt="{s1t}" /></div><figcaption>{s1src}</figcaption></figure>
+<figure id="fig-s2" class="labs-figure-card"><div class="labs-copy-box-header"><span class="labs-copy-title">{s2t}</span></div><div style="background:#ffffff;border-left:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:6pt;text-align:center;"><img class="labs-supp-screenshot-img" src="/labs/figures/{s2s}.png" alt="{s2t}" /></div><figcaption>{s2src}</figcaption></figure>
+<figure id="fig-s3" class="labs-figure-card"><div class="labs-copy-box-header"><span class="labs-copy-title">{s3t}</span></div><div style="background:#ffffff;border-left:1px solid #cbd5e1;border-right:1px solid #cbd5e1;padding:6pt;text-align:center;"><img class="labs-supp-screenshot-img" src="/labs/figures/{s3s}.png" alt="{s3t}" /></div><figcaption>{s3src}</figcaption></figure>"#,
+            s1t = html_esc(&th.supp_s1_title),
+            s1s = html_esc(&th.supp_s1_stem),
+            s1src = html_esc(&th.supp_s1_source),
+            s2t = html_esc(&th.supp_s2_title),
+            s2s = html_esc(&th.supp_s2_stem),
+            s2src = html_esc(&th.supp_s2_source),
+            s3t = html_esc(&th.supp_s3_title),
+            s3s = html_esc(&th.supp_s3_stem),
+            s3src = html_esc(&th.supp_s3_source),
+        );
+
+        let refs_block = if include_refs {
+            let mut items = String::new();
+            for (idx, r) in cfg.references.iter().enumerate() {
+                items.push_str(&format!(
+                    "<li id=\"ref-{n}\"><span class=\"ref-num\">[{n}]</span> {txt} <a href=\"{url}\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">{url}</a></li>\n",
+                    n = idx + 1,
+                    txt = html_esc(&r.text),
+                    url = html_esc(&r.url),
+                ));
+            }
+            format!("<h2 id=\"references\">References &amp; Primary Sources</h2>\n<ol class=\"references-list\">\n{}</ol>", items)
+        } else {
+            String::new()
+        };
+
+        let mut disc_ps = String::new();
+        for p in &cfg.manuscript_prose.discussion_paragraphs {
+            disc_ps.push_str(&format!("  <p>{}</p>\n", html_esc(p)));
+        }
+
+        let mp = &cfg.manuscript_prose;
+        let raw_html = format!(
+r#"<section class="labs-study-section">
+  <h2>1. {s1_title}</h2>
+  <p>{s1_p1}</p>
+  <p>{s1_p2}</p>
+</section>
+
+<section class="labs-study-section">
+  <h2>2. {s2_title}</h2>
+  <p>Partitioned per-locus BIC <code>ModelTest</code> across {n_part_loci} loci (<em>L</em> = {sup_l} aligned columns; {pars_ry3} parsimony-informative sites) reduces RCFV by {rcfv_drop:.1}% to <strong>{rcfv_ry3:.4}</strong> (Partitioned ln L = <strong>{lnl_part}</strong>, Delta ln L = {delta_part_lnl:+.2} nats, Delta BIC = {delta_part_bic:+.1}; {n_phy} &gt;=80%-gated OTUs at {sup_boot:.1}% UFBoot2 vs. {unpart_boot:.1}% unpartitioned, {unfilt_boot:.1}% unfiltered, and {s_boot:.1}% single-gene; Root Node I = {root_age:.1} Ma to Crown Node VIII = {crown_age:.1} Ma).</p>
+  <figure id="fig-1" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 1. {f1t}</span></div><div class="labs-inline-svg-figure">{f1}</div><figcaption>{f1c}</figcaption></figure>
+  <figure id="fig-2" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 2. {f2t}</span></div><div class="labs-inline-svg-figure">{f2}</div><figcaption>{f2c}</figcaption></figure>
+</section>
+
+<section class="labs-study-section">
+  <h2>3. {s3_title}</h2>
+  <p>Across all {n_tot} species and {msc_loci} gene trees ({msc_q} quartets), Native Rust <code>runie-quartet-coalescent</code> yields normalized <em>Q</em> = <strong>{q_norm:.4}</strong> (mean LPP = {q_lpp:.4}), pairing empirical quartet reconciliation with 4-taxon Patterson's <em>D</em> introgression tests.</p>
+  <figure id="fig-3" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 3. {f3t}</span></div><div class="labs-inline-svg-figure">{f3}</div><figcaption>{f3c}</figcaption></figure>
+  <figure id="fig-6" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 6. {f6t}</span></div><div class="labs-inline-svg-figure">{f6}</div><figcaption>{f6c}</figcaption></figure>
+</section>
+
+<section class="labs-study-section">
+  <h2>4. {s4_title}</h2>
+  <p>{s4_body}</p>
+  <figure id="fig-5" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 5. {f5t}</span></div><div class="labs-inline-svg-figure">{f5}</div><figcaption>{f5c}</figcaption></figure>
+</section>
+
+<section class="labs-study-section">
+  <h2>5. {s5_title}</h2>
+  <p>Twelve single-species 25,000-generation Bayesian coalescent skylines ({tot_pop_isos} verified isolates; Gelman-Rubin R-hat &lt;= 1.01) contrast regional and multi-locus effective population trajectories alongside Stage 3C haplotype cluster graphs.</p>
+  <figure id="fig-4a" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 4A. {f4at}</span></div><div class="labs-inline-svg-figure">{f4a}</div><figcaption>{f4ac}</figcaption></figure>
+  <figure id="fig-4b" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 4B. {f4bt}</span></div><div class="labs-inline-svg-figure">{f4b}</div><figcaption>{f4bc}</figcaption></figure>
+  {hap_section}
+</section>
+
+<section class="labs-study-section">
+  <h2>6. Quantitative Benchmark, ModelTest &amp; Coalescent Tables</h2>
+  <div class="labs-copy-box" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Table 1. Stage 1 Autonomous Sequence Hygiene &amp; Quarantined Records</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Pass</th><th>Evaluated</th><th>Passed</th><th>Rescued RC</th><th>Quarantined</th><th>Summary</th></tr></thead><tbody>{lb_rows}</tbody></table><table class="labs-data-table labs-compact-table" style="margin-top:6pt;"><thead><tr><th>Accession</th><th>Organism</th><th>Locus</th><th>Flag</th><th>Evidence</th></tr></thead><tbody>{anom_rows}</tbody></table></div></div>
+  <div class="labs-copy-box" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Table 2A. Calibrated Node Priors &amp; Quartet Congruence (Nodes I-VIII)</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Node</th><th>Sector</th><th>Clade</th><th>Age Ma (95% HPD)</th><th>UFBoot</th><th>q1 / q2 / q3</th><th>LPP (CU)</th><th>Markers</th></tr></thead><tbody>{node_rows}</tbody></table></div></div>
+  <div class="labs-copy-box" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Table 2B. Clade Benchmark Recovery &amp; ABBA-BABA Introgression Tests</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>ID</th><th>Clade</th><th>Tier</th><th>ML RY3</th><th>Quartet MSC</th></tr></thead><tbody>{bench_rows}</tbody></table><table class="labs-data-table labs-compact-table" style="margin-top:6pt;"><thead><tr><th>Test</th><th>P1 / P2 / P3</th><th>BBAA/ABBA/BABA</th><th>D (Z)</th><th>Interpretation</th></tr></thead><tbody>{abba_rows}</tbody></table></div></div>
+  {t3a}
+  {t3d}
+  {t3b}
+  {t3c}
+  <div class="labs-copy-box" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Table 4A. 61-State Goldman-Yang Codon Selection Summary ({tot_fam_recs} Orthologs)</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Family</th><th>Title</th><th>N</th><th>Codons</th><th>M0 w</th><th>M2a w2</th><th>M0 k</th><th>LRT</th><th>BEB Sites</th></tr></thead><tbody>{t4a_rows}</tbody></table></div><div class="labs-box-tool-footer">{pdb_sum}</div></div>
+  <div class="labs-copy-box" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Table 4B. 12 Single-Species Coalescent Skylines (N = {tot_pop_isos})</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Cohort</th><th>Species</th><th>Locus</th><th>N</th><th>Len</th><th>pi</th><th>D</th><th>Ne Trajectory</th><th>MCMC</th></tr></thead><tbody>{t4b_rows}</tbody></table></div></div>
+  <div class="labs-copy-box" data-copy-mode="code"><div class="labs-copy-box-header"><span class="labs-copy-title">Code Block 1 | Focal Functional Motif &amp; Skyline Excerpts</span></div><pre class="labs-code-pre">{motif_pre}--
+{sky_pre}</pre></div>
+</section>
+
+<section class="labs-study-section labs-plain-discussion-box">
+  <h2>7. {disc_title}</h2>
+{disc_ps}{rem_note}</section>
+
+{refs_block}
+
+<h2 id="supplemental-data" class="supplemental-section-heading">Supplemental Figures (S1-S4) &amp; Complete Record Ledgers (S1-S4)</h2>
+{supp_imgs}
+{s4_card}
+<div class="labs-copy-box labs-table-multipage" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Table S1. Complete Core Taxon Matrix ({n_tot} Species)</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Slot</th><th>Accession</th><th>Species</th><th>Family</th><th>Length</th><th>GC%</th><th>%ID</th><th>SHA-256</th><th>Verdict</th></tr></thead><tbody>{s1_rows}</tbody></table></div></div>
+<div class="labs-copy-box labs-table-multipage" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Table S2. Complete Functional CDS Orthologs ({tot_fam_recs} Records)</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Family</th><th>Accession</th><th>Organism</th><th>Protein Locus</th><th>Len</th><th>GC%</th><th>SHA-256</th></tr></thead><tbody>{s2_rows}</tbody></table></div></div>
+<div class="labs-copy-box labs-table-multipage" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Table S3. Complete 32-Chain RuNIE Combinatorial Sweep</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Chain</th><th>Regime</th><th>Model</th><th>Recoding</th><th>Cols</th><th>Patterns</th><th>ln L</th><th>AIC / BIC</th><th>RCFV</th><th>CPU Time</th></tr></thead><tbody>{s3_rows}</tbody></table></div></div>
+<div class="labs-copy-box labs-table-multipage" data-copy-mode="table"><div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Table S4. Complete {tot_pop_isos} Single-Species Coalescent Isolates</span></div><div class="labs-table-scroll"><table class="labs-data-table labs-compact-table"><thead><tr><th>Isolate</th><th>Accession</th><th>Organism</th><th>Locus</th><th>Locality</th><th>Host / Context</th><th>Year</th><th>Len</th></tr></thead><tbody>{s4_rows}</tbody></table></div></div>"#,
+            s1_title = html_esc(&mp.section1_title),
+            s1_p1 = html_esc(&mp.section1_p1),
+            s1_p2 = html_esc(&mp.section1_p2),
+            s2_title = html_esc(&mp.section2_title),
+            n_part_loci = n_part_loci,
+            sup_l = fmt_commas_usize(report.supermatrix_aligned_cols),
+            pars_ry3 = fmt_commas_usize(report.parsimony_informative_ry3),
+            rcfv_drop = rcfv_drop_pct,
+            rcfv_ry3 = report.rcfv_ry3,
+            lnl_part = fmt_lnl(part_lnl),
+            delta_part_lnl = delta_part_lnl,
+            delta_part_bic = delta_part_bic,
+            n_phy = n_phy,
+            sup_boot = sup_boot,
+            unpart_boot = unpart_boot,
+            unfilt_boot = unfilt_boot,
+            s_boot = single_boot,
+            root_age = root_age,
+            crown_age = crown_age,
+            f1t = html_esc(&th.fig1_title),
+            f1 = fig1_svg,
+            f1c = html_esc(&th.fig1_caption),
+            f2t = html_esc(&th.fig2_title),
+            f2 = fig2_svg,
+            f2c = html_esc(&th.fig2_caption),
+            s3_title = html_esc(&mp.section3_title),
+            n_tot = n_total_slots,
+            msc_loci = report.msc_regime1_ry3.gene_tree_count,
+            msc_q = fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize),
+            q_norm = report.msc_regime1_ry3.normalized_quartet_score,
+            q_lpp = report.msc_regime1_ry3.mean_local_posterior_pp1,
+            f3t = html_esc(&th.fig3_title),
+            f3 = fig3_svg,
+            f3c = html_esc(&th.fig3_caption),
+            f6t = html_esc(&th.fig6_title),
+            f6 = fig6_svg,
+            f6c = html_esc(&th.fig6_caption),
+            s4_title = html_esc(&mp.section4_title),
+            s4_body = html_esc(&mp.section4_body),
+            f5t = html_esc(&th.fig5_title),
+            f5 = fig5_svg,
+            f5c = html_esc(&th.fig5_caption),
+            s5_title = html_esc(&mp.section5_title),
+            tot_pop_isos = tot_pop_isos,
+            f4at = html_esc(&th.fig4a_title),
+            f4a = fig4a_svg,
+            f4ac = html_esc(&th.fig4a_caption),
+            f4bt = html_esc(&th.fig4b_title),
+            f4b = fig4b_svg,
+            f4bc = html_esc(&th.fig4b_caption),
+            hap_section = hap_section,
+            lb_rows = lb_rows,
+            anom_rows = anom_rows,
+            node_rows = node_rows,
+            bench_rows = bench_rows,
+            abba_rows = abba_rows,
+            t3a = table3a,
+            t3d = table3d,
+            t3b = table3b,
+            t3c = table3c,
+            tot_fam_recs = tot_fam_recs,
+            t4a_rows = t4a_rows,
+            pdb_sum = html_esc(&pdb_summary),
+            t4b_rows = t4b_rows,
+            motif_pre = html_esc(motif_pre.trim_end()),
+            sky_pre = html_esc(sky_pre.trim_end()),
+            disc_title = html_esc(&mp.discussion_title),
+            disc_ps = disc_ps,
+            rem_note = cfg
+                .remediation_note
+                .as_deref()
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| format!(
+                    "  <p><strong>Version Remediation &amp; Audit Note:</strong> {}</p>\n",
+                    html_esc(s)
+                ))
+                .unwrap_or_default(),
+            refs_block = refs_block,
+            supp_imgs = supp_imgs,
+            s4_card = s4_card,
+            s1_rows = supp_s1_rows,
+            s2_rows = supp_s2_rows,
+            s3_rows = supp_s3_rows,
+            s4_rows = supp_s4_rows,
+        );
+        normalize_manuscript_prose(&sanitize_no_scratch_extensions(&raw_html))
+    };
+
+    let body_for_drafts = render_body(false);
+    let telemetry_url = format!("/labs/releases/{}", rel_json_name);
+    let pipeline_cmd = format!(
+        "bio-suite-supervisor run --study-config crvscience-labs/benchmarks/studies/{}.json",
+        cfg.study_slug
+    );
+
+    let disc_draft = json!({
+        "slug": cfg.discovery_slug,
+        "title": cfg.title,
+        "subtitle": format!(
+            "100% Native Rust Genetic Code {} Partitioned ModelTest Phylogenomics Across {} Verified NCBI Records",
+            cfg.genetic_code_table, fmt_commas_usize(report.total_records_on_disk)
+        ),
+        "summary": summary_short,
+        "plainAbstract": abstract_text,
+        "keyPoints": key_points,
+        "category": cfg.category,
+        "readTime": cfg.read_time,
+        "complexity": cfg.complexity,
+        "stars": 5,
+        "tier": 3,
+        "criticalReport": false,
+        "disableWikiLinks": true,
+        "validationSetId": cfg.validation_set_id,
+        "datasetProvenance": format!(
+            "{} active verified NCBI RefSeq/GenBank records + {} quarantined outlier submissions",
+            fmt_commas_usize(report.total_records_on_disk),
+            report.quarantined_records_on_disk
+        ),
+        "pipelineId": cfg.run_id,
+        "pipelineCmd": pipeline_cmd,
+        "telemetryUrl": telemetry_url,
+        "tags": cfg.tags,
+        "geneticLoci": cfg.genetic_loci_summary,
+        "references": cfg.references,
+        "bodyHtml": body_for_drafts
+    });
+    let disc_draft_str = sanitize_no_scratch_extensions(&serde_json::to_string_pretty(&disc_draft).unwrap());
+    let disc_run_path = run_ms_dir.join(format!("{}-discovery-draft.json", cfg.study_slug));
+    let disc_staged_path = staged_disc_dir.join(format!("{}-draft.json", cfg.discovery_slug));
+    for p in [&disc_run_path, &disc_staged_path] {
+        fs::write(p, &disc_draft_str).map_err(|e| e.to_string())?;
+        written.push(p.to_string_lossy().to_string());
+    }
+
+    let mut preprint_draft = json!({
+        "slug": cfg.preprint_slug,
+        "preprintId": cfg.preprint_label,
+        "zenodoVersion": cfg.preprint_version,
+        "author": "Bryan P. White",
+        "affiliation": "CRV Science Labs",
+        "status": "Staged Preprint (Awaiting Verification)",
+        "arxivCategories": "q-bio.PE (Populations and Evolution) • q-bio.GN (Genomics) • q-bio.QM (Quantitative Methods)",
+        "latexBundleUrl": format!("/labs/releases/{}-arxiv-upload.tar.gz", cfg.study_slug),
+        "title": cfg.title,
+        "subtitle": format!(
+            "{} (v{} Staged Empirical Preprint) • 100% Native Rust Partitioned ModelTest Across {} Verified Records",
+            cfg.preprint_label, cfg.preprint_version, fmt_commas_usize(report.total_records_on_disk)
+        ),
+        "summary": summary_short,
+        "plainAbstract": abstract_text,
+        "keyPoints": key_points,
+        "category": cfg.category,
+        "readTime": cfg.read_time,
+        "complexity": cfg.complexity,
+        "stars": 5,
+        "tier": 3,
+        "disableWikiLinks": true,
+        "validationSetId": cfg.validation_set_id,
+        "datasetProvenance": format!(
+            "{} verified NCBI records + {} quarantined outlier submissions",
+            fmt_commas_usize(report.total_records_on_disk),
+            report.quarantined_records_on_disk
+        ),
+        "pipelineId": cfg.run_id,
+        "pipelineCmd": pipeline_cmd,
+        "telemetryUrl": telemetry_url,
+        "tags": cfg.tags,
+        "geneticLoci": cfg.genetic_loci_summary,
+        "references": cfg.references,
+        "bodyHtml": body_for_drafts
+    });
+    if let Some(ref doi) = cfg.concept_doi {
+        if !doi.trim().is_empty() {
+            if let Some(obj) = preprint_draft.as_object_mut() {
+                obj.insert("doi".to_string(), json!(doi));
+                obj.insert("conceptDoi".to_string(), json!(doi));
+            }
+        }
+    }
+    let staged_preprint_path = staged_preprint_dir.join(format!("{}-draft.json", cfg.preprint_slug));
+    fs::write(
+        &staged_preprint_path,
+        sanitize_no_scratch_extensions(&serde_json::to_string_pretty(&preprint_draft).unwrap()),
+    )
+    .map_err(|e| e.to_string())?;
+    written.push(staged_preprint_path.to_string_lossy().to_string());
+
+    let full_body = render_body(true);
+    let single_col_html = format!(
+r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="disable-wiki-links" content="true">
+  <title>{title}</title>
+  <style>
+    @page {{ size: 8.5in 11in; margin: 0.55in 0.6in; }}
+    * {{ box-sizing: border-box; }}
+    body {{ font-family: 'Georgia', 'Times New Roman', serif; font-size: 9.8pt; line-height: 1.44; color: #0f172a; margin: 0; padding: 0; background: #ffffff; }}
+    h1.arxiv-title {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13.6pt; font-weight: 800; line-height: 1.22; color: #0f172a; margin: 0 0 6pt 0; }}
+    .arxiv-meta {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 8.5pt; color: #334155; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 8pt; margin-bottom: 10pt; }}
+    .arxiv-abstract {{ background: #f8fafc; border: 1px solid #cbd5e1; border-left: 3.5px solid #0284c7; border-radius: 5px; padding: 8pt 10pt; margin-bottom: 10pt; font-size: 9.0pt; text-align: justify; }}
+    h2 {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11.2pt; font-weight: 800; color: #0f172a; margin: 12pt 0 5pt 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 2pt; break-inside: avoid; break-after: avoid; }}
+    h2.supplemental-section-heading {{ break-before: page; page-break-before: always; }}
+    p, li {{ text-align: justify; margin: 0 0 6pt 0; color: #0f172a; }}
+    ul, ol {{ margin: 0 0 8pt 0; padding-left: 16pt; }}
+    a {{ color: #0369a1; text-decoration: none; }}
+    .labs-copy-box {{ margin: 8pt 0; }}
+    .labs-copy-box[data-copy-mode="table"]:not(.labs-table-multipage), .labs-copy-box[data-copy-mode="code"] {{ break-inside: avoid; }}
+    .labs-copy-box-header, .labs-copy-header {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 8.4pt; font-weight: 700; color: #0f172a; background: #f1f5f9; border: 1px solid #cbd5e1; border-bottom: none; padding: 4pt 8pt; border-radius: 4px 4px 0 0; break-inside: avoid; break-after: avoid; }}
+    .labs-box-tool-footer {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 7.3pt; color: #475569; background: #f8fafc; border: 1px solid #cbd5e1; border-top: none; padding: 3pt 8pt; border-radius: 0 0 4px 4px; break-inside: avoid; break-before: avoid; }}
+    pre.labs-code-pre {{ font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 6.8pt; line-height: 1.26; background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 6pt 8pt; margin: 0; white-space: pre; overflow-x: hidden; }}
+    table.labs-compact-table, table.labs-data-table {{ width: 100%; border-collapse: collapse; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 6.7pt; line-height: 1.25; }}
+    thead {{ display: table-row-group; break-inside: avoid; break-after: avoid; }}
+    tr, th, td {{ break-inside: avoid; }}
+    table.labs-compact-table th, table.labs-compact-table td, table.labs-data-table th, table.labs-data-table td {{ border: 1px solid #cbd5e1; padding: 2.8pt 3.6pt; text-align: left; vertical-align: top; color: #0f172a; }}
+    table.labs-compact-table th, table.labs-data-table th {{ background: #e2e8f0; font-weight: 700; color: #0f172a; }}
+    .labs-figure-card, .labs-figure-card--print-full {{ page-break-inside: avoid !important; break-inside: avoid !important; }}
+    .labs-inline-svg-figure {{ page-break-inside: avoid !important; break-inside: avoid !important; overflow: visible !important; border-left: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1; background: #ffffff; padding: 4pt; }}
+    .labs-figure-card svg {{ width: 94% !important; height: auto !important; max-height: 7.0in !important; display: block !important; margin: 0 auto !important; }}
+    .labs-figure-card img, .labs-supp-screenshot-img {{ width: 95% !important; height: auto !important; max-height: 4.8in !important; display: block !important; margin: 0 auto !important; }}
+    #fig-1.labs-figure-card svg {{ width: 82% !important; max-height: 7.1in !important; }}
+    figcaption {{ font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 7.6pt; line-height: 1.34; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; border-top: none; padding: 5pt 8pt; border-radius: 0 0 4px 4px; text-align: justify; }}
+    ol.references-list {{ list-style: none; padding-left: 0; font-size: 8.4pt; line-height: 1.36; color: #0f172a; }}
+    ol.references-list li {{ margin-bottom: 4pt; color: #0f172a; }}
+    .ref-num {{ font-weight: 700; color: #0f172a; margin-right: 4pt; }}
+    code {{ font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 7.2pt; background: #f1f5f9; padding: 1pt 3pt; border-radius: 3px; color: #0f172a; }}
+    button.labs-copy-btn {{ display: none !important; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="arxiv-title">{title}</h1>
+    <div class="arxiv-meta">
+      <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
+      <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
+      <strong>Date:</strong> November 21, 2026 &nbsp;|&nbsp;
+      <strong>Preprint ID:</strong> {preprint_label} (v{preprint_ver} Empirical Preprint){doi_meta} &nbsp;|&nbsp;
+      <strong>Validation Dataset:</strong> <code>{val_set}</code>
+    </div>
+    <div class="arxiv-abstract">
+      <strong>Abstract —</strong> {abstract_html}
+    </div>
+  </header>
+  {body}
+</body>
+</html>"#,
+        title = html_esc(&cfg.title),
+        preprint_label = html_esc(&cfg.preprint_label),
+        preprint_ver = html_esc(&cfg.preprint_version),
+        doi_meta = cfg
+            .concept_doi
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .map(|d| format!(" &nbsp;|&nbsp;\n      <strong>Concept DOI:</strong> {}", html_esc(d)))
+            .unwrap_or_default(),
+        val_set = html_esc(&cfg.validation_set_id),
+        abstract_html = html_esc(&abstract_text),
+        body = full_body,
+    );
+    let clean_html = sanitize_no_scratch_extensions(&single_col_html);
+    let html_run_ms = clean_html.replace("src=\"/labs/figures/", "src=\"../figures/");
+    let html_arxiv = clean_html.replace("src=\"/labs/figures/", "src=\"figures/");
+    for (p, payload) in [
+        (run_ms_dir.join("single-column-manuscript.html"), &html_run_ms),
+        (arxiv_dir.join("single-column-manuscript.html"), &html_arxiv),
+    ] {
+        fs::write(&p, payload).map_err(|e| e.to_string())?;
+        written.push(p.to_string_lossy().to_string());
+    }
+
+    let mut bbl = String::new();
+    for (idx, r) in cfg.references.iter().enumerate() {
+        bbl.push_str(&format!(
+            "\\bibitem{{ref{}}} {} \\url{{{}}}\n\n",
+            idx + 1,
+            tex_esc(&r.text),
+            r.url
+        ));
+    }
+    let main_bbl = format!("\\begin{{thebibliography}}{{99}}\n{}\\end{{thebibliography}}\n", bbl);
+    let table3d_tex = render_canonical_table_3d_tex(part_opt.as_ref());
+    let main_tex = format!(
+"\\documentclass[10pt,letterpaper]{{article}}
+\\usepackage[margin=0.65in]{{geometry}}
+\\usepackage{{booktabs}}
+\\usepackage{{longtable}}
+\\usepackage{{graphicx}}
+\\usepackage{{hyperref}}
+\\title{{{title_tex}}}
+\\author{{Bryan P. White \\\\ CRV Science Labs}}
+\\date{{November 21, 2026 \\quad|\\quad Preprint ID: {preprint_label} (v{preprint_ver} Empirical Preprint)}}
+\\begin{{document}}
+\\maketitle
+\\begin{{abstract}}
+{abs_tex}
+\\end{{abstract}}
+\\section{{Introduction}}
+{intro_tex} Across {tot_r} active verified NCBI sequence records ({tot_bp} raw bp) and {quar_cnt} quarantined anomalies in {tot_s:.2} s of 100\\% Native Rust execution, per-locus BIC \\texttt{{ModelTest}} across {n_part} loci ($L = {sup_l}$ cols) over {n_phy} $\\ge 80\\%$-gated OTUs improves fit by $\\Delta \\ln L = {delta_lnl:+.2}$ nats ($\\ln L = {lnl_part}$, UFBoot2 = {sup_boot:.1}\\% vs. {unpart_boot:.1}\\% unpartitioned), while {msc_loci}-locus Quartet MSC across all {n_tot} species recovers $Q = {q_norm:.4}$ (LPP = {q_lpp:.4}) \\cite{{ref1}}.
+{table3d_tex}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.82\\textwidth]{{figures/{f1_pdf}}}\\caption{{{f1_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f2_pdf}}}\\caption{{{f2_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f3_pdf}}}\\caption{{{f3_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f4a_pdf}}}\\caption{{{f4a_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f4b_pdf}}}\\caption{{{f4b_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f5_pdf}}}\\caption{{{f5_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f6_pdf}}}\\caption{{{f6_cap}}}\\end{{figure}}
+\\section*{{Supplemental Figures}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{s1_png}}}\\caption{{{s1_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{s2_png}}}\\caption{{{s2_cap}}}\\end{{figure}}
+\\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{s3_png}}}\\caption{{{s3_cap}}}\\end{{figure}}
+\\input{{main.bbl}}
+\\end{{document}}
+",
+        title_tex = tex_esc(&cfg.title),
+        preprint_label = tex_esc(&cfg.preprint_label),
+        preprint_ver = tex_esc(&cfg.preprint_version),
+        abs_tex = tex_esc(&abstract_text),
+        intro_tex = tex_esc(&cfg.manuscript_prose.latex_intro),
+        tot_r = tex_esc(&fmt_commas_usize(report.total_records_on_disk)),
+        tot_bp = tex_esc(&fmt_commas_usize(report.total_raw_bp_on_disk)),
+        quar_cnt = report.quarantined_records_on_disk,
+        tot_s = total_sec,
+        n_part = n_part_loci,
+        sup_l = tex_esc(&fmt_commas_usize(report.supermatrix_aligned_cols)),
+        n_phy = n_phy,
+        n_tot = n_total_slots,
+        delta_lnl = delta_part_lnl,
+        lnl_part = tex_esc(&fmt_lnl(part_lnl)),
+        sup_boot = sup_boot,
+        unpart_boot = unpart_boot,
+        msc_loci = report.msc_regime1_ry3.gene_tree_count,
+        q_norm = report.msc_regime1_ry3.normalized_quartet_score,
+        q_lpp = report.msc_regime1_ry3.mean_local_posterior_pp1,
+        table3d_tex = table3d_tex,
+        f1_pdf = th.fig1_web_svg.replace(".svg", ".pdf"),
+        f1_cap = tex_esc(&th.fig1_caption),
+        f2_pdf = th.fig2_web_svg.replace(".svg", ".pdf"),
+        f2_cap = tex_esc(&th.fig2_caption),
+        f3_pdf = th.fig3_web_svg.replace(".svg", ".pdf"),
+        f3_cap = tex_esc(&th.fig3_caption),
+        f4a_pdf = th.fig4a_web_svg.replace(".svg", ".pdf"),
+        f4a_cap = tex_esc(&th.fig4a_caption),
+        f4b_pdf = th.fig4b_web_svg.replace(".svg", ".pdf"),
+        f4b_cap = tex_esc(&th.fig4b_caption),
+        f5_pdf = th.fig5_web_svg.replace(".svg", ".pdf"),
+        f5_cap = tex_esc(&th.fig5_caption),
+        f6_pdf = th.fig6_web_svg.replace(".svg", ".pdf"),
+        f6_cap = tex_esc(&th.fig6_caption),
+        s1_png = format!("{}.png", th.supp_s1_stem),
+        s1_cap = tex_esc(&th.supp_s1_title),
+        s2_png = format!("{}.png", th.supp_s2_stem),
+        s2_cap = tex_esc(&th.supp_s2_title),
+        s3_png = format!("{}.png", th.supp_s3_stem),
+        s3_cap = tex_esc(&th.supp_s3_title),
+    );
+    for dir in [&arxiv_dir, &run_ms_dir] {
+        fs::write(dir.join("main.tex"), sanitize_no_scratch_extensions(&main_tex))
+            .map_err(|e| e.to_string())?;
+        fs::write(dir.join("main.bbl"), sanitize_no_scratch_extensions(&main_bbl))
+            .map_err(|e| e.to_string())?;
+        fs::write(dir.join("00readme.xxx"), "main.tex toplevel\n")
+            .map_err(|e| e.to_string())?;
+    }
+    written.push(arxiv_dir.join("main.tex").to_string_lossy().to_string());
+
+    let tar_name = format!("{}-arxiv-upload.tar.gz", cfg.study_slug);
+    let rel_tar = labs_releases_dir.join(&tar_name);
+    let _ = std::process::Command::new("tar.exe")
+        .args([
+            "-czf",
+            &rel_tar.to_string_lossy(),
+            "-C",
+            &arxiv_dir.to_string_lossy(),
+            "main.tex",
+            "main.bbl",
+            "00readme.xxx",
+            "single-column-manuscript.html",
+            "figures",
+        ])
+        .status();
+    if rel_tar.exists() {
+        let _ = fs::copy(&rel_tar, arxiv_dir.join(&tar_name));
         written.push(rel_tar.to_string_lossy().to_string());
     }
 

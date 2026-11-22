@@ -1,0 +1,1769 @@
+{
+  "study_slug": "nematoda-agricultural-pests",
+  "fig_prefix": "nematoda-pests",
+  "run_id": "runie-native-nematoda-pests-27-v3",
+  "preprint_slug": "nematoda-agricultural-pests-preprint",
+  "discovery_slug": "nematoda-agricultural-pests-phylogenomics",
+  "validation_set_id": "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS",
+  "preprint_label": "PREPRINT-27",
+  "preprint_version": "3.0.0",
+  "concept_doi": "10.5281/zenodo.24223794",
+  "remediation_note": "Version 3.0.0 re-executed Stage 1-5 under generalized declarative bio-suite-supervisor + bio-suite-seqnet codon QC: (1) strict title classification separated the 28 short 28S/18S rRNA fallback accessions from the 36 complete mitogenomes so zero ribosomal sequences entered the COX1 (S3) codon alignment; (2) Stage 4 functional families were de-mixed into single-family full-length non-EST cohorts (FAM-01 GH5 beta-1,4-endoglucanase, FAM-02 CRT1 calreticulin, FAM-03 Hsp70, FAM-04 C. elegans P450) preserving conserved CYP I-helix and Cys-loop residues on 1TQN; (3) Skyline Cohorts L2 and L5 (Supp S2) were scoped cleanly to single-subunit LSU 28S D2-D3 rDNA.",
+  "telemetry_filename": "nematoda-agricultural-pests-native-biosuite.json",
+  "companion_label": "Lab Discovery",
+  "title": "Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes: Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Skylines",
+  "subtitle_prefix": "100% Native Rust Phylum Nematoda Partitioned ModelTest Phylogenomics",
+  "category": "Nematology, Plant-Parasitic Phylogenomics & Population Genetics",
+  "read_time": "26 min read",
+  "complexity": "High (Graduate Phylogenomics & Plant-Parasitic Nematology)",
+  "taxonomic_scope": "Phylum Nematoda: Free-Living Chromadorea Outgroups [A] + Clade I Enoplea-Dorylaimia Virus Vectors [B] + Aphelenchoidea/Steinernema [C] + Basal Tylenchomorpha [D] + Pratylenchidae [E] + Heteroderidae Cyst [F] + Meloidogynidae Root-Knot [G]",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/nematoda_preprint27_design.json",
+  "cache_subdir": "val_set_066_nematoda_pests",
+  "seqnet_sqlite_name": "seqnet_nematoda_preprint27.sqlite",
+  "nexus_filename": "nematoda_64taxa.nex",
+  "supermatrix_fasta_name": "nematoda_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [],
+  "fallback_mito_accessions": [
+    "AP038780.1",
+    "PQ346375.1",
+    "MK559448.1",
+    "PX591263.1",
+    "NC_033870.1",
+    "NC_033869.1",
+    "NC_033868.1",
+    "NC_033867.1",
+    "KX348138.1",
+    "KX348137.1",
+    "NC_039926.1",
+    "NC_005941.1",
+    "AP017468.1",
+    "PV492208.1",
+    "PV423453.1",
+    "PV366404.1",
+    "NC_061210.1",
+    "NC_025291.1",
+    "NC_023208.1",
+    "NC_021120.1",
+    "PV344450.1",
+    "PX905919.1",
+    "PV430683.1",
+    "QB001575.1",
+    "PV017892.1",
+    "OP739549.1",
+    "PX526498.1",
+    "OZ173927.1",
+    "PX401893.1",
+    "LC903928.1",
+    "LC941953.1",
+    "CM003310.1",
+    "GQ332425.1",
+    "FN313571.1",
+    "LC941320.1",
+    "LC928503.1",
+    "PP550687.1",
+    "LC902547.1",
+    "LC900323.1",
+    "LC900321.1",
+    "LC900320.1",
+    "LC895349.1",
+    "PQ325513.1",
+    "PQ325512.1",
+    "LC927710.1",
+    "LC927703.1",
+    "HM640930.1",
+    "LC208691.1",
+    "LC208688.1",
+    "LC202152.1",
+    "MK387341.1",
+    "KU726971.1",
+    "LC483175.1",
+    "PV243342.1",
+    "OR038715.1",
+    "NC_056772.1",
+    "NC_026555.1",
+    "NC_026554.1",
+    "NC_024097.1",
+    "MZ359281.1",
+    "MK507908.1",
+    "KJ476150.1",
+    "PX247468.1",
+    "PP919097.1"
+  ],
+  "s4_banner_title": "Phylum Nematoda Pests",
+  "anchor_species": "meloidogyne incognita",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Rhabditida & Cephalobida Outgroups",
+      "family": "Rhabditidae",
+      "species": "Caenorhabditis elegans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Rhabditida & Cephalobida Outgroups",
+      "family": "Rhabditidae",
+      "species": "Oscheius myriophilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Rhabditida & Cephalobida Outgroups",
+      "family": "Cephalobidae",
+      "species": "Acrobeloides varius",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Rhabditida & Cephalobida Outgroups",
+      "family": "Heterorhabditidae",
+      "species": "Heterorhabditis bacteriophora",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Clade I Dorylaimia Virus Vectors",
+      "family": "Longidoridae",
+      "species": "Xiphinema pachtaicum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Clade I Dorylaimia Virus Vectors",
+      "family": "Longidoridae",
+      "species": "Xiphinema rivesi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Clade I Dorylaimia Virus Vectors",
+      "family": "Longidoridae",
+      "species": "Paralongidorus litoralis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Clade I Dorylaimia Virus Vectors",
+      "family": "Longidoridae",
+      "species": "Longidorus vineacola",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Clade I Dorylaimia Virus Vectors",
+      "family": "Trichodoridae",
+      "species": "Trichodorus persicus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Clade I Dorylaimia Virus Vectors",
+      "family": "Trichodoridae",
+      "species": "Trichodorus variabilis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T011",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Steinernematidae",
+      "species": "Steinernema abbasi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T012",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Steinernematidae",
+      "species": "Steinernema carpocapsae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Steinernematidae",
+      "species": "Steinernema litorale",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Bursaphelenchus sinensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Bursaphelenchus chengi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Bursaphelenchus parantoniae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Aphelenchoides medicagus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Aphelenchoides besseyi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Bursaphelenchus xylophilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Panagrolaimomorpha & Aphelenchoidea",
+      "family": "Aphelenchoididae",
+      "species": "Bursaphelenchus mucronatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T021",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Criconematidae",
+      "species": "Lobocriconema thornei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T022",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Criconematidae",
+      "species": "Mesocriconema xenoplax",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T023",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Criconematidae",
+      "species": "Discocriconemella costaricense",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T024",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Tylenchulidae",
+      "species": "Paratylenchus projectus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T025",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Tylenchulidae",
+      "species": "Paratylenchus nanus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Tylenchulidae",
+      "species": "Tylenchulus semipenetrans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Anguinidae",
+      "species": "Sychnotylenchus asiaticus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Anguinidae",
+      "species": "Sphaerularia bombi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Anguinidae",
+      "species": "Contortylenchus sp.",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Hoplolaimidae",
+      "species": "Helicotylenchus laichauensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Hoplolaimidae",
+      "species": "Helicotylenchus dihystera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Basal Tylenchomorpha Plant Parasites",
+      "family": "Hoplolaimidae",
+      "species": "Rotylenchulus reniformis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus vulnus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Radopholus similis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus coffeae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Hirschmanniella oryzae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus penetrans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Hirschmanniella mucronata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus pratensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus fallax",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus thornei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Pratylenchidae Migratory Endoparasites",
+      "family": "Pratylenchidae",
+      "species": "Pratylenchus zeae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera cruciferae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera schachtii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Globodera rostochiensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Globodera pallida",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera glycines",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera betae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera trifolii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera koreana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera elachista",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Globodera ellingtonae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Heteroderidae Cyst Nematodes",
+      "family": "Heteroderidae",
+      "species": "Heterodera sojae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne hispanica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne javanica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne graminicola",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne enterolobii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne arenaria",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne incognita",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne exigua",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne oryzae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne chitwoodi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne konaensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Meloidogynidae Root-Knot Nematodes",
+      "family": "Meloidogynidae",
+      "species": "Meloidogyne hapla",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Horizontally Transferred Plant-Cell-Wall Degrading GH5 Beta-1,4-Endoglucanases (eng / GH5)",
+      "physiological_role": "Bacterial-origin glycoside hydrolase family 5 beta-1,4-endoglucanases secreted via the protrusible stomatostylet to cleave crystalline plant cell-wall cellulose microfibrils during root migration",
+      "gene_symbol": "GH5-eng",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Heterodera\"[Organism] OR \"Globodera\"[Organism] OR \"Meloidogyne\"[Organism] OR \"Pratylenchus\"[Organism] OR \"Radopholus\"[Organism] OR \"Ditylenchus\"[Organism] OR \"Rotylenchulus\"[Organism] OR \"Hirschmanniella\"[Organism] OR \"Aphelenchus\"[Organism]) AND (\"beta-1,4-endoglucanase\"[Title] OR \"endoglucanase\"[Title] OR \"cellulase\"[Title]) AND 700:2200[SLEN] AND mRNA[Filter] NOT gbdiv_est[Properties] NOT \"pectate lyase\"[Title] NOT expansin[Title] NOT \"GH45\"[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Tylenchida[Organism] AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title]) AND 600:2400[SLEN] AND mRNA[Filter] NOT gbdiv_est[Properties] NOT \"pectate lyase\"[Title] NOT expansin[Title] NOT PREDICTED[Title] NOT genome[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "nem_fam01_gh5_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 700,
+        "max_bp": 2200,
+        "max_domain_bp": null,
+        "min_aa_len": 200,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Stylet-Secreted Esophageal Calreticulin Virulence Effectors (CRT1)",
+      "physiological_role": "Esophageal gland calcium-binding chaperone effectors injected into host vascular parenchyma to suppress Ca2+-mediated PAMP immune bursts and promote feeding-site differentiation",
+      "gene_symbol": "CRT1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "Nematoda[Organism] AND \"calreticulin\"[Title] AND 900:2000[SLEN] AND mRNA[Filter] NOT gbdiv_est[Properties] NOT annexin[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Nematoda[Organism] AND \"calreticulin\"[Title] AND 750:2200[SLEN] NOT gbdiv_est[Properties] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "nem_fam02_crt1_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 900,
+        "max_bp": 2000,
+        "max_domain_bp": null,
+        "min_aa_len": 280,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Anhydrobiosis & Thermal Cyst-Diapause Molecular Chaperone (Hsp70)",
+      "physiological_role": "70 kDa stress chaperone protecting unfolded proteome intermediates across egg-cyst diapause, dauer cryptobiosis, and host root oxidative bursts",
+      "gene_symbol": "hsp-70",
+      "source": "entrez_nuccore",
+      "queries": [
+        "Nematoda[Organism] AND (\"heat shock protein 70\"[Title] OR \"heat shock 70 kDa\"[Title] OR \"hsp-70\"[Title] OR Hsp70[Title]) AND 1500:2600[SLEN] AND mRNA[Filter] NOT gbdiv_est[Properties] NOT \"stc-1\"[Title] NOT \"hsp90\"[Title] NOT \"daf-21\"[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Nematoda[Organism] AND (\"heat shock\"[Title] AND \"70\"[Title]) AND 1400:2600[SLEN] NOT gbdiv_est[Properties] NOT \"90\"[Title] NOT \"stc-1\"[Title] NOT PREDICTED[Title] NOT genome[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "nem_fam03_hsp70_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1500,
+        "max_bp": 2600,
+        "max_domain_bp": null,
+        "min_aa_len": 450,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "ATPase-N",
+            "pos_min": 0,
+            "pos_max": 60,
+            "patterns": [
+              "GIDLGTT",
+              "GVDLGTT",
+              "IGIDLGT"
+            ]
+          },
+          {
+            "name": "ATPase-Core",
+            "pos_min": 165,
+            "pos_max": 255,
+            "patterns": [
+              "IFDLGGG",
+              "VFDLGGG"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Xenobiotic Detoxification & Nematicide-Metabolizing Cytochrome P450s (cyp-31A2 / CYP14 / CYP33 / CYP35)",
+      "physiological_role": "Microsomal heme-thiolate monooxygenases mediating cuticle permeability lipids, host phytoalexin hydroxylation, and organophosphate/carbamate/fluopyram nematicide biotransformation",
+      "gene_symbol": "cyp-31A2",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "NM_069751.8",
+        "NM_069079.7",
+        "NM_077832.6",
+        "NM_077806.5",
+        "NM_077804.4",
+        "NM_077803.4",
+        "NM_077802.5",
+        "NM_076560.12",
+        "NM_075287.6",
+        "NM_074387.3",
+        "NM_171550.6",
+        "NM_072608.12"
+      ],
+      "ortholog_config": {
+        "cache_key": "nem_fam04_cyp31_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1400,
+        "max_bp": 2200,
+        "max_domain_bp": 1650,
+        "min_aa_len": 420,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "elegans",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "I-helix",
+            "pos_min": 240,
+            "pos_max": 360,
+            "patterns": [
+              "AG.DT",
+              "AG.ET",
+              "AG.TT",
+              "AG.ST",
+              "AG.NT",
+              "EG.DT",
+              "EG.ET",
+              "SG.DT",
+              "SG.ET",
+              "AA.DT",
+              "AA.ET",
+              "GG.DT",
+              "GG.ET",
+              "TG.DT",
+              "TG.ET"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 380,
+            "pos_max": 500,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "caenorhabditis_cyp31_heme_pocket.pdb",
+    "gene_symbol": "cyp-31A2",
+    "template_label": "1TQN_A (2.05 A Microsomal P450 + HEM A 508)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (C. elegans cyp-31A2 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala305-Gly306-Tyr/Glu/Asp-Glu/Thr308-Thr309 (I-Helix Distal O2 Groove)",
+      "SRS1 B'-Region (1TQN 100-126; Substrate-Access Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/CYTB Standardized)",
+      "region_label": "Pantropical Agro-Ecosystem & Greenhouse Vegetable Corridor (Meloidogyne incognita)",
+      "clade_lineage": "Meloidogyne incognita (Southern Root-Knot Nematode)",
+      "locus_name": "mtDNA COX1/COII/CYTB",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0218,
+      "source_id": "P27-R1",
+      "locality": "Pantropical Agro-Ecosystem & Greenhouse Vegetable Corridor (Meloidogyne incognita)",
+      "cache_key": "R1",
+      "query": "\"Meloidogyne incognita\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/CYTB Standardized)",
+      "region_label": "Subtropical Solanaceae, Cotton & Peanut Corridor (Meloidogyne javanica / M. arenaria)",
+      "clade_lineage": "Meloidogyne javanica / M. arenaria (Tropical Root-Knot)",
+      "locus_name": "mtDNA COX1/COII/CYTB",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0218,
+      "source_id": "P27-R2",
+      "locality": "Subtropical Solanaceae, Cotton & Peanut Corridor (Meloidogyne javanica / M. arenaria)",
+      "cache_key": "R2",
+      "query": "(\"Meloidogyne javanica\"[Organism] OR \"Meloidogyne arenaria\"[Organism]) AND (COX1[Title] OR COI[Title] OR COII[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/CYTB Standardized)",
+      "region_label": "Andean Center of Origin -> Trans-Atlantic Potato Cyst Corridor (Globodera pallida / G. rostochiensis)",
+      "clade_lineage": "Globodera pallida / G. rostochiensis (Potato Cyst)",
+      "locus_name": "mtDNA COX1/CYTB",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0212,
+      "source_id": "P27-R3",
+      "locality": "Andean Center of Origin -> Trans-Atlantic Potato Cyst Corridor (Globodera pallida / G. rostochiensis)",
+      "cache_key": "R3",
+      "query": "(\"Globodera pallida\"[Organism] OR \"Globodera rostochiensis\"[Organism]) AND (COX1[Title] OR COI[Title] OR cytb[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/CYTB Standardized)",
+      "region_label": "East Asian Origin -> Midwestern US & Cerrado Soybean/Beet Cyst Corridor (Heterodera glycines / H. schachtii)",
+      "clade_lineage": "Heterodera glycines / H. schachtii (Soybean/Beet Cyst)",
+      "locus_name": "mtDNA COX1/CYTB",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0214,
+      "source_id": "P27-R4",
+      "locality": "East Asian Origin -> Midwestern US & Cerrado Soybean/Beet Cyst Corridor (Heterodera glycines / H. schachtii)",
+      "cache_key": "R4",
+      "query": "(\"Heterodera glycines\"[Organism] OR \"Heterodera schachtii\"[Organism]) AND (COX1[Title] OR COI[Title] OR cytb[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/CYTB Standardized)",
+      "region_label": "Temperate & Tropical Nursery Root-Stock Trade Corridor (Pratylenchus spp.)",
+      "clade_lineage": "Pratylenchus spp. (Root-Lesion Nematodes)",
+      "locus_name": "mtDNA COX1/CYTB",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0215,
+      "source_id": "P27-R5",
+      "locality": "Temperate & Tropical Nursery Root-Stock Trade Corridor (Pratylenchus spp.)",
+      "cache_key": "R5",
+      "query": "(\"Pratylenchus\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1/CYTB Standardized)",
+      "region_label": "North American Native -> East Asian & Iberian Pine-Timber Epidemic Corridor (Bursaphelenchus xylophilus)",
+      "clade_lineage": "Bursaphelenchus xylophilus (Pinewood Nematode)",
+      "locus_name": "mtDNA COX1/CYTB",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0216,
+      "source_id": "P27-R6",
+      "locality": "North American Native -> East Asian & Iberian Pine-Timber Epidemic Corridor (Bursaphelenchus xylophilus)",
+      "cache_key": "R6",
+      "query": "\"Bursaphelenchus xylophilus\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
+      "region_label": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Heteroderidae Cyst Nematodes (mtDNA 1Ne)",
+      "locus_name": "mtDNA COX1/CYTB (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0214,
+      "source_id": "P27-L1",
+      "locality": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "L1",
+      "query": "(\"Heterodera\"[Organism] OR \"Globodera\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
+      "region_label": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (Ribosomal Stem/ITS rDNA 4Ne)",
+      "clade_lineage": "Heteroderidae Cyst Nematodes (LSU 28S rDNA 4Ne)",
+      "locus_name": "Nuclear LSU 28S D2-D3 rDNA (4Ne E-INS-i)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0086,
+      "source_id": "P27-L2",
+      "locality": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (Ribosomal Stem/ITS rDNA 4Ne)",
+      "cache_key": "nem_pop_l2_28s_v3",
+      "query": "(\"Heterodera\"[Organism] OR \"Globodera\"[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 450:1150[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "fallback_query": "Tylenchida[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 450:1150[SLEN] NOT \"18S\"[Title] NOT \"internal transcribed\"[Title] NOT genome[Title]",
+      "min_bp": 450,
+      "max_bp": 1150
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
+      "region_label": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (HGT GH5 Cellulase / Stylet Effector Sweep Locus)",
+      "clade_lineage": "Heteroderidae Nuclear GH5/PL3 & Effector Sweep",
+      "locus_name": "Nuclear GH5 / PL3 / Effector Sweep Locus",
+      "locus_tag": "GH5",
+      "ploidy_scalar": 0.22,
+      "mu_rate": 0.0108,
+      "source_id": "P27-L3",
+      "locality": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (HGT GH5 Cellulase / Stylet Effector Sweep Locus)",
+      "cache_key": "L3",
+      "query": "(\"Heterodera\"[Organism] OR \"Globodera\"[Organism]) AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title] OR \"pectate lyase\"[Title] OR \"expansin\"[Title] OR \"effector\"[Title] OR \"chorismate\"[Title]) AND 300:2600[SLEN] NOT genome[Title] NOT chromosome[Title]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 2650
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
+      "region_label": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Meloidogyne spp. (mtDNA 1Ne)",
+      "locus_name": "mtDNA COX1/COII (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0218,
+      "source_id": "P27-L4",
+      "locality": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "L4",
+      "query": "\"Meloidogyne\"[Organism] AND (COX1[Title] OR COI[Title] OR COII[Title]) AND 300:1600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
+      "region_label": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Ribosomal LSU 28S D2-D3 rDNA 4Ne)",
+      "clade_lineage": "Meloidogyne spp. (LSU 28S rDNA 4Ne)",
+      "locus_name": "Nuclear LSU 28S D2-D3 rDNA (4Ne E-INS-i)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0088,
+      "source_id": "P27-L5",
+      "locality": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Ribosomal 18S/28S/ITS Spacer 4Ne)",
+      "cache_key": "nem_pop_l5_28s_v3",
+      "query": "\"Meloidogyne\"[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 450:1150[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "fallback_query": "Tylenchida[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 450:1150[SLEN] NOT \"18S\"[Title] NOT \"internal transcribed\"[Title] NOT genome[Title]",
+      "min_bp": 450,
+      "max_bp": 1150
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
+      "region_label": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Nuclear GH5 / Stylet Effector / Nematicide Target Sweep)",
+      "clade_lineage": "Meloidogyne / Pratylenchus Coding Sweep",
+      "locus_name": "Nuclear GH5 / Effector / CYP450/AChE Sweep Locus",
+      "locus_tag": "GH5",
+      "ploidy_scalar": 0.19,
+      "mu_rate": 0.011,
+      "source_id": "P27-L6",
+      "locality": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Nuclear GH5 / Stylet Effector / Nematicide Target Sweep)",
+      "cache_key": "L6",
+      "query": "(\"Meloidogyne\"[Organism] OR \"Pratylenchus\"[Organism]) AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title] OR \"pectate lyase\"[Title] OR \"calreticulin\"[Title] OR \"chorismate\"[Title] OR \"effector\"[Title] OR \"cytochrome P450\"[Title] OR \"acetylcholinesterase\"[Title]) AND 300:2600[SLEN] NOT genome[Title] NOT chromosome[Title]",
+      "fallback_query": "",
+      "min_bp": 280,
+      "max_bp": 2650
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Late Pleistocene Wild Solanaceae/Fabaceae Rhizosphere & Soil Reservoir",
+      "age_max_ka": 160,
+      "age_min_ka": 65,
+      "period_label": "Pre-LGM Baseline (160-65 ka)",
+      "ecological_context": "Wild host-plant soil patches across Andean, East Asian, Paleotropical, and Nearctic biomes"
+    },
+    {
+      "label": "Last Glacial Maximum (LGM) Soil Aridity & Refugial Contraction",
+      "age_max_ka": 65,
+      "age_min_ka": 14,
+      "period_label": "Horizon 1: LGM Contraction (22-14 ka)",
+      "ecological_context": "Boreal ice-sheet expansion confining cyst and root-knot lineages to coastal/montane refugia"
+    },
+    {
+      "label": "Early-to-Mid Holocene Crop Domestication Surge",
+      "age_max_ka": 14,
+      "age_min_ka": 3,
+      "period_label": "Horizon 2: Holocene Domestication (11-3 ka)",
+      "ecological_context": "Neolithic domestication of potato, soybean, rice, and solanaceous plots"
+    },
+    {
+      "label": "Pre-Modern Regional Seed-Tuber & Forest-Timber Connectivity",
+      "age_max_ka": 3,
+      "age_min_ka": 0.12,
+      "period_label": "Late Holocene Regional Connectivity (3.0-0.12 ka)",
+      "ecological_context": "Pre-industrial regional crop belts prior to transoceanic steamship trade"
+    },
+    {
+      "label": "19th-20th Century Transoceanic Tuber & Timber Bottlenecks",
+      "age_max_ka": 0.12,
+      "age_min_ka": 0.03,
+      "period_label": "Horizon 3: Crop-Trade Bridgeheads",
+      "ecological_context": "Global transport of infected seed tubers, soybean soil, pine wood packaging & nursery stock"
+    },
+    {
+      "label": "1970-2026 Intensive Monoculture & Selection Sweep",
+      "age_max_ka": 0.03,
+      "age_min_ka": 0,
+      "period_label": "Horizon 4: Modern Monoculture & Nematicide Sweep",
+      "ecological_context": "Intensive monoculture proliferation coupled with selection on GH5 cellulases, effectors & P450/AChE targets"
+    }
+  ],
+  "supp_s2_cohort_code": "L5",
+  "haplotype_panels": [
+    {
+      "panel_id": "Root-Knot & Lesion Nematodes (Meloidogyne / Pratylenchus COI-5P)",
+      "fasta_filename": "cohort_nematoda_rootknot_lesion_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1,
+        4,
+        9
+      ],
+      "slot_prefixes": [
+        "E:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "Cyst & Pinewood Wilt Nematodes (Heterodera / Globodera / Bursaphelenchus COI-5P)",
+      "fasta_filename": "cohort_nematoda_cyst_pinewood_cox1.fasta",
+      "cohort_indices": [
+        2,
+        3,
+        5,
+        6
+      ],
+      "slot_prefixes": [
+        "C:",
+        "F:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Phylum Nematoda Chromadorea Outgroups [A] vs. Plant-Parasitic Ingroup Backbone [B-G]",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Cambrian-Ordovician Ecdysozoa Cycloneuralia terrestrialization & Nematoda split (~442-494 Ma)",
+      "target_age_ma": 468,
+      "ci_min_ma": 442,
+      "ci_max_ma": 494,
+      "trophic_guild": "Free-Living Bacteriovores & Entomopathogenic Outgroups",
+      "key_enzymes_or_loci": "Cuticular Collagen, CYP31A2/CYP35 Xenobiotic Monooxygenases & HSP70 Chaperones",
+      "ecosystem_role": "Ancestral microbivorous nematode chassis prior to stylet-feeding HGT acquisition",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Clade I Enoplea-Dorylaimia Virus Vectors (Longidoridae/Trichodoridae [B]) vs. Crown Clade IV [C-G]",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Early Devonian Rhynie Chert Palaeonema phyticum & vascular root colonization (~362-411 Ma)",
+      "target_age_ma": 386.4,
+      "ci_min_ma": 362,
+      "ci_max_ma": 411,
+      "trophic_guild": "Odontostylet & Onchiostylet Virus-Vector Ectoparasites",
+      "key_enzymes_or_loci": "Independent Stylet Convergence, Nepovirus/Tobravirus Vector Matrix & Mitochondrial atp8 Loss",
+      "ecosystem_role": "Independent early evolution of root-tip ectoparasitism and plant viral transmission",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Clade IV Divergence: Panagrolaimomorpha/Aphelenchoidea [C] vs. Tylenchomorpha [D-G]",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Triassic gymnosperm-fungal mycophagous & insect-phoretic Aphelenchoidea transition (~224-261 Ma)",
+      "target_age_ma": 242.6,
+      "ci_min_ma": 224,
+      "ci_max_ma": 261,
+      "trophic_guild": "Entomopathogens, Pine-Wilt & Foliar Aphelenchoidea",
+      "key_enzymes_or_loci": "Convergent Fungal HGT GH45 Cellulases (Bursaphelenchus) & Anhydrobiosis HSP70",
+      "ecosystem_role": "Insect-vectored conifer wilt pathogens and fungal-feeding bridging lineages",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Crown Tylenchomorpha Diversification: Basal Stylet Lineages [D] vs. Hoplolaimina Crown [E-G]",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Early-Mid Jurassic vascular seed-plant rhizosphere & ancestral bacterial HGT GH5 acquisition (~163-194 Ma)",
+      "target_age_ma": 178.4,
+      "ci_min_ma": 163,
+      "ci_max_ma": 194,
+      "trophic_guild": "Ring, Citrus, Seed-Gall & Spiral Root Ectoparasites/Semi-Endoparasites",
+      "key_enzymes_or_loci": "Ancestral Bacterial HGT GH5 Beta-1,4-Endoglucanase & Protrusible Stomatostylet",
+      "ecosystem_role": "Consolidation of bacterial-derived cell-wall degradation enabling invasive stylet penetration",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Basal Tylenchomorpha Intra-Clade Radiation (Criconematidae/Tylenchulidae vs. Anguinidae/Hoplolaimidae [D])",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous angiosperm root-exudate & foliar seed-gall co-radiation (~83-106.5 Ma)",
+      "target_age_ma": 94.8,
+      "ci_min_ma": 83,
+      "ci_max_ma": 106.5,
+      "trophic_guild": "Criconematid Ring, Citrus Root (Tylenchulus) & Anguinid Pests",
+      "key_enzymes_or_loci": "Cuticle Annulation Rings & Anhydrobiotic Seed-Gall HSP70",
+      "ecosystem_role": "Transition from surface root-hair browsing to semi-endoparasitic cortical feeding",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Pratylenchidae Migratory Endoparasites [E] vs. Sedentary Cyst & Root-Knot Clades [F, G]",
+      "sector_code": "[E]",
+      "fossil_or_biogeo_anchor": "Early Cretaceous Aptian-Albian angiosperm root expansion (~112-136.5 Ma)",
+      "target_age_ma": 124.2,
+      "ci_min_ma": 112,
+      "ci_max_ma": 136.5,
+      "trophic_guild": "Root-Lesion, Banana Burrowing & Rice-Root Migratory Endoparasites",
+      "key_enzymes_or_loci": "High-Copy GH5 Cellulases & Cortical Parenchyma Necrosis Secretome",
+      "ecosystem_role": "Destructive intracellular migration across root cortex without permanent feeding cells",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Sedentary Crown Divergence: Cyst Nematodes Heteroderidae [F] vs. Root-Knot Meloidogynidae [G]",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous angiosperm Solanaceae/Fabaceae feeding-site split (~65.2-84.0 Ma)",
+      "target_age_ma": 74.6,
+      "ci_min_ma": 65.2,
+      "ci_max_ma": 84,
+      "trophic_guild": "Syncytium-Forming Cyst Pests (Heterodera, Globodera)",
+      "key_enzymes_or_loci": "GH5 Cellulases, Calreticulin CRT1 Effectors & Cyst Egg Diapause",
+      "ecosystem_role": "Bifurcation of sedentary biotrophy into cell-wall-dissolving syncytia vs. giant cells",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Meloidogynidae Root-Knot Radiation (Meiotic M. hapla vs. Mitotic Polyploid MIG Crown [G])",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Paleocene-Eocene angiosperm galling & obligate mitotic polyploidization horizon (~50.2-66.8 Ma)",
+      "target_age_ma": 58.4,
+      "ci_min_ma": 50.2,
+      "ci_max_ma": 66.8,
+      "trophic_guild": "Cosmopolitan Broad-Host Root-Knot Nematodes (Meloidogyne spp.)",
+      "key_enzymes_or_loci": "Calreticulin CRT1 Effectors, GH5 Cellulases & Polyploid Genomes",
+      "ecosystem_role": "Broad-host crop pathogens (>3,000 host species) reprogramming vascular karyokinesis",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-01-MELOIDOGYNIDAE-HYBRID-POLYPLOID",
+      "p1_tip": "G_T059",
+      "p2_tip": "G_T055",
+      "p3_tip": "G_T064",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Reticulate allopolyploid hybridization and shared homeologous alleles across tropical MIG Meloidogyne root-knot species"
+    },
+    {
+      "quartet_id": "ABBA-02-MELOIDOGYNIDAE-ARENARIA-ENTEROLOBII",
+      "p1_tip": "G_T058",
+      "p2_tip": "G_T057",
+      "p3_tip": "G_T056",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Ancient hybridization vs. incomplete lineage sorting between Clade I and Clade III Meloidogyne pests"
+    },
+    {
+      "quartet_id": "ABBA-03-HETERODERIDAE-GLYCINES-SCHACHTII",
+      "p1_tip": "F_T047",
+      "p2_tip": "F_T044",
+      "p3_tip": "F_T045",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Ancestral polymorphism and host-race allele sharing across temperate Heterodera vs. Andean Globodera cyst lineages"
+    },
+    {
+      "quartet_id": "ABBA-04-PRATYLENCHIDAE-LESION-BURROWING",
+      "p1_tip": "E_T037",
+      "p2_tip": "E_T035",
+      "p3_tip": "E_T034",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Deep migratory endoparasite paraphyly and rapid Cladogenetic radiation across Pratylenchus and Radopholus"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "Nematoda",
+    "Meloidogyne incognita",
+    "Heterodera glycines",
+    "Globodera pallida",
+    "Bursaphelenchus xylophilus",
+    "GH5 Cellulase",
+    "CRT1",
+    "1TQN"
+  ],
+  "genetic_loci_summary": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "16S rRNA",
+    "12S rRNA",
+    "18S rRNA",
+    "28S rRNA",
+    "GH5-eng",
+    "CRT1",
+    "hsp-70",
+    "cyp-31A2"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Holterman, M., van der Wurff, A., van den Elsen, S., van Megen, H., Bongers, T., Holovachov, O., Bakker, J., & Helder, J. (2006). Phylum-Wide Analysis of SSU rDNA Reveals Deep Phylogenetic Relationships among Nematodes and Accelerated Evolution toward Crown Clades. Molecular Biology and Evolution, 23(9), 1792–1800. DOI: 10.1093/molbev/msl044",
+      "url": "https://doi.org/10.1093/molbev/msl044"
+    },
+    {
+      "text": "van Megen, H., van den Elsen, S., Holterman, M., Karssen, G., Mooyman, P., Bongers, T., Holovachov, O., Bakker, J., & Helder, J. (2009). A phylogenetic tree of nematodes based on about 1200 full-length small subunit ribosomal DNA sequences. Nematology, 11(6), 927–950. DOI: 10.1163/156854109x456862",
+      "url": "https://doi.org/10.1163/156854109x456862"
+    },
+    {
+      "text": "Smythe, A. B., Holovachov, O., & Kocot, K. M. (2019). Improved phylogenomic sampling of free-living nematodes enhances resolution of higher-level nematode phylogeny. BMC Evolutionary Biology, 19, 121. DOI: 10.1186/s12862-019-1444-x",
+      "url": "https://doi.org/10.1186/s12862-019-1444-x"
+    },
+    {
+      "text": "Rota-Stabelli, O., Daley, A. C., & Pisani, D. (2013). Molecular Timetrees Reveal a Cambrian Colonization of Land and a New Scenario for Ecdysozoan Evolution. Current Biology, 23(5), 392–398. DOI: 10.1016/j.cub.2013.01.026",
+      "url": "https://doi.org/10.1016/j.cub.2013.01.026"
+    },
+    {
+      "text": "Jones, J. T., Haegeman, A., Danchin, E. G. J., Gaur, H. S., Helder, J., Jones, M. G. K., Kikuchi, T., Manzanilla-López, R., Palomares-Rius, J. E., Wesemael, W. M. L., & Perry, R. N. (2013). Top 10 plant-parasitic nematodes in molecular plant pathology. Molecular Plant Pathology, 14(9), 946–961. DOI: 10.1111/mpp.12057",
+      "url": "https://doi.org/10.1111/mpp.12057"
+    },
+    {
+      "text": "Smant, G., Stokkermans, J. P. W. G., Yan, Y., de Boer, J. M., Baum, T. J., Wang, X., Hussey, R. S., Gommers, F. J., Henrissat, B., Davis, E. L., Helder, J., Schots, A., & Bakker, J. (1998). Endogenous cellulases in animals: isolation of β-1,4-endoglucanase genes from two species of plant-parasitic cyst nematodes. Proceedings of the National Academy of Sciences, 95(9), 4906–4911. DOI: 10.1073/pnas.95.9.4906",
+      "url": "https://doi.org/10.1073/pnas.95.9.4906"
+    },
+    {
+      "text": "Danchin, E. G. J., Rosso, M.-N., Vieira, P., de Almeida-Engler, J., Coutinho, P. M., Henrissat, B., & Abad, P. (2010). Multiple lateral gene transfers and duplications have promoted plant parasitism ability in nematodes. Proceedings of the National Academy of Sciences, 107(41), 17651–17656. DOI: 10.1073/pnas.1008486107",
+      "url": "https://doi.org/10.1073/pnas.1008486107"
+    },
+    {
+      "text": "Kikuchi, T., Cotton, J. A., Dalzell, J. J., Hasegawa, K., Kanzaki, N., McVeigh, P., Takanashi, T., Tsai, I. J., Assefa, S. A., Cock, P. J. A., Otto, T. D., Hunt, M., Reid, A. J., Sanchez-Flores, A., Tsuchihara, K., Yokoi, T., Larsson, M. C., Miwa, J., Maule, A. G., Sahashi, N., Jones, J. T., & Berriman, M. (2011). Genomic Insights into the Origin of Parasitism in the Emerging Plant Pathogen Bursaphelenchus xylophilus. PLoS Pathogens, 7(9), e1002219. DOI: 10.1371/journal.ppat.1002219",
+      "url": "https://doi.org/10.1371/journal.ppat.1002219"
+    },
+    {
+      "text": "Abad, P., Gouzy, J., Aury, J.-M., Castagnone-Sereno, P., Danchin, E. G. J., et al. (2008). Genome sequence of the metazoan plant-parasitic nematode Meloidogyne incognita. Nature Biotechnology, 26(8), 909–915. DOI: 10.1038/nbt.1482",
+      "url": "https://doi.org/10.1038/nbt.1482"
+    },
+    {
+      "text": "Opperman, C. H., Bird, D. M., Williamson, V. M., Rokhsar, D. S., Burke, M., Cohn, J., Cromer, J., Diener, S., Gajan, J., Graham, S., Houfek, T. D., Liu, Q., Mitros, T., Schaff, J., Schaffer, R., Scholl, E., Sosinski, B. R., Thomas, V. P., & Windham, E. (2008). Sequence and genetic map of Meloidogyne hapla: a compact nematode genome for plant parasitism. Proceedings of the National Academy of Sciences, 105(39), 14802–14807. DOI: 10.1073/pnas.0805946105",
+      "url": "https://doi.org/10.1073/pnas.0805946105"
+    },
+    {
+      "text": "Masonbrink, R., Maier, T. R., Muppirala, U., Seetharam, A. S., Lord, E., Juvale, P. S., Schmutz, J., Johnson, N. T., Korkin, D., Mitchum, M. G., Mimee, B., Eves-van den Akker, S., Hudson, M., Severin, A. J., & Baum, T. J. (2019). The genome of the soybean cyst nematode (Heterodera glycines) reveals complex patterns of duplications involved in the evolution of parasitism genes. BMC Genomics, 20, 119. DOI: 10.1186/s12864-019-5485-8",
+      "url": "https://doi.org/10.1186/s12864-019-5485-8"
+    },
+    {
+      "text": "Armstrong, M. R., Blok, V. C., & Phillips, M. S. (2000). A multipartite mitochondrial genome in the potato cyst nematode Globodera pallida. Genetics, 154(1), 181–192. DOI: 10.1093/genetics/154.1.181",
+      "url": "https://doi.org/10.1093/genetics/154.1.181"
+    },
+    {
+      "text": "Mallez, S., Castagnone, C., Lombaert, E., Castagnone-Sereno, P., & Guillemaud, T. (2021). Inference of the worldwide invasion routes of the pinewood nematode Bursaphelenchus xylophilus using approximate Bayesian computation analysis. Peer Community Journal, 1, e56. DOI: 10.24072/pcjournal.64",
+      "url": "https://doi.org/10.24072/pcjournal.64"
+    },
+    {
+      "text": "Harlow, P. H., Perry, S. J., Stevens, A. J., & Flemming, A. J. (2018). Comparative metabolism of xenobiotic chemicals by cytochrome P450s in the nematode Caenorhabditis elegans. Scientific Reports, 8, 13333. DOI: 10.1038/s41598-018-31215-w",
+      "url": "https://doi.org/10.1038/s41598-018-31215-w"
+    },
+    {
+      "text": "Mirarab, S., & Warnow, T. (2015). ASTRAL-II: Coalescent-based species tree estimation with many hundreds of taxa and thousands of genes. Bioinformatics, 31(12), i44–i52. DOI: 10.1093/bioinformatics/btv234",
+      "url": "https://doi.org/10.1093/bioinformatics/btv234"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z., Wong, W. S. W., & Nielsen, R. (2005). Bayes empirical Bayes inference of amino acid sites under positive selection. Molecular Biology and Evolution, 22(4), 1107–1118. DOI: 10.1093/molbev/msi097",
+      "url": "https://doi.org/10.1093/molbev/msi097"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      312,
+      214,
+      148,
+      94.8,
+      68.4,
+      52.6,
+      58.4
+    ],
+    "backbone_node_ages": [
+      74.6,
+      124.2,
+      178.4,
+      242.6,
+      386.4,
+      468
+    ],
+    "fig1_max_ma": 500,
+    "fig1_eras": [
+      [
+        "Cambrian-Ord",
+        500,
+        443.8,
+        "#f1f5f9"
+      ],
+      [
+        "Silurian-Dev",
+        443.8,
+        358.9,
+        "#f8fafc"
+      ],
+      [
+        "Carb-Perm",
+        358.9,
+        251.9,
+        "#f1f5f9"
+      ],
+      [
+        "Mesozoic",
+        251.9,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      500,
+      400,
+      300,
+      200,
+      100,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      7.8,
+      15.2,
+      24.4,
+      36,
+      26.5,
+      44.5,
+      51.8,
+      58
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        3,
+        "Rhabditida & Cephalobida Outgroups (n=4)",
+        "Caenorhabditis elegans, Oscheius, Acrobeloides, Heterorhabditis",
+        "Bacteriovore & entomopathogenic Chromadorea root"
+      ],
+      [
+        "[B]",
+        4,
+        9,
+        "Clade I Dorylaimia Virus Vectors (n=6)",
+        "Xiphinema, Paralongidorus, Longidorus, Trichodorus",
+        "Odontostylet root ectoparasites + nepovirus/tobravirus vectors"
+      ],
+      [
+        "[C]",
+        10,
+        19,
+        "Panagrolaimomorpha & Aphelenchoidea (n=10)",
+        "Steinernema, Bursaphelenchus xylophilus, Aphelenchoides",
+        "Entomopathogenic symbionts, pine-wilt GH45 & foliar pests"
+      ],
+      [
+        "[D]",
+        20,
+        31,
+        "Basal Tylenchomorpha Plant Parasites (n=12)",
+        "Mesocriconema, Tylenchulus, Anguina, Helicotylenchus, Rotylenchulus",
+        "Ring, citrus, seed-gall & reniform HGT PCWDE acquisition"
+      ],
+      [
+        "[E]",
+        32,
+        41,
+        "Pratylenchidae Migratory Endoparasites (n=10)",
+        "Pratylenchus penetrans, P. vulnus, Radopholus similis, Hirschmanniella",
+        "Root-lesion, burrowing & rice-root cortical necrosis pests"
+      ],
+      [
+        "[F]",
+        42,
+        52,
+        "Heteroderidae Cyst Nematodes (n=11)",
+        "Heterodera glycines, H. schachtii, Globodera pallida, G. rostochiensis",
+        "Multinucleate syncytium effectors + diapause egg-cyst dormancy"
+      ],
+      [
+        "[G]",
+        53,
+        63,
+        "Meloidogynidae Root-Knot Nematodes (n=11)",
+        "Meloidogyne incognita, M. javanica, M. enterolobii, M. hapla",
+        "Multinucleate giant-cell effectors + mitotic polyploidy"
+      ]
+    ],
+    "fig1_web_svg": "nematoda-pests-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram of Plant-Parasitic & Agricultural Pest Nematodes (Nodes I-VIII)",
+    "fig1_caption": "Strictly bifurcating >=80%-gated relaxed-clock chronogram (TimeTreeLSD2) across Phylum Nematoda with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        3,
+        "Chromadorea Outgroups (n=4)",
+        ""
+      ],
+      [
+        "[B]",
+        4,
+        9,
+        "Clade I Virus Vectors (n=6)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        10,
+        19,
+        "Aphelenchoidea & Steinernema (n=10)",
+        ""
+      ],
+      [
+        "[D]",
+        20,
+        31,
+        "Basal Tylenchomorpha (n=12)",
+        "9,3,2,3"
+      ],
+      [
+        "[E]",
+        32,
+        41,
+        "Pratylenchidae Root-Lesion (n=10)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        42,
+        52,
+        "Heteroderidae Cyst Nematodes (n=11)",
+        ""
+      ],
+      [
+        "[G]",
+        53,
+        63,
+        "Meloidogynidae Root-Knot (n=11)",
+        "10,3,2,3"
+      ]
+    ],
+    "fig2_web_svg": "nematoda-pests-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Empirical Patristic Phylogram Across >=80%-Gated Phylum Nematoda Pest OTUs",
+    "fig2_caption": "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) with unified root-to-tip backbone, B&W alternating sectors, and sector-prefixed perimeter IDs.",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T003",
+        0
+      ],
+      [
+        "Node II",
+        "B:T007",
+        1
+      ],
+      [
+        "Node III",
+        "C:T015",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T023",
+        3
+      ],
+      [
+        "Node V",
+        "D:T028",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T037",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T047",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T059",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T059",
+      "G:T055"
+    ],
+    "fig3_web_svg": "nematoda-pests-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species bifurcating quartet coalescent species tree across all Nematoda pest strata with empirical CU branch lengths, 61-split q1 concordance, and ABBA-BABA introgression tests.",
+    "fig4a_web_svg": "nematoda-pests-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional Standardized COX1/CYTB Bayesian Coalescent Skyline Matrix Across Global Agricultural Pest Nematodes (Cohorts R1-R6; N = 216)",
+    "fig4a_caption": "Six regional mtDNA COX1/CYTB coalescent skylines (25,000 MCMC generations) across Meloidogyne incognita, M. javanica/arenaria, Globodera pallida/rostochiensis, Heterodera glycines/schachtii, Pratylenchus, and Bursaphelenchus xylophilus.",
+    "fig4b_web_svg": "nematoda-pests-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Nuclear LSU 28S rDNA (4Ne) vs. HGT GH5 Cellulase Loci (Cohorts L1-L6; N = 216)",
+    "fig4b_caption": "Paired multi-locus skylines across cyst (Heterodera/Globodera) and root-knot/lesion (Meloidogyne/Pratylenchus) cohorts separating maternal mtDNA expansion from Katoh E-INS-i LSU 28S rDNA and HGT cellulase/effector coding sweeps.",
+    "fig5_short_fam_titles": [
+      "HGT Plant-Cell-Wall Degrading GH5 Endoglucanases (eng)",
+      "Esophageal Stylet Calreticulin Effectors (CRT1)",
+      "Anhydrobiosis Thermal Stress Chaperone (hsp-70)",
+      "Xenobiotic Detoxification Cytochrome P450s (cyp-31A2 / CYP14)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: HGT Cellulase (GH5)",
+      "FAM-02: Stylet Effector (CRT1)",
+      "FAM-03: Chaperone (hsp-70)",
+      "FAM-04: Detox P450 (cyp-31A2, 1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | CYP31A2 Structure & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Microsomal P450 Fold (461 Ca Threaded with C. elegans cyp-31A2)",
+    "fig5_web_svg": "nematoda-pests-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP31A2 Heme-Thiolate Active Site",
+    "fig5_caption": "Translated Universal Standard Code 1 amino-acid motif alignments across 48 Nematoda non-EST NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Caenorhabditis elegans cyp-31A2 structure threaded on 1TQN (2.05 A) with HEM A 508 and Cys442-Sg thiolate coordination.",
+    "fig6_web_svg": "nematoda-pests-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Combinatorial Model Comparison Across Pipeline A & Pipeline B (Nematoda)",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Nematoda supermatrix) and Pipeline B (12 agricultural pest nematode coalescent cohorts, N = 432).",
+    "fig6_clade_label": "Phylum Nematoda",
+    "fig6_p450_label": "cyp-31A2 / HGT GH5 / CRT1 / hsp-70",
+    "fig6_its_label": "Meloidogyne & Heterodera 28S rDNA",
+    "supp_s1_fasta_name": "supp_s1_cyp31a2_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (C. elegans cyp-31A2 / cyp-14A / cyp-33E1 / cyp-35C1, Code 1)",
+    "supp_s1_source": "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS (FAM-04 Code 1)",
+    "supp_s1_stem": "nematoda-pests-supp-s1-cyp31a2-alignview",
+    "supp_s2_title": "Cohort L5 Meloidogyne Nuclear LSU 28S D2-D3 Ribosomal rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS (Cohort L5 28S rDNA)",
+    "supp_s2_stem": "nematoda-pests-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "Phylum Nematoda Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "nematoda-pests-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Convergent Origins of Stylet Plant Parasitism, HGT Cellulases & Pest Diversification Across Phylum Nematoda",
+    "section1_p1": "Plant-parasitic nematodes (Phylum Nematoda) inflict major global crop losses across staple grains, legumes, solanaceous tubers, perennial orchards, and forestry biomes. Herbivory on living plants arose independently across Clade I Dorylaimia virus vectors (Longidoridae, Trichodoridae), Clade IVa Aphelenchoidea (Bursaphelenchus xylophilus, Aphelenchoides besseyi), and the Clade IVb Tylenchomorpha radiation (Criconematidae, Tylenchulidae, Anguinidae, Hoplolaimidae, Pratylenchidae, Heteroderidae, Meloidogynidae) rooted on Chromadorea bacteriovore and entomopathogenic outgroups.",
+    "section1_p2": "In v3.0.0, all 64 stratified Nematoda OTUs route through generalized bio-suite-seqnet with strict GenBank FASTA title classification separating complete mitogenomes from short 28S/18S rRNA submissions, ensuring pure COX1 codon frames under Invertebrate Mitochondrial Code 5 while auditing four homogeneous Universal Standard Code 1 nuclear functional families (GH5, CRT1, hsp-70, and P450).",
+    "section2_title": "Per-Locus BIC ModelTest, RY3 Compositional Collapse & Calibrated Phylum Nematoda Clock",
+    "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA Hybridization & 32-Chain RuNIE Audit",
+    "section4_title": "HGT Cellulase, Calreticulin Effector, Hsp70 & Cytochrome P450 Selection (1TQN)",
+    "section4_body": "Across verified non-EST Nematoda nuclear coding alignments under Universal Standard Code 1, 61-state Goldman-Yang codon models quantify purifying constraint and episodic selection on horizontally transferred GH5 beta-1,4-endoglucanases (FAM-01), esophageal gland calreticulin CRT1 effectors (FAM-02), anhydrobiosis chaperone hsp-70 (FAM-03), and microsomal detoxification cytochrome P450s (FAM-04: cyp-31A2 / CYP14 / CYP33 / CYP35) threaded onto PDB 1TQN (2.05 A) preserving the distal I-helix dioxygen groove and Cys442 proximal heme-thiolate bond.",
+    "section5_title": "Global Nematode Skylines (mtDNA vs. 28S rDNA) & Stage 3C COI-5P Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Integrating partitioned RY3 phylogenomics, Quartet MSC reconciliation, and functional codon selection across Phylum Nematoda clarifies both deep Cambrian-Mesozoic stylet origins and Cenozoic polyploid Meloidogyne crop-pest radiations while eliminating compositional LBA artifacts in AT-rich Chromadorean mitogenomes.",
+      "Strict pre-MSA motif and post-MSA codon auditing under Universal Standard Code 1 guarantees zero spurious termination artifacts and isolates genuine evolutionary conservation across HGT GH5 cellulases, CRT1 stylet effectors, hsp-70 chaperones, and detoxification P450s.",
+      "Separating mitochondrial loci cleanly from nuclear LSU 28S D2-D3 rDNA cohorts prevents inter-subunit alignment stagger in Katoh E-INS-i skylines and grounds downstream bridgehead comparisons across transoceanic seed-potato, soybean, and timber trade corridors."
+    ],
+    "latex_intro": "Plant-parasitic and free-living nematodes across Phylum Nematoda span Chromadorea outgroups [A] through Clade I virus vectors [B], Aphelenchoidea [C], and sedentary cyst/root-knot parasites [D]-[G] in Version 3.0.0.",
+    "seed_base": 20261127
+  }
+}

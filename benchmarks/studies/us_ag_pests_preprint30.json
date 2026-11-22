@@ -1,0 +1,1960 @@
+{
+  "study_slug": "us-agricultural-arthropod-pests",
+  "fig_prefix": "us-ag-pests",
+  "run_id": "runie-native-us-ag-pests-30-v2",
+  "preprint_slug": "us-agricultural-arthropod-pests-preprint",
+  "discovery_slug": "us-agricultural-arthropod-pests-phylogenomics",
+  "validation_set_id": "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS",
+  "preprint_label": "PREPRINT-30",
+  "preprint_version": "2.0.0",
+  "concept_doi": "10.5281/zenodo.24359245",
+  "remediation_note": "Version 2.0.0 re-executed Stage 1-5 under generalized declarative bio-suite-supervisor + bio-suite-seqnet codon QC: (1) Stage 1/2 mitochondrial COI/PCG extraction now requires >2400 bp homologous matching without blind mitogenome slicing, yielding a clean frame-locked COX1 S3 core; (2) Stage 4 families were de-mixed into strictly single-family alignments (FAM-01 ace-1, FAM-02 Orco, FAM-03 Hsp70, FAM-04 Clan-3 CYP6) evaluated with Universal Standard PAML Genetic Code 1 (icode = 0); (3) Skyline Cohorts L2 and L5 (Supp S2) were scoped cleanly to single-subunit LSU 28S rDNA (D1-D2).",
+  "telemetry_filename": "us-agricultural-arthropod-pests-native-biosuite.json",
+  "companion_label": "Lab Discovery",
+  "title": "Partitioned ModelTest Phylogenomics, Insecticide-Target Selection, and Bayesian Coalescent Dynamics Across 64 U.S. Agricultural Arthropod Pests",
+  "subtitle_prefix": "100% Native Rust Genetic Code 5 & 1 Partitioned ModelTest Phylogenomics",
+  "category": "Entomology, Agricultural Phylogenomics & Population Genetics",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Population Genetics)",
+  "taxonomic_scope": "Chelicerata Acari Outgroups [A] + Polyneoptera Orthoptera [B] + Paraneoptera Vectors [C] + Hymenoptera Fire Ants [D] + Coleoptera Beetles [E] + Diptera Fruit/Livestock Flies [F] + Lepidoptera Moths [G]",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/us_ag_pests_preprint30_design.json",
+  "cache_subdir": "us_ag_pests_val_069",
+  "seqnet_sqlite_name": "seqnet_us_ag_pests_069.sqlite",
+  "nexus_filename": "us_ag_pests_64taxa.nex",
+  "supermatrix_fasta_name": "us_ag_pests_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "usag_mito_A",
+      "query": "(\"Rhipicephalus\"[Organism] OR \"Tetranychus\"[Organism] OR \"Panonychus\"[Organism]) AND mitochondrion[Filter] AND 12000:18000[SLEN]",
+      "target_n": 14,
+      "min_bp": 12000,
+      "max_bp": 18000
+    },
+    {
+      "cache_key": "usag_mito_B",
+      "query": "(\"Anabrus simplex\"[Organism] OR \"Melanoplus\"[Organism] OR \"Schistocerca\"[Organism] OR \"Camnula\"[Organism]) AND mitochondrion[Filter] AND 14000:18500[SLEN]",
+      "target_n": 14,
+      "min_bp": 14000,
+      "max_bp": 18500
+    },
+    {
+      "cache_key": "usag_mito_C",
+      "query": "(\"Frankliniella\"[Organism] OR \"Thrips\"[Organism] OR \"Lycorma delicatula\"[Organism] OR \"Diaphorina citri\"[Organism] OR \"Bactericera\"[Organism] OR \"Planococcus\"[Organism] OR \"Phenacoccus\"[Organism]) AND mitochondrion[Filter] AND 13000:18500[SLEN]",
+      "target_n": 18,
+      "min_bp": 13000,
+      "max_bp": 18500
+    },
+    {
+      "cache_key": "usag_mito_D",
+      "query": "(\"Solenopsis\"[Organism] OR \"Linepithema humile\"[Organism] OR \"Wasmannia\"[Organism]) AND mitochondrion[Filter] AND 14000:18500[SLEN]",
+      "target_n": 12,
+      "min_bp": 14000,
+      "max_bp": 18500
+    },
+    {
+      "cache_key": "usag_mito_E",
+      "query": "(\"Leptinotarsa\"[Organism] OR \"Diabrotica\"[Organism] OR \"Sitophilus\"[Organism] OR \"Rhyzopertha dominica\"[Organism] OR \"Tribolium\"[Organism] OR \"Anthonomus\"[Organism]) AND mitochondrion[Filter] AND 14000:19000[SLEN]",
+      "target_n": 18,
+      "min_bp": 14000,
+      "max_bp": 19000
+    },
+    {
+      "cache_key": "usag_mito_F",
+      "query": "(\"Drosophila suzukii\"[Organism] OR \"Drosophila biarmipes\"[Organism] OR \"Drosophila melanogaster\"[Organism] OR \"Cochliomyia\"[Organism] OR \"Lucilia sericata\"[Organism] OR \"Haematobia\"[Organism] OR \"Stomoxys\"[Organism]) AND mitochondrion[Filter] AND 14000:19500[SLEN]",
+      "target_n": 16,
+      "min_bp": 14000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_mito_G",
+      "query": "(\"Plutella\"[Organism] OR \"Cydia pomonella\"[Organism] OR \"Grapholita molesta\"[Organism] OR \"Plodia interpunctella\"[Organism] OR \"Ephestia\"[Organism] OR \"Trichoplusia ni\"[Organism] OR \"Spodoptera\"[Organism] OR \"Helicoverpa zea\"[Organism]) AND mitochondrion[Filter] AND 14000:18500[SLEN]",
+      "target_n": 20,
+      "min_bp": 14000,
+      "max_bp": 18500
+    },
+    {
+      "cache_key": "usag_pmt_a1",
+      "query": "\"Rhipicephalus microplus\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_a2",
+      "query": "\"Rhipicephalus annulatus\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_a3",
+      "query": "\"Tetranychus urticae\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_b1",
+      "query": "\"Anabrus simplex\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_b2",
+      "query": "\"Melanoplus sanguinipes\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_b3",
+      "query": "\"Schistocerca americana\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_c1",
+      "query": "\"Frankliniella occidentalis\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_c2",
+      "query": "\"Lycorma delicatula\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_c3",
+      "query": "\"Diaphorina citri\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_d1",
+      "query": "\"Solenopsis invicta\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_d2",
+      "query": "\"Solenopsis richteri\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_d3",
+      "query": "\"Linepithema humile\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_e1",
+      "query": "\"Leptinotarsa decemlineata\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_e2",
+      "query": "\"Sitophilus oryzae\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_e3",
+      "query": "\"Rhyzopertha dominica\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_f1",
+      "query": "\"Drosophila suzukii\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_f2",
+      "query": "\"Cochliomyia hominivorax\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_f3",
+      "query": "\"Haematobia irritans\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_g1",
+      "query": "\"Plutella xylostella\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_g2",
+      "query": "\"Cydia pomonella\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    },
+    {
+      "cache_key": "usag_pmt_g3",
+      "query": "\"Plodia interpunctella\"[Organism] AND mitochondrion[Filter] AND 12000:19500[SLEN]",
+      "target_n": 1,
+      "min_bp": 12000,
+      "max_bp": 19500
+    }
+  ],
+  "fallback_mito_accessions": [],
+  "s4_banner_title": "U.S. Agricultural Arthropod Pests",
+  "anchor_species": "helicoverpa zea",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Chelicerata Acari Outgroup",
+      "family": "Ixodidae",
+      "species": "Rhipicephalus microplus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Chelicerata Acari Outgroup",
+      "family": "Ixodidae",
+      "species": "Rhipicephalus annulatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Chelicerata Acari Outgroup",
+      "family": "Tetranychidae",
+      "species": "Tetranychus urticae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Chelicerata Acari Outgroup",
+      "family": "Tetranychidae",
+      "species": "Tetranychus pacificus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T005",
+      "sector_code": "[A] Chelicerata Acari Outgroup",
+      "family": "Tetranychidae",
+      "species": "Tetranychus mcdanieli",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T006",
+      "sector_code": "[A] Chelicerata Acari Outgroup",
+      "family": "Tetranychidae",
+      "species": "Panonychus ulmi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Polyneoptera Orthoptera Rangeland",
+      "family": "Tettigoniidae",
+      "species": "Anabrus simplex",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Polyneoptera Orthoptera Rangeland",
+      "family": "Acrididae",
+      "species": "Melanoplus sanguinipes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Polyneoptera Orthoptera Rangeland",
+      "family": "Acrididae",
+      "species": "Melanoplus differentialis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Polyneoptera Orthoptera Rangeland",
+      "family": "Acrididae",
+      "species": "Melanoplus bivittatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T011",
+      "sector_code": "[B] Polyneoptera Orthoptera Rangeland",
+      "family": "Acrididae",
+      "species": "Schistocerca americana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T012",
+      "sector_code": "[B] Polyneoptera Orthoptera Rangeland",
+      "family": "Acrididae",
+      "species": "Camnula pellucida",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Thripidae",
+      "species": "Frankliniella occidentalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Thripidae",
+      "species": "Frankliniella fusca",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Thripidae",
+      "species": "Thrips tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Thripidae",
+      "species": "Thrips palmi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Fulgoridae",
+      "species": "Lycorma delicatula",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Liviidae",
+      "species": "Diaphorina citri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Liviidae",
+      "species": "Bactericera cockerelli",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Liviidae",
+      "species": "Cacopsylla pyricola",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Pseudococcidae",
+      "species": "Antonina graminis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Pseudococcidae",
+      "species": "Phenacoccus solenopsis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Pseudococcidae",
+      "species": "Planococcus citri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Pseudococcidae",
+      "species": "Pseudococcus viburni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T025",
+      "sector_code": "[C] Paraneoptera Thrips Psyllids SLF & Mealybugs",
+      "family": "Pseudococcidae",
+      "species": "Maconellicoccus hirsutus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Hymenoptera Formicidae Fire Ants",
+      "family": "Formicidae",
+      "species": "Solenopsis invicta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Hymenoptera Formicidae Fire Ants",
+      "family": "Formicidae",
+      "species": "Solenopsis richteri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Hymenoptera Formicidae Fire Ants",
+      "family": "Formicidae",
+      "species": "Solenopsis geminata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Hymenoptera Formicidae Fire Ants",
+      "family": "Formicidae",
+      "species": "Solenopsis xyloni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Hymenoptera Formicidae Fire Ants",
+      "family": "Formicidae",
+      "species": "Linepithema humile",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T031",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Chrysomelidae",
+      "species": "Leptinotarsa decemlineata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T032",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Chrysomelidae",
+      "species": "Leptinotarsa juncta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Chrysomelidae",
+      "species": "Diabrotica virgifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Curculionidae",
+      "species": "Sitophilus granarius",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Curculionidae",
+      "species": "Sitophilus oryzae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Curculionidae",
+      "species": "Sitophilus zeamais",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Bostrichidae",
+      "species": "Rhyzopertha dominica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Bostrichidae",
+      "species": "Prostephanus truncatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Tenebrionidae",
+      "species": "Tribolium castaneum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Tenebrionidae",
+      "species": "Tribolium confusum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Coleoptera Crop & Stored Grain Beetles",
+      "family": "Curculionidae",
+      "species": "Anthonomus grandis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T042",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Drosophilidae",
+      "species": "Drosophila suzukii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Drosophilidae",
+      "species": "Drosophila biarmipes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Drosophilidae",
+      "species": "Drosophila subpulchrella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Drosophilidae",
+      "species": "Drosophila melanogaster",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Calliphoridae",
+      "species": "Cochliomyia hominivorax",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Calliphoridae",
+      "species": "Cochliomyia macellaria",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Calliphoridae",
+      "species": "Lucilia sericata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Muscidae",
+      "species": "Haematobia irritans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Diptera Soft-Fruit & Livestock Flies",
+      "family": "Muscidae",
+      "species": "Stomoxys calcitrans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T051",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Plutellidae",
+      "species": "Plutella xylostella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T052",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Plutellidae",
+      "species": "Plutella australiana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T053",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Tortricidae",
+      "species": "Cydia pomonella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Tortricidae",
+      "species": "Grapholita molesta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Tortricidae",
+      "species": "Choristoneura rosaceana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Pyralidae",
+      "species": "Plodia interpunctella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Pyralidae",
+      "species": "Ephestia kuehniella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Pyralidae",
+      "species": "Amyelois transitella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Pyralidae",
+      "species": "Galleria mellonella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Noctuidae",
+      "species": "Trichoplusia ni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Noctuidae",
+      "species": "Spodoptera frugiperda",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Noctuidae",
+      "species": "Spodoptera exigua",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Noctuidae",
+      "species": "Helicoverpa zea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Lepidoptera Orchard Brassica & Grain Moths",
+      "family": "Noctuidae",
+      "species": "Agrotis ipsilon",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Neurotoxic Organophosphate/Carbamate Target-Site Acetylcholinesterase (ace-1 / ace-2)",
+      "physiological_role": "Synaptic cholinesterase hydrolyzing acetylcholine in arthropod cholinergic neuromuscular and central nervous synapses under organophosphate and carbamate selection",
+      "gene_symbol": "ace-1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Leptinotarsa decemlineata\"[Organism] OR \"Diabrotica virgifera\"[Organism] OR \"Sitophilus oryzae\"[Organism] OR \"Tribolium castaneum\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Helicoverpa zea\"[Organism] OR \"Spodoptera frugiperda\"[Organism] OR \"Spodoptera exigua\"[Organism] OR \"Cydia pomonella\"[Organism]) AND (\"acetylcholinesterase\"[Title] OR \"ace-1\"[Title] OR \"ace1\"[Title] OR \"ace-2\"[Title]) AND 1200:2600[SLEN] AND mRNA[Filter] NOT \"sodium channel\"[Title] NOT para[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]",
+        "(\"Drosophila melanogaster\"[Organism] OR \"Drosophila suzukii\"[Organism] OR \"Lucilia sericata\"[Organism] OR \"Frankliniella occidentalis\"[Organism] OR \"Solenopsis invicta\"[Organism] OR \"Tetranychus urticae\"[Organism] OR \"Diaphorina citri\"[Organism] OR \"Myzus persicae\"[Organism] OR \"Musca domestica\"[Organism]) AND (\"acetylcholinesterase\"[Title] OR \"ace-1\"[Title] OR \"ace1\"[Title] OR \"ace-2\"[Title] OR Ace[Title]) AND 1200:2600[SLEN] AND mRNA[Filter] NOT \"sodium channel\"[Title] NOT para[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Insecta[Organism] AND (\"acetylcholinesterase\"[Title] OR \"ace-1\"[Title]) AND 1200:2600[SLEN] AND mRNA[Filter] NOT \"sodium channel\"[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "usag_fam01_ace1_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1200,
+        "max_bp": 2600,
+        "max_domain_bp": null,
+        "min_aa_len": 350,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "Active-site-Ser",
+            "pos_min": 180,
+            "pos_max": 340,
+            "patterns": [
+              "FGESAG",
+              "FGE.AG"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Host-Finding Olfactory Odorant Receptor Coreceptor (Orco / Or83b)",
+      "physiological_role": "Obligate heteromeric olfactory ion-channel subunit forming functional pheromone and host-plant volatile receptor complexes across neopteran agricultural pests",
+      "gene_symbol": "Orco",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Drosophila melanogaster\"[Organism] OR \"Drosophila suzukii\"[Organism] OR \"Spodoptera frugiperda\"[Organism] OR \"Spodoptera exigua\"[Organism] OR \"Helicoverpa zea\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Cydia pomonella\"[Organism] OR \"Tribolium castaneum\"[Organism] OR \"Leptinotarsa decemlineata\"[Organism] OR \"Diabrotica virgifera\"[Organism] OR \"Solenopsis invicta\"[Organism] OR \"Diaphorina citri\"[Organism] OR \"Lycorma delicatula\"[Organism] OR \"Frankliniella occidentalis\"[Organism]) AND (\"odorant receptor coreceptor\"[Title] OR \"odorant receptor co-receptor\"[Title] OR \"Orco\"[Gene] OR \"Or83b\"[Title] OR \"odorant receptor 83b\"[Title]) AND 1100:2200[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]",
+        "Insecta[Organism] AND (\"odorant receptor coreceptor\"[Title] OR \"odorant receptor co-receptor\"[Title] OR Orco[Title]) AND 1100:2200[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "usag_fam02_orco_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 2200,
+        "max_domain_bp": null,
+        "min_aa_len": 320,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Overwintering Diapause & Arid Thermal Chaperone (Hsp70 / HSC70)",
+      "physiological_role": "ATP-dependent 70 kDa molecular chaperone stabilizing folded proteins during cold-hardiness diapause, grain-storage desiccation, and summer field heat shocks",
+      "gene_symbol": "Hsp70",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Drosophila melanogaster\"[Organism] OR \"Drosophila suzukii\"[Organism] OR \"Spodoptera frugiperda\"[Organism] OR \"Spodoptera exigua\"[Organism] OR \"Helicoverpa zea\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Cydia pomonella\"[Organism] OR \"Tribolium castaneum\"[Organism] OR \"Leptinotarsa decemlineata\"[Organism] OR \"Sitophilus zeamais\"[Organism] OR \"Frankliniella occidentalis\"[Organism] OR \"Tetranychus urticae\"[Organism] OR \"Lucilia sericata\"[Organism] OR \"Trichoplusia ni\"[Organism]) AND (\"heat shock protein 70\"[Title] OR \"heat shock 70 kDa\"[Title] OR Hsp70[Title] OR HSC70[Title]) AND 1600:2600[SLEN] AND mRNA[Filter] NOT \"Hsp90\"[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]",
+        "Insecta[Organism] AND (\"heat shock protein 70\"[Title] OR \"heat shock 70 kDa\"[Title] OR Hsp70[Title]) AND 1600:2600[SLEN] AND mRNA[Filter] NOT \"Hsp90\"[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "usag_fam03_hsp70_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1600,
+        "max_bp": 2600,
+        "max_domain_bp": null,
+        "min_aa_len": 480,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "ATPase-N",
+            "pos_min": 0,
+            "pos_max": 60,
+            "patterns": [
+              "GIDLGTT",
+              "GVDLGTT",
+              "GTDLGTT"
+            ]
+          },
+          {
+            "name": "ATPase-Core",
+            "pos_min": 170,
+            "pos_max": 250,
+            "patterns": [
+              "IFDLGGG",
+              "VFDLGGG"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Insecticide Detoxification & Xenobiotic Cytochrome P450s (CYP6 Clan-3 Subfamily)",
+      "physiological_role": "Microsomal heme-thiolate monooxygenases oxidizing plant allelochemicals, pyrethroids, neonicotinoids, and diamides via the conserved CYP6 I-helix and heme Cys-loop",
+      "gene_symbol": "CYP6",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Leptinotarsa decemlineata\"[Organism] OR \"Diabrotica virgifera\"[Organism] OR \"Tribolium castaneum\"[Organism] OR \"Sitophilus\"[Organism]) AND (\"cytochrome P450 6\"[Title] OR CYP6*[Title] OR CYP6BQ*[Title] OR CYP6FD*[Title] OR CYP6[Title]) AND 1300:2300[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]",
+        "(\"Helicoverpa\"[Organism] OR \"Spodoptera\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Cydia pomonella\"[Organism] OR \"Trichoplusia ni\"[Organism]) AND (\"cytochrome P450 6\"[Title] OR CYP6AE*[Title] OR CYP6AB*[Title] OR CYP6B*[Title] OR CYP6[Title]) AND 1300:2300[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]",
+        "(\"Drosophila melanogaster\"[Organism] OR \"Drosophila suzukii\"[Organism] OR \"Musca domestica\"[Organism] OR \"Bactrocera dorsalis\"[Organism] OR \"Bemisia tabaci\"[Organism] OR \"Diaphorina citri\"[Organism] OR \"Myzus persicae\"[Organism]) AND (\"cytochrome P450 6\"[Title] OR CYP6A*[Title] OR CYP6G*[Title] OR CYP6D*[Title] OR CYP6CM*[Title] OR CYP6[Title]) AND 1300:2300[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Insecta[Organism] AND (\"cytochrome P450 6\"[Title] OR CYP6B*[Title] OR CYP6G*[Title] OR CYP6A*[Title]) AND 1300:2300[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "usag_fam04_cyp6_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1300,
+        "max_bp": 2300,
+        "max_domain_bp": 1650,
+        "min_aa_len": 420,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "decemlineata",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "I-helix",
+            "pos_min": 250,
+            "pos_max": 350,
+            "patterns": [
+              "AG.ET",
+              "AG.DT",
+              "AG.ES",
+              "AG.DS",
+              "SG.ET",
+              "SG.DT",
+              "GG.ET",
+              "GG.DT",
+              "AA.ET",
+              "AA.DT"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 390,
+            "pos_max": 490,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.7
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "us_ag_pests_cyp6_1tqn.pdb",
+    "gene_symbol": "CYP6",
+    "template_label": "1TQN_A (2.05 A Microsomal P450 + HEM A 508)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (Insect CYP6 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala305-Gly306-Tyr/Glu/Asp-Glu/Thr308-Thr309 (I-Helix Distal O2 Groove)",
+      "SRS1 B'-Region (1TQN 100-126; Substrate-Access Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Regional COX1 (R1-R6)",
+      "region_label": "U.S. Soft-Fruit Berry Belts",
+      "clade_lineage": "Diptera Drosophilidae",
+      "locus_name": "COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0177,
+      "source_id": "P30-R1",
+      "locality": "U.S. Soft-Fruit Berry Belts",
+      "cache_key": "usag_pop_r1",
+      "query": "\"Drosophila suzukii\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Drosophila suzukii\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Regional COX1 (R1-R6)",
+      "region_label": "U.S. Potato & Solanaceae Belt",
+      "clade_lineage": "Coleoptera Chrysomelidae",
+      "locus_name": "COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0165,
+      "source_id": "P30-R2",
+      "locality": "U.S. Potato & Solanaceae Belt",
+      "cache_key": "usag_pop_r2",
+      "query": "\"Leptinotarsa decemlineata\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Diabrotica virgifera\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Regional COX1 (R1-R6)",
+      "region_label": "Pacific NW & Mid-Atlantic Orchards",
+      "clade_lineage": "Lepidoptera Tortricidae",
+      "locus_name": "COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0177,
+      "source_id": "P30-R3",
+      "locality": "Pacific NW & Mid-Atlantic Orchards",
+      "cache_key": "usag_pop_r3",
+      "query": "\"Cydia pomonella\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Grapholita molesta\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Regional COX1 (R1-R6)",
+      "region_label": "Florida, Texas & CA Citrus",
+      "clade_lineage": "Hemiptera Liviidae",
+      "locus_name": "COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.017,
+      "source_id": "P30-R4",
+      "locality": "Florida, Texas & CA Citrus",
+      "cache_key": "usag_pop_r4",
+      "query": "\"Diaphorina citri\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Frankliniella occidentalis\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Regional COX1 (R1-R6)",
+      "region_label": "Southern U.S. Rangeland & Pasture",
+      "clade_lineage": "Hymenoptera Formicidae",
+      "locus_name": "COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.016,
+      "source_id": "P30-R5",
+      "locality": "Southern U.S. Rangeland & Pasture",
+      "cache_key": "usag_pop_r5",
+      "query": "\"Solenopsis invicta\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2 NOT \"tRNA\"",
+      "fallback_query": "\"Cochliomyia hominivorax\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Regional COX1 (R1-R6)",
+      "region_label": "Midwest & Great Plains Stored Grain",
+      "clade_lineage": "Coleoptera Curculionidae",
+      "locus_name": "COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0165,
+      "source_id": "P30-R6",
+      "locality": "Midwest & Great Plains Stored Grain",
+      "cache_key": "usag_pop_r6",
+      "query": "\"Sitophilus oryzae\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Plodia interpunctella\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Multi-Locus (L1-L6)",
+      "region_label": "U.S. Brassica Corridors",
+      "clade_lineage": "Lepidoptera Plutellidae",
+      "locus_name": "COX1 (1Ne Maternal)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0177,
+      "source_id": "P30-L1",
+      "locality": "U.S. Brassica Corridors",
+      "cache_key": "usag_pop_l1",
+      "query": "\"Plutella xylostella\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Trichoplusia ni\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Multi-Locus (L1-L6)",
+      "region_label": "U.S. Protected & Greenhouse Crops",
+      "clade_lineage": "Diploid Nuclear rDNA",
+      "locus_name": "28S rDNA D1-D2 (4Ne E-INS-i)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0022,
+      "source_id": "P30-L2",
+      "locality": "U.S. Protected & Greenhouse Crops",
+      "cache_key": "usag_pop_l2_28s_v2",
+      "query": "\"Frankliniella occidentalis\"[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 400:1200[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "fallback_query": "Thripidae[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 400:1200[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "min_bp": 400,
+      "max_bp": 1200
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Multi-Locus (L1-L6)",
+      "region_label": "Insecticide Target-Site Resistance",
+      "clade_lineage": "Coleoptera Neurotoxic Locus",
+      "locus_name": "Nuclear ace-1 (Locus CDS)",
+      "locus_tag": "ace1",
+      "ploidy_scalar": 0.7,
+      "mu_rate": 0.0038,
+      "source_id": "P30-L3",
+      "locality": "Insecticide Target-Site Resistance",
+      "cache_key": "usag_pop_l3",
+      "query": "\"Leptinotarsa decemlineata\"[Organism] AND (acetylcholinesterase[Title] OR \"ace-1\"[Title]) AND 500:2400[SLEN] NOT PREDICTED NOT genome",
+      "fallback_query": "\"Plutella xylostella\"[Organism] AND (acetylcholinesterase[Title] OR \"ace-1\"[Title]) AND 500:2400[SLEN] NOT PREDICTED NOT genome",
+      "min_bp": 450,
+      "max_bp": 2450
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Multi-Locus (L1-L6)",
+      "region_label": "Mississippi-Atlantic Migratory Flyway",
+      "clade_lineage": "Lepidoptera Noctuidae",
+      "locus_name": "COX1 (1Ne Maternal)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0177,
+      "source_id": "P30-L4",
+      "locality": "Mississippi-Atlantic Migratory Flyway",
+      "cache_key": "usag_pop_l4",
+      "query": "\"Spodoptera frugiperda\"[Organism] AND (COI[Title] OR COX1[Title] OR \"subunit I\"[Title]) AND mitochondrion[Filter] AND 520:920[SLEN] NOT genome NOT COII NOT COX2",
+      "fallback_query": "\"Helicoverpa zea\"[Organism] AND (COI[Gene] OR COX1[Gene]) AND mitochondrion[Filter] AND 480:950[SLEN] NOT genome NOT COII NOT COX2",
+      "min_bp": 480,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Multi-Locus (L1-L6)",
+      "region_label": "Citrus & Specialty Crop Nursery rDNA",
+      "clade_lineage": "Diploid Nuclear rDNA",
+      "locus_name": "28S rDNA D1-D2 (4Ne E-INS-i)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.002,
+      "source_id": "P30-L5",
+      "locality": "Citrus & Specialty Crop Nursery rDNA",
+      "cache_key": "usag_pop_l5_28s_v2",
+      "query": "\"Thrips tabaci\"[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 400:1200[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "fallback_query": "Thripidae[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title] OR \"28S rRNA\"[Title]) AND 400:1200[SLEN] NOT \"18S\"[Title] NOT \"small subunit\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "min_bp": 400,
+      "max_bp": 1200
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Multi-Locus (L1-L6)",
+      "region_label": "Host-Strain Z-Linked Nuclear Locus",
+      "clade_lineage": "Z-Chromosome Tpi Coding Locus",
+      "locus_name": "Nuclear Tpi (Z-Linked CDS)",
+      "locus_tag": "Tpi",
+      "ploidy_scalar": 0.75,
+      "mu_rate": 0.0042,
+      "source_id": "P30-L6",
+      "locality": "Host-Strain Z-Linked Nuclear Locus",
+      "cache_key": "usag_pop_l6",
+      "query": "\"Spodoptera frugiperda\"[Organism] AND (\"triosephosphate isomerase\"[Title] OR Tpi[Title]) AND 250:1800[SLEN] NOT PREDICTED NOT genome",
+      "fallback_query": "\"Spodoptera frugiperda\"[Organism] AND (CYP[Title] OR cytochrome P450[Title]) NOT PREDICTED NOT genome",
+      "min_bp": 240,
+      "max_bp": 4500
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Epoch 1: Late Pleistocene Interstadial",
+      "age_max_ka": 120,
+      "age_min_ka": 45,
+      "period_label": "120-45 ka (MIS 5-3)",
+      "ecological_context": "Pleistocene refugia across North & Central America"
+    },
+    {
+      "label": "Epoch 2: LGM Refugial Contraction",
+      "age_max_ka": 45,
+      "age_min_ka": 15,
+      "period_label": "45-15 ka (LGM)",
+      "ecological_context": "Laurentide glacial bottleneck & southern refugia"
+    },
+    {
+      "label": "Epoch 3: Early Agricultural Settlement",
+      "age_max_ka": 15,
+      "age_min_ka": 7,
+      "period_label": "15-7 ka (Holocene)",
+      "ecological_context": "Post-glacial host expansion"
+    },
+    {
+      "label": "Epoch 4: Broad Agrarian Belt Formation",
+      "age_max_ka": 7,
+      "age_min_ka": 1.2,
+      "period_label": "7.0-1.2 ka",
+      "ecological_context": "Row-crop, rangeland & prairie agroecosystems"
+    },
+    {
+      "label": "Epoch 5: Trans-Atlantic & Rail/Port Trade",
+      "age_max_ka": 1.2,
+      "age_min_ka": 0.08,
+      "period_label": "1.2-0.08 ka (Pre-1945)",
+      "ecological_context": "European/Asian orchard, grain & imported fire ant arrivals"
+    },
+    {
+      "label": "Epoch 6: Modern Synthetic Control & Global Trade",
+      "age_max_ka": 0.08,
+      "age_min_ka": 0,
+      "period_label": "1945-2026 Modern",
+      "ecological_context": "Pyrethroid/diamide sweeps & 2008-2026 SWD/SLF expansions"
+    }
+  ],
+  "supp_s2_cohort_code": "L2",
+  "haplotype_panels": [
+    {
+      "panel_id": "U.S. Orchard, Brassica & Soft-Fruit Moth/Diptera (COX1-5P)",
+      "fasta_filename": "cohort_us_orchard_rowcrop_lep_cox1.fasta",
+      "cohort_indices": [
+        0,
+        2,
+        6,
+        9
+      ],
+      "slot_prefixes": [
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.72
+    },
+    {
+      "panel_id": "U.S. Sap-Feeding, Fire-Ant & Stored-Grain Beetles (COX1-5P)",
+      "fasta_filename": "cohort_us_sap_grain_livestock_cox1.fasta",
+      "cohort_indices": [
+        1,
+        3,
+        4,
+        5
+      ],
+      "slot_prefixes": [
+        "B:",
+        "C:",
+        "D:",
+        "E:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.65
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Arthropoda Crown (Chelicerata Acari [A] vs. Hexapoda [B]-[G])",
+      "sector_code": "[A]-[G]",
+      "fossil_or_biogeo_anchor": "Cambrian-Ordovician Arthropoda (Misof et al. 2014)",
+      "target_age_ma": 545,
+      "ci_min_ma": 515,
+      "ci_max_ma": 565,
+      "trophic_guild": "Acari & Hexapoda root",
+      "key_enzymes_or_loci": "16S / 12S / COX1-3 / CYTB / 18S-28S",
+      "ecosystem_role": "Root outgroup divergence (cattle fever ticks & spider mites)",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Neoptera Crown (Polyneoptera Rangeland Orthoptera [B] vs. Eumetabola [C]-[G])",
+      "sector_code": "[B]-[G]",
+      "fossil_or_biogeo_anchor": "Devonian-Carboniferous Neoptera stem",
+      "target_age_ma": 378,
+      "ci_min_ma": 345,
+      "ci_max_ma": 412,
+      "trophic_guild": "Rangeland Orthoptera",
+      "key_enzymes_or_loci": "COX1-3 / ND1-5 / rRNA / Orco / Hsp70",
+      "ecosystem_role": "Mormon cricket & migratory grasshoppers vs. Eumetabola",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Eumetabola (Paraneoptera Thrips/Psyllids/SLF/Mealybugs [C] vs. Holometabola [D]-[G])",
+      "sector_code": "[C]-[G]",
+      "fossil_or_biogeo_anchor": "Carboniferous Eumetabola stem",
+      "target_age_ma": 356,
+      "ci_min_ma": 325,
+      "ci_max_ma": 388,
+      "trophic_guild": "Phloem & rasping vectors",
+      "key_enzymes_or_loci": "COX1 / 18S / 28S / CYP6 / ace-1",
+      "ecosystem_role": "Thrips/psyllids/lanternfly/mealybugs vs. Holometabola",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Holometabola Crown (Hymenoptera Fire Ants [D] vs. Aparaglossata [E]-[G])",
+      "sector_code": "[D]-[G]",
+      "fossil_or_biogeo_anchor": "Carboniferous-Permian Holometabola",
+      "target_age_ma": 342,
+      "ci_min_ma": 312,
+      "ci_max_ma": 372,
+      "trophic_guild": "Eusocial vs. holometabolous pests",
+      "key_enzymes_or_loci": "COX1-CYTB / 18S / 28S / CYP6",
+      "ecosystem_role": "Basal Formicidae fire ant divergence from Beetles/Flies/Moths",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Aparaglossata (Coleoptera Crop/Stored-Grain [E] vs. Panorpida [F]+[G])",
+      "sector_code": "[E]-[G]",
+      "fossil_or_biogeo_anchor": "Permian Aparaglossata",
+      "target_age_ma": 322,
+      "ci_min_ma": 294,
+      "ci_max_ma": 352,
+      "trophic_guild": "Crop & stored-grain beetles",
+      "key_enzymes_or_loci": "Leptinotarsa/Sitophilus/Rhyzopertha CYP6 & ace-1",
+      "ecosystem_role": "Colorado potato beetle + grain weevils/borers vs. Panorpida",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Panorpida / Mecopterida (Diptera Fruit & Livestock Flies [F] vs. Lepidoptera [G])",
+      "sector_code": "[F]+[G]",
+      "fossil_or_biogeo_anchor": "Permian-Triassic Mecopterida",
+      "target_age_ma": 286,
+      "ci_min_ma": 256,
+      "ci_max_ma": 318,
+      "trophic_guild": "Frugivorous & myiasis Diptera",
+      "key_enzymes_or_loci": "Drosophila suzukii / Cochliomyia / Haematobia loci",
+      "ecosystem_role": "Spotted wing drosophila & screwworm/horn flies vs. Moths",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Ditrysia Divergence (Yponomeutoidea/Tortricoidea Orchards vs. Pyraloidea/Noctuoidea)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Jurassic-Early Cretaceous Ditrysia",
+      "target_age_ma": 146,
+      "ci_min_ma": 118,
+      "ci_max_ma": 178,
+      "trophic_guild": "Brassica & orchard moths",
+      "key_enzymes_or_loci": "Plutella & Cydia pomonella CYP6 / ace-1",
+      "ecosystem_role": "Diamondback & codling moths vs. Indianmeal & Noctuid moths",
+      "sector_idx": 6
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Obtectomera Crop & Stored-Product Radiation (Pyralidae + Noctuidae)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous-Paleogene pest crown",
+      "target_age_ma": 96,
+      "ci_min_ma": 74,
+      "ci_max_ma": 122,
+      "trophic_guild": "Stored-product & brassica/row moths",
+      "key_enzymes_or_loci": "Plodia / Trichoplusia / Spodoptera / Helicoverpa loci",
+      "ecosystem_role": "Indianmeal moth, cabbage looper, fall armyworm & corn earworm",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "G_T051",
+      "p2_tip": "G_T053",
+      "p3_tip": "G_T061",
+      "outgroup_tip": "A_T001",
+      "interpretation": "DBM/Codling/FAW ILS vs. deep Lepidoptera sharing"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "E_T034",
+      "p2_tip": "E_T035",
+      "p3_tip": "E_T036",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Sitophilus granarius vs. S. oryzae / S. zeamais stored-grain sibling introgression test"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "F_T042",
+      "p2_tip": "F_T043",
+      "p3_tip": "F_T044",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Spotted wing drosophila D. suzukii vs. D. biarmipes / D. subpulchrella admixture check"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "D_T026",
+      "p2_tip": "D_T027",
+      "p3_tip": "D_T028",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Red & black imported fire ants S. invicta / S. richteri vs. S. geminata check"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "U.S. Agricultural Pests",
+    "Arthropoda",
+    "Leptinotarsa decemlineata",
+    "Drosophila suzukii",
+    "Lycorma delicatula",
+    "Solenopsis invicta",
+    "CYP6",
+    "1TQN"
+  ],
+  "genetic_loci_summary": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "16S rRNA",
+    "12S rRNA",
+    "18S rRNA",
+    "28S rRNA",
+    "ace-1",
+    "Orco",
+    "Hsp70",
+    "CYP6"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Chernomor, O., von Haeseler, A., & Minh, B. Q. (2016). Terrace aware data structure for phylogenomic inference from supermatrices. Systematic Biology, 65(6), 997-1008. DOI: 10.1093/sysbio/syw037",
+      "url": "https://doi.org/10.1093/sysbio/syw037"
+    },
+    {
+      "text": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589. DOI: 10.1038/nmeth.4285",
+      "url": "https://doi.org/10.1038/nmeth.4285"
+    },
+    {
+      "text": "Misof, B., Liu, S., Meusemann, K., Peters, R. S., Donath, A., Mayer, C., ... & Zhou, X. (2014). Phylogenomics settles major divergence timings in insect evolution. Science, 346(6210), 763-767. DOI: 10.1126/science.1257570",
+      "url": "https://doi.org/10.1126/science.1257570"
+    },
+    {
+      "text": "Johnson, K. P., Dietrich, C. H., Friedrich, F., Beutel, R. G., Wipfler, B., Peters, R. S., ... & Yoshizawa, K. (2018). Phylogenomics and the evolution of hemipteroid insects. Proceedings of the National Academy of Sciences USA, 115(50), 12775-12780. DOI: 10.1073/pnas.1815820115",
+      "url": "https://doi.org/10.1073/pnas.1815820115"
+    },
+    {
+      "text": "McKenna, D. D., Shin, S., Ahrens, D., Balke, M., Beza-Beza, C., Clarke, D. J., ... & Beutel, R. G. (2019). The evolution and genomic basis of beetle diversity. Proceedings of the National Academy of Sciences USA, 116(49), 24729-24737. DOI: 10.1073/pnas.1909655116",
+      "url": "https://doi.org/10.1073/pnas.1909655116"
+    },
+    {
+      "text": "Rota-Stabelli, O., Daley, A. C., & Pisani, D. (2013). Molecular timetrees reveal a Cambrian colonization of land and a new scenario for ecdysozoan evolution. Current Biology, 23(5), 392-398. DOI: 10.1016/j.cub.2013.01.026",
+      "url": "https://doi.org/10.1016/j.cub.2013.01.026"
+    },
+    {
+      "text": "Wiegmann, B. M., Trautwein, M. D., Winkler, I. S., Barr, N. B., Kim, J. W., Lambkin, C., ... & Yeates, D. K. (2011). Episodic radiations in the fly tree of life. Proceedings of the National Academy of Sciences USA, 108(14), 5690-5695. DOI: 10.1073/pnas.1012675108",
+      "url": "https://doi.org/10.1073/pnas.1012675108"
+    },
+    {
+      "text": "Kawahara, A. Y., Plotkin, D., Espeland, M., Meusemann, K., Toussaint, E. F. A., Donath, A., ... & Breinholt, J. W. (2019). Phylogenomics reveals the evolutionary timing and pattern of butterflies and moths. Proceedings of the National Academy of Sciences USA, 116(45), 22657-22663. DOI: 10.1073/pnas.1907847116",
+      "url": "https://doi.org/10.1073/pnas.1907847116"
+    },
+    {
+      "text": "Grbic, M., Van Leeuwen, T., Clark, R. M., Rombauts, S., Rouze, P., Grbic, V., ... & Van de Peer, Y. (2011). The genome of Tetranychus urticae reveals herbivorous pest adaptations. Nature, 479(7374), 487-492. DOI: 10.1038/nature10640",
+      "url": "https://doi.org/10.1038/nature10640"
+    },
+    {
+      "text": "Oyen, K. J., & Poh, K. C. (2025). Rhipicephalus microplus (Southern cattle fever tick). Trends in Parasitology, 41(2), 160-161. DOI: 10.1016/j.pt.2024.11.004",
+      "url": "https://doi.org/10.1016/j.pt.2024.11.004"
+    },
+    {
+      "text": "Chiu, J. C., Jiang, X., Zhao, L., Hamm, C. A., Cridland, J. M., Saelao, P., ... & Begun, D. J. (2013). Genome of Drosophila suzukii, the spotted wing drosophila. G3: Genes, Genomes, Genetics, 3(12), 2257-2271. DOI: 10.1534/g3.113.008185",
+      "url": "https://doi.org/10.1534/g3.113.008185"
+    },
+    {
+      "text": "Schoville, S. D., Chen, Y. H., Andersson, M. N., Benoit, J. B., Bhandari, A., Bowsher, J. H., ... & Richards, S. (2018). A model species for agricultural pest genomics: the genome of the Colorado potato beetle, Leptinotarsa decemlineata. Scientific Reports, 8, 1931. DOI: 10.1038/s41598-018-20154-1",
+      "url": "https://doi.org/10.1038/s41598-018-20154-1"
+    },
+    {
+      "text": "Wan, F., Yin, C., Tang, R., Chen, M., Wu, Q., Huang, C., ... & Peng, Z. (2019). A chromosome-level genome assembly of Cydia pomonella provides insights into chemical ecology and insecticide resistance. Nature Communications, 10, 4237. DOI: 10.1038/s41467-019-12175-9",
+      "url": "https://doi.org/10.1038/s41467-019-12175-9"
+    },
+    {
+      "text": "You, M., Yue, Z., He, W., Yang, X., Yang, G., Xie, M., ... & Wang, J. (2013). A heterozygous moth genome provides insights into herbivory and detoxification. Nature Genetics, 45(2), 220-225. DOI: 10.1038/ng.2524",
+      "url": "https://doi.org/10.1038/ng.2524"
+    },
+    {
+      "text": "Stelinski, L. L. (2019). Ecological aspects of the vector-borne bacterial disease, Citrus Greening (Huanglongbing): Dispersal and host use by Asian citrus psyllid, Diaphorina citri Kuwayama. Insects, 10(7), 208. DOI: 10.3390/insects10070208",
+      "url": "https://doi.org/10.3390/insects10070208"
+    },
+    {
+      "text": "Barringer, L. (2020). Lycorma delicatula (spotted lanternfly). CABI Compendium, 110524. DOI: 10.1079/cabicompendium.110524",
+      "url": "https://doi.org/10.1079/cabicompendium.110524"
+    },
+    {
+      "text": "Rotenberg, D., Baumann, A. A., Ben-Mahmoud, S., Christiaens, O., Dermauw, W., Ioannidis, P., ... & Whitfield, A. E. (2020). Genome-enabled insights into the biology of thrips as crop pests. BMC Biology, 18, 142. DOI: 10.1186/s12915-020-00862-9",
+      "url": "https://doi.org/10.1186/s12915-020-00862-9"
+    },
+    {
+      "text": "Wurm, Y., Wang, J., Riba-Grognuz, O., Corona, M., Nygaard, S., Hunt, B. G., ... & Keller, L. (2011). The genome of the fire ant Solenopsis invicta. Proceedings of the National Academy of Sciences USA, 108(14), 5679-5684. DOI: 10.1073/pnas.1009690108",
+      "url": "https://doi.org/10.1073/pnas.1009690108"
+    },
+    {
+      "text": "Scott, M. J., Benoit, J. B., Davis, R. J., Bailey, S. T., Varga, V., Martinson, E. O., ... & Richards, S. (2020). Genomic analyses of a livestock pest, the New World screwworm, find potential targets for genetic control programs. Communications Biology, 3, 424. DOI: 10.1038/s42003-020-01152-4",
+      "url": "https://doi.org/10.1038/s42003-020-01152-4"
+    },
+    {
+      "text": "Tay, W. T., Meagher, R. L., Jr., Czepak, C., & Groot, A. T. (2023). Spodoptera frugiperda: Ecology, evolution, and management options of an invasive species. Annual Review of Entomology, 68, 299-317. DOI: 10.1146/annurev-ento-120220-102548",
+      "url": "https://doi.org/10.1146/annurev-ento-120220-102548"
+    },
+    {
+      "text": "Feyereisen, R. (2012). Insect CYP genes and P450 enzymes. In Insect Molecular Biology and Biochemistry (pp. 236-316). Academic Press. DOI: 10.1016/b978-0-12-384747-8.10008-x",
+      "url": "https://doi.org/10.1016/b978-0-12-384747-8.10008-x"
+    },
+    {
+      "text": "Katoh, K., & Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7: improvements in performance and usability. Molecular Biology and Evolution, 30(4), 772-780. DOI: 10.1093/molbev/mst010",
+      "url": "https://doi.org/10.1093/molbev/mst010"
+    },
+    {
+      "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., & Lanfear, R. (2020). IQ-TREE 2: New models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530-1534. DOI: 10.1093/molbev/msaa015",
+      "url": "https://doi.org/10.1093/molbev/msaa015"
+    },
+    {
+      "text": "To, T. H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068",
+      "url": "https://doi.org/10.1093/sysbio/syv068"
+    },
+    {
+      "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: Polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(1), 153. DOI: 10.1186/s12859-018-2129-y",
+      "url": "https://doi.org/10.1186/s12859-018-2129-y"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185-1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z. (2007). PAML 4: Phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088",
+      "url": "https://doi.org/10.1093/molbev/msm088"
+    },
+    {
+      "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239-2252. DOI: 10.1093/molbev/msr048",
+      "url": "https://doi.org/10.1093/molbev/msr048"
+    },
+    {
+      "text": "Williams, P. A., Cosme, J., Vidic, D. M., Ward, A., Angove, H. C., Day, P. J., ... & Jhoti, H. (2004). Crystal structures of human cytochrome P450 3A4 bound to metyrapone and progesterone. Science, 305(5684), 683-686. DOI: 10.1126/science.1099736",
+      "url": "https://doi.org/10.1126/science.1099736"
+    },
+    {
+      "text": "Clement, M., Posada, D., & Crandall, K. A. (2000). TCS: A computer program to estimate gene genealogies. Molecular Ecology, 9(10), 1657-1659. DOI: 10.1046/j.1365-294x.2000.01020.x",
+      "url": "https://doi.org/10.1046/j.1365-294x.2000.01020.x"
+    },
+    {
+      "text": "Bandelt, H. J., Forster, P., & Rohl, A. (1999). Median-joining networks for inferring intraspecific phylogenies. Molecular Biology and Evolution, 16(1), 37-48. DOI: 10.1093/oxfordjournals.molbev.a026036",
+      "url": "https://doi.org/10.1093/oxfordjournals.molbev.a026036"
+    },
+    {
+      "text": "Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology, 25(2), 163-177. DOI: 10.1080/0022250x.2001.9990249",
+      "url": "https://doi.org/10.1080/0022250x.2001.9990249"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      118,
+      145,
+      272,
+      96,
+      108,
+      72,
+      98
+    ],
+    "backbone_node_ages": [
+      148,
+      288,
+      328,
+      356,
+      378,
+      545
+    ],
+    "fig1_max_ma": 580,
+    "fig1_eras": [
+      [
+        "Cambrian-Ord",
+        580,
+        443.8,
+        "#f1f5f9"
+      ],
+      [
+        "Sil-Devonian",
+        443.8,
+        358.9,
+        "#f8fafc"
+      ],
+      [
+        "Carb-Perm",
+        358.9,
+        251.9,
+        "#f1f5f9"
+      ],
+      [
+        "Mesozoic",
+        251.9,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      550,
+      450,
+      350,
+      250,
+      150,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      6,
+      11.5,
+      17.5,
+      23,
+      29,
+      35,
+      39.5,
+      42.5
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        5,
+        "Chelicerata: Acari Outgroup (n=6)",
+        "Rhipicephalus microplus, R. annulatus, Tetranychus urticae, T. pacificus, Panonychus ulmi",
+        "Cattle fever ticks + spider mites outgroup & target-site/P450 evolution"
+      ],
+      [
+        "[B]",
+        6,
+        11,
+        "Polyneoptera: Rangeland Orthoptera (n=6)",
+        "Anabrus simplex, Melanoplus sanguinipes, M. differentialis, Schistocerca americana",
+        "Mormon cricket + migratory rangeland grasshoppers (Orco/Hsp70)"
+      ],
+      [
+        "[C]",
+        12,
+        24,
+        "Paraneoptera: Thrips/Psyllids/SLF/Mealybugs (n=13)",
+        "Frankliniella occidentalis, Thrips tabaci, Diaphorina citri, Lycorma delicatula, Antonina graminis",
+        "HLB vector, spotted lanternfly & pasture mealybugs (CYP6/ace-1)"
+      ],
+      [
+        "[D]",
+        25,
+        29,
+        "Hymenoptera: Formicidae Fire Ants (n=5)",
+        "Solenopsis invicta, S. richteri, S. geminata, S. xyloni, Linepithema humile",
+        "Red imported fire ant Southern U.S. range expansion & CYP6/ace-1"
+      ],
+      [
+        "[E]",
+        30,
+        40,
+        "Coleoptera: Crop & Stored-Grain Beetles (n=11)",
+        "Leptinotarsa decemlineata, Diabrotica virgifera, Sitophilus granarius, S. oryzae, Rhyzopertha dominica",
+        "Colorado potato beetle & internal grain-kernel borers/weevils"
+      ],
+      [
+        "[F]",
+        41,
+        49,
+        "Diptera: Soft-Fruit & Livestock Flies (n=9)",
+        "Drosophila suzukii, Cochliomyia hominivorax, C. macellaria, Haematobia irritans, Stomoxys calcitrans",
+        "Spotted wing drosophila, New World screwworm & horn/stable flies"
+      ],
+      [
+        "[G]",
+        50,
+        63,
+        "Lepidoptera: Orchard, Brassica & Grain Moths (n=14)",
+        "Cydia pomonella, Plutella xylostella, Trichoplusia ni, Plodia interpunctella, Spodoptera frugiperda",
+        "Codling moth, DBM, cabbage looper & Indianmeal moth detoxification"
+      ]
+    ],
+    "fig1_web_svg": "us-ag-pests-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram Across >=80%-Gated Multi-Locus U.S. Agricultural Arthropod Pests (Nodes I-VIII)",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) inferred under edge-linked partitioned per-locus ModelTest across >=80% supermatrix-coverage Acari outgroups and U.S. Hexapoda pest guilds ([A]-[G]; sparse/single-locus OTUs excluded to Figures 3, 4 & 7).",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        5,
+        "Acari Outgroup // (n=6)",
+        ""
+      ],
+      [
+        "[B]",
+        6,
+        11,
+        "Rangeland Orthoptera (n=6)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        12,
+        24,
+        "Paraneoptera Vectors (n=13)",
+        ""
+      ],
+      [
+        "[D]",
+        25,
+        29,
+        "Formicidae Fire Ants (n=5)",
+        "9,3,2,3"
+      ],
+      [
+        "[E]",
+        30,
+        40,
+        "Crop & Grain Coleoptera (n=11)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        41,
+        49,
+        "Soft-Fruit & Livestock Diptera (n=9)",
+        ""
+      ],
+      [
+        "[G]",
+        50,
+        63,
+        "Orchard & Grain Lepidoptera (n=14)",
+        "10,3,2,3"
+      ]
+    ],
+    "fig2_web_svg": "us-ag-pests-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Empirical Patristic Phylogram Across >=80%-Gated U.S. Agricultural Arthropod Pests",
+    "fig2_caption": "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) inferred under edge-linked proportional partitioned ModelTest across >=80%-gated U.S. pest OTUs displaying Chelicerata [A] outgroup // stem break and B&W taxonomic sectors.",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T007",
+        1
+      ],
+      [
+        "Node III",
+        "C:T017",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T026",
+        3
+      ],
+      [
+        "Node V",
+        "E:T031",
+        4
+      ],
+      [
+        "Node VI",
+        "F:T042",
+        5
+      ],
+      [
+        "Node VII",
+        "G:T053",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T060",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "E:T035",
+      "E:T036"
+    ],
+    "fig3_web_svg": "us-ag-pests-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species bifurcating multi-locus ASTRAL-equivalent quartet coalescent species tree (all 64 species including <80%/single-locus OTUs) with empirical CU branch lengths, 61-split q1 concordance, and U.S. pest ABBA-BABA introgression tests.",
+    "fig4a_web_svg": "us-ag-pests-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across U.S. Fruit, Rangeland & Stored-Grain Pests (Cohorts R1-R6; N = 216)",
+    "fig4a_caption": "Six single-species U.S. regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across Drosophila suzukii, Leptinotarsa decemlineata, Cydia pomonella, Diaphorina citri, Solenopsis invicta, and Sitophilus oryzae.",
+    "fig4b_web_svg": "us-ag-pests-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 28S rDNA (4Ne) vs. Target-Site ace-1 & Z-Linked Tpi Loci (Cohorts L1-L6; N = 216)",
+    "fig4b_caption": "Six single-species U.S. multi-locus skylines contrasting maternal mtDNA expansion from diploid Katoh E-INS-i 28S rDNA buffering (L2, L5) and resistance-sweep coding trajectories at ace-1 (L3) and Tpi (L6).",
+    "fig5_short_fam_titles": [
+      "Neurotoxic Target-Site Acetylcholinesterase (ace-1)",
+      "Host-Finding Olfactory Coreceptor (Orco / Or83b)",
+      "Overwintering Diapause Thermal Chaperone (Hsp70)",
+      "Xenobiotic & Insecticide Cytochrome P450s (CYP6 Clan-3)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Target-Site (ace-1)",
+      "FAM-02: Olfaction (Orco)",
+      "FAM-03: Thermal Diapause (Hsp70)",
+      "FAM-04: Resistance P450 (CYP6, 1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | Arthropod CYP6 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Clan-3 Microsomal P450 Fold (461 Ca Threaded with Pest CYP6)",
+    "fig5_web_svg": "us-ag-pests-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP6 Heme-Thiolate Pocket",
+    "fig5_caption": "Translated Universal Standard Code 1 amino-acid motif alignments across 48 U.S. pest NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D insect CYP6 structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
+    "fig6_web_svg": "us-ag-pests-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Partitioned vs. Unpartitioned Comparison Across Pipeline A & Pipeline B",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and 0-Beaker control (4th), alongside Pipeline B (12 single-species skylines, N = 432).",
+    "fig6_clade_label": "U.S. Agricultural Pests",
+    "fig6_p450_label": "CYP6 / ace-1 / Orco / Hsp70",
+    "fig6_its_label": "F. occidentalis & T. tabaci 28S rDNA",
+    "supp_s1_fasta_name": "supp_s1_cyp6_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (U.S. Agricultural Pest CYP6 Subfamily, Code 1)",
+    "supp_s1_source": "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS (FAM-04 CYP6)",
+    "supp_s1_stem": "us-ag-pests-supp-s1-cyp6-alignview",
+    "supp_s2_title": "Cohort L2 Frankliniella occidentalis Nuclear LSU 28S rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS (Cohort L2 28S rDNA)",
+    "supp_s2_stem": "us-ag-pests-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "U.S. Agricultural Arthropod Pests Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS (COX1 Mito Code 5)",
+    "supp_s3_stem": "us-ag-pests-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Comparative Scope Across U.S. Specialty Crop, Rangeland, Livestock & Stored-Grain Agroecosystems",
+    "section1_p1": "United States agriculture sustains interconnected arthropod pest complexes spanning specialty crop and orchard pests (Cydia pomonella, Plutella xylostella, Frankliniella occidentalis, Diaphorina citri, Lycorma delicatula, Leptinotarsa decemlineata), western rangeland and pasture taxa (Anabrus simplex, Melanoplus grasshoppers, Solenopsis invicta, Rhipicephalus microplus), livestock flies (Cochliomyia hominivorax, Haematobia irritans), and stored-grain borers and moths (Sitophilus granarius, S. oryzae, Rhyzopertha dominica, Plodia interpunctella).",
+    "section1_p2": "In v2.0.0, all 64 stratified arthropod slots ([A]-[G]) route through generalized bio-suite-seqnet and homologous mitogenome locus extraction without unseeded mitogenome slicing, separating Invertebrate Mitochondrial Code 5 organellar evolution from Universal Standard Code 1 nuclear functional evolution across single-family ace-1, Orco, Hsp70, and Clan-3 CYP6 orthologs.",
+    "section2_title": "Per-Locus BIC ModelTest, Edge-Linked Proportional Partitioning & >=80% Supermatrix Gate",
+    "section3_title": "64-Species Multispecies Coalescent Species Tree, ABBA-BABA & 32-Chain RuNIE Audit",
+    "section4_title": "Xenobiotic Resistance & Olfactory/Thermal Selection (ace-1, Orco, Hsp70 & CYP6 on 1TQN)",
+    "section4_body": "Across verified Code 1 arthropod nuclear coding alignments passing strict pre-MSA motif and post-MSA codon auditing, 61-state Goldman-Yang codon models quantify selective constraint on organophosphate/carbamate target-site acetylcholinesterase (FAM-01: ace-1), obligate olfactory coreceptor (FAM-02: Orco), thermal-diapause chaperone (FAM-03: Hsp70), and microsomal detoxification cytochrome P450s (FAM-04: CYP6) threaded onto crystal structure PDB 1TQN (2.05 A) with the conserved I-helix dioxygen groove and proximal Cys442 heme-thiolate bond.",
+    "section5_title": "Single-Species U.S. Pest Skylines (mtDNA vs. 28S rDNA) & Stage 3C Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Jointly modeling U.S. agricultural arthropods across fruit/specialty crops, western rangelands, livestock pastures, and stored-grain facilities highlights how independent evolutionary lineages—from Paleozoic Chelicerata cattle fever ticks and spider mites to Cenozoic noctuid and tortricid moths—converge on parallel agroecosystem strategies under contrasting mitochondrial and nuclear substitution regimes.",
+      "Enforcing homogeneous single-family nuclear ortholog curation under Universal Standard Code 1 alongside homologous mitochondrial locus extraction eliminates inter-gene frame contamination across COX1 and reveals clean purifying and episodic positive selection across ace-1, Orco, Hsp70, and CYP6 compartments.",
+      "Methodologically, integrating per-locus BIC ModelTest, edge-linked proportional rate optimization, the >=80% supermatrix gate, 64-species Quartet MSC, and single-subunit 28S E-INS-i cohorts yields reproducible phylogenomic and demographic inference conditional on public GenBank sampling density."
+    ],
+    "latex_intro": "United States agricultural arthropod pests span Chelicerata Acari outgroups [A] through six Hexapoda orders [B]-[G], analyzed under Genetic Codes 5 and 1 in Version 2.0.0.",
+    "seed_base": 20261130
+  }
+}

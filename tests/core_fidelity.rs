@@ -1861,4 +1861,321 @@ fn test_ml_tree_bootstrap_estimator_equivalence_and_source_guardrails() {
     );
 }
 
+#[test]
+fn test_seqnet_coding_ortholog_qc_and_post_msa_row_guard() {
+    use bio_suite::fetch::FastaRecord;
+    use bio_suite::supermatrix_audit_util::{
+        align_and_trim_codon_core_with_qc, align_and_trim_frame0_codon_core_with_qc,
+        ncbi_table_to_paml_icode,
+    };
+    use bio_suite_seqnet::coding_ortholog::{
+        audit_aligned_codon_rows, audit_coding_ortholog_cohort, fetch_refseq_gene_orthologs,
+        CodingOrthologCandidate, CodingOrthologConfig, ProteinMotifRule,
+    };
+
+    // 20-codon diverse Table-11 block (~60 nt per block); repeated 7x = 140 codons (420 bp)
+    let block = "GCTGAACTGAAAGGTGTTATCGACCGTACTTCTAACTTCTACCAGATGCCGTGGCACGAC";
+    let make_cds = |i_motif: &str, c_motif: &str, stop_at_35: bool| -> String {
+        let mut codons: Vec<&str> = Vec::with_capacity(140);
+        let unit = [
+            "GCT", "GAA", "CTG", "AAA", "GGT", "GTT", "ATC", "GAC", "CGT", "ACT",
+            "TCT", "AAC", "TTC", "TAC", "CAG", "ATG", "CCG", "TGG", "CAC", "GAT",
+        ];
+        for k in 0..140 {
+            codons.push(unit[k % unit.len()]);
+        }
+        let _ = block;
+        if stop_at_35 {
+            codons[35] = "TGA";
+        }
+        // Place 5-aa I-helix at codon 70..75
+        let i_c = match i_motif {
+            "AGHET" => ["GCT", "GGT", "CAT", "GAA", "ACT"],
+            _ => ["GCT", "GGT", "CTG", "CAG", "ACT"],
+        };
+        for (o, c) in i_c.iter().enumerate() {
+            codons[70 + o] = c;
+        }
+        // Place 10-aa Cys-loop at codon 110..120
+        let c_c = match c_motif {
+            "FGNGQRACIG" => ["TTC", "GGT", "AAC", "GGT", "CAG", "CGT", "GCT", "TGC", "ATC", "GGT"],
+            _ => ["TTC", "GGT", "AAC", "GGT", "CAG", "CGT", "GCT", "GCT", "ATC", "GGT"],
+        };
+        for (o, c) in c_c.iter().enumerate() {
+            codons[110 + o] = c;
+        }
+        codons.join("")
+    };
+
+    // Repeat AAA (Lys) and CCT (Pro) so motifs remain embedded while amino acid k-mer profile diverges sharply
+    let make_outlier_cds = || -> String {
+        let mut codons = vec!["AAA"; 140];
+        let i_c = ["GCT", "GGT", "CAT", "GAA", "ACT"];
+        for (o, c) in i_c.iter().enumerate() {
+            codons[70 + o] = c;
+        }
+        let c_c = ["TTC", "GGT", "AAC", "GGT", "CAG", "CGT", "GCT", "TGC", "ATC", "GGT"];
+        for (o, c) in c_c.iter().enumerate() {
+            codons[110 + o] = c;
+        }
+        codons.join("")
+    };
+
+    let cfg = CodingOrthologConfig {
+        cache_key: "test_cyp102a_qc".to_string(),
+        genetic_code_table: 11,
+        preserve_frame0: true,
+        min_bp: 300,
+        max_bp: 1000,
+        max_domain_bp: Some(420),
+        min_aa_len: 120,
+        max_internal_stops: 0,
+        target_n: 12,
+        pin_species_substr: Some("megaterium".to_string()),
+        blocked_organisms: vec!["anthracis".to_string()],
+        required_motifs: vec![
+            ProteinMotifRule {
+                name: "I-helix".to_string(),
+                pos_min: 55,
+                pos_max: 85,
+                patterns: vec!["AGHET".to_string(), "SGHET".to_string()],
+            },
+            ProteinMotifRule {
+                name: "Cys-loop".to_string(),
+                pos_min: 100,
+                pos_max: 130,
+                patterns: vec!["F..G...C.G".to_string()],
+            },
+        ],
+        min_anchor_aa_kmer_sim: 0.35,
+        min_row_coverage: 0.45,
+        min_consensus_aa_identity: 0.18,
+        min_consensus_dayhoff6_sim: 0.35,
+    };
+
+    let valid_cds = make_cds("AGHET", "FGNGQRACIG", false);
+    let cands = vec![
+        CodingOrthologCandidate {
+            accession: "NC_VALID_1".to_string(),
+            organism: "Priestia megaterium".to_string(),
+            title: "CYP102A1".to_string(),
+            subname: String::new(),
+            sequence_raw: valid_cds.clone(),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_VALID_2".to_string(),
+            organism: "Bacillus subtilis".to_string(),
+            title: "CYP102A2".to_string(),
+            subname: String::new(),
+            sequence_raw: valid_cds.clone(),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_VALID_3".to_string(),
+            organism: "Bacillus licheniformis".to_string(),
+            title: "CYP102A3".to_string(),
+            subname: String::new(),
+            sequence_raw: valid_cds.clone(),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_VALID_4".to_string(),
+            organism: "Bacillus velezensis".to_string(),
+            title: "CYP102A4".to_string(),
+            subname: String::new(),
+            sequence_raw: valid_cds.clone(),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_BLOCKED".to_string(),
+            organism: "Bacillus anthracis".to_string(),
+            title: "CYP102A_blocked".to_string(),
+            subname: String::new(),
+            sequence_raw: valid_cds.clone(),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_STOP_TGA".to_string(),
+            organism: "Geobacillus stearothermophilus".to_string(),
+            title: "truncated pseudogene".to_string(),
+            subname: String::new(),
+            sequence_raw: make_cds("AGHET", "FGNGQRACIG", true),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_NO_MOTIF".to_string(),
+            organism: "Paenibacillus polymyxa".to_string(),
+            title: "missing heme motif".to_string(),
+            subname: String::new(),
+            sequence_raw: make_cds("AGLQT", "FGNGQRAAIG", false),
+        },
+        CodingOrthologCandidate {
+            accession: "NC_OUTLIER".to_string(),
+            organism: "Streptomyces coelicolor".to_string(),
+            title: "frameshifted non-homolog".to_string(),
+            subname: String::new(),
+            sequence_raw: make_outlier_cds(),
+        },
+    ];
+
+    let rep = audit_coding_ortholog_cohort(&cands, &cfg);
+    assert_eq!(rep.accepted.len(), 4, "Expected 4 valid orthologs accepted");
+    assert_eq!(rep.quarantined.len(), 4, "Expected all 4 invalid orthologs quarantined");
+    assert!(rep.quarantined.iter().any(|q| q.accession == "NC_BLOCKED" && q.reason == "BLOCKED_ORGANISM"));
+    assert!(rep.quarantined.iter().any(|q| q.accession == "NC_STOP_TGA" && q.reason == "TRUNCATED_OR_EARLY_STOP"));
+    assert!(rep.quarantined.iter().any(|q| q.accession == "NC_NO_MOTIF" && q.reason == "MISSING_ORTHOLOG_MOTIF"));
+    assert!(rep.quarantined.iter().any(|q| q.accession == "NC_OUTLIER" && q.reason == "NON_HOMOLOGOUS_PROTEIN_OUTLIER"));
+
+    // Post-MSA row guard check: all-gap and unrelated tryptophan/poly-K rows must be quarantined
+    let coherent_aa = "AELKGVIDRTSNFYQMPWHD".repeat(6);
+    let coherent_nt = "GCT".repeat(120);
+    let rows = vec![
+        ("OK1".to_string(), coherent_aa.clone(), coherent_nt.clone()),
+        ("OK2".to_string(), coherent_aa.clone(), coherent_nt.clone()),
+        ("OK3".to_string(), coherent_aa.clone(), coherent_nt.clone()),
+        ("OK4".to_string(), coherent_aa.clone(), coherent_nt.clone()),
+        ("GAP_ROW".to_string(), "-".repeat(120), "---".repeat(120)),
+        ("GARBAGE_ROW".to_string(), "W".repeat(120), "TGG".repeat(120)),
+    ];
+    let (kept_idx, q_rows) = audit_aligned_codon_rows(&rows, 0.45, 0.18, 0.35);
+    assert_eq!(kept_idx, vec![0, 1, 2, 3]);
+    assert_eq!(q_rows.len(), 2);
+
+    // End-to-end align_and_trim_frame0_codon_core_with_qc drops non-homologous frameshift row
+    let recs = vec![
+        FastaRecord { id: "R1".into(), accession: "R1".into(), taxon: "Sp1".into(), common_name: String::new(), family: "F".into(), gene: "G".into(), description: String::new(), sequence: valid_cds.clone(), cached_from_disk: true },
+        FastaRecord { id: "R2".into(), accession: "R2".into(), taxon: "Sp2".into(), common_name: String::new(), family: "F".into(), gene: "G".into(), description: String::new(), sequence: valid_cds.clone(), cached_from_disk: true },
+        FastaRecord { id: "R3".into(), accession: "R3".into(), taxon: "Sp3".into(), common_name: String::new(), family: "F".into(), gene: "G".into(), description: String::new(), sequence: valid_cds.clone(), cached_from_disk: true },
+        FastaRecord { id: "R4".into(), accession: "R4".into(), taxon: "Sp4".into(), common_name: String::new(), family: "F".into(), gene: "G".into(), description: String::new(), sequence: valid_cds, cached_from_disk: true },
+        FastaRecord { id: "BAD".into(), accession: "BAD".into(), taxon: "Bad".into(), common_name: String::new(), family: "F".into(), gene: "G".into(), description: String::new(), sequence: "TTT".repeat(140), cached_from_disk: true },
+    ];
+    let (nt_kept, _, bp, _, bad_q) = align_and_trim_frame0_codon_core_with_qc(&recs, 11, 0.70, 100);
+    assert!(bp >= 300);
+    assert!(nt_kept.len() == 4 && nt_kept.iter().all(|(id, _)| id != "BAD"));
+    assert!(bad_q.iter().any(|q| q.id == "BAD"));
+
+    // Verify existing cached RefSeq CYP102A panel passes 12/12 with 0 quarantined if cache present
+    let val_cache = Path::new(env!("CARGO_MANIFEST_DIR")).join("cache/val_set_070_gram_positive");
+    if val_cache.join("gp_fam04_refseq_cyp102a_v2.json").is_file() {
+        let mut cyp_cfg = CodingOrthologConfig {
+            cache_key: "gp_fam04_refseq_cyp102a_v2".to_string(),
+            genetic_code_table: 11,
+            preserve_frame0: true,
+            min_bp: 2900,
+            max_bp: 3500,
+            max_domain_bp: Some(1395),
+            min_aa_len: 420,
+            max_internal_stops: 0,
+            target_n: 12,
+            pin_species_substr: Some("megaterium".to_string()),
+            blocked_organisms: vec!["anthracis".to_string(), "cereus".to_string()],
+            required_motifs: vec![
+                ProteinMotifRule {
+                    name: "I-helix".to_string(),
+                    pos_min: 225,
+                    pos_max: 315,
+                    patterns: vec!["AGHET".to_string(), "SGHET".to_string(), "AGFET".to_string()],
+                },
+                ProteinMotifRule {
+                    name: "Cys-loop".to_string(),
+                    pos_min: 350,
+                    pos_max: 435,
+                    patterns: vec!["F..G...C.G".to_string()],
+                },
+            ],
+            ..CodingOrthologConfig::default()
+        };
+        cyp_cfg.target_n = 12;
+        let cached_rep = fetch_refseq_gene_orthologs(&[], &cyp_cfg, &val_cache);
+        assert_eq!(cached_rep.accepted.len(), 12, "Cached gp_fam04_refseq_cyp102a_v2 must yield 12/12");
+        assert!(cached_rep.quarantined.is_empty(), "Cached gp_fam04_refseq_cyp102a_v2 must have 0 quarantined");
+    }
+
+    // Verify NCBI-to-PAML icode mapping (Table 1/5/11 -> 0 Universal; Table 2 -> 1 Vertebrate Mito)
+    assert_eq!(ncbi_table_to_paml_icode(1), 0);
+    assert_eq!(ncbi_table_to_paml_icode(11), 0);
+    assert_eq!(ncbi_table_to_paml_icode(5), 0);
+    assert_eq!(ncbi_table_to_paml_icode(2), 1);
+
+    // Generalized Table-5 codon QC drops non-COX1 >2400bp contigs and non-homologous frameshifts
+    let mito_cox1_unit = "GCTGAATTAGGTCAACCAGGTTCATTATTAGGTGATGATCAAATTTATAATGTAATTGTT";
+    let mito_cox1 = mito_cox1_unit.repeat(7);
+    let mito_recs = vec![
+        FastaRecord { id: "M1".into(), accession: "M1".into(), taxon: "Pest1".into(), common_name: String::new(), family: "F".into(), gene: "COI".into(), description: String::new(), sequence: mito_cox1.clone(), cached_from_disk: true },
+        FastaRecord { id: "M2".into(), accession: "M2".into(), taxon: "Pest2".into(), common_name: String::new(), family: "F".into(), gene: "COI".into(), description: String::new(), sequence: mito_cox1.clone(), cached_from_disk: true },
+        FastaRecord { id: "M3".into(), accession: "M3".into(), taxon: "Pest3".into(), common_name: String::new(), family: "F".into(), gene: "COI".into(), description: String::new(), sequence: mito_cox1.clone(), cached_from_disk: true },
+        FastaRecord { id: "M4".into(), accession: "M4".into(), taxon: "Pest4".into(), common_name: String::new(), family: "F".into(), gene: "COI".into(), description: String::new(), sequence: mito_cox1, cached_from_disk: true },
+        FastaRecord { id: "M_BAD_SHORT".into(), accession: "MBS".into(), taxon: "BadS".into(), common_name: String::new(), family: "F".into(), gene: "COI".into(), description: String::new(), sequence: "TTT".repeat(140), cached_from_disk: true },
+        FastaRecord { id: "M_BAD_CONTIG".into(), accession: "MBC".into(), taxon: "BadC".into(), common_name: String::new(), family: "F".into(), gene: "COI".into(), description: String::new(), sequence: "CCCCAAAAATTTTGGGG".repeat(180), cached_from_disk: true },
+    ];
+    let (m_nt, _, m_bp, _, m_q) = align_and_trim_codon_core_with_qc(&mito_recs, 5, false, 0.55, 80, 0.45, 0.18, 0.35);
+    assert!(m_bp >= 300);
+    assert_eq!(m_nt.len(), 4);
+    assert!(m_nt.iter().all(|(id, _)| id != "M_BAD_SHORT" && id != "M_BAD_CONTIG"));
+    assert!(m_q.iter().any(|q| q.id == "M_BAD_SHORT"));
+    assert!(m_q.iter().any(|q| q.id == "M_BAD_CONTIG"));
+}
+
+#[test]
+fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
+    use bio_suite::supermatrix_audit_util::DeclarativeStudyConfig;
+
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    for (fname, exp_loci, exp_pdb, exp_gcode) in [
+        ("gram_positive_preprint31.json", 10usize, "1BU7", 11u8),
+        ("us_ag_pests_preprint30.json", 16usize, "1TQN", 5u8),
+        ("nematoda_preprint27.json", 16usize, "1TQN", 5u8),
+    ] {
+        let cfg_path = manifest_dir.join("benchmarks/studies").join(fname);
+        let cfg = DeclarativeStudyConfig::load(&cfg_path)
+            .unwrap_or_else(|e| panic!("{} must load into DeclarativeStudyConfig: {}", fname, e));
+        assert_eq!(cfg.species_slots.len(), 64, "{} species_slots != 64", fname);
+        assert_eq!(cfg.locus_defs.len(), exp_loci, "{} locus_defs", fname);
+        assert_eq!(cfg.functional_families.len(), 4, "{} functional_families != 4", fname);
+        assert_eq!(cfg.skyline_cohorts.len(), 12, "{} skyline_cohorts != 12", fname);
+        assert_eq!(cfg.skyline_epochs.len(), 6, "{} skyline_epochs != 6", fname);
+        assert_eq!(cfg.haplotype_panels.len(), 2, "{} haplotype_panels != 2", fname);
+        assert_eq!(cfg.calibrated_nodes.len(), 8, "{} calibrated_nodes != 8", fname);
+        assert_eq!(cfg.abba_baba_contrasts.len(), 4, "{} abba_baba_contrasts != 4", fname);
+        assert_eq!(cfg.pdb_template.pdb_id, exp_pdb, "{} pdb_id", fname);
+        assert_eq!(cfg.genetic_code_table, exp_gcode, "{} genetic_code_table", fname);
+    }
+
+    let cfg_path = manifest_dir.join("benchmarks/studies/gram_positive_preprint31.json");
+    let cfg = DeclarativeStudyConfig::load(&cfg_path)
+        .expect("gram_positive_preprint31.json must load into DeclarativeStudyConfig");
+
+    let json_roundtrip = serde_json::to_string(&cfg).expect("serialize DeclarativeStudyConfig");
+    let cfg_rt: DeclarativeStudyConfig =
+        serde_json::from_str(&json_roundtrip).expect("deserialize roundtrip DeclarativeStudyConfig");
+    assert_eq!(cfg_rt.study_slug, cfg.study_slug);
+    assert_eq!(cfg_rt.run_id, cfg.run_id);
+
+    // Freeze the 17 legacy supervisor_*.rs files: all new studies must use JSON configs, never new .rs files.
+    let mut supervisor_files: Vec<String> = fs::read_dir(manifest_dir.join("src"))
+        .expect("read src dir")
+        .filter_map(|e| e.ok())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .filter(|name| name.starts_with("supervisor_") && name.ends_with(".rs"))
+        .collect();
+    supervisor_files.sort();
+    let expected_frozen = vec![
+        "supervisor_acanthochitonidae.rs",
+        "supervisor_basal_metazoa.rs",
+        "supervisor_basal_metazoa_figures.rs",
+        "supervisor_basal_metazoa_manuscript.rs",
+        "supervisor_china_aus_pests.rs",
+        "supervisor_china_aus_pests_manuscript.rs",
+        "supervisor_figures.rs",
+        "supervisor_gram_positive.rs",
+        "supervisor_gram_positive_manuscript.rs",
+        "supervisor_isoptera.rs",
+        "supervisor_manuscript.rs",
+        "supervisor_nematoda.rs",
+        "supervisor_nudibranchs.rs",
+        "supervisor_snails.rs",
+        "supervisor_study.rs",
+        "supervisor_us_ag_pests.rs",
+        "supervisor_us_ag_pests_manuscript.rs",
+    ];
+    assert_eq!(
+        supervisor_files, expected_frozen,
+        "Per-study Rust files are frozen at 17 legacy files; author new studies as JSON configs in benchmarks/studies/<study>.json"
+    );
+}
 

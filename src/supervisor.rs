@@ -434,6 +434,8 @@ pub struct SupervisorRunManifest {
 pub struct SupervisorRunSpec {
     pub run_id: String,
     pub preset_name: Option<String>,
+    #[serde(default)]
+    pub study_config_path: Option<String>,
     pub ncbi_accessions: Vec<String>,
     pub fasta_paths: Vec<String>,
     pub model_design: ModelDesignMode,
@@ -457,6 +459,7 @@ impl Default for SupervisorRunSpec {
         Self {
             run_id: "runie-3way-multifactorial-anopheles-mosquitos".to_string(),
             preset_name: Some("anopheles-3way".to_string()),
+            study_config_path: None,
             ncbi_accessions: Vec::new(),
             fasta_paths: Vec::new(),
             model_design: ModelDesignMode::ThreeWayMultifactorial,
@@ -2021,6 +2024,56 @@ pub fn run_autonomous_supervisor(
     cache: &PoliteCacheManager,
     runs_root_dir: &Path,
 ) -> Result<SupervisorRunManifest, String> {
+    if let Some(ref cfg_path) = spec.study_config_path {
+        let t0_dec = Instant::now();
+        let cfg = crate::supermatrix_audit_util::DeclarativeStudyConfig::load(Path::new(cfg_path))?;
+        let run_dir = runs_root_dir.join(&spec.run_id);
+        let (mut manifest, report) =
+            crate::supermatrix_audit_util::execute_declarative_study(
+                &cfg,
+                spec,
+                cache,
+                runs_root_dir,
+            )?;
+        run_supervisor_haplotype_stage(&mut manifest, &run_dir, spec)?;
+        let report_path = run_dir.join("multi-compartment-report.json");
+        if let Ok(rep_json) = serde_json::to_string_pretty(&report) {
+            let _ = fs::write(&report_path, rep_json);
+        }
+        if spec.generate_figures_and_preprint {
+            let t_fig = Instant::now();
+            let ws_root = resolve_crv_workspace_root();
+            let labs_fig_dir = ws_root.join("labs").join("figures");
+            crate::supervisor_figures::generate_declarative_locked_figures(
+                &mut manifest,
+                &report,
+                &cfg.figure_theme,
+                &run_dir,
+                Some(labs_fig_dir.as_path()),
+            )?;
+            crate::supervisor_manuscript::export_declarative_manuscript_and_staged_bundle(
+                &cfg,
+                &report,
+                &mut manifest,
+                &ws_root,
+                &run_dir,
+            )?;
+            manifest.stage_figures_tex_ms = t_fig.elapsed().as_millis().max(1);
+        }
+        manifest.total_wall_clock_ms = t0_dec.elapsed().as_millis().max(1);
+        let manifest_path = run_dir.join("run-manifest.json");
+        let manifest_json =
+            serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+        fs::write(&manifest_path, manifest_json).map_err(|e| e.to_string())?;
+        eprintln!(
+            "[bio-suite-supervisor] Declarative Run '{}' completed in {} ms -> {}",
+            manifest.run_id,
+            manifest.total_wall_clock_ms,
+            manifest_path.display()
+        );
+        return Ok(manifest);
+    }
+
     if crate::supervisor_acanthochitonidae::is_acanthochitonidae_study_target(
         spec.preset_name.as_deref(),
         &spec.run_id,
@@ -3406,21 +3459,44 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                     i += 1;
                 }
             }
+            "--study-config" | "--study" | "--config" => {
+                if let Some(v) = args.get(i + 1) {
+                    let cfg = crate::supermatrix_audit_util::DeclarativeStudyConfig::load(
+                        Path::new(v),
+                    )?;
+                    spec.study_config_path = Some(v.clone());
+                    spec.preset_name = Some(cfg.study_slug.clone());
+                    if spec.run_id == "runie-3way-multifactorial-anopheles-mosquitos" {
+                        spec.run_id = cfg.run_id.clone();
+                    }
+                    spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                    spec.bootstrap_replicates = 500;
+                    spec.enable_haplotype_clusters = true;
+                    if spec.mcmc_generations == 10_000 {
+                        spec.mcmc_generations = 25_000;
+                    }
+                    i += 1;
+                }
+            }
             "--preset" => {
                 if let Some(v) = args.get(i + 1) {
                     spec.preset_name = Some(v.clone());
                     let v_low = v.to_ascii_lowercase();
+                    let mut matched_legacy = false;
                     if spec.run_id == "runie-3way-multifactorial-anopheles-mosquitos" {
                         if v_low.contains("coleoptera") || v_low.contains("18") {
                             spec.run_id = "runie-3way-coleoptera-function-18".to_string();
+                            matched_legacy = true;
                         } else if v_low.contains("rhinoloph") || v_low.contains("21") {
                             spec.run_id = "runie-3way-rhinolophus-asia-21".to_string();
+                            matched_legacy = true;
                         } else if is_basal_metazoa_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-3way-basal-metazoa-timetree-05".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if crate::supervisor_acanthochitonidae::is_acanthochitonidae_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-acanthochitonidae-28".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3429,6 +3505,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if crate::supervisor_gram_positive::is_gram_positive_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-gram-positive-31".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3437,6 +3514,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if crate::supervisor_us_ag_pests::is_us_ag_pests_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-us-ag-pests-30".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3445,6 +3523,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if crate::supervisor_china_aus_pests::is_china_aus_pests_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-china-australia-pests-29".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3453,6 +3532,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if is_nematoda_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-nematoda-pests-27".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3461,6 +3541,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if is_isoptera_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-isoptera-global-26".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3469,6 +3550,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if is_nudibranchs_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-nudibranch-global-25".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
@@ -3477,15 +3559,42 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if is_snails_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-invasive-snails-au-nz-24".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
+                            matched_legacy = true;
                         } else if is_bemisia_study_target(Some(v.as_str()), "") {
                             spec.run_id = "runie-native-bemisia-whiteflies-23".to_string();
                             spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            if spec.mcmc_generations == 10_000 {
+                                spec.mcmc_generations = 25_000;
+                            }
+                            matched_legacy = true;
+                        }
+                    }
+                    if !matched_legacy && spec.study_config_path.is_none() {
+                        let v_us = v.replace('-', "_");
+                        let candidates = [
+                            format!("benchmarks/studies/{}.json", v),
+                            format!("benchmarks/studies/{}.json", v_us),
+                            format!("crvscience-labs/benchmarks/studies/{}.json", v),
+                            format!("crvscience-labs/benchmarks/studies/{}.json", v_us),
+                        ];
+                        if let Some(found) = candidates.iter().find(|p| Path::new(p).is_file()) {
+                            let cfg = crate::supermatrix_audit_util::DeclarativeStudyConfig::load(
+                                Path::new(found),
+                            )?;
+                            spec.study_config_path = Some(found.clone());
+                            if spec.run_id == "runie-3way-multifactorial-anopheles-mosquitos" {
+                                spec.run_id = cfg.run_id;
+                            }
+                            spec.model_design = ModelDesignMode::BioSuiteNativeOnly;
+                            spec.bootstrap_replicates = 500;
+                            spec.enable_haplotype_clusters = true;
                             if spec.mcmc_generations == 10_000 {
                                 spec.mcmc_generations = 25_000;
                             }
@@ -3647,7 +3756,26 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                     serde_json::from_str(&rep_txt).map_err(|e| e.to_string())?;
                 let ws_root = resolve_crv_workspace_root();
                 let labs_fig_dir = ws_root.join("labs").join("figures");
-                if is_basal_metazoa_study_target(None, &m.run_id) {
+                if let Some(ref cfg_path) = spec.study_config_path {
+                    let cfg = crate::supermatrix_audit_util::DeclarativeStudyConfig::load(
+                        Path::new(cfg_path),
+                    )?;
+                    run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
+                    crate::supervisor_figures::generate_declarative_locked_figures(
+                        &mut m,
+                        &rep,
+                        &cfg.figure_theme,
+                        &run_dir,
+                        Some(labs_fig_dir.as_path()),
+                    )?;
+                    crate::supervisor_manuscript::export_declarative_manuscript_and_staged_bundle(
+                        &cfg,
+                        &rep,
+                        &mut m,
+                        &ws_root,
+                        &run_dir,
+                    )?;
+                } else if is_basal_metazoa_study_target(None, &m.run_id) {
                     crate::supervisor_basal_metazoa_figures::generate_basal_metazoa_locked_figures(
                         &mut m,
                         &rep,
@@ -3771,6 +3899,25 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                     crate::supervisor_snails::export_snails_manuscript_and_staged_bundle(
                         &rep,
                         &m,
+                        &ws_root,
+                        &run_dir,
+                    )?;
+                } else if run_dir.join("study-config.json").is_file() {
+                    let cfg = crate::supermatrix_audit_util::DeclarativeStudyConfig::load(
+                        &run_dir.join("study-config.json"),
+                    )?;
+                    run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
+                    crate::supervisor_figures::generate_declarative_locked_figures(
+                        &mut m,
+                        &rep,
+                        &cfg.figure_theme,
+                        &run_dir,
+                        Some(labs_fig_dir.as_path()),
+                    )?;
+                    crate::supervisor_manuscript::export_declarative_manuscript_and_staged_bundle(
+                        &cfg,
+                        &rep,
+                        &mut m,
                         &ws_root,
                         &run_dir,
                     )?;

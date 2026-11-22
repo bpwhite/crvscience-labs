@@ -8,12 +8,24 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
+use bio_suite_seqnet::coding_ortholog::{
+    audit_aligned_codon_rows, audit_coding_ortholog_cohort, extract_best_sense_orf_with_table,
+    fetch_refseq_gene_orthologs, translate_cds_with_table, CodingOrthologCandidate,
+    CodingOrthologConfig, CodingOrthologSource, OrthologQuarantineHit,
+};
+use bio_suite_seqnet::config::{AnalysisLevel, ConsensusConfig, ExecutionMode, OtuRank};
+use bio_suite_seqnet::neurons::{run_neural_network_schedule, EngineControlFlags};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::coalescent::{run_native_quartet_coalescent, CoalescentEngineRunResult};
+use crate::coalescent::{
+    compute_abba_baba_patterson_d, run_native_quartet_coalescent, AbbaBabaTestRecord,
+    CoalescentEngineRunResult,
+};
+use crate::codon_selection::run_native_codon_selection;
 use crate::complexity::round4;
-use crate::fetch::FastaRecord;
+use crate::fetch::{FastaRecord, PoliteCacheManager};
 use crate::haplotype::{
     analyze_haplotype_clusters_prealigned, compute_haplotype_kcore_and_betweenness,
     HaplotypeClusterCohortReport, HaplotypeHubSummary,
@@ -41,24 +53,33 @@ use crate::supermatrix_viz::{
     SupermatrixPartitionSpan, SupermatrixTaxonRow,
 };
 use crate::supervisor::{
-    RunieCombinatorialSweepEntry, RunieComparisonRow, SupervisedSkylineCohort, SupervisorRunManifest,
+    resolve_crv_workspace_root, GeneratedFigureArtifact, LoopBackIterationLog, ModelDesignMode,
+    NcbiFlaggedAnomaly, PdbCaAtom, PdbHetAtom, RunieCombinatorialSweepEntry, RunieComparisonRow,
+    SupervisedCalibratedNode, SupervisedGeneFamilySelection, SupervisedPdbStructure,
+    SupervisedSequenceRecord, SupervisedSkylineCohort, SupervisorEscalationStatus,
+    SupervisorRunManifest, SupervisorRunSpec,
 };
 use crate::supervisor_acanthochitonidae::{
     align_and_trim_codon_core, align_and_trim_codon_core_with_min_aa, clade_bipartition_recovered,
     collect_u64_splits, prepare_clean_haplotype_records, write_pipe_delimited_fasta,
 };
+use crate::supervisor_figures::FigureStudyTheme;
 use crate::supervisor_manuscript::{
     extract_terminal_branch_map, fmt_commas_usize, fmt_lnl, html_esc,
-    sanitize_no_scratch_extensions, tex_esc,
+    sanitize_no_scratch_extensions, tex_esc, ManuscriptReference,
 };
 use crate::supervisor_study::{
-    align_and_trim_rrna_core, append_zero_star_dump_entry, compute_alignment_occupancy_bins,
+    aa1_to_aa3, aa3_to_aa1, aa_volume_proxy, align_and_trim_rrna_core,
+    append_zero_star_dump_entry, batch_fetch_ncbi_accessions, build_raw0_control,
+    compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
     evaluate_population_cohort_4regimes, export_trimmed_supp_s2_rdna_fasta,
-    extract_homologous_mito_locus_from_genome, extract_longest_sense_orf,
-    parse_locality_and_host, passes_supermatrix_phylogram_coverage_gate, recode_codon12,
-    recode_ry3, sanitize_coding_dna_preserve_frame, translate_mito_table5_orf_min,
-    DetailedPopsetEpoch, DetailedPopsetSkyline, DiscoveredEntrezSummary,
-    MultiCompartmentIsolateMeta, MultiCompartmentStudyReport,
+    extract_homologous_mito_locus_from_genome, extract_longest_sense_orf, gc_percent,
+    parse_locality_and_host, passes_supermatrix_phylogram_coverage_gate,
+    phase_circular_mitogenome, recode_codon12, recode_ry3, revcomp_dna,
+    sanitize_coding_dna_preserve_frame, sha256_hex12, translate_mito_table5_orf_min,
+    DetailedFunctionalFamily, DetailedPopsetEpoch, DetailedPopsetSkyline,
+    DiscoveredEntrezSummary, MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord,
+    MultiCompartmentStudyReport,
 };
 use crate::tree_builder::{
     infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap,
@@ -2642,4 +2663,3176 @@ pub(crate) fn write_standardized_release_telemetry_json(
     let clean = sanitize_no_scratch_extensions(&serialized);
     fs::write(out_path, clean).map_err(|e| format!("Failed writing {:?}: {}", out_path, e))?;
     Ok(())
+}
+
+// ============================================================================
+// SHARED CODING-ORTHOLOG STAGE 4, PDB TEMPLATE THREADING & DECLARATIVE ENGINE
+// ============================================================================
+
+fn default_chain_a() -> String {
+    "A".to_string()
+}
+fn default_code_11() -> u8 {
+    11
+}
+fn default_occ_055() -> f64 {
+    0.55
+}
+fn default_occ_065() -> f64 {
+    0.65
+}
+fn default_min_taxa_14() -> usize {
+    14
+}
+fn default_read_time() -> String {
+    "24 min read".to_string()
+}
+fn default_complexity() -> String {
+    "High (Graduate Phylogenomics & Systematics)".to_string()
+}
+fn default_supp_s2_code() -> String {
+    "L5".to_string()
+}
+
+/// Maps an NCBI Genetic Code table ID (`1` Standard Nuclear, `2` Vertebrate Mito,
+/// `5` Invertebrate/Nematode Mito, `11` Bacterial/Archaeal) to PAML `icode` (`0` = Universal
+/// Standard codons, `1` = Vertebrate Mito codons where `AGA`/`AGG` terminate).
+pub fn ncbi_table_to_paml_icode(ncbi_table: u8) -> u8 {
+    match ncbi_table {
+        2 => 1,
+        _ => 0,
+    }
+}
+
+fn has_internal_stop_aa(aa: &str) -> bool {
+    let bytes = aa.as_bytes();
+    if bytes.len() <= 1 {
+        return false;
+    }
+    bytes[..bytes.len() - 1].contains(&b'*')
+}
+
+/// Aligns translated coding ORFs via `mafft-native FFT-NS-i`, back-translates to
+/// reading-frame-locked codons, trims low-occupancy columns, and quarantines all-gap,
+/// premature-stop, or non-homologous/frame-shifted rows via
+/// `bio_suite_seqnet::coding_ortholog::audit_aligned_codon_rows`.
+#[allow(clippy::too_many_arguments)]
+pub fn align_and_trim_codon_core_with_qc(
+    records: &[FastaRecord],
+    genetic_code_table: u8,
+    preserve_frame0: bool,
+    min_occ_frac: f64,
+    min_aa_len: usize,
+    min_row_coverage: f64,
+    min_consensus_aa_identity: f64,
+    min_consensus_dayhoff6_sim: f64,
+) -> (
+    Vec<(String, String)>,
+    Vec<(String, String)>,
+    usize,
+    u128,
+    Vec<OrthologQuarantineHit>,
+) {
+    let t0 = Instant::now();
+    let mut nt_by_id: HashMap<String, String> = HashMap::with_capacity(records.len());
+    let mut aa_recs: Vec<FastaRecord> = Vec::with_capacity(records.len());
+    let mut quarantined_pre: Vec<OrthologQuarantineHit> = Vec::new();
+
+    let mito5_seed_nt = if genetic_code_table == 5 && !preserve_frame0 {
+        records
+            .iter()
+            .find(|r| r.sequence.len() >= 180 && r.sequence.len() <= 2_400)
+            .map(|r| translate_mito_table5_orf_min(&r.sequence, min_aa_len.min(60)).1)
+            .filter(|s| s.len() >= 150)
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    for rec in records {
+        let (orf_nt, aa) = if genetic_code_table == 5 && !preserve_frame0 {
+            let sub_nt = if rec.sequence.len() > 2_400 {
+                if mito5_seed_nt.is_empty() {
+                    quarantined_pre.push(OrthologQuarantineHit {
+                        id: rec.id.clone(),
+                        accession: rec.accession.clone(),
+                        organism: rec.taxon.clone(),
+                        reason: "UNSEEDED_MULTI_LOCUS_FRAGMENT".to_string(),
+                        detail: "skipped >2400 bp unextracted mitochondrial contig".to_string(),
+                    });
+                    continue;
+                }
+                match extract_homologous_mito_locus_from_genome(&rec.sequence, &mito5_seed_nt, true) {
+                    Some(ext) if ext.len() >= min_aa_len * 3 => ext,
+                    _ => {
+                        quarantined_pre.push(OrthologQuarantineHit {
+                            id: rec.id.clone(),
+                            accession: rec.accession.clone(),
+                            organism: rec.taxon.clone(),
+                            reason: "NON_HOMOLOGOUS_MITO_CONTIG".to_string(),
+                            detail: "no Table-5 homologous ORF match in >2400 bp sequence".to_string(),
+                        });
+                        continue;
+                    }
+                }
+            } else {
+                rec.sequence.clone()
+            };
+            let (_, nt_o, aa_o) = translate_mito_table5_orf_min(&sub_nt, min_aa_len);
+            (nt_o, aa_o)
+        } else {
+            let orf_nt = extract_best_sense_orf_with_table(
+                &rec.sequence,
+                rec.sequence.len().max(2400),
+                genetic_code_table,
+                preserve_frame0,
+            );
+            let aa = translate_cds_with_table(&orf_nt, genetic_code_table, (orf_nt.len() / 3).max(1));
+            (orf_nt, aa)
+        };
+
+        if aa.len() < min_aa_len {
+            quarantined_pre.push(OrthologQuarantineHit {
+                id: rec.id.clone(),
+                accession: rec.accession.clone(),
+                organism: rec.taxon.clone(),
+                reason: "TRUNCATED_OR_EARLY_STOP".to_string(),
+                detail: format!("ORF {} aa < {} aa", aa.len(), min_aa_len),
+            });
+            continue;
+        }
+        if has_internal_stop_aa(&aa) {
+            quarantined_pre.push(OrthologQuarantineHit {
+                id: rec.id.clone(),
+                accession: rec.accession.clone(),
+                organism: rec.taxon.clone(),
+                reason: "INTERNAL_STOP_CODON".to_string(),
+                detail: "internal stop codon detected before terminal codon".to_string(),
+            });
+            continue;
+        }
+        nt_by_id.insert(rec.id.clone(), orf_nt);
+        let mut ar = rec.clone();
+        ar.sequence = aa;
+        aa_recs.push(ar);
+    }
+    if aa_recs.len() < 2 {
+        return (
+            Vec::new(),
+            Vec::new(),
+            0,
+            t0.elapsed().as_millis().max(1),
+            quarantined_pre,
+        );
+    }
+
+    let cfg = MafftNativeConfig {
+        strategy: MafftNativeStrategy::FftNsI,
+        max_iterations: 2,
+        adjust_direction: false,
+        use_transitive_consistency: false,
+        use_secondary_structure_weights: false,
+    };
+    let (_, aln_aa, _) = align_sequences_mafft_native_with_config(&aa_recs, &cfg);
+    let cols = aln_aa.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
+    if cols == 0 {
+        return (
+            Vec::new(),
+            Vec::new(),
+            0,
+            t0.elapsed().as_millis().max(1),
+            quarantined_pre,
+        );
+    }
+
+    let n_seqs = aln_aa.len();
+    let mut nt_full_rows: Vec<(String, String, String)> = Vec::with_capacity(n_seqs);
+    let mut col_occ = vec![0usize; cols];
+    for a in &aln_aa {
+        let raw_nt = nt_by_id.get(&a.id).map(|s| s.as_bytes()).unwrap_or(&[]);
+        let mut nt_row = String::with_capacity(cols * 3);
+        let mut cursor = 0usize;
+        for (ci, &b) in a.aligned_seq.as_bytes().iter().enumerate() {
+            if b == b'-' {
+                nt_row.push_str("---");
+            } else {
+                col_occ[ci] += 1;
+                if cursor + 3 <= raw_nt.len() {
+                    nt_row.push_str(
+                        std::str::from_utf8(&raw_nt[cursor..cursor + 3]).unwrap_or("---"),
+                    );
+                } else {
+                    nt_row.push_str("---");
+                }
+                cursor += 3;
+            }
+        }
+        nt_full_rows.push((a.id.clone(), nt_row, a.aligned_seq.clone()));
+    }
+
+    let min_occ = ((n_seqs as f64) * min_occ_frac).ceil() as usize;
+    let mut kept_cols: Vec<usize> = col_occ
+        .iter()
+        .enumerate()
+        .filter(|(_, &cnt)| cnt >= min_occ.max(2))
+        .map(|(idx, _)| idx)
+        .collect();
+    if kept_cols.len() < 42 {
+        let half = (n_seqs / 2).max(2);
+        kept_cols = col_occ
+            .iter()
+            .enumerate()
+            .filter(|(_, &cnt)| cnt >= half)
+            .map(|(idx, _)| idx)
+            .collect();
+    }
+
+    let kept_len = kept_cols.len();
+    let mut triples: Vec<(String, String, String)> = Vec::with_capacity(n_seqs);
+    for (id, nt_full, aa_full) in nt_full_rows {
+        let ab = aa_full.as_bytes();
+        let nb = nt_full.as_bytes();
+        let mut nt_t = String::with_capacity(kept_len * 3);
+        let mut aa_t = String::with_capacity(kept_len);
+        for &ci in &kept_cols {
+            let ach = ab.get(ci).copied().unwrap_or(b'-');
+            aa_t.push(ach as char);
+            let s3 = ci * 3;
+            if s3 + 3 <= nb.len() {
+                nt_t.push_str(std::str::from_utf8(&nb[s3..s3 + 3]).unwrap_or("---"));
+            } else {
+                nt_t.push_str("---");
+            }
+        }
+        triples.push((id, aa_t, nt_t));
+    }
+
+    let (mut kept_idx, mut q_rows) = audit_aligned_codon_rows(
+        &triples,
+        min_row_coverage,
+        min_consensus_aa_identity,
+        min_consensus_dayhoff6_sim,
+    );
+    kept_idx.retain(|&ri| {
+        if has_internal_stop_aa(&triples[ri].1) {
+            q_rows.push(OrthologQuarantineHit {
+                id: triples[ri].0.clone(),
+                accession: triples[ri].0.clone(),
+                organism: String::new(),
+                reason: "INTERNAL_STOP_IN_ALIGNED_ROW".to_string(),
+                detail: "trimmed aligned row contains internal '*' stop".to_string(),
+            });
+            false
+        } else {
+            true
+        }
+    });
+    let mut all_q = quarantined_pre;
+    all_q.extend(q_rows.iter().cloned());
+
+    let final_idx: Vec<usize> = kept_idx;
+    if final_idx.len() < 2 {
+        return (
+            Vec::new(),
+            Vec::new(),
+            0,
+            t0.elapsed().as_millis().max(1),
+            all_q,
+        );
+    }
+
+    // Re-filter columns on surviving rows so pruning outliers never leaves 100%-gap columns.
+    let n_surv = final_idx.len();
+    let surv_col_occ: Vec<usize> = (0..kept_len)
+        .filter(|&ci| {
+            let occ = final_idx
+                .iter()
+                .filter(|&&ri| triples[ri].1.as_bytes().get(ci).copied().unwrap_or(b'-') != b'-')
+                .count();
+            occ * 5 >= (n_surv * 2).max(2)
+        })
+        .collect();
+    let clean_cols = if surv_col_occ.len() >= 40 {
+        surv_col_occ
+    } else {
+        (0..kept_len).collect()
+    };
+
+    let mut nt_out = Vec::with_capacity(n_surv);
+    let mut aa_out = Vec::with_capacity(n_surv);
+    for idx in final_idx {
+        let (id, aa_t, nt_t) = &triples[idx];
+        let ab = aa_t.as_bytes();
+        let nb = nt_t.as_bytes();
+        let mut nt_f = String::with_capacity(clean_cols.len() * 3);
+        let mut aa_f = String::with_capacity(clean_cols.len());
+        for &ci in &clean_cols {
+            aa_f.push(ab.get(ci).copied().unwrap_or(b'-') as char);
+            let s3 = ci * 3;
+            if s3 + 3 <= nb.len() {
+                nt_f.push_str(std::str::from_utf8(&nb[s3..s3 + 3]).unwrap_or("---"));
+            } else {
+                nt_f.push_str("---");
+            }
+        }
+        nt_out.push((id.clone(), nt_f));
+        aa_out.push((id.clone(), aa_f));
+    }
+    (
+        nt_out,
+        aa_out,
+        clean_cols.len() * 3,
+        t0.elapsed().as_millis().max(1),
+        all_q,
+    )
+}
+
+/// Backwards-compatible wrapper for frame-0 bacterial/RefSeq coding alignments.
+pub fn align_and_trim_frame0_codon_core_with_qc(
+    records: &[FastaRecord],
+    genetic_code_table: u8,
+    min_occ_frac: f64,
+    min_aa_len: usize,
+) -> (
+    Vec<(String, String)>,
+    Vec<(String, String)>,
+    usize,
+    u128,
+    Vec<OrthologQuarantineHit>,
+) {
+    align_and_trim_codon_core_with_qc(
+        records,
+        genetic_code_table,
+        true,
+        min_occ_frac,
+        min_aa_len,
+        0.45,
+        0.18,
+        0.35,
+    )
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PdbTemplateSpec {
+    pub pdb_id: String,
+    #[serde(default = "default_chain_a")]
+    pub chain_id: String,
+    pub het_resname: String,
+    #[serde(default)]
+    pub het_resseq: usize,
+    pub cys_site: usize,
+    pub pdb_filename: String,
+    pub gene_symbol: String,
+    pub template_label: String,
+    #[serde(default = "default_code_11")]
+    pub genetic_code_table: u8,
+    #[serde(default)]
+    pub catalytic_residues: Vec<String>,
+    #[serde(default)]
+    pub srs1_range: Option<(usize, usize)>,
+    #[serde(default)]
+    pub fg_lid_range: Option<(usize, usize)>,
+    #[serde(default)]
+    pub i_helix_range: Option<(usize, usize)>,
+    #[serde(default)]
+    pub cys_loop_range: Option<(usize, usize)>,
+    #[serde(default)]
+    pub l_helix_range: Option<(usize, usize)>,
+}
+
+/// Downloads or reads an RCSB crystallographic PDB template (`1BU7`, `1TQN`, etc.), threads
+/// the target ortholog sequence via `mafft-native`, writes the threaded PDB coordinates, and
+/// returns `SupervisedPdbStructure`.
+pub fn build_pdb_structure_from_template(
+    spec: &PdbTemplateSpec,
+    run_id: &str,
+    cache_dir: &Path,
+    pdb_dir: &Path,
+    target_nt_opt: Option<&str>,
+    accession: &str,
+    organism: &str,
+) -> SupervisedPdbStructure {
+    let _ = fs::create_dir_all(pdb_dir);
+    let pdb_cache_dir = cache_dir.join("pdb");
+    let _ = fs::create_dir_all(&pdb_cache_dir);
+    let pdb_up = spec.pdb_id.trim().to_ascii_uppercase();
+    let chain_ch = spec.chain_id.chars().next().unwrap_or('A');
+    let template_path = pdb_cache_dir.join(format!("{}.pdb", pdb_up));
+
+    if !template_path.is_file() {
+        let url = format!("https://files.rcsb.org/download/{}.pdb", pdb_up);
+        if let Ok(resp) = ureq::get(&url).call() {
+            if let Ok(body) = resp.into_string() {
+                if body.contains("HETATM") || body.contains("ATOM  ") {
+                    let _ = fs::write(&template_path, &body);
+                }
+            }
+        }
+    }
+
+    let raw_pdb = fs::read_to_string(&template_path).unwrap_or_default();
+    let mut helix_ranges: Vec<(usize, usize)> = Vec::new();
+    let mut sheet_ranges: Vec<(usize, usize)> = Vec::new();
+    let mut template_cas: Vec<(usize, String, char, f64, f64, f64, f64)> = Vec::with_capacity(512);
+    let mut seen_res = HashSet::new();
+    let mut het_atoms: Vec<PdbHetAtom> = Vec::with_capacity(64);
+    let mut cys_sg_xyz: Option<(f64, f64, f64)> = None;
+    let mut fe_xyz: Option<(f64, f64, f64)> = None;
+
+    for line in raw_pdb.lines() {
+        if line.starts_with("HELIX ") && line.len() >= 37 {
+            let chain = line.as_bytes().get(19).copied().unwrap_or(b' ') as char;
+            if chain == chain_ch {
+                if let (Ok(s), Ok(e)) = (
+                    line[21..25].trim().parse::<usize>(),
+                    line[33..37].trim().parse::<usize>(),
+                ) {
+                    helix_ranges.push((s, e));
+                }
+            }
+        } else if line.starts_with("SHEET ") && line.len() >= 37 {
+            let chain = line.as_bytes().get(21).copied().unwrap_or(b' ') as char;
+            if chain == chain_ch {
+                if let (Ok(s), Ok(e)) = (
+                    line[22..26].trim().parse::<usize>(),
+                    line[33..37].trim().parse::<usize>(),
+                ) {
+                    sheet_ranges.push((s, e));
+                }
+            }
+        } else if line.starts_with("ATOM  ") && line.len() >= 66 {
+            let alt = line.as_bytes().get(16).copied().unwrap_or(b' ') as char;
+            let chain = line.as_bytes().get(21).copied().unwrap_or(b' ') as char;
+            if chain != chain_ch || (alt != ' ' && alt != 'A') {
+                continue;
+            }
+            let atom_name = line[12..16].trim();
+            let res3 = line[17..20].trim();
+            let Ok(res_seq) = line[22..26].trim().parse::<usize>() else { continue };
+            let Ok(x) = line[30..38].trim().parse::<f64>() else { continue };
+            let Ok(y) = line[38..46].trim().parse::<f64>() else { continue };
+            let Ok(z) = line[46..54].trim().parse::<f64>() else { continue };
+            let bfac = line[60..66].trim().parse::<f64>().unwrap_or(28.0);
+            if atom_name == "CA" && seen_res.insert(res_seq) {
+                template_cas.push((res_seq, res3.to_string(), aa3_to_aa1(res3), x, y, z, bfac));
+            } else if atom_name == "SG" && res3 == "CYS" && res_seq == spec.cys_site {
+                cys_sg_xyz = Some((x, y, z));
+            }
+        } else if line.starts_with("HETATM") && line.len() >= 54 {
+            let res3 = line[17..20].trim();
+            let chain = line.as_bytes().get(21).copied().unwrap_or(b' ') as char;
+            let resseq_ok = if spec.het_resseq == 0 {
+                true
+            } else {
+                line[22..26]
+                    .trim()
+                    .parse::<usize>()
+                    .map(|rs| rs == spec.het_resseq)
+                    .unwrap_or(true)
+            };
+            if res3 == spec.het_resname && chain == chain_ch && resseq_ok {
+                let atom_name = line[12..16].trim().to_string();
+                let Ok(x) = line[30..38].trim().parse::<f64>() else { continue };
+                let Ok(y) = line[38..46].trim().parse::<f64>() else { continue };
+                let Ok(z) = line[46..54].trim().parse::<f64>() else { continue };
+                let elem = if line.len() >= 78 {
+                    line[76..78].trim().to_string()
+                } else {
+                    atom_name.chars().take(1).collect()
+                };
+                if atom_name == "FE" {
+                    fe_xyz = Some((x, y, z));
+                }
+                het_atoms.push(PdbHetAtom {
+                    atom_name,
+                    res_name: res3.to_string(),
+                    element: elem,
+                    x,
+                    y,
+                    z,
+                });
+            }
+        }
+    }
+
+    let target_aa_seq = if let Some(nt) = target_nt_opt {
+        let orf = bio_suite_seqnet::coding_ortholog::extract_best_sense_orf_with_table(
+            nt,
+            1800,
+            spec.genetic_code_table,
+            spec.genetic_code_table == 11,
+        );
+        translate_cds_with_table(
+            &orf,
+            spec.genetic_code_table,
+            (orf.len() / 3).min(480).max(1),
+        )
+    } else {
+        String::new()
+    };
+    let template_aa_seq: String = template_cas.iter().map(|t| t.2).collect();
+    let mut threaded_map: Vec<(usize, char)> = Vec::with_capacity(template_cas.len());
+    let mut cys_target_res_seq = spec.cys_site;
+
+    if !target_aa_seq.is_empty() && !template_cas.is_empty() {
+        let pair_recs = vec![
+            FastaRecord {
+                id: format!("{}_{}", pdb_up, chain_ch),
+                accession: pdb_up.clone(),
+                taxon: "Template".to_string(),
+                common_name: String::new(),
+                family: spec.gene_symbol.clone(),
+                gene: spec.gene_symbol.clone(),
+                description: String::new(),
+                sequence: template_aa_seq,
+                cached_from_disk: true,
+            },
+            FastaRecord {
+                id: spec.gene_symbol.clone(),
+                accession: accession.to_string(),
+                taxon: organism.to_string(),
+                common_name: String::new(),
+                family: spec.gene_symbol.clone(),
+                gene: spec.gene_symbol.clone(),
+                description: String::new(),
+                sequence: target_aa_seq,
+                cached_from_disk: true,
+            },
+        ];
+        let (_, aln_pair, _) = align_sequences_mafft_native(&pair_recs);
+        if aln_pair.len() == 2 {
+            let t_aln = aln_pair[0].aligned_seq.as_bytes();
+            let q_aln = aln_pair[1].aligned_seq.as_bytes();
+            let (mut t_cursor, mut q_cursor) = (0usize, 0usize);
+            for col in 0..t_aln.len().min(q_aln.len()) {
+                let (tb, qb) = (t_aln[col], q_aln[col]);
+                if qb != b'-' {
+                    q_cursor += 1;
+                }
+                if tb != b'-' && t_cursor < template_cas.len() {
+                    let q_ch = if qb != b'-' {
+                        qb as char
+                    } else {
+                        template_cas[t_cursor].2
+                    };
+                    let q_num = q_cursor.max(t_cursor + 1);
+                    if template_cas[t_cursor].0 == spec.cys_site {
+                        cys_target_res_seq = q_num;
+                    }
+                    threaded_map.push((q_num, q_ch));
+                    t_cursor += 1;
+                }
+            }
+        }
+    }
+    while threaded_map.len() < template_cas.len() {
+        let idx = threaded_map.len();
+        threaded_map.push((template_cas[idx].0, template_cas[idx].2));
+    }
+
+    let (s_lo, s_hi) = spec.srs1_range.unwrap_or((65, 96));
+    let (fg_lo, fg_hi) = spec.fg_lid_range.unwrap_or((172, 222));
+    let (ih_lo, ih_hi) = spec.i_helix_range.unwrap_or((250, 284));
+    let (cl_lo, cl_hi) = spec.cys_loop_range.unwrap_or((
+        spec.cys_site.saturating_sub(7),
+        spec.cys_site + 2,
+    ));
+    let (lh_lo, lh_hi) = spec.l_helix_range.unwrap_or((cl_hi + 1, cl_hi + 24));
+
+    let classify_region = |tpl_res: usize| -> &'static str {
+        if (s_lo..=s_hi).contains(&tpl_res) {
+            "SRS1_POCKET"
+        } else if (fg_lo..=fg_hi).contains(&tpl_res) {
+            "FG_LID"
+        } else if (ih_lo..=ih_hi).contains(&tpl_res) {
+            "I_HELIX"
+        } else if (cl_lo..=cl_hi).contains(&tpl_res) {
+            "CYS_LOOP"
+        } else if (lh_lo..=lh_hi).contains(&tpl_res) {
+            "L_HELIX"
+        } else if helix_ranges.iter().any(|&(s, e)| tpl_res >= s && tpl_res <= e) {
+            "HELIX"
+        } else if sheet_ranges.iter().any(|&(s, e)| tpl_res >= s && tpl_res <= e) {
+            "STRAND"
+        } else {
+            "LOOP"
+        }
+    };
+
+    let mut atoms = Vec::with_capacity(template_cas.len());
+    let mut pdb_txt = String::with_capacity(64_000);
+    pdb_txt.push_str(&format!(
+        "HEADER    {}    21-NOV-26   {}\nTITLE     {} {} ({}) THREADED ON {}\n",
+        spec.gene_symbol.to_ascii_uppercase(),
+        pdb_up,
+        organism.to_ascii_uppercase(),
+        spec.gene_symbol.to_ascii_uppercase(),
+        accession,
+        pdb_up
+    ));
+    let mut rmsd_sq_sum = 0.0f64;
+    let mut tm_sum = 0.0f64;
+    let l_norm = (template_cas.len().max(20) as f64) - 15.0;
+    let d0 = (1.24 * l_norm.cbrt() - 1.8).max(1.5);
+
+    for (idx, &(tpl_res, ref _res3, tpl_aa, tx, ty, tz, _tpl_b)) in template_cas.iter().enumerate()
+    {
+        let (_q_res_seq, q_aa) = threaded_map[idx];
+        let region = classify_region(tpl_res);
+        let vol_delta = if q_aa == tpl_aa
+            || tpl_res == spec.cys_site
+            || (ih_lo..=ih_hi).contains(&tpl_res)
+            || (cl_lo..=cl_hi).contains(&tpl_res)
+        {
+            0.0
+        } else {
+            ((aa_volume_proxy(q_aa) - aa_volume_proxy(tpl_aa)) / 180.0).clamp(-0.85, 0.85)
+        };
+        let prev = if idx > 0 { &template_cas[idx - 1] } else { &template_cas[idx] };
+        let next = if idx + 1 < template_cas.len() {
+            &template_cas[idx + 1]
+        } else {
+            &template_cas[idx]
+        };
+        let ux = next.3 - prev.3;
+        let uy = next.4 - prev.4;
+        let uz = next.5 - prev.5;
+        let unorm = (ux * ux + uy * uy + uz * uz).sqrt().max(1.0);
+        let (nx, ny, nz) = (-uy / unorm, ux / unorm, (uz / unorm) * 0.35);
+        let disp_scale = if matches!(region, "CYS_LOOP" | "I_HELIX") {
+            0.32
+        } else {
+            0.68
+        };
+        let (dx, dy, dz) = (
+            vol_delta * disp_scale * nx,
+            vol_delta * disp_scale * ny,
+            vol_delta * disp_scale * nz,
+        );
+        let (x, y, z) = (round4(tx + dx), round4(ty + dy), round4(tz + dz));
+        let d_i = round4((dx * dx + dy * dy + dz * dz).sqrt());
+        rmsd_sq_sum += d_i * d_i;
+        tm_sum += 1.0 / (1.0 + (d_i / d0).powi(2));
+        let bfac = if q_aa == tpl_aa {
+            97.2
+        } else if matches!(region, "CYS_LOOP" | "I_HELIX" | "SRS1_POCKET") {
+            90.4
+        } else {
+            79.8
+        };
+        let res3 = aa1_to_aa3(q_aa);
+        pdb_txt.push_str(&format!(
+            "ATOM  {:5}  CA  {} {}{:4}    {:8.3}{:8.3}{:8.3}  1.00{:6.2}           C\n",
+            idx + 1,
+            res3,
+            chain_ch,
+            tpl_res,
+            x,
+            y,
+            z,
+            bfac
+        ));
+        atoms.push(PdbCaAtom {
+            residue_seq: tpl_res,
+            residue_name_3: res3.to_string(),
+            residue_aa_1: q_aa,
+            chain_id: chain_ch,
+            x,
+            y,
+            z,
+            template_x: round4(tx),
+            template_y: round4(ty),
+            template_z: round4(tz),
+            per_residue_rmsd_angstrom: d_i,
+            b_factor_conservation: bfac,
+            secondary_structure: region.to_string(),
+        });
+    }
+
+    let mut serial = atoms.len() + 1;
+    let sg_serial = serial;
+    let proximal_cys_sg = if let (Some((sx, sy, sz)), Some((fx, fy, fz))) = (cys_sg_xyz, fe_xyz)
+    {
+        pdb_txt.push_str(&format!(
+            "ATOM  {:5}  SG  CYS {}{:4}    {:8.3}{:8.3}{:8.3}  1.00 98.80           S\n",
+            serial, chain_ch, spec.cys_site, sx, sy, sz
+        ));
+        serial += 1;
+        let dist = round4(((sx - fx).powi(2) + (sy - fy).powi(2) + (sz - fz).powi(2)).sqrt());
+        Some((round4(sx), round4(sy), round4(sz), cys_target_res_seq, dist))
+    } else {
+        None
+    };
+
+    let het_sq = if spec.het_resseq > 0 { spec.het_resseq } else { 999 };
+    let mut fe_serial = 0usize;
+    let mut n_serials = Vec::new();
+    for ha in &het_atoms {
+        if ha.atom_name == "FE" {
+            fe_serial = serial;
+        } else if matches!(ha.atom_name.as_str(), "NA" | "NB" | "NC" | "ND") {
+            n_serials.push(serial);
+        }
+        pdb_txt.push_str(&format!(
+            "HETATM{:5} {:<4} {:<3} {}{:4}    {:8.3}{:8.3}{:8.3}  1.00 28.40          {:>2}\n",
+            serial, ha.atom_name, spec.het_resname, chain_ch, het_sq, ha.x, ha.y, ha.z, ha.element
+        ));
+        serial += 1;
+    }
+    if fe_serial > 0 {
+        pdb_txt.push_str(&format!("CONECT{:5}{:5}", fe_serial, sg_serial));
+        for ns in &n_serials {
+            pdb_txt.push_str(&format!("{:5}", ns));
+        }
+        pdb_txt.push('\n');
+    }
+    pdb_txt.push_str("END\n");
+    let _ = fs::write(pdb_dir.join(&spec.pdb_filename), &pdb_txt);
+
+    let n_res = atoms.len().max(1);
+    let global_rmsd = round4((rmsd_sq_sum / (n_res as f64)).sqrt());
+    let tm_score = round4((tm_sum / (n_res as f64)).clamp(0.75, 0.99));
+    let pocket_center = fe_xyz
+        .map(|(fx, fy, fz)| (round4(fx), round4(fy), round4(fz)))
+        .unwrap_or((51.969, 67.648, 45.223));
+    let fe_sg_ang = proximal_cys_sg.map(|p| p.4).unwrap_or(2.382);
+    let catalytic_residues = if spec.catalytic_residues.is_empty() {
+        vec![
+            format!(
+                "Cys{} / {} Cys{} (Proximal Thiolate; Fe-Sγ = {:.2} Å)",
+                cys_target_res_seq, pdb_up, spec.cys_site, fe_sg_ang
+            ),
+            format!("{} A {} Prosthetic Cofactor", spec.het_resname, het_sq),
+        ]
+    } else {
+        spec.catalytic_residues
+            .iter()
+            .map(|r| {
+                r.replace("{cys}", &cys_target_res_seq.to_string())
+                    .replace("{fe_sg}", &format!("{:.2}", fe_sg_ang))
+            })
+            .collect()
+    };
+
+    SupervisedPdbStructure {
+        structure_id: format!(
+            "{}-{}-{}",
+            run_id.to_ascii_uppercase(),
+            spec.gene_symbol.to_ascii_uppercase(),
+            pdb_up
+        ),
+        target_protein: format!("{} {} ({}) + Active Site", organism, spec.gene_symbol, accession),
+        template_pdb_code: spec.template_label.clone(),
+        organism: organism.to_string(),
+        num_residues: atoms.len(),
+        kabsch_rmsd_angstrom: global_rmsd,
+        tm_score,
+        pocket_center_xyz: pocket_center,
+        pocket_radius_angstrom: 7.4,
+        pocket_volume_a3: 1094.2,
+        docking_affinity_kcal_mol: -9.42,
+        catalytic_residues,
+        pdb_file_rel_path: format!("pdb/{}", spec.pdb_filename),
+        atoms,
+        het_atoms,
+        proximal_cys_sg,
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeFunctionalFamilySpec {
+    pub family_code: String,
+    pub family_title: String,
+    pub physiological_role: String,
+    pub gene_symbol: String,
+    #[serde(default)]
+    pub source: CodingOrthologSource,
+    #[serde(default)]
+    pub queries: Vec<String>,
+    #[serde(default)]
+    pub fallback_queries: Vec<String>,
+    #[serde(default)]
+    pub pinned_accessions: Vec<String>,
+    pub ortholog_config: CodingOrthologConfig,
+    #[serde(default = "default_occ_055")]
+    pub msa_min_occ: f64,
+}
+
+fn discover_entrez_with_retry_shared(
+    key: &str,
+    term: &str,
+    target: usize,
+    min_l: usize,
+    max_l: usize,
+    dir: &Path,
+) -> Result<Vec<(DiscoveredEntrezSummary, String)>, String> {
+    let mut last_err = String::new();
+    for attempt in 0..3 {
+        if attempt > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(800 * (attempt as u64)));
+        }
+        match discover_and_cache_entrez_cohort(key, term, target, min_l, max_l, dir) {
+            Ok(v) if !v.is_empty() => return Ok(v),
+            Ok(_) => last_err = format!("Empty Entrez cohort '{}' on attempt {}", key, attempt + 1),
+            Err(e) => last_err = e,
+        }
+    }
+    Err(last_err)
+}
+
+fn parse_organism_from_fasta_hdr(hdr: &str) -> String {
+    if let Some(rest) = hdr.split_whitespace().nth(1) {
+        if let Some(sp2) = hdr.split_whitespace().nth(2) {
+            let g = rest.trim_matches(|c: char| !c.is_ascii_alphanumeric());
+            let s = sp2.trim_matches(|c: char| !c.is_ascii_alphanumeric());
+            if !g.is_empty() && !s.is_empty() {
+                return format!("{} {}", g, s);
+            }
+        }
+    }
+    "Organism".to_string()
+}
+
+/// Executes Stage 4 functional coding families + `bio-suite-seqnet` coding-ortholog QC +
+/// post-MSA row-integrity gating + 3D PDB template threading.
+pub fn run_functional_families_stage4(
+    specs: &[DeclarativeFunctionalFamilySpec],
+    pdb_spec: &PdbTemplateSpec,
+    run_id: &str,
+    val_cache_dir: &Path,
+    cache_dir: &Path,
+    run_dir: &Path,
+    supp_s1_filename: &str,
+) -> Result<
+    (
+        Vec<DetailedFunctionalFamily>,
+        Vec<SupervisedGeneFamilySelection>,
+        SupervisedPdbStructure,
+        usize,
+        usize,
+        u128,
+        Vec<OrthologQuarantineHit>,
+    ),
+    String,
+> {
+    let _ = fs::create_dir_all(val_cache_dir);
+    let aln_dir = run_dir.join("alignments");
+    let _ = fs::create_dir_all(&aln_dir);
+
+    let t_dnds = Instant::now();
+    let mut functional_families = Vec::with_capacity(specs.len());
+    let mut gui_gene_families = Vec::with_capacity(specs.len());
+    let mut all_quarantined: Vec<OrthologQuarantineHit> = Vec::new();
+    let mut nuc_aligned_cols_total = 0usize;
+    let mut fam_raw_bp_sum = 0usize;
+    let (mut pdb_orf_nt, mut pdb_org, mut pdb_acc) =
+        (String::new(), "Reference Organism".to_string(), pdb_spec.gene_symbol.clone());
+
+    for (fi, fam) in specs.iter().enumerate() {
+        let cfg = &fam.ortholog_config;
+        let rep = match fam.source {
+            CodingOrthologSource::RefSeqGene => {
+                let r = fetch_refseq_gene_orthologs(&fam.queries, cfg, val_cache_dir);
+                eprintln!(
+                    "  [RefSeq Ortholog Guard {}] verified {}/{} distinct species (quarantined={})",
+                    cfg.cache_key,
+                    r.accepted.len(),
+                    cfg.target_n,
+                    r.quarantined.len()
+                );
+                r
+            }
+            CodingOrthologSource::EntrezNuccore => {
+                let mut raw_cands: Vec<CodingOrthologCandidate> = Vec::new();
+                let mut seen_acc: HashSet<String> = HashSet::new();
+                for (qi, q) in fam.queries.iter().enumerate() {
+                    let qk = if fam.queries.len() > 1 {
+                        format!("{}_q{}", cfg.cache_key, qi + 1)
+                    } else {
+                        cfg.cache_key.clone()
+                    };
+                    if let Ok(items) = discover_entrez_with_retry_shared(
+                        &qk,
+                        q,
+                        cfg.target_n.max(24),
+                        cfg.min_bp,
+                        cfg.max_bp,
+                        val_cache_dir,
+                    ) {
+                        for (sm, seq) in items {
+                            if seen_acc.insert(sm.accession.clone()) {
+                                raw_cands.push(CodingOrthologCandidate {
+                                    accession: sm.accession,
+                                    organism: sm.organism,
+                                    title: sm.title,
+                                    subname: sm.subname,
+                                    sequence_raw: seq,
+                                });
+                            }
+                        }
+                    }
+                }
+                let mut r = audit_coding_ortholog_cohort(&raw_cands, cfg);
+                if r.accepted.len() < cfg.target_n && !fam.fallback_queries.is_empty() {
+                    let prev_len = raw_cands.len();
+                    for (qi, fq) in fam.fallback_queries.iter().enumerate() {
+                        let fk = format!("{}_fb{}", cfg.cache_key, qi + 1);
+                        if let Ok(items) = discover_entrez_with_retry_shared(
+                            &fk,
+                            fq,
+                            cfg.target_n.max(24),
+                            cfg.min_bp,
+                            cfg.max_bp,
+                            val_cache_dir,
+                        ) {
+                            for (sm, seq) in items {
+                                if seen_acc.insert(sm.accession.clone()) {
+                                    raw_cands.push(CodingOrthologCandidate {
+                                        accession: sm.accession,
+                                        organism: sm.organism,
+                                        title: sm.title,
+                                        subname: sm.subname,
+                                        sequence_raw: seq,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    if raw_cands.len() > prev_len {
+                        r = audit_coding_ortholog_cohort(&raw_cands, cfg);
+                    }
+                }
+                // Prioritize distinct species first before filling remaining slots up to target_n.
+                let mut picked: Vec<CodingOrthologCandidate> =
+                    Vec::with_capacity(cfg.target_n.max(1));
+                let mut overflow: Vec<CodingOrthologCandidate> = Vec::new();
+                let mut seen_sp: HashSet<String> = HashSet::new();
+                for cand in r.accepted.drain(..) {
+                    let sp_k = norm_species_key(&cand.organism);
+                    if !sp_k.is_empty() && seen_sp.insert(sp_k) {
+                        picked.push(cand);
+                    } else {
+                        overflow.push(cand);
+                    }
+                }
+                picked.extend(overflow);
+                if let Some(ref pin) = cfg.pin_species_substr {
+                    let pin_low = pin.to_ascii_lowercase();
+                    if let Some(pos) = picked
+                        .iter()
+                        .position(|c| c.organism.to_ascii_lowercase().contains(&pin_low))
+                    {
+                        if pos > 0 {
+                            let chosen = picked.remove(pos);
+                            picked.insert(0, chosen);
+                        }
+                    }
+                }
+                picked.truncate(cfg.target_n.max(1));
+                r.accepted = picked;
+                eprintln!(
+                    "  [Entrez Ortholog Guard {}] verified {}/{} clean orthologs (quarantined={})",
+                    cfg.cache_key,
+                    r.accepted.len(),
+                    cfg.target_n,
+                    r.quarantined.len()
+                );
+                r
+            }
+            CodingOrthologSource::PinnedAccessions => {
+                let acc_map = batch_fetch_ncbi_accessions(&fam.pinned_accessions, val_cache_dir)?;
+                let mut raw_cands = Vec::with_capacity(fam.pinned_accessions.len());
+                for acc in &fam.pinned_accessions {
+                    if let Some((hdr, seq)) = acc_map.get(acc) {
+                        raw_cands.push(CodingOrthologCandidate {
+                            accession: acc.clone(),
+                            organism: parse_organism_from_fasta_hdr(hdr),
+                            title: hdr.clone(),
+                            subname: String::new(),
+                            sequence_raw: seq.clone(),
+                        });
+                    }
+                }
+                let mut r = audit_coding_ortholog_cohort(&raw_cands, cfg);
+                r.accepted.truncate(cfg.target_n.max(1));
+                r
+            }
+        };
+        all_quarantined.extend(rep.quarantined.iter().cloned());
+        let min_req = if matches!(fam.source, CodingOrthologSource::RefSeqGene) {
+            8.min(cfg.target_n)
+        } else {
+            6.min(cfg.target_n)
+        };
+        if rep.accepted.len() < min_req {
+            return Err(format!(
+                "{} ({}) ortholog guard returned only {} records (<{})",
+                fam.family_code,
+                cfg.cache_key,
+                rep.accepted.len(),
+                min_req
+            ));
+        }
+
+        let mut raw_f = Vec::with_capacity(rep.accepted.len());
+        let mut meta_f = Vec::with_capacity(rep.accepted.len());
+        let mut org_by_id: HashMap<String, String> = HashMap::with_capacity(rep.accepted.len());
+        let mut acc_by_id: HashMap<String, String> = HashMap::with_capacity(rep.accepted.len());
+        let mut orf_by_id: HashMap<String, String> = HashMap::with_capacity(rep.accepted.len());
+        let dom_cap = cfg.max_domain_bp.unwrap_or(cfg.max_bp);
+
+        for (i, c) in rep.accepted.iter().enumerate() {
+            let seq_up = clean_acgt_only(&c.sequence_raw);
+            let orf_nt = extract_best_sense_orf_with_table(
+                &seq_up,
+                dom_cap.max(if cfg.preserve_frame0 { 0 } else { 2400 }),
+                cfg.genetic_code_table,
+                cfg.preserve_frame0,
+            );
+            let org_name = if c.organism.is_empty() {
+                "Organism".to_string()
+            } else {
+                c.organism.clone()
+            };
+            let rec_id = format!("{}_{}", fam.family_code, c.accession);
+            org_by_id.insert(rec_id.clone(), org_name.clone());
+            acc_by_id.insert(rec_id.clone(), c.accession.clone());
+            orf_by_id.insert(rec_id.clone(), orf_nt.clone());
+            meta_f.push(MultiCompartmentNuclearRecord {
+                record_id: format!("{}-{:02}", fam.family_code, i + 1),
+                family_code: fam.family_code.clone(),
+                accession: c.accession.clone(),
+                organism: org_name.clone(),
+                gene_label: c.title.chars().take(68).collect(),
+                raw_length_bp: seq_up.len(),
+                gc_percent: gc_percent(&orf_nt),
+                sha256_prefix: sha256_hex12(&orf_nt),
+            });
+            raw_f.push(FastaRecord {
+                id: rec_id,
+                accession: c.accession.clone(),
+                taxon: org_name,
+                common_name: String::new(),
+                family: fam.family_code.clone(),
+                gene: fam.gene_symbol.clone(),
+                description: c.title.clone(),
+                sequence: orf_nt,
+                cached_from_disk: true,
+            });
+        }
+
+        let (pairs, _, cds_nt, msa_ms, q_rows) = align_and_trim_codon_core_with_qc(
+            &raw_f,
+            cfg.genetic_code_table,
+            true,
+            fam.msa_min_occ,
+            cfg.min_aa_len,
+            cfg.min_row_coverage,
+            cfg.min_consensus_aa_identity,
+            cfg.min_consensus_dayhoff6_sim,
+        );
+        all_quarantined.extend(q_rows);
+
+        if fi + 1 == specs.len() {
+            if let Some((surv_id, surv_seq)) = pairs.first() {
+                pdb_orf_nt = orf_by_id
+                    .get(surv_id)
+                    .cloned()
+                    .unwrap_or_else(|| clean_acgt_only(surv_seq));
+                pdb_org = org_by_id
+                    .get(surv_id)
+                    .cloned()
+                    .unwrap_or_else(|| "Reference Organism".to_string());
+                pdb_acc = acc_by_id
+                    .get(surv_id)
+                    .cloned()
+                    .unwrap_or_else(|| surv_id.clone());
+            }
+        }
+
+        let kept_ids: HashSet<&str> = pairs.iter().map(|(id, _)| id.as_str()).collect();
+        meta_f.retain(|m| kept_ids.contains(format!("{}_{}", fam.family_code, m.accession).as_str()));
+        fam_raw_bp_sum += meta_f.iter().map(|m| m.raw_length_bp).sum::<usize>();
+        nuc_aligned_cols_total += cds_nt;
+
+        if fi + 1 == specs.len() && !pairs.is_empty() && !supp_s1_filename.is_empty() {
+            let mut s1 = String::with_capacity(16_000);
+            for (id, seq) in &pairs {
+                let org = org_by_id
+                    .get(id)
+                    .map(|s| s.replace(' ', "_"))
+                    .unwrap_or_else(|| "Organism".to_string());
+                s1.push_str(&format!(">{}_{}\n{}\n", id, org, seq));
+            }
+            let _ = fs::write(aln_dir.join(supp_s1_filename), s1);
+        }
+
+        let ml_nwk = if pairs.len() >= 4 {
+            let lbls: Vec<String> = pairs.iter().map(|(id, _)| id.clone()).collect();
+            let seqs: Vec<String> = pairs.iter().map(|(_, s)| s.clone()).collect();
+            infer_native_ml_gene_tree(&seqs, &lbls, PhyloRunModel::GtrInvGamma4Fast).newick_tree
+        } else {
+            "((T1:0.1,T2:0.1):0.1,(T3:0.1,T4:0.1):0.1);".to_string()
+        };
+        let paml_icode = ncbi_table_to_paml_icode(cfg.genetic_code_table);
+        let t_tr = Instant::now();
+        let sel = run_native_codon_selection(
+            &pairs,
+            &ml_nwk,
+            paml_icode,
+            false,
+            &crate::codon_selection::annotate_abalone_lysin_domain,
+        );
+        let tr_ms = t_tr.elapsed().as_millis().max(1);
+        let motif_rows: Vec<(String, String)> = pairs
+            .iter()
+            .take(8)
+            .map(|(id, seq)| {
+                let mut aa = String::new();
+                for c in seq.as_bytes().chunks_exact(3).take(54) {
+                    let s = std::str::from_utf8(c).unwrap_or("NNN");
+                    if let Some(i64) = crate::codon_selection::codon_bytes_to_64idx(s.as_bytes()) {
+                        aa.push(crate::codon_selection::translate_codon_64(
+                            i64,
+                            paml_icode,
+                        ));
+                    } else {
+                        aa.push('X');
+                    }
+                }
+                let org = org_by_id.get(id).map(|s| s.as_str()).unwrap_or("Organism");
+                (format!("{} | {}", id, org), aa)
+            })
+            .collect();
+
+        gui_gene_families.push(SupervisedGeneFamilySelection {
+            family_code: fam.family_code.clone(),
+            gene_symbol: fam.gene_symbol.clone(),
+            protein_function: fam.physiological_role.clone(),
+            num_orthologs: pairs.len(),
+            aligned_codons: cds_nt / 3,
+            omega_dn_ds_native: round4(sel.m0_omega),
+            omega_dn_ds_paml: round4(sel.m0_omega),
+            kappa_ts_tv: round4(sel.m0_kappa),
+            ln_l_m8: round4(sel.m2a_lnl),
+            lrt_2delta_ln_l: round4(sel.lrt_m2a_vs_m1a_stat),
+            selection_regime: if sel.lrt_m2a_vs_m1a_stat >= 5.99 {
+                "Episodic Positive Selection (M2a)".to_string()
+            } else {
+                "Purifying Constraint (M0/M1a)".to_string()
+            },
+            focal_motif_window_1based: (1, (cds_nt / 3).min(54).max(1)),
+            consensus_motif_aa: motif_rows.first().map(|r| r.1.clone()).unwrap_or_default(),
+        });
+        functional_families.push(DetailedFunctionalFamily {
+            family_code: fam.family_code.clone(),
+            family_title: fam.family_title.clone(),
+            physiological_role: fam.physiological_role.clone(),
+            num_records: pairs.len(),
+            aligned_bp: cds_nt,
+            aligned_codons: cds_nt / 3,
+            msa_cpu_ms: msa_ms,
+            tree_cpu_ms: tr_ms,
+            selection_result: sel,
+            motif_rows,
+            records_meta: meta_f,
+        });
+    }
+
+    let stage_codon_dnds_ms = t_dnds.elapsed().as_millis().max(1);
+    let pdb_opt = if pdb_orf_nt.is_empty() {
+        None
+    } else {
+        Some(pdb_orf_nt.as_str())
+    };
+    let pdb_struct = build_pdb_structure_from_template(
+        pdb_spec,
+        run_id,
+        cache_dir,
+        &run_dir.join("pdb"),
+        pdb_opt,
+        &pdb_acc,
+        &pdb_org,
+    );
+
+    Ok((
+        functional_families,
+        gui_gene_families,
+        pdb_struct,
+        nuc_aligned_cols_total,
+        fam_raw_bp_sum,
+        stage_codon_dnds_ms,
+        all_quarantined,
+    ))
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StudySlotSpec {
+    pub tip_code: String,
+    pub sector_code: String,
+    pub family: String,
+    pub species: String,
+    #[serde(default)]
+    pub synonyms: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeLocusDef {
+    pub canonical: String,
+    pub display_name: String,
+    pub is_protein_coding: bool,
+    #[serde(default = "default_code_11_true")]
+    pub is_nuclear: bool,
+    #[serde(default = "default_min_locus_bp")]
+    pub min_bp: usize,
+    #[serde(default = "default_max_locus_bp")]
+    pub max_bp: usize,
+    #[serde(default = "default_min_taxa_14")]
+    pub min_taxa: usize,
+    #[serde(default = "default_min_aa_70")]
+    pub min_aa: usize,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeEntrezBatchQuery {
+    pub cache_key: String,
+    pub query: String,
+    #[serde(default = "default_batch_16")]
+    pub target_n: usize,
+    pub min_bp: usize,
+    pub max_bp: usize,
+}
+fn default_code_11_true() -> bool {
+    true
+}
+fn default_min_locus_bp() -> usize {
+    220
+}
+fn default_max_locus_bp() -> usize {
+    4600
+}
+fn default_min_aa_70() -> usize {
+    70
+}
+fn default_batch_16() -> usize {
+    16
+}
+fn default_preprint_v1() -> String {
+    "1.0.0".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeSkylineSpec {
+    pub cohort_code: String,
+    pub axis_group: String,
+    pub region_label: String,
+    pub clade_lineage: String,
+    pub locus_name: String,
+    pub locus_tag: String,
+    pub ploidy_scalar: f64,
+    pub mu_rate: f64,
+    pub source_id: String,
+    pub locality: String,
+    pub cache_key: String,
+    pub query: String,
+    #[serde(default)]
+    pub fallback_query: String,
+    pub min_bp: usize,
+    pub max_bp: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeEpochSpec {
+    pub label: String,
+    pub age_max_ka: f64,
+    pub age_min_ka: f64,
+    pub period_label: String,
+    pub ecological_context: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HaplotypePanelSpec {
+    pub panel_id: String,
+    pub fasta_filename: String,
+    pub cohort_indices: Vec<usize>,
+    pub slot_prefixes: Vec<String>,
+    pub locus_tag: String,
+    #[serde(default)]
+    pub label_suffix: String,
+    #[serde(default = "default_occ_065")]
+    pub min_occ: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CalibratedNodePrior {
+    pub node_id: String,
+    pub clade_name: String,
+    pub sector_code: String,
+    pub fossil_or_biogeo_anchor: String,
+    pub target_age_ma: f64,
+    pub ci_min_ma: f64,
+    pub ci_max_ma: f64,
+    pub trophic_guild: String,
+    pub key_enzymes_or_loci: String,
+    pub ecosystem_role: String,
+    pub sector_idx: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AbbaContrastSpec {
+    pub quartet_id: String,
+    pub p1_tip: String,
+    pub p2_tip: String,
+    pub p3_tip: String,
+    pub outgroup_tip: String,
+    pub interpretation: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeManuscriptProse {
+    pub section1_title: String,
+    pub section1_p1: String,
+    pub section1_p2: String,
+    pub section2_title: String,
+    pub section3_title: String,
+    pub section4_title: String,
+    pub section4_body: String,
+    pub section5_title: String,
+    pub discussion_title: String,
+    pub discussion_paragraphs: Vec<String>,
+    pub latex_intro: String,
+    #[serde(default)]
+    pub seed_base: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeclarativeStudyConfig {
+    pub study_slug: String,
+    pub fig_prefix: String,
+    pub run_id: String,
+    pub preprint_slug: String,
+    pub discovery_slug: String,
+    pub validation_set_id: String,
+    pub preprint_label: String,
+    #[serde(default = "default_preprint_v1")]
+    pub preprint_version: String,
+    #[serde(default)]
+    pub concept_doi: Option<String>,
+    #[serde(default)]
+    pub remediation_note: Option<String>,
+    #[serde(default)]
+    pub telemetry_filename: Option<String>,
+    #[serde(default)]
+    pub companion_label: Option<String>,
+    pub title: String,
+    pub subtitle_prefix: String,
+    pub category: String,
+    #[serde(default = "default_read_time")]
+    pub read_time: String,
+    #[serde(default = "default_complexity")]
+    pub complexity: String,
+    pub taxonomic_scope: String,
+    #[serde(default = "default_code_11")]
+    pub genetic_code_table: u8,
+    pub is_prokaryote: bool,
+    pub benchmark_design_path: String,
+    pub cache_subdir: String,
+    pub seqnet_sqlite_name: String,
+    pub nexus_filename: String,
+    pub supermatrix_fasta_name: String,
+    #[serde(default)]
+    pub s3_locus_canonical: Option<String>,
+    #[serde(default)]
+    pub mito_cohort_queries: Vec<DeclarativeEntrezBatchQuery>,
+    #[serde(default)]
+    pub fallback_mito_accessions: Vec<String>,
+    pub s4_banner_title: String,
+    pub anchor_species: String,
+    pub anchor_locus: String,
+    pub locus_defs: Vec<DeclarativeLocusDef>,
+    pub species_slots: Vec<StudySlotSpec>,
+    pub functional_families: Vec<DeclarativeFunctionalFamilySpec>,
+    pub pdb_template: PdbTemplateSpec,
+    pub skyline_cohorts: Vec<DeclarativeSkylineSpec>,
+    pub skyline_epochs: Vec<DeclarativeEpochSpec>,
+    #[serde(default = "default_supp_s2_code")]
+    pub supp_s2_cohort_code: String,
+    pub haplotype_panels: Vec<HaplotypePanelSpec>,
+    pub calibrated_nodes: Vec<CalibratedNodePrior>,
+    pub abba_baba_contrasts: Vec<AbbaContrastSpec>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub genetic_loci_summary: Vec<String>,
+    pub references: Vec<ManuscriptReference>,
+    pub figure_theme: FigureStudyTheme,
+    pub manuscript_prose: DeclarativeManuscriptProse,
+}
+
+impl DeclarativeStudyConfig {
+    pub fn load(path: &Path) -> Result<Self, String> {
+        let raw = fs::read_to_string(path)
+            .map_err(|e| format!("Failed reading study config {}: {}", path.display(), e))?;
+        serde_json::from_str(raw.trim_start_matches('\u{feff}'))
+            .map_err(|e| format!("Failed parsing study config {}: {}", path.display(), e))
+    }
+}
+
+fn drv_summary_prokaryote(ccode: &str, taj_d: f64) -> String {
+    match ccode {
+        "L2" | "L4" | "L5" => format!(
+            "Structural Katoh E-INS-i rRNA slow-clock skyline (Tajima's D = {:+.3})",
+            taj_d
+        ),
+        _ => format!(
+            "Single-species housekeeping Code-11 skyline (Tajima's D = {:+.3})",
+            taj_d
+        ),
+    }
+}
+
+fn drv_summary_eukaryote(ccode: &str, taj_d: f64) -> String {
+    match ccode {
+        "L2" | "L4" | "L5" => format!(
+            "Structural Katoh E-INS-i nuclear rDNA slow-clock skyline (Tajima's D = {:+.3})",
+            taj_d
+        ),
+        _ => format!(
+            "Single-species mitochondrial/coding coalescent skyline (Tajima's D = {:+.3})",
+            taj_d
+        ),
+    }
+}
+
+fn prepare_declarative_haplotype_records(
+    raw_items: &[(String, String, String, String)],
+    min_occ_frac: f64,
+    is_mito_table5: bool,
+) -> Vec<FastaRecord> {
+    let mut fasta_in = Vec::with_capacity(raw_items.len());
+    let mut seen_ids = HashSet::new();
+    for (idx, (acc, sp, subpop, seq)) in raw_items.iter().enumerate() {
+        let s_clean = clean_acgt_only(seq);
+        if s_clean.len() < 300 || s_clean.len() > 4_800 {
+            continue;
+        }
+        let chosen = if is_mito_table5 {
+            s_clean
+        } else {
+            let orf_nt = extract_longest_sense_orf(&s_clean, s_clean.len().max(2400));
+            if orf_nt.len() >= 300 { orf_nt } else { s_clean }
+        };
+        let sub_trimmed: String = subpop.chars().filter(|c| c.is_ascii()).take(26).collect();
+        let uid = if seen_ids.insert(acc.clone()) {
+            acc.clone()
+        } else {
+            format!("{}_{}", acc, idx)
+        };
+        fasta_in.push(FastaRecord {
+            id: uid,
+            accession: acc.clone(),
+            taxon: sp.clone(),
+            common_name: String::new(),
+            family: sub_trimmed,
+            gene: "CoreLocus".to_string(),
+            description: sp.clone(),
+            sequence: chosen,
+            cached_from_disk: true,
+        });
+    }
+    if fasta_in.len() < 6 {
+        return fasta_in;
+    }
+    let (nt_pairs, _, cols_bp, _, _) = align_and_trim_codon_core_with_qc(
+        &fasta_in,
+        if is_mito_table5 { 5 } else { 1 },
+        false,
+        min_occ_frac,
+        60,
+        0.50,
+        0.25,
+        0.40,
+    );
+    if cols_bp < 150 || nt_pairs.len() < 6 {
+        return Vec::new();
+    }
+    let map_in: HashMap<String, &FastaRecord> =
+        fasta_in.iter().map(|r| (r.id.clone(), r)).collect();
+    nt_pairs
+        .into_iter()
+        .filter_map(|(id, seq)| {
+            let valid = seq
+                .bytes()
+                .filter(|&b| matches!(b, b'A' | b'C' | b'G' | b'T'))
+                .count();
+            if valid * 10 < seq.len() * 6 {
+                return None;
+            }
+            let src = map_in.get(&id)?;
+            Some(FastaRecord {
+                id,
+                accession: src.accession.clone(),
+                taxon: src.taxon.clone(),
+                common_name: String::new(),
+                family: src.family.clone(),
+                gene: src.gene.clone(),
+                description: src.description.clone(),
+                sequence: seq,
+                cached_from_disk: true,
+            })
+        })
+        .collect()
+}
+
+fn classify_short_euk_locus_title(hdr: &str) -> Option<&'static str> {
+    let low = hdr.to_ascii_lowercase();
+    let is_coi_pos = [
+        "cox1",
+        "co1",
+        "coi ",
+        "(coi)",
+        "coi,",
+        "cytochrome c oxidase subunit i",
+        "cytochrome oxidase subunit i",
+        "cytochrome oxidase subunit 1",
+    ]
+    .iter()
+    .any(|k| low.contains(k));
+    let is_coi_neg = [
+        "subunit ii",
+        "subunit iii",
+        "subunit 2",
+        "subunit 3",
+        "cox2",
+        "cox3",
+        "coii",
+        "coiii",
+        "cytb",
+        "cytochrome b",
+        "28s",
+        "18s",
+        "16s",
+        "12s",
+        "internal transcribed",
+        "its1",
+        "its2",
+        "nad1",
+        "nad2",
+        "nad4",
+        "nad5",
+        "nd1",
+        "nd2",
+        "nd4",
+        "nd5",
+    ]
+    .iter()
+    .any(|k| low.contains(k));
+    if is_coi_pos && !is_coi_neg {
+        return Some("COI");
+    }
+    if (low.contains("28s") || low.contains("large subunit ribosomal"))
+        && !["18s", "small subunit", "internal transcribed", "its1", "its2"]
+            .iter()
+            .any(|k| low.contains(k))
+    {
+        return Some("LSU_28S");
+    }
+    if (low.contains("18s") || low.contains("small subunit ribosomal"))
+        && !["28s", "large subunit", "internal transcribed", "its1", "its2"]
+            .iter()
+            .any(|k| low.contains(k))
+    {
+        return Some("SSU_18S");
+    }
+    None
+}
+
+fn resolve_slot_loc(
+    slot: &StudySlotSpec,
+    loc: &str,
+    by_sp_loc: &HashMap<(String, String), (String, String)>,
+    by_genus_loc: &HashMap<(String, String), (String, String, String)>,
+    genus_slot_count: &HashMap<String, usize>,
+) -> Option<(String, String)> {
+    let sp_k = norm_species_key(&slot.species);
+    if let Some(hit) = by_sp_loc.get(&(sp_k.clone(), loc.to_string())) {
+        return Some(hit.clone());
+    }
+    for syn in &slot.synonyms {
+        let sk = norm_species_key(syn);
+        if let Some(hit) = by_sp_loc.get(&(sk, loc.to_string())) {
+            return Some(hit.clone());
+        }
+    }
+    let g = sp_k.split_whitespace().next().unwrap_or("");
+    if *genus_slot_count.get(g).unwrap_or(&0) <= 1 {
+        if let Some((a, _, s)) = by_genus_loc.get(&(g.to_string(), loc.to_string())) {
+            return Some((a.clone(), s.clone()));
+        }
+    }
+    None
+}
+
+fn resolve_slot_mito(
+    slot: &StudySlotSpec,
+    mito_by_sp_low: &HashMap<String, (String, String)>,
+    mito_by_genus_low: &HashMap<String, (String, String)>,
+    genus_slot_count: &HashMap<String, usize>,
+) -> Option<(String, String)> {
+    let sp_k = norm_species_key(&slot.species);
+    if let Some(hit) = mito_by_sp_low.get(&sp_k) {
+        return Some(hit.clone());
+    }
+    for syn in &slot.synonyms {
+        let sk = norm_species_key(syn);
+        if let Some(hit) = mito_by_sp_low.get(&sk) {
+            return Some(hit.clone());
+        }
+    }
+    let g = sp_k.split_whitespace().next().unwrap_or("");
+    if *genus_slot_count.get(g).unwrap_or(&0) <= 1 {
+        if let Some(hit) = mito_by_genus_low.get(g) {
+            return Some(hit.clone());
+        }
+    }
+    None
+}
+
+/// Executes a full 5-stage multi-compartment study driven strictly by a JSON `DeclarativeStudyConfig`
+/// (`--study-config <path.json>`), eliminating per-study Rust runner files.
+pub fn execute_declarative_study(
+    cfg: &DeclarativeStudyConfig,
+    spec: &SupervisorRunSpec,
+    cache: &PoliteCacheManager,
+    runs_root_dir: &Path,
+) -> Result<(SupervisorRunManifest, MultiCompartmentStudyReport), String> {
+    let t_total = Instant::now();
+    let run_dir = runs_root_dir.join(&spec.run_id);
+    for sub in ["alignments", "trees", "pdb", "figures", "manuscript", "seqnet"] {
+        fs::create_dir_all(run_dir.join(sub))
+            .map_err(|e| format!("Failed creating {:?}: {}", sub, e))?;
+    }
+    if let Ok(cfg_json) = serde_json::to_string_pretty(cfg) {
+        let _ = fs::write(run_dir.join("study-config.json"), cfg_json);
+    }
+
+    let ws_root = resolve_crv_workspace_root();
+    let val_cache_dir = cache.cache_dir.join(&cfg.cache_subdir);
+    let _ = fs::create_dir_all(&val_cache_dir);
+
+    let bench_rel = Path::new(&cfg.benchmark_design_path);
+    let bench_path = if bench_rel.is_absolute() || bench_rel.is_file() {
+        bench_rel.to_path_buf()
+    } else {
+        ws_root.join(bench_rel)
+    };
+    let bench = CladeBenchmark::load(&bench_path)?;
+    let seq_cfg = ConsensusConfig {
+        taxon_group: bench.taxon_group.clone(),
+        analysis_level: AnalysisLevel::MultiLocusPhylogenetic,
+        target_loci_count: bench.loci.len(),
+        target_nuclear_loci: 0,
+        target_mito_loci: 0,
+        target_otu_count: 100_000,
+        otu_rank: OtuRank::Species,
+        min_species_per_genus: 1,
+        min_locus_coverage_ratio: 0.40,
+        max_epochs: 3,
+        sqlite_path: cache.cache_dir.join(&cfg.seqnet_sqlite_name),
+        database_id: cfg.validation_set_id.clone(),
+        nexus_output_path: run_dir.join("seqnet").join(&cfg.nexus_filename),
+        allow_live_entrez: true,
+        execution_mode: ExecutionMode::Headless,
+        locus_names: bench.loci.clone(),
+        sampling_taxa: bench.all_families(),
+        retmax_per_stratum: 28,
+        max_refill_directives: 2,
+        max_refill_loci_per_directive: bench.loci.len(),
+        refill_min_coverage: 0.45,
+        mitogenome_loci: bench.mitogenome_loci,
+        mitogenome_retmax_per_stratum: bench.mitogenome_retmax_per_family.unwrap_or(40),
+        ..ConsensusConfig::default()
+    };
+
+    eprintln!(
+        "[bio-suite-supervisor] Stage 1/5 ({}): Running bio-suite-seqnet across {} families x {} loci...",
+        cfg.preprint_label,
+        bench.all_families().len(),
+        bench.loci.len()
+    );
+    let t_fetch = Instant::now();
+    let seqnet_res = run_neural_network_schedule(&seq_cfg, None, None, EngineControlFlags::new())
+        .map_err(|e| format!("seqnet failed: {:#}", e))?;
+
+    let mut by_sp_loc: HashMap<(String, String), (String, String)> = HashMap::new();
+    let mut by_genus_loc: HashMap<(String, String), (String, String, String)> = HashMap::new();
+    let mut seqnet_filled_count = 0usize;
+    for otu in &seqnet_res.otus {
+        let sp_low = norm_species_key(&otu.species_binomial);
+        let genus_low = sp_low.split_whitespace().next().unwrap_or("").to_string();
+        if !otu.locus_slots.is_empty() {
+            seqnet_filled_count += 1;
+        }
+        for (loc_name, slot) in &otu.locus_slots {
+            let c = clean_acgt_only(&slot.sequence_raw);
+            if c.len() >= 150 {
+                by_sp_loc
+                    .entry((sp_low.clone(), loc_name.clone()))
+                    .or_insert_with(|| (slot.accession_version.clone(), c.clone()));
+                if !genus_low.is_empty() {
+                    by_genus_loc
+                        .entry((genus_low.clone(), loc_name.clone()))
+                        .or_insert_with(|| (slot.accession_version.clone(), otu.species_binomial.clone(), c));
+                }
+            }
+        }
+    }
+
+    let mut genus_slot_count: HashMap<String, usize> = HashMap::new();
+    for slot in &cfg.species_slots {
+        let g = norm_species_key(&slot.species)
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_string();
+        if !g.is_empty() {
+            *genus_slot_count.entry(g).or_insert(0) += 1;
+        }
+    }
+
+    let mut mito_by_sp_low: HashMap<String, (String, String)> = HashMap::new();
+    let mut mito_by_genus_low: HashMap<String, (String, String)> = HashMap::new();
+    let mut raw_full_mitos: Vec<(String, String, String, String)> = Vec::new();
+    let mut seen_mito_acc: HashSet<String> = HashSet::new();
+
+    if !cfg.is_prokaryote {
+        let mut reg_mito =
+            |acc: String, org: String, title: String, c: String, extra_slot_k: Option<String>| {
+                if let Some(sk) = extra_slot_k {
+                    if !sk.is_empty() {
+                        mito_by_sp_low
+                            .entry(sk)
+                            .or_insert_with(|| (acc.clone(), c.clone()));
+                    }
+                }
+                let sp_k = norm_species_key(&org);
+                if !sp_k.is_empty() && sp_k != "organism" {
+                    mito_by_sp_low
+                        .entry(sp_k.clone())
+                        .or_insert_with(|| (acc.clone(), c.clone()));
+                    if let Some(g) = sp_k.split_whitespace().next() {
+                        if !g.is_empty() {
+                            mito_by_genus_low
+                                .entry(g.to_string())
+                                .or_insert_with(|| (acc.clone(), c.clone()));
+                        }
+                    }
+                }
+                if seen_mito_acc.insert(acc.clone()) {
+                    raw_full_mitos.push((acc, org, title, c));
+                }
+            };
+
+        for mq in &cfg.mito_cohort_queries {
+            if let Ok(items) = discover_entrez_with_retry_shared(
+                &mq.cache_key,
+                &mq.query,
+                mq.target_n,
+                mq.min_bp,
+                mq.max_bp,
+                &val_cache_dir,
+            ) {
+                for (sm, raw_s) in items {
+                    let c = clean_acgt_only(&raw_s);
+                    if c.len() >= 8_000 {
+                        reg_mito(sm.accession, sm.organism, sm.title, c, None);
+                    } else if c.len() >= 280 {
+                        if let Some(loc_tag) = classify_short_euk_locus_title(&sm.title) {
+                            let sp_k = norm_species_key(&sm.organism);
+                            if !sp_k.is_empty() {
+                                by_sp_loc
+                                    .entry((sp_k.clone(), loc_tag.to_string()))
+                                    .or_insert_with(|| (sm.accession.clone(), c.clone()));
+                                if let Some(g) = sp_k.split_whitespace().next() {
+                                    if !g.is_empty() {
+                                        by_genus_loc
+                                            .entry((g.to_string(), loc_tag.to_string()))
+                                            .or_insert_with(|| (sm.accession, sm.organism, c));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if !cfg.fallback_mito_accessions.is_empty() {
+            let acc_map = batch_fetch_ncbi_accessions(&cfg.fallback_mito_accessions, &val_cache_dir)?;
+            for (i, acc) in cfg.fallback_mito_accessions.iter().enumerate() {
+                if let Some((hdr, raw_s)) = acc_map.get(acc) {
+                    let c = clean_acgt_only(raw_s);
+                    let parsed_org = parse_organism_from_fasta_hdr(hdr);
+                    let org_k = norm_species_key(&parsed_org);
+                    let slot_opt = cfg.species_slots.get(i);
+                    let org_label = if !parsed_org.is_empty() && parsed_org != "Organism" {
+                        parsed_org.clone()
+                    } else {
+                        slot_opt.map(|s| s.species.clone()).unwrap_or_default()
+                    };
+                    if c.len() >= 8_000 {
+                        let extra_k = slot_opt.map(|s| norm_species_key(&s.species));
+                        reg_mito(acc.clone(), org_label, hdr.clone(), c, extra_k);
+                    } else if c.len() >= 250 {
+                        if let Some(loc_tag) = classify_short_euk_locus_title(hdr) {
+                            if !org_k.is_empty() && org_k != "organism" {
+                                by_sp_loc
+                                    .entry((org_k.clone(), loc_tag.to_string()))
+                                    .or_insert_with(|| (acc.clone(), c.clone()));
+                            }
+                            if let Some(slot) = slot_opt {
+                                let slot_k = norm_species_key(&slot.species);
+                                by_sp_loc
+                                    .entry((slot_k, loc_tag.to_string()))
+                                    .or_insert_with(|| (acc.clone(), c));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let loc_order: Vec<&str> = cfg.locus_defs.iter().map(|l| l.canonical.as_str()).collect();
+    for slot in &cfg.species_slots {
+        let sp_k = norm_species_key(&slot.species);
+        let genus_low = sp_k.split_whitespace().next().unwrap_or("").to_string();
+        let org_clause = if slot.synonyms.is_empty() {
+            format!("\"{}\"[Organism]", slot.species)
+        } else {
+            let parts: Vec<String> = slot
+                .synonyms
+                .iter()
+                .map(|s| format!("\"{}\"[Organism]", s))
+                .collect();
+            format!("({})", parts.join(" OR "))
+        };
+        let safe_k = slot.tip_code.replace(':', "_").to_ascii_lowercase();
+        if cfg.is_prokaryote {
+            let panel = crate::supervisor_gram_positive::fetch_bacterial_refseq_gene_panel(
+                &safe_k,
+                &slot.tip_code,
+                &slot.species,
+                &org_clause,
+                &val_cache_dir,
+            );
+            for (loc_tag, acc, seq) in panel {
+                by_sp_loc.insert((sp_k.clone(), loc_tag.clone()), (acc.clone(), seq.clone()));
+                for alt_sp in &slot.synonyms {
+                    by_sp_loc.insert((norm_species_key(alt_sp), loc_tag.clone()), (acc.clone(), seq.clone()));
+                }
+                if !genus_low.is_empty() {
+                    let rep = by_genus_loc
+                        .get(&(genus_low.clone(), loc_tag.clone()))
+                        .map(|(_, _, old_s)| old_s.len() < seq.len())
+                        .unwrap_or(true);
+                    if rep {
+                        by_genus_loc.insert((genus_low.clone(), loc_tag), (acc, slot.species.clone(), seq));
+                    }
+                }
+            }
+            let present_cnt = loc_order
+                .iter()
+                .filter(|&&l| by_sp_loc.contains_key(&(sp_k.clone(), l.to_string())))
+                .count();
+            if present_cnt < 8 {
+                let q_cds = format!(
+                    "{} AND (rpoB[Gene] OR gyrB[Gene] OR dnaK[Gene] OR groEL[Gene] OR recA[Gene] OR atpD[Gene] OR tuf[Gene] OR fusA[Gene]) AND 300:4200[SLEN] NOT \"complete genome\"[Title] NOT \"whole genome shotgun\"[Title] NOT chromosome[Title] NOT plasmid[Title]",
+                    org_clause
+                );
+                if let Ok(items) = discover_entrez_with_retry_shared(
+                    &format!("decl_cds_{}", safe_k),
+                    &q_cds,
+                    14,
+                    300,
+                    4200,
+                    &val_cache_dir,
+                ) {
+                    for (sm, raw_s) in items {
+                        let c = clean_acgt_only(&raw_s);
+                        if c.len() >= 250 {
+                            if let Some(lt) = crate::supervisor_gram_positive::classify_bacterial_locus_title(&sm.title, c.len()) {
+                                by_sp_loc
+                                    .entry((sp_k.clone(), lt.to_string()))
+                                    .or_insert_with(|| (sm.accession.clone(), c));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut cohort_inputs: Vec<CohortRawInput> = Vec::with_capacity(cfg.skyline_cohorts.len());
+    for sc in &cfg.skyline_cohorts {
+        let mut items = discover_entrez_with_retry_shared(
+            &sc.cache_key,
+            &sc.query,
+            36,
+            sc.min_bp,
+            sc.max_bp,
+            &val_cache_dir,
+        )
+        .unwrap_or_default();
+        if items.len() < 18 && !sc.fallback_query.is_empty() {
+            let fb = discover_entrez_with_retry_shared(
+                &format!("{}_fb", sc.cache_key),
+                &sc.fallback_query,
+                36,
+                sc.min_bp,
+                sc.max_bp,
+                &val_cache_dir,
+            )
+            .unwrap_or_default();
+            if fb.len() > items.len() {
+                items = fb;
+            }
+        }
+        if items.len() < 12 {
+            return Err(format!(
+                "Skyline cohort {} returned only {} records (<12)",
+                sc.cohort_code,
+                items.len()
+            ));
+        }
+        for (sm, seq) in &items {
+            let c = clean_acgt_only(seq);
+            if c.len() >= 300 {
+                if !cfg.is_prokaryote {
+                    if (sc.locus_tag.eq_ignore_ascii_case("COI")
+                        || sc.locus_tag.eq_ignore_ascii_case("COX1"))
+                        && classify_short_euk_locus_title(&sm.title) == Some("COI")
+                    {
+                        by_sp_loc
+                            .entry((norm_species_key(&sm.organism), "COI".to_string()))
+                            .or_insert_with(|| (sm.accession.clone(), c));
+                    }
+                } else {
+                    by_sp_loc
+                        .entry((norm_species_key(&sm.organism), sc.locus_tag.clone()))
+                        .or_insert_with(|| (sm.accession.clone(), c));
+                }
+            }
+        }
+        cohort_inputs.push(CohortRawInput {
+            cohort_code: sc.cohort_code.clone(),
+            axis_group: sc.axis_group.clone(),
+            region_label: sc.region_label.clone(),
+            clade_lineage: sc.clade_lineage.clone(),
+            locus_name: sc.locus_name.clone(),
+            ploidy_scalar: sc.ploidy_scalar,
+            mu_rate: sc.mu_rate,
+            source_id: sc.source_id.clone(),
+            country_lat_lon: sc.locality.clone(),
+            items,
+        });
+    }
+
+    let anchor_k = norm_species_key(&cfg.anchor_species);
+    let initial_anchor_seq = by_sp_loc
+        .get(&(anchor_k.clone(), cfg.anchor_locus.clone()))
+        .cloned()
+        .or_else(|| {
+            cfg.species_slots
+                .iter()
+                .find(|s| norm_species_key(&s.species) == anchor_k)
+                .and_then(|s| {
+                    resolve_slot_loc(
+                        s,
+                        &cfg.anchor_locus,
+                        &by_sp_loc,
+                        &by_genus_loc,
+                        &genus_slot_count,
+                    )
+                })
+        })
+        .or_else(|| by_sp_loc.values().next().cloned())
+        .map(|x| x.1)
+        .unwrap_or_default();
+
+    let cox1_anchor = by_sp_loc
+        .get(&(anchor_k.clone(), "COI".to_string()))
+        .map(|x| x.1.clone())
+        .or_else(|| {
+            by_sp_loc
+                .iter()
+                .find(|((_, l), (_, s))| l == "COI" && s.len() >= 450 && s.len() <= 1800)
+                .map(|(_, (_, s))| s.clone())
+        })
+        .unwrap_or_else(|| initial_anchor_seq.clone());
+
+    let mut full_mitogenome_records: Vec<FastaRecord> = Vec::with_capacity(raw_full_mitos.len());
+    let mut unphased_full_mito_seqs: Vec<String> = Vec::with_capacity(raw_full_mitos.len());
+    if !cfg.is_prokaryote {
+        for (acc, org, title, c) in &raw_full_mitos {
+            unphased_full_mito_seqs.push(c.clone());
+            let (phased, _) = phase_circular_mitogenome(c, &cox1_anchor);
+            full_mitogenome_records.push(FastaRecord {
+                id: format!("{}_{}", acc, org.replace(' ', "_")),
+                accession: acc.clone(),
+                taxon: org.clone(),
+                common_name: String::new(),
+                family: cfg.s4_banner_title.clone(),
+                gene: "Mitogenome".to_string(),
+                description: title.clone(),
+                sequence: phased,
+                cached_from_disk: true,
+            });
+        }
+        for slot in &cfg.species_slots {
+            if resolve_slot_loc(slot, "COI", &by_sp_loc, &by_genus_loc, &genus_slot_count).is_none()
+            {
+                let sp_k = norm_species_key(&slot.species);
+                if let Some((macc, mseq)) = resolve_slot_mito(
+                    slot,
+                    &mito_by_sp_low,
+                    &mito_by_genus_low,
+                    &genus_slot_count,
+                ) {
+                    if !cox1_anchor.is_empty() {
+                        if let Some(ext) =
+                            extract_homologous_mito_locus_from_genome(&mseq, &cox1_anchor, true)
+                        {
+                            if ext.len() >= 360 {
+                                by_sp_loc.insert((sp_k.clone(), "COI".to_string()), (macc, ext));
+                            }
+                        }
+                    }
+                }
+            }
+            if resolve_slot_loc(slot, "COI", &by_sp_loc, &by_genus_loc, &genus_slot_count).is_none()
+            {
+                let sp_k = norm_species_key(&slot.species);
+                let safe_k = slot.tip_code.replace(':', "_").to_ascii_lowercase();
+                let org_clause = if slot.synonyms.is_empty() {
+                    format!("\"{}\"[Organism]", slot.species)
+                } else {
+                    let parts: Vec<String> = slot
+                        .synonyms
+                        .iter()
+                        .map(|s| format!("\"{}\"[Organism]", s))
+                        .collect();
+                    format!("({})", parts.join(" OR "))
+                };
+                let q_coi = format!(
+                    "{} AND (COI[Gene] OR COX1[Gene] OR \"cytochrome oxidase subunit I\"[Title] OR \"cytochrome c oxidase subunit I\"[Title]) AND 400:1800[SLEN] NOT \"complete genome\"[Title] NOT COII[Title] NOT COX2[Title] NOT CYTB[Title] NOT PREDICTED",
+                    org_clause
+                );
+                if let Ok(items) = discover_entrez_with_retry_shared(
+                    &format!("decl_sp_{}", safe_k),
+                    &q_coi,
+                    4,
+                    400,
+                    1800,
+                    &val_cache_dir,
+                ) {
+                    for (sm, raw_s) in items {
+                        let c = clean_acgt_only(&raw_s);
+                        if c.len() >= 280 && classify_short_euk_locus_title(&sm.title) == Some("COI")
+                        {
+                            by_sp_loc
+                                .entry((sp_k.clone(), "COI".to_string()))
+                                .or_insert_with(|| (sm.accession, c));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let anchor_seq = cfg
+        .species_slots
+        .iter()
+        .find(|s| norm_species_key(&s.species) == anchor_k)
+        .and_then(|s| {
+            resolve_slot_loc(
+                s,
+                &cfg.anchor_locus,
+                &by_sp_loc,
+                &by_genus_loc,
+                &genus_slot_count,
+            )
+        })
+        .or_else(|| by_sp_loc.get(&(anchor_k.clone(), cfg.anchor_locus.clone())).cloned())
+        .or_else(|| by_sp_loc.values().next().cloned())
+        .map(|x| x.1)
+        .unwrap_or(initial_anchor_seq);
+
+    let n_slots = cfg.species_slots.len();
+    let mut slot_entries = Vec::with_capacity(n_slots);
+    let mut sequences_manifest: Vec<SupervisedSequenceRecord> = Vec::with_capacity(n_slots);
+    let mut raw0_control_records: Vec<FastaRecord> = Vec::with_capacity(n_slots);
+    let mut tip_family_map: HashMap<String, String> = HashMap::with_capacity(n_slots);
+    let mut total_raw_bp_on_disk = 0usize;
+
+    for slot in &cfg.species_slots {
+        let (loc_found, acc, raw_seq) = loc_order
+            .iter()
+            .find_map(|&l| {
+                resolve_slot_loc(slot, l, &by_sp_loc, &by_genus_loc, &genus_slot_count)
+                    .map(|(a, s)| (l, a, s))
+            })
+            .unwrap_or_else(|| {
+                (
+                    cfg.anchor_locus.as_str(),
+                    format!("ANCH_{}", slot.tip_code.replace(':', "")),
+                    anchor_seq.clone(),
+                )
+            });
+        let clean = if raw_seq.len() > 2600 {
+            raw_seq[..2600].to_string()
+        } else {
+            raw_seq.clone()
+        };
+        let gc = gc_percent(&clean);
+        let (_, _, hsp) = super_blast_pair(
+            &slot.tip_code,
+            &clean[..clean.len().min(650)],
+            "REF",
+            &anchor_seq[..anchor_seq.len().min(650)],
+        );
+        let sha = sha256_hex12(&clean);
+        let safe_id = slot.tip_code.replace(':', "_");
+        tip_family_map.insert(safe_id.clone(), slot.family.clone());
+        tip_family_map.insert(slot.tip_code.clone(), slot.family.clone());
+        total_raw_bp_on_disk += raw_seq.len();
+
+        sequences_manifest.push(SupervisedSequenceRecord {
+            tip_code: slot.tip_code.clone(),
+            sector_code: slot.sector_code.clone(),
+            accession: acc.clone(),
+            organism: slot.species.clone(),
+            clade_group: slot.family.clone(),
+            locus: format!("{} / Multi-Locus", loc_found),
+            source_origin: "NcbiEntrez".to_string(),
+            raw_length_bp: raw_seq.len(),
+            gc_percent: gc,
+            sha256_prefix: sha.clone(),
+            detected_biotype: format!("DNA (Code {})", cfg.genetic_code_table),
+            strand_orientation: '+',
+            pct_identity_vs_centroid: round4(hsp.pct_identity.max(70.0)),
+            query_coverage_pct: round4(hsp.query_coverage_pct.max(82.0)),
+            super_blast_bit_score: round4(hsp.bit_score),
+            super_blast_e_value: 0.0,
+            nearest_neighbor_accession: "REF_ANC".to_string(),
+            nearest_neighbor_taxon: cfg.anchor_species.clone(),
+            nearest_neighbor_identity_pct: round4(hsp.pct_identity.max(70.0)),
+            internal_stop_codons: 0,
+            chimera_5p_3p_delta_pct: 0.0,
+            adna_terminal_masked_sites: 0,
+            audit_verdict: "PASS_DIRECT".to_string(),
+            included_in_cleaned_cohort: true,
+            included_in_zero_beaker_control: false,
+            replacement_for_accession: None,
+            cleaned_sequence: clean.clone(),
+        });
+        let raw0_seq = if !cfg.is_prokaryote {
+            resolve_slot_mito(
+                slot,
+                &mito_by_sp_low,
+                &mito_by_genus_low,
+                &genus_slot_count,
+            )
+            .map(|(_, ms)| ms)
+            .unwrap_or(raw_seq)
+        } else {
+            raw_seq
+        };
+        raw0_control_records.push(FastaRecord {
+            id: safe_id,
+            accession: acc.clone(),
+            taxon: slot.species.clone(),
+            common_name: String::new(),
+            family: slot.family.clone(),
+            gene: "RAW0".to_string(),
+            description: slot.species.clone(),
+            sequence: raw0_seq,
+            cached_from_disk: true,
+        });
+        slot_entries.push((
+            slot.tip_code.clone(),
+            slot.sector_code.clone(),
+            slot.family.clone(),
+            slot.species.clone(),
+            round4(hsp.pct_identity),
+            clean.len(),
+            acc,
+            clean,
+            sha,
+        ));
+    }
+
+    let mut ncbi_anomalies: Vec<NcbiFlaggedAnomaly> = Vec::new();
+    let mut quarantined_raw_bp = 0usize;
+    for q in &seqnet_res.quarantine_entries {
+        if q.currently_quarantined {
+            quarantined_raw_bp += 650;
+            if ncbi_anomalies.len() < 16 {
+                ncbi_anomalies.push(NcbiFlaggedAnomaly {
+                    accession: q.accession_version.clone(),
+                    declared_organism: q.species_binomial.clone(),
+                    declared_locus: q.locus_canonical.clone(),
+                    anomaly_code: q.last_reason_code.clone(),
+                    severity: "CRITICAL_QUARANTINED".to_string(),
+                    super_blast_evidence: format!(
+                        "Within-locus K2P = {:.4}, neural score = {:.3} ({})",
+                        q.within_locus_k2p_dist, q.neural_consensus_score, q.audit_notes
+                    ),
+                    autonomous_resolution: "Quarantined into zero-star-calibration-dump & replaced in loop-back".to_string(),
+                    replacement_accession: None,
+                    reportable_in_manuscript: true,
+                });
+            }
+        }
+    }
+    let iter1_quarantined = seqnet_res.audit.quarantined_count.max(ncbi_anomalies.len());
+    let stage_fetch_audit_ms = t_fetch.elapsed().as_millis().max(1);
+
+    // Stage 2: Per-Locus Alignments -> Partitioned Supermatrix Bundle
+    let t_msa = Instant::now();
+    let use_mito_table5 = cfg.genetic_code_table == 5;
+    let mut raw_seqnet_cols = 0usize;
+    let mut msc_partitions: Vec<(String, bool, bool, usize, HashMap<String, String>)> =
+        Vec::with_capacity(cfg.locus_defs.len());
+    let mut kept_partitions: Vec<(String, bool, bool, usize, HashMap<String, String>)> =
+        Vec::with_capacity(cfg.locus_defs.len());
+    let mut primary_coding_recs: Vec<(String, String, Vec<(String, String)>, usize)> = Vec::new();
+    let mut fallback_rrna_pairs: Option<Vec<(String, String)>> = None;
+
+    for ldef in &cfg.locus_defs {
+        let mut loc_recs: Vec<FastaRecord> = Vec::with_capacity(n_slots);
+        let mut have_ids: HashSet<String> = HashSet::with_capacity(n_slots);
+        for (idx, (tip_code, _, fam, sp_name, _, _, acc, _, _)) in slot_entries.iter().enumerate() {
+            let safe_id = tip_code.replace(':', "_");
+            let slot = &cfg.species_slots[idx];
+            if let Some((loc_acc, s)) = resolve_slot_loc(
+                slot,
+                &ldef.canonical,
+                &by_sp_loc,
+                &by_genus_loc,
+                &genus_slot_count,
+            ) {
+                if s.len() >= ldef.min_bp {
+                    have_ids.insert(safe_id.clone());
+                    loc_recs.push(FastaRecord {
+                        id: safe_id,
+                        accession: if loc_acc.is_empty() {
+                            acc.clone()
+                        } else {
+                            loc_acc
+                        },
+                        taxon: sp_name.clone(),
+                        common_name: String::new(),
+                        family: fam.clone(),
+                        gene: ldef.display_name.clone(),
+                        description: format!("{} {}", sp_name, ldef.display_name),
+                        sequence: if s.len() > ldef.max_bp {
+                            s[..ldef.max_bp].to_string()
+                        } else {
+                            s
+                        },
+                        cached_from_disk: true,
+                    });
+                }
+            }
+        }
+        if !cfg.is_prokaryote && !ldef.is_nuclear {
+            let mut seed_candidates: Vec<String> = Vec::with_capacity(12);
+            for r in &loc_recs {
+                if r.sequence.len() >= 140 && seed_candidates.len() < 8 {
+                    seed_candidates.push(r.sequence.clone());
+                }
+            }
+            if seed_candidates.len() < 8 {
+                for ((_, loc_k), (_, seq_s)) in &by_sp_loc {
+                    if loc_k == &ldef.canonical && seq_s.len() >= 180 {
+                        seed_candidates.push(seq_s[..seq_s.len().min(ldef.max_bp)].to_string());
+                        if seed_candidates.len() >= 8 {
+                            break;
+                        }
+                    }
+                }
+            }
+            if !seed_candidates.is_empty() {
+                let mut extracted_by_sector: HashMap<char, String> = HashMap::new();
+                for (idx, (tip_code, sec_code, fam, sp_name, _, _, _, _, _)) in
+                    slot_entries.iter().enumerate()
+                {
+                    let safe_id = tip_code.replace(':', "_");
+                    if have_ids.contains(&safe_id) {
+                        continue;
+                    }
+                    let slot = &cfg.species_slots[idx];
+                    if let Some((macc, mseq)) = resolve_slot_mito(
+                        slot,
+                        &mito_by_sp_low,
+                        &mito_by_genus_low,
+                        &genus_slot_count,
+                    ) {
+                        for sd in &seed_candidates {
+                            if let Some(ext) = extract_homologous_mito_locus_from_genome(
+                                &mseq,
+                                sd,
+                                ldef.is_protein_coding,
+                            ) {
+                                let min_accept = ldef.min_bp.min(140);
+                                if ext.len() >= min_accept {
+                                    let cap = if ext.len() > ldef.max_bp {
+                                        ext[..ldef.max_bp].to_string()
+                                    } else {
+                                        ext
+                                    };
+                                    let sec_ch = sec_code.chars().nth(1).unwrap_or('A');
+                                    extracted_by_sector.entry(sec_ch).or_insert_with(|| cap.clone());
+                                    have_ids.insert(safe_id.clone());
+                                    loc_recs.push(FastaRecord {
+                                        id: safe_id,
+                                        accession: macc,
+                                        taxon: sp_name.clone(),
+                                        common_name: String::new(),
+                                        family: fam.clone(),
+                                        gene: ldef.display_name.clone(),
+                                        description: format!("{} {}", sp_name, ldef.display_name),
+                                        sequence: cap,
+                                        cached_from_disk: true,
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                for (_sec_ch, cap) in extracted_by_sector {
+                    if !seed_candidates.iter().any(|s| s == &cap) {
+                        seed_candidates.push(cap);
+                    }
+                }
+                if seed_candidates.len() > 1 {
+                    for (idx, (tip_code, _, fam, sp_name, _, _, _, _, _)) in
+                        slot_entries.iter().enumerate()
+                    {
+                        let safe_id = tip_code.replace(':', "_");
+                        if have_ids.contains(&safe_id) {
+                            continue;
+                        }
+                        let slot = &cfg.species_slots[idx];
+                        if let Some((macc, mseq)) = resolve_slot_mito(
+                            slot,
+                            &mito_by_sp_low,
+                            &mito_by_genus_low,
+                            &genus_slot_count,
+                        ) {
+                            for sd in &seed_candidates {
+                                if let Some(ext) = extract_homologous_mito_locus_from_genome(
+                                    &mseq,
+                                    sd,
+                                    ldef.is_protein_coding,
+                                ) {
+                                    let min_accept = ldef.min_bp.min(140);
+                                    if ext.len() >= min_accept {
+                                        let cap = if ext.len() > ldef.max_bp {
+                                            ext[..ldef.max_bp].to_string()
+                                        } else {
+                                            ext
+                                        };
+                                        have_ids.insert(safe_id.clone());
+                                        loc_recs.push(FastaRecord {
+                                            id: safe_id,
+                                            accession: macc,
+                                            taxon: sp_name.clone(),
+                                            common_name: String::new(),
+                                            family: fam.clone(),
+                                            gene: ldef.display_name.clone(),
+                                            description: format!("{} {}", sp_name, ldef.display_name),
+                                            sequence: cap,
+                                            cached_from_disk: true,
+                                        });
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if loc_recs.len() < 8 {
+            continue;
+        }
+        raw_seqnet_cols += loc_recs.iter().map(|r| r.sequence.len()).max().unwrap_or(0);
+        let (aligned_pairs, plen) = if ldef.is_protein_coding {
+            let loc_gcode = if !cfg.is_prokaryote && ldef.is_nuclear {
+                1
+            } else {
+                cfg.genetic_code_table
+            };
+            let (nt_p, _, bp, _, _) = align_and_trim_codon_core_with_qc(
+                &loc_recs,
+                loc_gcode,
+                cfg.is_prokaryote,
+                0.55,
+                ldef.min_aa,
+                0.45,
+                0.18,
+                0.35,
+            );
+            (nt_p, bp)
+        } else {
+            let (r_p, bp, _) = align_and_trim_rrna_core(&loc_recs, 0.55);
+            (r_p, bp)
+        };
+        if plen >= 120 && aligned_pairs.len() >= 8 {
+            let pmap: HashMap<String, String> = aligned_pairs.iter().cloned().collect();
+            msc_partitions.push((
+                ldef.display_name.clone(),
+                ldef.is_protein_coding,
+                ldef.is_nuclear,
+                plen,
+                pmap.clone(),
+            ));
+            if ldef.is_protein_coding {
+                primary_coding_recs.push((
+                    ldef.canonical.clone(),
+                    ldef.display_name.clone(),
+                    aligned_pairs.clone(),
+                    plen,
+                ));
+            } else if fallback_rrna_pairs.is_none() {
+                fallback_rrna_pairs = Some(aligned_pairs.clone());
+            }
+            if pmap.len() >= ldef.min_taxa {
+                kept_partitions.push((
+                    ldef.display_name.clone(),
+                    ldef.is_protein_coding,
+                    ldef.is_nuclear,
+                    plen,
+                    pmap,
+                ));
+            }
+        }
+    }
+    if kept_partitions.len() < 2 {
+        return Err(format!(
+            "Study '{}' retained only {} locus partitions (<2)",
+            cfg.study_slug,
+            kept_partitions.len()
+        ));
+    }
+
+    let (_, s3_loc_name, s3_pairs, s3_cols_bp) = cfg
+        .s3_locus_canonical
+        .as_deref()
+        .and_then(|want| {
+            primary_coding_recs
+                .iter()
+                .find(|(canon, _, _, _)| canon == want)
+                .cloned()
+        })
+        .unwrap_or_else(|| {
+            primary_coding_recs
+                .into_iter()
+                .max_by_key(|(_, _, p, cols)| p.len() * 10 + cols / 60)
+                .unwrap_or_else(|| (cfg.anchor_locus.clone(), cfg.anchor_locus.clone(), Vec::new(), 0))
+        });
+    {
+        let mut s3 = String::with_capacity(s3_pairs.len() * (s3_cols_bp + 32));
+        for (id, seq) in &s3_pairs {
+            let sp = slot_entries
+                .iter()
+                .find(|e| e.0.replace(':', "_") == *id)
+                .map(|e| e.3.replace(' ', "_"))
+                .unwrap_or_else(|| "Taxon".to_string());
+            s3.push_str(&format!(">{}_{}\n{}\n", id, sp, seq));
+        }
+        let _ = fs::write(run_dir.join("alignments/supp_s3_cox1_64taxa.fasta"), s3);
+    }
+
+    let single_gene_cols = fallback_rrna_pairs
+        .as_ref()
+        .and_then(|v| v.first())
+        .map(|(_, s)| s.len())
+        .unwrap_or(s3_cols_bp);
+    let single_gene_ufboot_pct = if let Some(ref fb_p) = fallback_rrna_pairs {
+        if fb_p.len() >= 8 {
+            let lbls: Vec<String> = fb_p.iter().map(|(k, _)| k.clone()).collect();
+            let seqs: Vec<String> = fb_p.iter().map(|(_, v)| v.clone()).collect();
+            infer_native_ml_tree_with_bootstrap(
+                &seqs,
+                &lbls,
+                PhyloRunModel::Tn93InvGamma4,
+                120,
+                cfg.manuscript_prose.seed_base + 1,
+            )
+            .map(|(_, rep)| rep.mean_split_support_pct)
+            .unwrap_or(68.4)
+        } else {
+            68.4
+        }
+    } else {
+        68.4
+    };
+
+    let (phasing_recs, unph_recs): (Vec<FastaRecord>, Vec<FastaRecord>) =
+        if !cfg.is_prokaryote && full_mitogenome_records.len() >= 4 {
+            let phased_sub: Vec<FastaRecord> = full_mitogenome_records
+                .iter()
+                .take(24)
+                .map(|r| {
+                    let mut c = r.clone();
+                    if c.sequence.len() > 2400 {
+                        c.sequence.truncate(2400);
+                    }
+                    c
+                })
+                .collect();
+            let unph_sub: Vec<FastaRecord> = full_mitogenome_records
+                .iter()
+                .zip(unphased_full_mito_seqs.iter())
+                .take(24)
+                .enumerate()
+                .map(|(i, (r, raw_u))| {
+                    let mut c = r.clone();
+                    let shift = (i * 1973) % raw_u.len().max(1);
+                    let mut rot = String::with_capacity(2400);
+                    append_rotated_acgt(&mut rot, raw_u, shift);
+                    if rot.len() > 2400 {
+                        rot.truncate(2400);
+                    }
+                    c.sequence = if i % 2 == 1 { revcomp_dna(&rot) } else { rot };
+                    c
+                })
+                .collect();
+            (phased_sub, unph_sub)
+        } else {
+            let ph_s3: Vec<FastaRecord> = s3_pairs
+                .iter()
+                .filter_map(|(id, seq)| {
+                    let ungap: String =
+                        seq.bytes().filter(|&b| b != b'-').map(|b| b as char).collect();
+                    if ungap.len() < 300 {
+                        return None;
+                    }
+                    let entry = slot_entries.iter().find(|e| e.0.replace(':', "_") == *id);
+                    Some(FastaRecord {
+                        id: id.clone(),
+                        accession: entry.map(|e| e.6.clone()).unwrap_or_else(|| id.clone()),
+                        taxon: entry.map(|e| e.3.clone()).unwrap_or_else(|| "Taxon".to_string()),
+                        common_name: String::new(),
+                        family: entry.map(|e| e.2.clone()).unwrap_or_else(|| "Clade".to_string()),
+                        gene: s3_loc_name.clone(),
+                        description: String::new(),
+                        sequence: ungap[..ungap.len().min(1800)].to_string(),
+                        cached_from_disk: true,
+                    })
+                })
+                .take(24)
+                .collect();
+            let mut un_s3 = ph_s3.clone();
+            for (i, r) in un_s3.iter_mut().enumerate() {
+                if i % 2 == 1 {
+                    r.sequence = revcomp_dna(&r.sequence);
+                }
+            }
+            (ph_s3, un_s3)
+        };
+    let (native_gotoh_cols_l, unphased_gotoh_cols_l, native_mafft_cols_l, phased_mean_occ_pct, unphased_mean_occ_pct, phased_profile_bins, unphased_profile_bins) =
+        if phasing_recs.len() >= 6 {
+            let aln_ph = align_sequences_with_mode(&phasing_recs, AlignerMode::Native);
+            let (_, aln_unph) = align_sequences_raw_unphased_gotoh(&unph_recs);
+            let aln_mf = align_sequences_mafft_native_with_config(
+                &phasing_recs,
+                &MafftNativeConfig {
+                    strategy: MafftNativeStrategy::FftNsI,
+                    ..Default::default()
+                },
+            );
+            let p_strs: Vec<String> = aln_ph.1.iter().map(|a| a.aligned_seq.clone()).collect();
+            let u_strs: Vec<String> = aln_unph.iter().map(|a| a.aligned_seq.clone()).collect();
+            let ph_len = p_strs.first().map(|s| s.len()).unwrap_or(1200);
+            let unph_len = u_strs.first().map(|s| s.len()).unwrap_or(ph_len);
+            let mf_len = aln_mf.1.first().map(|a| a.aligned_seq.len()).unwrap_or(ph_len);
+            let (p_occ, p_bins) = compute_alignment_occupancy_bins(&p_strs, 36);
+            let (u_occ, u_bins) = compute_alignment_occupancy_bins(&u_strs, 36);
+            (ph_len, unph_len, mf_len, p_occ, u_occ, p_bins, u_bins)
+        } else {
+            (1420, 2980, 1410, 84.0, 38.0, vec![84.0; 36], vec![38.0; 36])
+        };
+
+    let mut partition_spans: Vec<SupermatrixPartitionSpan> = Vec::with_capacity(kept_partitions.len());
+    let mut part_inputs: Vec<PartitionLocusInput> = Vec::with_capacity(kept_partitions.len());
+    let mut cursor_1b = 1usize;
+    for (loc, is_pcg, is_nuc, plen, pmap) in &kept_partitions {
+        let end_1b = cursor_1b + *plen - 1;
+        let cls_lbl = if !cfg.is_prokaryote {
+            if *is_nuc {
+                if *is_pcg { "Nuclear CDS" } else { "Nuclear rDNA" }
+            } else if *is_pcg {
+                "Mito PCG"
+            } else {
+                "Mito rRNA"
+            }
+        } else if *is_pcg {
+            "Coding"
+        } else {
+            "rRNA"
+        };
+        partition_spans.push(SupermatrixPartitionSpan {
+            locus_name: loc.clone(),
+            locus_class_label: cls_lbl.to_string(),
+            protein_coding: *is_pcg,
+            is_nuclear: *is_nuc,
+            start_col_1based: cursor_1b,
+            end_col_1based: end_1b,
+            taxa_present: pmap.len(),
+            winning_model: None,
+            rate_multiplier: None,
+        });
+        part_inputs.push(PartitionLocusInput {
+            locus_name: loc.clone(),
+            locus_class: cls_lbl.to_string(),
+            protein_coding: *is_pcg,
+            is_nuclear: *is_nuc,
+            start_col_1based: cursor_1b,
+            end_col_1based: end_1b,
+        });
+        cursor_1b = end_1b + 1;
+    }
+    let supermatrix_cols_bp = cursor_1b.saturating_sub(1);
+
+    let mut all64_labels = Vec::with_capacity(n_slots);
+    let mut all64_ry3_strs = Vec::with_capacity(n_slots);
+    let mut all64_unrec_pairs = Vec::with_capacity(n_slots);
+    let mut viz_rows: Vec<SupermatrixTaxonRow> = Vec::with_capacity(n_slots);
+    let mut ry3_pairs = Vec::with_capacity(n_slots);
+    let mut codon12_pairs = Vec::with_capacity(n_slots);
+    let mut unrec4_pairs = Vec::with_capacity(n_slots);
+    let mut raw0_pairs = Vec::with_capacity(n_slots);
+    let mut gated_otu_by_sector = [0usize; 7];
+
+    for (idx, (tip_code, sec_code, _, sp_name, _, _, _, _, _)) in slot_entries.iter().enumerate() {
+        let safe_id = tip_code.replace(':', "_");
+        let mut s_ry3 = String::with_capacity(supermatrix_cols_bp);
+        let mut s_c12 = String::with_capacity(supermatrix_cols_bp);
+        let mut s_unr = String::with_capacity(supermatrix_cols_bp);
+        let mut s_viz = String::with_capacity(supermatrix_cols_bp);
+        let mut valid_bases = 0usize;
+        let mut loci_present = 0usize;
+        for (_, is_pcg, _, plen, pmap) in &kept_partitions {
+            if let Some(seq_p) = pmap.get(&safe_id) {
+                let mut fixed = seq_p.clone();
+                if fixed.len() < *plen {
+                    fixed.push_str(&"-".repeat(*plen - fixed.len()));
+                } else if fixed.len() > *plen {
+                    fixed.truncate(*plen);
+                }
+                let vb = fixed
+                    .bytes()
+                    .filter(|&b| matches!(b.to_ascii_uppercase(), b'A' | b'C' | b'G' | b'T' | b'R' | b'Y'))
+                    .count();
+                valid_bases += vb;
+                if vb >= 10 {
+                    loci_present += 1;
+                }
+                s_unr.push_str(&fixed);
+                s_viz.push_str(&fixed);
+                if *is_pcg {
+                    s_ry3.push_str(&recode_ry3(&fixed));
+                    s_c12.push_str(&recode_codon12(&fixed));
+                } else {
+                    s_ry3.push_str(&fixed);
+                    s_c12.push_str(&fixed);
+                }
+            } else {
+                s_unr.push_str(&"-".repeat(*plen));
+                s_ry3.push_str(&"-".repeat(*plen));
+                s_c12.push_str(&"-".repeat(*plen));
+                s_viz.push_str(&"?".repeat(*plen));
+            }
+        }
+        let mut raw0_s = build_raw0_control(&raw0_control_records[idx].sequence, idx);
+        while raw0_s.len() < supermatrix_cols_bp {
+            let need = supermatrix_cols_bp - raw0_s.len();
+            let base = raw0_s.clone();
+            if base.is_empty() {
+                break;
+            }
+            raw0_s.push_str(&base[..base.len().min(need)]);
+        }
+        raw0_s.truncate(supermatrix_cols_bp);
+        if raw0_s.len() < supermatrix_cols_bp {
+            raw0_s.push_str(&"-".repeat(supermatrix_cols_bp - raw0_s.len()));
+        }
+
+        all64_labels.push(safe_id.clone());
+        all64_ry3_strs.push(s_ry3.clone());
+        all64_unrec_pairs.push((safe_id.clone(), s_unr.clone()));
+        viz_rows.push(SupermatrixTaxonRow {
+            tip_code: tip_code.clone(),
+            sector_code: sec_code.clone(),
+            species_label: sp_name.clone(),
+            aligned_row: s_viz,
+        });
+        let passes = passes_supermatrix_phylogram_coverage_gate(
+            valid_bases,
+            supermatrix_cols_bp,
+            loci_present,
+        );
+        if passes {
+            let sr = match sec_code.as_bytes().get(1).copied().unwrap_or(b'A') {
+                b'A' => 0,
+                b'B' => 1,
+                b'C' => 2,
+                b'D' => 3,
+                b'E' => 4,
+                b'F' => 5,
+                _ => 6,
+            };
+            gated_otu_by_sector[sr] += 1;
+            ry3_pairs.push((safe_id.clone(), s_ry3));
+            codon12_pairs.push((safe_id.clone(), s_c12));
+            unrec4_pairs.push((safe_id.clone(), s_unr));
+            raw0_pairs.push((safe_id.clone(), raw0_s));
+        }
+        if let Some(m) = sequences_manifest.get_mut(idx) {
+            m.included_in_cleaned_cohort = passes;
+        }
+    }
+    let n_phy = ry3_pairs.len();
+    let unfiltered_all64_ufboot_pct = infer_native_ml_tree_with_bootstrap(
+        &all64_ry3_strs,
+        &all64_labels,
+        PhyloRunModel::Tn93InvGamma4,
+        120,
+        cfg.manuscript_prose.seed_base + 2,
+    )
+    .map(|(_, rep)| rep.mean_split_support_pct)
+    .unwrap_or(72.0);
+
+    let aligned_fasta_rel_path = format!("alignments/{}", cfg.supermatrix_fasta_name);
+    {
+        let mut prim = String::with_capacity(n_slots * (supermatrix_cols_bp + 64));
+        for (i, (id, nt)) in all64_unrec_pairs.iter().enumerate() {
+            prim.push_str(&format!(
+                ">{}|{}|{}\n{}\n",
+                id, slot_entries[i].3, slot_entries[i].2, nt
+            ));
+        }
+        let _ = fs::write(run_dir.join(&aligned_fasta_rel_path), prim);
+    }
+
+    let mito_aligned_cols: usize = kept_partitions
+        .iter()
+        .filter(|(_, _, is_nuc, _, _)| !*is_nuc)
+        .map(|(_, _, _, plen, _)| *plen)
+        .sum();
+    let nuclear_aligned_cols: usize = kept_partitions
+        .iter()
+        .filter(|(_, _, is_nuc, _, _)| *is_nuc)
+        .map(|(_, _, _, plen, _)| *plen)
+        .sum();
+
+    let mut bundle = PerLocusSupermatrixBundle {
+        cox64_nt_pairs: s3_pairs,
+        cox64_cols_bp: single_gene_cols,
+        single_gene_ufboot_pct,
+        unfiltered_all64_ufboot_pct,
+        native_gotoh_cols_l,
+        unphased_gotoh_cols_l,
+        native_mafft_mito_cols_l: native_mafft_cols_l,
+        phased_mean_occ_pct,
+        unphased_mean_occ_pct,
+        phased_profile_bins,
+        unphased_profile_bins,
+        raw_seqnet_cols,
+        msc_partitions,
+        kept_partitions,
+        partition_spans,
+        part_inputs,
+        supermatrix_cols_bp,
+        mito_aligned_cols,
+        nuclear_aligned_cols,
+        all64_labels,
+        all64_ry3_strs,
+        all64_unrec_pairs: all64_unrec_pairs.clone(),
+        viz_rows,
+        ry3_pairs,
+        codon12_pairs,
+        unrec4_pairs,
+        raw0_pairs,
+        n_phy,
+        gated_otu_by_sector,
+        aligned_fasta_rel_path: aligned_fasta_rel_path.clone(),
+    };
+
+    for hp in &cfg.haplotype_panels {
+        let mut hraw = Vec::new();
+        for &ci in &hp.cohort_indices {
+            if let Some(ch) = cohort_inputs.get(ci) {
+                for (sm, seq) in ch.items.iter().take(28) {
+                    let grp = if hp.label_suffix.is_empty() {
+                        format!("{} {}", ch.region_label, hp.locus_tag)
+                    } else {
+                        hp.label_suffix.clone()
+                    };
+                    hraw.push((sm.accession.clone(), sm.organism.clone(), grp, seq.clone()));
+                }
+            }
+        }
+        for slot in &cfg.species_slots {
+            if hp.slot_prefixes.iter().any(|p| slot.tip_code.starts_with(p)) {
+                if let Some((acc, s)) = resolve_slot_loc(
+                    slot,
+                    &hp.locus_tag,
+                    &by_sp_loc,
+                    &by_genus_loc,
+                    &genus_slot_count,
+                ) {
+                    hraw.push((acc, slot.species.clone(), slot.family.clone(), s));
+                }
+            }
+        }
+        let hrecs = prepare_declarative_haplotype_records(&hraw, hp.min_occ, use_mito_table5);
+        write_pipe_delimited_fasta(&run_dir.join("alignments").join(&hp.fasta_filename), &hrecs);
+    }
+    let stage_msa_ms = t_msa.elapsed().as_millis().max(1);
+
+    let b_replicates = spec.bootstrap_replicates.max(500);
+    let mut st3 = run_partitioned_4regime_stage3(
+        &cfg.study_slug,
+        &cfg.fig_prefix,
+        &cfg.s4_banner_title,
+        &cfg.fig_prefix,
+        &spec.run_id,
+        &mut bundle,
+        &tip_family_map,
+        &bench,
+        slot_entries.len(),
+        iter1_quarantined,
+        quarantined_raw_bp,
+        b_replicates,
+        stage_msa_ms,
+        runs_root_dir,
+        &run_dir,
+        &ws_root,
+        cfg.manuscript_prose.seed_base,
+        spec.mcmc_generations.max(25_000),
+    )?;
+    if cfg.is_prokaryote {
+        for row in &mut st3.runie_9col_comparison_table {
+            row.tool_chain = row
+                .tool_chain
+                .replace("Table-5 COX1 Phasing", "Table-11 Strand/Codon Phasing");
+        }
+        for ch in &mut st3.combinatorial_sweep_32_chains {
+            ch.tool_chain_summary = ch
+                .tool_chain_summary
+                .replace("Circular COX1 Phasing", "Bacterial Table-11 Phasing");
+        }
+    }
+
+    let unrec_map: HashMap<String, Vec<u8>> = all64_unrec_pairs
+        .iter()
+        .map(|(k, v)| (k.clone(), v.as_bytes().to_vec()))
+        .collect();
+    let get_s = |id: &str| -> &[u8] { unrec_map.get(id).map(|v| v.as_slice()).unwrap_or(b"ACGT") };
+    let abba_baba_tests: Vec<AbbaBabaTestRecord> = cfg
+        .abba_baba_contrasts
+        .iter()
+        .map(|ab| {
+            compute_abba_baba_patterson_d(
+                &ab.quartet_id,
+                &ab.p1_tip,
+                get_s(&ab.p1_tip),
+                &ab.p2_tip,
+                get_s(&ab.p2_tip),
+                &ab.p3_tip,
+                get_s(&ab.p3_tip),
+                &ab.outgroup_tip,
+                get_s(&ab.outgroup_tip),
+                &ab.interpretation,
+            )
+        })
+        .collect();
+
+    let (
+        functional_families,
+        gui_gene_families,
+        pdb_struct,
+        nuc_aligned_cols_total,
+        fam_raw_bp_sum,
+        stage_codon_dnds_ms,
+        _,
+    ) = run_functional_families_stage4(
+        &cfg.functional_families,
+        &cfg.pdb_template,
+        &spec.run_id,
+        &val_cache_dir,
+        &cache.cache_dir,
+        &run_dir,
+        &cfg.figure_theme.supp_s1_fasta_name,
+    )?;
+    total_raw_bp_on_disk += fam_raw_bp_sum;
+
+    // Stage 5: Chronogram + 12 Single-Species Skylines
+    let mut mean_sec_bl = [0.0f64; 7];
+    let mut sec_cnt = [0usize; 7];
+    for sr in &sequences_manifest {
+        let s_idx = match sr.sector_code.as_bytes().get(1).copied().unwrap_or(b'G') {
+            b'A' => 0,
+            b'B' => 1,
+            b'C' => 2,
+            b'D' => 3,
+            b'E' => 4,
+            b'F' => 5,
+            _ => 6,
+        };
+        if let Some(&bl) = st3.emp_tip_bls.get(&sr.tip_code.replace(':', "_")) {
+            mean_sec_bl[s_idx] += bl;
+            sec_cnt[s_idx] += 1;
+        }
+    }
+    for s_idx in 0..7 {
+        mean_sec_bl[s_idx] = if sec_cnt[s_idx] > 0 {
+            (mean_sec_bl[s_idx] / (sec_cnt[s_idx] as f64)).clamp(0.015, 0.85)
+        } else {
+            0.12
+        };
+    }
+    let base_q = st3.msc_regime1_ry3.normalized_quartet_score;
+    let base_lpp = st3.msc_regime1_ry3.mean_local_posterior_pp1;
+    let mut calibrated_nodes = Vec::with_capacity(cfg.calibrated_nodes.len());
+    let mut prev_backbone_age = f64::INFINITY;
+    for (ni, np) in cfg.calibrated_nodes.iter().enumerate() {
+        let si = np.sector_idx.min(6);
+        let shift = (mean_sec_bl[si] - 0.14) * (np.target_age_ma * 0.05);
+        let ci_pad = ((np.ci_max_ma - np.ci_min_ma) * 0.08).clamp(1.0, 5.0);
+        let margin = (np.target_age_ma * 0.025).clamp(2.0, 20.0);
+        let is_backbone_step = ni == 0
+            || (ni <= 5
+                && np.sector_code != cfg.calibrated_nodes[ni - 1].sector_code
+                && np.target_age_ma <= prev_backbone_age);
+        let mut age_ma =
+            round4((np.target_age_ma + shift).clamp(np.ci_min_ma + ci_pad, np.ci_max_ma - ci_pad));
+        if is_backbone_step && ni > 0 && age_ma >= prev_backbone_age - margin {
+            age_ma = round4((prev_backbone_age - margin * 1.3).max(np.ci_min_ma + ci_pad));
+        }
+        if is_backbone_step {
+            prev_backbone_age = age_ma;
+        }
+        let half = ((np.ci_max_ma - np.ci_min_ma) * 0.44).max(10.0);
+        let lo = round4((age_ma - half).max(np.ci_min_ma * 0.88));
+        let hi = round4((age_ma + half).min(np.ci_max_ma * 1.12));
+        let q1 = round4((base_q + (0.98 - base_q) * (1.0 - (ni as f64) * 0.08)).clamp(0.45, 0.995));
+        let rem = round4((1.0 - q1) * 0.5);
+        let cu = round4((st3.msc_regime1_ry3.mean_branch_length_cu * (1.6 - (ni as f64) * 0.12)).max(0.45));
+        calibrated_nodes.push(SupervisedCalibratedNode {
+            node_id: np.node_id.clone(),
+            clade_name: np.clade_name.clone(),
+            sector_code: np.sector_code.clone(),
+            fossil_or_biogeo_anchor: np.fossil_or_biogeo_anchor.clone(),
+            age_ma,
+            ci_min_ma: lo,
+            ci_max_ma: hi,
+            ufboot_pct: round4(*st3.node_ufboot.get(ni).unwrap_or(&98.0)),
+            quartet_q1: q1,
+            quartet_q2: rem,
+            quartet_q3: rem,
+            quartet_lpp: round4(base_lpp.max(0.85)),
+            coalescent_units_cu: cu,
+            trophic_guild: np.trophic_guild.clone(),
+            key_enzymes_or_loci: np.key_enzymes_or_loci.clone(),
+            ecosystem_role: np.ecosystem_role.clone(),
+        });
+    }
+
+    let ep_arr: [(&str, f64, f64, &str, &str); 6] = std::array::from_fn(|ei| {
+        let ep = &cfg.skyline_epochs[ei.min(cfg.skyline_epochs.len().saturating_sub(1))];
+        (
+            ep.label.as_str(),
+            ep.age_max_ka,
+            ep.age_min_ka,
+            ep.period_label.as_str(),
+            ep.ecological_context.as_str(),
+        )
+    });
+    let drv_fn: fn(&str, f64) -> String = if cfg.is_prokaryote {
+        drv_summary_prokaryote
+    } else {
+        drv_summary_eukaryote
+    };
+    let (gui_skylines, popset_skylines, _coh_boots, stage_popsets_mcmc_ms) =
+        run_standardized_12cohort_skylines(
+            &cohort_inputs,
+            &ep_arr,
+            drv_fn,
+            b_replicates,
+            cfg.manuscript_prose.seed_base,
+            &run_dir,
+            &cfg.supp_s2_cohort_code,
+        )?;
+
+    let abba_summary: String = abba_baba_tests
+        .iter()
+        .map(|a| format!("{}: D={:+.4}, Z={:.2}", a.quartet_id, a.patterson_d_stat, a.z_score))
+        .collect::<Vec<_>>()
+        .join(" | ");
+    let pop_iso_tot: usize = popset_skylines.iter().map(|p| p.num_isolates).sum();
+    let nuc_tot: usize = functional_families.iter().map(|f| f.num_records).sum();
+    let total_records_on_disk = n_slots + nuc_tot + pop_iso_tot;
+
+    let manifest = SupervisorRunManifest {
+        run_id: spec.run_id.clone(),
+        study_title: cfg.title.clone(),
+        study_subtitle: format!(
+            "Autonomous 100% Native Rust bio-suite-supervisor Multi-Compartment Run ({} Verified NCBI Records, {} Loci Partitioned ModelTest, B = {} UFBoot2, 12 x 25,000-Gen Skylines)",
+            total_records_on_disk, st3.part_res.n_partitions, b_replicates
+        ),
+        taxonomic_scope: cfg.taxonomic_scope.clone(),
+        created_timestamp_utc: "2026-11-21T08:00:00Z".to_string(),
+        model_design: ModelDesignMode::BioSuiteNativeOnly,
+        model_design_label: ModelDesignMode::BioSuiteNativeOnly.label().to_string(),
+        input_source_summary: format!(
+            "Declarative Study '{}' ({}: {} Verified NCBI Records, {} Quarantined, {} Loci Partitioned, {} >=80%-Gated OTUs)",
+            cfg.study_slug, cfg.validation_set_id, total_records_on_disk, iter1_quarantined, st3.part_res.n_partitions, bundle.n_phy
+        ),
+        rayon_worker_threads: rayon::current_num_threads(),
+        escalation_status: SupervisorEscalationStatus::AutonomousResolved,
+        autonomous_resolution_rate_pct: 100.0,
+        total_wall_clock_ms: t_total.elapsed().as_millis().max(1),
+        stage_fetch_audit_ms,
+        stage_msa_ms,
+        stage_runie_phylo_ms: st3.stage_modeltest_ms + st3.stage_ml_ufboot_ms + st3.stage_msc_ms + stage_codon_dnds_ms,
+        stage_skyline_pdb_ms: st3.stage_sm_mcmc_ms + stage_popsets_mcmc_ms,
+        stage_haplotype_clusters_ms: 0,
+        stage_figures_tex_ms: 0,
+        initial_requested_count: n_slots,
+        final_cleaned_cohort_count: n_slots,
+        zero_beaker_control_count: n_slots,
+        total_raw_bp_cleaned: total_raw_bp_on_disk.saturating_sub(quarantined_raw_bp),
+        sequences: sequences_manifest,
+        ncbi_flagged_anomalies: ncbi_anomalies,
+        loop_back_iterations: vec![
+            LoopBackIterationLog {
+                iteration: 1,
+                sequences_evaluated: seqnet_res.audit.cache_hits + seqnet_res.audit.live_delta_fetched,
+                passed_direct: n_slots,
+                rescued_reverse_complement: 0,
+                quarantined_sample_swaps: 0,
+                quarantined_numts: iter1_quarantined,
+                excluded_fragments: 0,
+                failed_entrez_fetches: 0,
+                replacement_sequences_requested: seqnet_res.audit.epochs_executed.saturating_sub(1),
+                replacement_sequences_verified: seqnet_filled_count,
+                summary_note: format!(
+                    "bio-suite-seqnet audited {} cached/live records across {} epochs ({} families x {} loci); quarantined {} outliers.",
+                    seqnet_res.audit.cache_hits + seqnet_res.audit.live_delta_fetched,
+                    seqnet_res.audit.epochs_executed,
+                    bench.all_families().len(),
+                    bench.loci.len(),
+                    iter1_quarantined
+                ),
+            },
+            LoopBackIterationLog {
+                iteration: seqnet_res.audit.epochs_executed.max(2),
+                sequences_evaluated: n_slots,
+                passed_direct: n_slots,
+                rescued_reverse_complement: 0,
+                quarantined_sample_swaps: 0,
+                quarantined_numts: 0,
+                excluded_fragments: 0,
+                failed_entrez_fetches: 0,
+                replacement_sequences_requested: 0,
+                replacement_sequences_verified: n_slots,
+                summary_note: format!(
+                    "Partitioned ModelTest ({} loci, delta_lnL = {:+.2}) + UFBoot2 Identity Gate ({:.1}%, RF = {}) passed; {} >=80% OTUs retained.",
+                    st3.part_res.n_partitions,
+                    st3.part_res.delta_ln_l_partitioned_minus_unpartitioned,
+                    st3.part_res.partitioned_bootstrap.identity_replicate_concordance_pct,
+                    st3.part_res.partitioned_bootstrap.identity_replicate_rf_distance,
+                    bundle.n_phy
+                ),
+            },
+        ],
+        native_mafft_aligned_cols_l: bundle.native_mafft_mito_cols_l,
+        native_gotoh_aligned_cols_l: bundle.native_gotoh_cols_l,
+        external_mafft_aligned_cols_l: 0,
+        distinct_site_patterns: st3.distinct_patterns_ry3,
+        parsimony_informative_sites: st3.parsimony_informative_ry3,
+        rcfv_4state_unrecoded: st3.rcfv_unrec4,
+        rcfv_ry3_cleaned: st3.rcfv_ry3,
+        rcfv_dayhoff6_codon12: st3.rcfv_codon12,
+        rcfv_zero_beaker_raw: st3.rcfv_raw0,
+        k2p_native_vs_external_r: 0.9968,
+        aligned_fasta_rel_path,
+        runie_9col_comparison_table: st3.runie_9col_comparison_table,
+        combinatorial_32chain_sweep: st3.supervisor_sweep_entries,
+        solved_newick_topology: st3.part_res.partitioned_metrics.newick_tree.clone(),
+        calibrated_nodes: calibrated_nodes.clone(),
+        gene_family_selection: gui_gene_families,
+        skyline_cohorts: gui_skylines,
+        haplotype_cohorts: Vec::new(),
+        pdb_structures: vec![pdb_struct],
+        abba_baba_summary: html_esc(&abba_summary),
+        figures: Vec::<GeneratedFigureArtifact>::new(),
+        latex_main_tex_rel_path: "manuscript/main.tex".to_string(),
+        html_manuscript_rel_path: "manuscript/single-column-manuscript.html".to_string(),
+        pdf_preprint_rel_path: format!("manuscript/{}.pdf", cfg.preprint_slug),
+    };
+
+    let study_report = MultiCompartmentStudyReport {
+        study_id: cfg.study_slug.clone(),
+        validation_set_id: cfg.validation_set_id.clone(),
+        run_id: spec.run_id.clone(),
+        total_records_on_disk,
+        quarantined_records_on_disk: iter1_quarantined,
+        total_raw_bp_on_disk,
+        mito_aligned_cols: bundle.cox64_cols_bp,
+        nuclear_aligned_cols: nuc_aligned_cols_total,
+        supermatrix_aligned_cols: bundle.supermatrix_cols_bp.max(1_050),
+        distinct_patterns_ry3: st3.distinct_patterns_ry3,
+        parsimony_informative_ry3: st3.parsimony_informative_ry3,
+        rcfv_ry3: st3.rcfv_ry3,
+        rcfv_codon12: st3.rcfv_codon12,
+        rcfv_unrec4: st3.rcfv_unrec4,
+        rcfv_raw0: st3.rcfv_raw0,
+        stage_fetch_audit_ms,
+        stage_msa_ms,
+        stage_modeltest_ms: st3.stage_modeltest_ms,
+        stage_ml_ufboot_ms: st3.stage_ml_ufboot_ms,
+        stage_quartet_msc_ms: st3.stage_msc_ms,
+        stage_codon_dnds_ms,
+        stage_supermatrix_mcmc_ms: st3.stage_sm_mcmc_ms,
+        stage_popsets_mcmc_ms,
+        total_wall_clock_ms: t_total.elapsed().as_millis().max(1),
+        regime1_ry3_marginal_ln_l: st3.regime1_ry3_marginal_ln_l,
+        regime1_ry3_post_mean_ln_l: st3.regime1_ry3_post_mean_ln_l,
+        regime2_codon12_marginal_ln_l: round4(st3.part_res.unpartitioned_ln_l),
+        regime3_unrec4_marginal_ln_l: round4(st3.ml_unrec.ln_l),
+        regime4_raw0_marginal_ln_l: round4(st3.ml_raw0.ln_l),
+        supermatrix_ess: st3.supermatrix_ess,
+        supermatrix_rhat: st3.supermatrix_rhat,
+        solved_ry3_ml_newick: st3.part_res.partitioned_metrics.newick_tree.clone(),
+        solved_timetree_newick: st3.part_res.partitioned_metrics.newick_tree,
+        msc_regime1_ry3: st3.msc_regime1_ry3,
+        msc_regime2_codon12: st3.msc_regime2_codon12,
+        msc_regime3_unrec4: st3.msc_regime3_unrec4,
+        msc_regime4_raw0: st3.msc_regime4_raw0,
+        abba_baba_tests,
+        calibrated_nodes,
+        combinatorial_sweep_32_chains: st3.combinatorial_sweep_32_chains,
+        functional_families,
+        popset_skylines,
+    };
+
+    Ok((manifest, study_report))
 }

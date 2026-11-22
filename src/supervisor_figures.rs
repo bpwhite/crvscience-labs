@@ -11,6 +11,7 @@ use crate::align_viewer::{
 use crate::mcmc_skyline::{parse_phylo_tree, ParsedPhyloNode};
 use crate::supervisor::{GeneratedFigureArtifact, RunieComparisonRow, SupervisorRunManifest};
 use crate::supervisor_study::{DetailedPopsetSkyline, MultiCompartmentStudyReport};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -174,7 +175,7 @@ pub(crate) fn build_balanced_sector_clade(
     }
 }
 
-pub(crate) struct FigureStudyTheme {
+pub(crate) struct StaticFigureTheme {
     pub sec_crown_ages: [f64; 7],
     pub backbone_node_ages: [f64; 6], // [node_vii, node_vi, node_iv, node_iii, node_ii, node_i_root]
     pub fig1_max_ma: f64,
@@ -225,7 +226,134 @@ pub(crate) struct FigureStudyTheme {
     pub supp_s3_stem: &'static str,
 }
 
-pub(crate) const BEMISIA_THEME: FigureStudyTheme = FigureStudyTheme {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FigureStudyTheme {
+    pub sec_crown_ages: [f64; 7],
+    pub backbone_node_ages: [f64; 6],
+    pub fig1_max_ma: f64,
+    pub fig1_eras: Vec<(String, f64, f64, String)>,
+    pub fig1_ticks: Vec<usize>,
+    pub fig1_node_y_slots: [f64; 8],
+    pub fig1_clade_cards: Vec<(String, usize, usize, String, String, String)>,
+    pub fig1_web_svg: String,
+    pub fig1_title: String,
+    pub fig1_caption: String,
+    pub fig2_sec_ranges: Vec<(String, usize, usize, String, String)>,
+    pub fig2_web_svg: String,
+    pub fig2_title: String,
+    pub fig2_caption: String,
+    pub fig3_sec_tip_anchors: [(String, String, usize); 8],
+    pub fig3_abba_arc_tips: (String, String),
+    pub fig3_web_svg: String,
+    pub fig3_title: String,
+    pub fig3_caption: String,
+    pub fig4a_web_svg: String,
+    pub fig4a_title: String,
+    pub fig4a_caption: String,
+    pub fig4b_web_svg: String,
+    pub fig4b_title: String,
+    pub fig4b_caption: String,
+    pub fig5_short_fam_titles: [String; 4],
+    pub fig5_panel_b_fam_names: [String; 4],
+    pub fig5_panel_d_header: String,
+    pub fig5_panel_d_upper_subtitle: String,
+    pub fig5_web_svg: String,
+    pub fig5_title: String,
+    pub fig5_caption: String,
+    pub fig6_web_svg: String,
+    pub fig6_title: String,
+    pub fig6_caption: String,
+    pub fig6_clade_label: String,
+    pub fig6_p450_label: String,
+    pub fig6_its_label: String,
+    pub supp_s1_fasta_name: String,
+    pub supp_s1_title: String,
+    pub supp_s1_source: String,
+    pub supp_s1_stem: String,
+    pub supp_s2_title: String,
+    pub supp_s2_source: String,
+    pub supp_s2_stem: String,
+    pub supp_s3_title: String,
+    pub supp_s3_source: String,
+    pub supp_s3_stem: String,
+}
+
+impl From<&StaticFigureTheme> for FigureStudyTheme {
+    fn from(s: &StaticFigureTheme) -> Self {
+        Self {
+            sec_crown_ages: s.sec_crown_ages,
+            backbone_node_ages: s.backbone_node_ages,
+            fig1_max_ma: s.fig1_max_ma,
+            fig1_eras: s
+                .fig1_eras
+                .iter()
+                .map(|&(a, b, c, d)| (a.to_string(), b, c, d.to_string()))
+                .collect(),
+            fig1_ticks: s.fig1_ticks.to_vec(),
+            fig1_node_y_slots: s.fig1_node_y_slots,
+            fig1_clade_cards: s
+                .fig1_clade_cards
+                .iter()
+                .map(|&(a, b, c, d, e, f)| {
+                    (a.to_string(), b, c, d.to_string(), e.to_string(), f.to_string())
+                })
+                .collect(),
+            fig1_web_svg: s.fig1_web_svg.to_string(),
+            fig1_title: s.fig1_title.to_string(),
+            fig1_caption: s.fig1_caption.to_string(),
+            fig2_sec_ranges: s
+                .fig2_sec_ranges
+                .iter()
+                .map(|&(a, b, c, d, e)| (a.to_string(), b, c, d.to_string(), e.to_string()))
+                .collect(),
+            fig2_web_svg: s.fig2_web_svg.to_string(),
+            fig2_title: s.fig2_title.to_string(),
+            fig2_caption: s.fig2_caption.to_string(),
+            fig3_sec_tip_anchors: s
+                .fig3_sec_tip_anchors
+                .clone()
+                .map(|(a, b, c)| (a.to_string(), b.to_string(), c)),
+            fig3_abba_arc_tips: (
+                s.fig3_abba_arc_tips.0.to_string(),
+                s.fig3_abba_arc_tips.1.to_string(),
+            ),
+            fig3_web_svg: s.fig3_web_svg.to_string(),
+            fig3_title: s.fig3_title.to_string(),
+            fig3_caption: s.fig3_caption.to_string(),
+            fig4a_web_svg: s.fig4a_web_svg.to_string(),
+            fig4a_title: s.fig4a_title.to_string(),
+            fig4a_caption: s.fig4a_caption.to_string(),
+            fig4b_web_svg: s.fig4b_web_svg.to_string(),
+            fig4b_title: s.fig4b_title.to_string(),
+            fig4b_caption: s.fig4b_caption.to_string(),
+            fig5_short_fam_titles: s.fig5_short_fam_titles.map(|x| x.to_string()),
+            fig5_panel_b_fam_names: s.fig5_panel_b_fam_names.map(|x| x.to_string()),
+            fig5_panel_d_header: s.fig5_panel_d_header.to_string(),
+            fig5_panel_d_upper_subtitle: s.fig5_panel_d_upper_subtitle.to_string(),
+            fig5_web_svg: s.fig5_web_svg.to_string(),
+            fig5_title: s.fig5_title.to_string(),
+            fig5_caption: s.fig5_caption.to_string(),
+            fig6_web_svg: s.fig6_web_svg.to_string(),
+            fig6_title: s.fig6_title.to_string(),
+            fig6_caption: s.fig6_caption.to_string(),
+            fig6_clade_label: s.fig6_clade_label.to_string(),
+            fig6_p450_label: s.fig6_p450_label.to_string(),
+            fig6_its_label: s.fig6_its_label.to_string(),
+            supp_s1_fasta_name: s.supp_s1_fasta_name.to_string(),
+            supp_s1_title: s.supp_s1_title.to_string(),
+            supp_s1_source: s.supp_s1_source.to_string(),
+            supp_s1_stem: s.supp_s1_stem.to_string(),
+            supp_s2_title: s.supp_s2_title.to_string(),
+            supp_s2_source: s.supp_s2_source.to_string(),
+            supp_s2_stem: s.supp_s2_stem.to_string(),
+            supp_s3_title: s.supp_s3_title.to_string(),
+            supp_s3_source: s.supp_s3_source.to_string(),
+            supp_s3_stem: s.supp_s3_stem.to_string(),
+        }
+    }
+}
+
+pub(crate) const BEMISIA_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [168.0, 74.0, 68.0, 20.6, 12.8, 6.4, 2.86],
     backbone_node_ages: [8.14, 15.6, 46.8, 92.8, 129.4, 234.6],
     fig1_max_ma: 255.0,
@@ -317,7 +445,7 @@ pub(crate) const BEMISIA_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "bemisia-global-supp-s3-cox1-ry3-alignview",
 };
 
-pub(crate) const SNAILS_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const SNAILS_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [264.0, 148.0, 112.0, 138.4, 104.0, 44.8, 21.8],
     backbone_node_ages: [91.6, 161.8, 212.4, 258.6, 386.2, 472.4],
     fig1_max_ma: 500.0,
@@ -409,7 +537,7 @@ pub(crate) const SNAILS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "invasive-snails-supp-s3-cox1-ry3-alignview",
 };
 
-pub(crate) const NUDIBRANCHS_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const NUDIBRANCHS_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [178.0, 128.0, 108.0, 112.4, 96.2, 68.4, 52.8],
     backbone_node_ages: [94.8, 138.6, 164.8, 198.2, 236.4, 284.6],
     fig1_max_ma: 300.0,
@@ -501,7 +629,7 @@ pub(crate) const NUDIBRANCHS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "nudibranch-global-supp-s3-cox1-ry3-alignview",
 };
 
-pub(crate) const ISOPTERA_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const ISOPTERA_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [174.6, 114.0, 86.0, 72.4, 38.4, 36.2, 34.6],
     backbone_node_ages: [44.8, 54.2, 98.6, 126.4, 148.8, 238.4],
     fig1_max_ma: 260.0,
@@ -593,7 +721,7 @@ pub(crate) const ISOPTERA_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "isoptera-global-supp-s3-cox1-ry3-alignview",
 };
 
-pub(crate) const NEMATODA_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const NEMATODA_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [312.0, 214.0, 148.0, 94.8, 68.4, 52.6, 58.4],
     backbone_node_ages: [74.6, 124.2, 178.4, 242.6, 386.4, 468.0],
     fig1_max_ma: 500.0,
@@ -701,7 +829,7 @@ static ACAN_ERAS_500: &[(&str, f64, f64, &str)] = &[
     ("Neogene-Quat", 23.0, 0.0, "#f1f5f9"),
 ];
 
-pub(crate) const ACANTHOCHITONIDAE_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const ACANTHOCHITONIDAE_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [212.0, 178.0, 138.0, 114.2, 62.4, 31.8, 18.6],
     backbone_node_ages: [52.4, 91.2, 162.8, 228.4, 306.0, 388.0],
     fig1_max_ma: 450.0,
@@ -795,7 +923,7 @@ static ARTHROPODA_ERAS_580: &[(&str, f64, f64, &str)] = &[
     ("Cenozoic", 66.0, 0.0, "#f1f5f9"),
 ];
 
-pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const CHINA_AUS_PESTS_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [112.0, 142.0, 268.0, 102.0, 94.0, 68.0, 96.0],
     backbone_node_ages: [148.0, 288.0, 328.0, 356.0, 378.0, 545.0],
     fig1_max_ma: 580.0,
@@ -881,7 +1009,7 @@ pub(crate) const CHINA_AUS_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
     supp_s3_stem: "china-australia-pests-supp-s3-cox1-ry3-alignview",
 };
 
-pub(crate) const US_AG_PESTS_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const US_AG_PESTS_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [118.0, 145.0, 272.0, 96.0, 108.0, 72.0, 98.0],
     backbone_node_ages: [148.0, 288.0, 328.0, 356.0, 378.0, 545.0],
     fig1_max_ma: 580.0,
@@ -975,7 +1103,7 @@ static BACT_ERAS_3450: &[(&str, f64, f64, &str)] = &[
     ("Phanerozoic", 538.8, 0.0, "#f1f5f9"),
 ];
 
-pub(crate) const GRAM_POSITIVE_THEME: FigureStudyTheme = FigureStudyTheme {
+pub(crate) const GRAM_POSITIVE_THEME: StaticFigureTheme = StaticFigureTheme {
     sec_crown_ages: [1650.0, 1480.0, 980.0, 740.0, 620.0, 880.0, 460.0],
     backbone_node_ages: [1420.0, 1240.0, 1620.0, 2240.0, 2680.0, 3120.0],
     fig1_max_ma: 3450.0,
@@ -1343,9 +1471,9 @@ fn render_bemisia_fig1_chronogram(
     let max_ma = theme.fig1_max_ma;
     let x_ma = |ma: f64| -> f64 { x_tips - (ma / max_ma).clamp(0.0, 1.0) * (x_tips - x_root) };
 
-    for &(nm, hi, lo, bg) in theme.fig1_eras {
-        let bx0 = x_ma(hi);
-        let bw = (x_ma(lo) - bx0).max(2.0);
+    for (nm, hi, lo, bg) in &theme.fig1_eras {
+        let bx0 = x_ma(*hi);
+        let bw = (x_ma(*lo) - bx0).max(2.0);
         svg.push_str(&format!(
             r##"<rect x="{:.1}" y="18" width="{:.1}" height="1158" fill="{}" stroke="#e2e8f0" stroke-width="0.8"/>"##,
             bx0, bw, bg
@@ -1357,7 +1485,7 @@ fn render_bemisia_fig1_chronogram(
         ));
     }
 
-    for &tick in theme.fig1_ticks {
+    for &tick in &theme.fig1_ticks {
         let tx = x_ma(tick as f64);
         svg.push_str(&format!(
             r##"<line x1="{:.1}" y1="44" x2="{:.1}" y2="1176" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="2,4"/>"##,
@@ -1372,7 +1500,7 @@ fn render_bemisia_fig1_chronogram(
 
     let leaf_count = count_tree_leaves(root).max(1);
     let (fig1_title_dyn, fig1_cap_dyn) =
-        resolve_dynamic_title_and_caption(theme.fig1_title, theme.fig1_caption, leaf_count);
+        resolve_dynamic_title_and_caption(&theme.fig1_title, &theme.fig1_caption, leaf_count);
     let y_top = 56.0_f64;
     let y_step = (1096.2_f64 / (leaf_count.saturating_sub(1).max(1) as f64)).clamp(17.4, 33.5);
     let y_of = |slot: f64| -> f64 { y_top + slot * y_step };
@@ -1610,8 +1738,8 @@ fn render_bemisia_fig1_chronogram(
     // Right-hand Clade Brackets & Summary Cards across active non-empty sectors
     let sec_slot_ranges = collect_leaf_sector_ranges(root);
     let mut prev_card_bottom = 16.0_f64;
-    for &(sec, _i0_def, _i1_def, hdr, line1, line2) in theme.fig1_clade_cards {
-        let sec_rk = match sec {
+    for (sec, _i0_def, _i1_def, hdr, line1, line2) in &theme.fig1_clade_cards {
+        let sec_rk = match sec.as_str() {
             "[A]" => 0,
             "[B]" => 1,
             "[C]" => 2,
@@ -1671,7 +1799,7 @@ fn render_bemisia_fig1_chronogram(
     save_figure_triple_and_web_svg(
         1,
         "fig1-vertical-chronogram",
-        theme.fig1_web_svg,
+        &theme.fig1_web_svg,
         "Chronogram",
         &fig1_title_dyn,
         &fig1_cap_dyn,
@@ -1726,7 +1854,7 @@ fn render_bemisia_fig2_circular_phylogram(
 
     let leaf_count = count_tree_leaves(root).max(1);
     let (fig2_title_dyn, fig2_cap_dyn) =
-        resolve_dynamic_title_and_caption(theme.fig2_title, theme.fig2_caption, leaf_count);
+        resolve_dynamic_title_and_caption(&theme.fig2_title, &theme.fig2_caption, leaf_count);
     let mut fb = SoftwareFrameBuffer::new(w, h);
     fb.clear((255, 255, 255));
     fb.fill_rect(16, 10, (w - 32) as i32, 26, (15, 23, 42));
@@ -1740,24 +1868,24 @@ fn render_bemisia_fig2_circular_phylogram(
     );
 
     // Sector angular ranges for alternating B&W pie wedges (`#f1f5f9` vs `#ffffff`) + patterned outer bracket arcs
-    let sec_ranges = theme.fig2_sec_ranges;
+    let sec_ranges = &theme.fig2_sec_ranges;
     let sec_slot_ranges = collect_leaf_sector_ranges(root);
     let span = std::f64::consts::TAU * 0.955;
     let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
     let ang_of_idx = |idx: f64| -> f64 { start_ang + (idx / (leaf_count as f64)) * span };
 
-    struct ActiveCircSec {
+    struct ActiveCircSec<'a> {
         s_idx: usize,
-        sec: &'static str,
+        sec: &'a str,
         dyn_lbl: String,
-        dash: &'static str,
+        dash: &'a str,
         a0: f64,
         a1: f64,
         amid: f64,
     }
-    let mut active_secs: Vec<ActiveCircSec> = Vec::with_capacity(7);
-    for (s_idx, &(sec, _i0_def, _i1_def, lbl, dash)) in sec_ranges.iter().enumerate() {
-        let sec_rk = match sec {
+    let mut active_secs: Vec<ActiveCircSec<'_>> = Vec::with_capacity(7);
+    for (s_idx, (sec, _i0_def, _i1_def, lbl, dash)) in sec_ranges.iter().enumerate() {
+        let sec_rk = match sec.as_str() {
             "[A]" => 0,
             "[B]" => 1,
             "[C]" => 2,
@@ -2029,7 +2157,7 @@ fn render_bemisia_fig2_circular_phylogram(
     save_figure_triple_and_web_svg(
         2,
         "fig2-circular-phylogram",
-        theme.fig2_web_svg,
+        &theme.fig2_web_svg,
         "CircularPhylogram",
         &fig2_title_dyn,
         &fig2_cap_dyn,
@@ -2535,8 +2663,9 @@ fn render_bemisia_fig3_quartet_msc(
     );
 
     // Overlay compact Node I-VIII `[q1/q2/q3]` badges at sector midpoints on the left backbone
-    for (nlbl, anchor_tip, c_idx) in theme.fig3_sec_tip_anchors {
-        if let (Some(&ay), Some(cn)) = (tip_y_map.get(anchor_tip), manifest.calibrated_nodes.get(c_idx)) {
+    for (nlbl, anchor_tip, c_idx) in &theme.fig3_sec_tip_anchors {
+        let c_idx = *c_idx;
+        if let (Some(&ay), Some(cn)) = (tip_y_map.get(anchor_tip.as_str()), manifest.calibrated_nodes.get(c_idx)) {
             let bx = 50.0 + (c_idx as f64) * 38.0;
             let by = (ay - 12.0).clamp(86.0, 1258.0);
             let w1 = 44.0 * cn.quartet_q1;
@@ -2572,8 +2701,8 @@ fn render_bemisia_fig3_quartet_msc(
 
     // Curved dashed ABBA-BABA introgression reticulation arc on right margin of Panel A
     if let (Some(&y_a), Some(&y_b), Some(ab0)) = (
-        tip_y_map.get(theme.fig3_abba_arc_tips.0),
-        tip_y_map.get(theme.fig3_abba_arc_tips.1),
+        tip_y_map.get(theme.fig3_abba_arc_tips.0.as_str()),
+        tip_y_map.get(theme.fig3_abba_arc_tips.1.as_str()),
         study.abba_baba_tests.first(),
     ) {
         let ym = 0.5 * (y_a + y_b);
@@ -2865,10 +2994,10 @@ fn render_bemisia_fig3_quartet_msc(
     save_figure_triple_and_web_svg(
         3,
         "fig3-quartet-coalescent-species-tree",
-        theme.fig3_web_svg,
+        &theme.fig3_web_svg,
         "QuartetCoalescent",
-        theme.fig3_title,
-        theme.fig3_caption,
+        &theme.fig3_title,
+        &theme.fig3_caption,
         &svg,
         &fb,
         run_dir,
@@ -3200,7 +3329,7 @@ fn render_bemisia_fig5_selection_and_sweep(
         }
     };
 
-    let short_fam_titles = theme.fig5_short_fam_titles;
+    let short_fam_titles = &theme.fig5_short_fam_titles;
     for (fi, fam) in study.functional_families.iter().take(4).enumerate() {
         let col_b = fi % 2;
         let row_b = fi / 2;
@@ -3211,7 +3340,7 @@ fn render_bemisia_fig5_selection_and_sweep(
             bx,
             by,
             xml_esc(&fam.family_code),
-            xml_esc(short_fam_titles[fi]),
+            xml_esc(&short_fam_titles[fi]),
             fam.selection_result.m0_omega,
             fam.selection_result.beb_sites_p95_count
         ));
@@ -3264,7 +3393,7 @@ fn render_bemisia_fig5_selection_and_sweep(
     svg.push_str(r##"<text x="36" y="505" font-size="11.5" font-weight="800" fill="#f8fafc">Panel B | 61-State Goldman-Yang Codon Selection (ω₀, ω₂ &amp; 4D BEB)</text>"##);
     fb.fill_rect(20, 482, 520, 36, (15, 23, 42));
 
-    let fam_short_names = theme.fig5_panel_b_fam_names;
+    let fam_short_names = &theme.fig5_panel_b_fam_names;
     for (fi, fam) in study.functional_families.iter().take(4).enumerate() {
         let fy = 544.0 + (fi as f64) * 136.0;
         let sel = &fam.selection_result;
@@ -3279,7 +3408,7 @@ fn render_bemisia_fig5_selection_and_sweep(
         svg.push_str(&format!(
             r##"<text x="46" y="{:.1}" font-size="10.2" font-weight="800" fill="#0f172a">{} ({} codons; κ = {:.2})</text>"##,
             fy + 2.0,
-            xml_esc(fam_short_names[fi]),
+            xml_esc(&fam_short_names[fi]),
             fam.aligned_codons,
             sel.m2a_kappa
         ));
@@ -3395,7 +3524,7 @@ fn render_bemisia_fig5_selection_and_sweep(
     svg.push_str(r##"<rect x="1092" y="482" width="488" height="36" rx="8" fill="#0f172a"/>"##);
     svg.push_str(&format!(
         r##"<text x="1108" y="505" font-size="11.2" font-weight="800" fill="#f8fafc">{}</text>"##,
-        xml_esc(theme.fig5_panel_d_header)
+        xml_esc(&theme.fig5_panel_d_header)
     ));
     fb.fill_rect(1092, 482, 488, 36, (15, 23, 42));
 
@@ -3404,7 +3533,7 @@ fn render_bemisia_fig5_selection_and_sweep(
         svg.push_str(r##"<rect x="1106" y="526" width="460" height="280" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.1"/>"##);
         svg.push_str(&format!(
             r##"<text x="1118" y="544" font-size="9.4" font-weight="800" fill="#0f172a">{}</text>"##,
-            xml_esc(theme.fig5_panel_d_upper_subtitle)
+            xml_esc(&theme.fig5_panel_d_upper_subtitle)
         ));
 
         let (cx0, cy0, cz0) = pdb.pocket_center_xyz;
@@ -3807,10 +3936,10 @@ fn render_bemisia_fig5_selection_and_sweep(
     save_figure_triple_and_web_svg(
         6,
         "fig5-selection-sweep-alignment",
-        theme.fig5_web_svg,
+        &theme.fig5_web_svg,
         "ColoredMsaAndRunieSweep",
-        theme.fig5_title,
-        theme.fig5_caption,
+        &theme.fig5_title,
+        &theme.fig5_caption,
         &svg,
         &fb,
         run_dir,
@@ -4115,7 +4244,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         study.msc_regime1_ry3.normalized_quartet_score,
         study.msc_regime1_ry3.mean_local_posterior_pp1,
         n_chrono_int,
-        fig6_tpl_desc.replacen("{}", &xml_esc(theme.fig6_p450_label), 1).replacen("{:.2}", &format!("{:.2}", f4_w2), 1)
+        fig6_tpl_desc.replacen("{}", &xml_esc(&theme.fig6_p450_label), 1).replacen("{:.2}", &format!("{:.2}", f4_w2), 1)
     ));
 
     // =========================================================================
@@ -4256,13 +4385,13 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let (axis_a_txt, axis_b_txt, recs_tot_lbl) = if is_bacterial {
         (
             "Axis A Chromosomal Housekeeping Skylines (Cohorts R1–R6, N = 216): Reconstructs single-species gyrB, rpoB, recA &amp; groEL coalescent histories across Bacillota and Actinomycetota.",
-            format!("Axis B Multi-Locus Contrast (Cohorts L1–L6, N = 216): Contrasts fast housekeeping rpoB/recA evolution against deeply buffered Katoh E-INS-i {}.", xml_esc(theme.fig6_its_label)),
+            format!("Axis B Multi-Locus Contrast (Cohorts L1–L6, N = 216): Contrasts fast housekeeping rpoB/recA evolution against deeply buffered Katoh E-INS-i {}.", xml_esc(&theme.fig6_its_label)),
             format!("End-to-End Multi-Compartment Execution: {} active verified bacterial NCBI records completed in {:.2} s total wall-clock time.", study.total_records_on_disk, tot_s),
         )
     } else {
         (
             "Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = 216): Separates Pleistocene refugial stability from historical founder bottlenecks and modern agro-ecological expansions.",
-            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.", xml_esc(theme.fig6_its_label)),
+            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.", xml_esc(&theme.fig6_its_label)),
             format!("End-to-End Multi-Compartment Execution: All 544 active verified NCBI records (+ 6 quarantined UNVERIFIED anomalies) completed in {:.2} s total wall-clock time.", tot_s),
         )
     };
@@ -4596,10 +4725,10 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     save_figure_triple_and_web_svg(
         7,
         "fig6-runie-pipeline-architecture",
-        theme.fig6_web_svg,
+        &theme.fig6_web_svg,
         "DualRuniePipelineArchitecture",
-        theme.fig6_title,
-        theme.fig6_caption,
+        &theme.fig6_title,
+        &theme.fig6_caption,
         &svg,
         &fb,
         run_dir,
@@ -4678,7 +4807,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
 
     // --- Supplemental Figure S1: FAM-04 CYP450 Heme-Thiolate Loop (Table 1, Dual DNA+AA) ---
-    let s1_fasta = aln_dir.join(theme.supp_s1_fasta_name);
+    let s1_fasta = aln_dir.join(&theme.supp_s1_fasta_name);
     if s1_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
             &s1_fasta,
@@ -4698,7 +4827,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         let s1_motifs: &[&str] = if is_bacterial {
             &["GQRAC", "GNGQR", "QRACI", "ACIGQ", "FGNGQ", "GPRLC", "FGDGP"]
         } else {
-            &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC"]
+            &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC", "GPRIC", "GPRAC", "FGAGP", "FGEGP", "FSAGP", "FGGGP"]
         };
         let (s1, e1, hcol) = find_codon_motif_window(
             &ws,
@@ -4745,7 +4874,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s1_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s1_stem));
         state.capture_current_viewport_snapshots(1560, Some(&svg_out), Some(&png_out))?;
-        mirror_pair(&svg_out, &png_out, theme.supp_s1_stem)?;
+        mirror_pair(&svg_out, &png_out, &theme.supp_s1_stem)?;
     }
 
     // --- Supplemental Figure S2: ITS1-5.8S rDNA Stem / Indel Boundary (mafft-native Katoh E-INS-i) ---
@@ -4855,7 +4984,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s2_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s2_stem));
         state.capture_current_viewport_snapshots(1640, Some(&svg_out), Some(&png_out))?;
-        mirror_pair(&svg_out, &png_out, theme.supp_s2_stem)?;
+        mirror_pair(&svg_out, &png_out, &theme.supp_s2_stem)?;
     }
 
     // --- Supplemental Figure S3: Phased Coding Locus (Mito Table 5 or Bacterial Code 11) ---
@@ -4943,7 +5072,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s3_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s3_stem));
         state.capture_current_viewport_snapshots(1560, Some(&svg_out), Some(&png_out))?;
-        mirror_pair(&svg_out, &png_out, theme.supp_s3_stem)?;
+        mirror_pair(&svg_out, &png_out, &theme.supp_s3_stem)?;
     }
 
     Ok(())
@@ -4972,9 +5101,9 @@ pub(crate) fn generate_locked_figures_with_theme(
     figs.push(render_bemisia_skyline_6panel(
         4,
         "fig4a-regional-skyline-matrix",
-        theme.fig4a_web_svg,
-        theme.fig4a_title,
-        theme.fig4a_caption,
+        &theme.fig4a_web_svg,
+        &theme.fig4a_title,
+        &theme.fig4a_caption,
         &reg_cohorts,
         run_dir,
         web_figures_dir,
@@ -4989,9 +5118,9 @@ pub(crate) fn generate_locked_figures_with_theme(
     figs.push(render_bemisia_skyline_6panel(
         5,
         "fig4b-multilocus-skyline-matrix",
-        theme.fig4b_web_svg,
-        theme.fig4b_title,
-        theme.fig4b_caption,
+        &theme.fig4b_web_svg,
+        &theme.fig4b_title,
+        &theme.fig4b_caption,
         &loc_cohorts,
         run_dir,
         web_figures_dir,
@@ -5004,6 +5133,20 @@ pub(crate) fn generate_locked_figures_with_theme(
     Ok(())
 }
 
+/// Generates all locked-format figures (Figures 1-6 + Supplemental S1-S3) for a JSON-driven
+/// `DeclarativeStudyConfig`, dynamically synchronizing chronogram ages from `manifest.calibrated_nodes`.
+pub fn generate_declarative_locked_figures(
+    manifest: &mut SupervisorRunManifest,
+    study: &MultiCompartmentStudyReport,
+    theme: &FigureStudyTheme,
+    run_dir: &Path,
+    web_figures_dir: Option<&Path>,
+) -> Result<(), String> {
+    let mut t = theme.clone();
+    sync_theme_chronogram_ages(&mut t, manifest);
+    generate_locked_figures_with_theme(manifest, study, &t, run_dir, web_figures_dir)
+}
+
 /// Generates all 6 Preprint-23 (`Bemisia`) locked-format figures (`.svg` + `.png` + `.pdf`) plus 3 Native
 /// Alignment Viewer supplemental screenshots inside `run_dir/figures/` and optionally mirrors into `web_figures_dir`.
 pub fn generate_bemisia_locked_figures(
@@ -5012,7 +5155,8 @@ pub fn generate_bemisia_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    generate_locked_figures_with_theme(manifest, study, &BEMISIA_THEME, run_dir, web_figures_dir)
+    let theme = FigureStudyTheme::from(&BEMISIA_THEME);
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
 
 /// Generates all 6 Preprint-24 (`Invasive Snails AU & NZ`) locked-format figures (`.svg` + `.png` + `.pdf`)
@@ -5023,28 +5167,53 @@ pub fn generate_snails_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    generate_locked_figures_with_theme(manifest, study, &SNAILS_THEME, run_dir, web_figures_dir)
+    let theme = FigureStudyTheme::from(&SNAILS_THEME);
+    generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
 
 fn sync_theme_chronogram_ages(theme: &mut FigureStudyTheme, manifest: &SupervisorRunManifest) {
     if manifest.calibrated_nodes.len() >= 8 {
         let cn = &manifest.calibrated_nodes;
-        theme.backbone_node_ages = [
-            cn[6].age_ma,
-            cn[5].age_ma,
-            cn[3].age_ma,
-            cn[2].age_ma,
-            cn[1].age_ma,
-            cn[0].age_ma,
-        ];
+        let shared_d = cn[3].sector_code == cn[4].sector_code;
+        theme.backbone_node_ages = if shared_d {
+            [
+                cn[6].age_ma,
+                cn[5].age_ma,
+                cn[3].age_ma,
+                cn[2].age_ma,
+                cn[1].age_ma,
+                cn[0].age_ma,
+            ]
+        } else {
+            [
+                cn[5].age_ma,
+                cn[4].age_ma,
+                cn[3].age_ma,
+                cn[2].age_ma,
+                cn[1].age_ma,
+                cn[0].age_ma,
+            ]
+        };
+        let min_crown = if cn[0].age_ma > 1000.0 { 24.0 } else { 5.0 };
+        let sec_d_raw = if shared_d {
+            cn[4].age_ma
+        } else {
+            cn[3].age_ma * 0.62
+        };
+        let sec_e_raw = if shared_d {
+            cn[5].age_ma * 0.64
+        } else {
+            cn[4].age_ma * 0.64
+        };
+        let sec_f_parent = if shared_d { cn[6].age_ma } else { cn[5].age_ma };
         theme.sec_crown_ages = [
-            (cn[0].age_ma * 0.52).min(cn[0].age_ma - 16.0).max(24.0),
-            (cn[1].age_ma * 0.56).min(cn[1].age_ma - 14.0).max(20.0),
-            (cn[2].age_ma * 0.62).min(cn[2].age_ma - 12.0).max(18.0),
-            cn[4].age_ma.min(cn[3].age_ma - 8.0).max(14.0),
-            (cn[5].age_ma * 0.64).min(cn[5].age_ma - 8.0).max(12.0),
-            (cn[6].age_ma * 0.58).min(cn[6].age_ma - 6.0).max(8.0),
-            cn[7].age_ma.min(cn[6].age_ma - 5.0).max(5.0),
+            (cn[0].age_ma * 0.52).min(cn[0].age_ma - 16.0).max(min_crown),
+            (cn[1].age_ma * 0.56).min(cn[1].age_ma - 14.0).max(min_crown * 0.8),
+            (cn[2].age_ma * 0.62).min(cn[2].age_ma - 12.0).max(min_crown * 0.7),
+            sec_d_raw.min(cn[3].age_ma - 8.0).max(min_crown * 0.55),
+            sec_e_raw.min(theme.backbone_node_ages[1] - 8.0).max(min_crown * 0.5),
+            (sec_f_parent * 0.58).min(sec_f_parent - 6.0).max(min_crown * 0.35),
+            cn[7].age_ma.min(sec_f_parent - 5.0).max(5.0),
         ];
     }
 }
@@ -5057,7 +5226,7 @@ pub fn generate_nudibranchs_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = NUDIBRANCHS_THEME;
+    let mut theme = FigureStudyTheme::from(&NUDIBRANCHS_THEME);
     sync_theme_chronogram_ages(&mut theme, manifest);
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
@@ -5070,7 +5239,7 @@ pub fn generate_isoptera_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = ISOPTERA_THEME;
+    let mut theme = FigureStudyTheme::from(&ISOPTERA_THEME);
     sync_theme_chronogram_ages(&mut theme, manifest);
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
@@ -5083,7 +5252,7 @@ pub fn generate_nematoda_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = NEMATODA_THEME;
+    let mut theme = FigureStudyTheme::from(&NEMATODA_THEME);
     sync_theme_chronogram_ages(&mut theme, manifest);
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
 }
@@ -5097,7 +5266,7 @@ pub fn generate_acanthochitonidae_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = ACANTHOCHITONIDAE_THEME;
+    let mut theme = FigureStudyTheme::from(&ACANTHOCHITONIDAE_THEME);
     if manifest.calibrated_nodes.len() >= 8 {
         let cn = &manifest.calibrated_nodes;
         theme.backbone_node_ages = [
@@ -5119,12 +5288,18 @@ pub fn generate_acanthochitonidae_locked_figures(
         ];
         if cn[0].ci_max_ma > 445.0 {
             theme.fig1_max_ma = 500.0;
-            theme.fig1_eras = ACAN_ERAS_500;
-            theme.fig1_ticks = &[500, 400, 300, 200, 100, 50, 0];
+            theme.fig1_eras = ACAN_ERAS_500
+                .iter()
+                .map(|&(a, b, c, d)| (a.to_string(), b, c, d.to_string()))
+                .collect();
+            theme.fig1_ticks = vec![500, 400, 300, 200, 100, 50, 0];
         } else {
             theme.fig1_max_ma = 450.0;
-            theme.fig1_eras = ACAN_ERAS_450;
-            theme.fig1_ticks = &[450, 350, 250, 150, 100, 50, 0];
+            theme.fig1_eras = ACAN_ERAS_450
+                .iter()
+                .map(|&(a, b, c, d)| (a.to_string(), b, c, d.to_string()))
+                .collect();
+            theme.fig1_ticks = vec![450, 350, 250, 150, 100, 50, 0];
         }
     }
     generate_locked_figures_with_theme(manifest, study, &theme, run_dir, web_figures_dir)
@@ -5139,7 +5314,7 @@ pub fn generate_china_aus_pests_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = CHINA_AUS_PESTS_THEME;
+    let mut theme = FigureStudyTheme::from(&CHINA_AUS_PESTS_THEME);
     if manifest.calibrated_nodes.len() >= 8 {
         let cn = &manifest.calibrated_nodes;
         theme.backbone_node_ages = [
@@ -5172,7 +5347,7 @@ pub fn generate_us_ag_pests_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = US_AG_PESTS_THEME;
+    let mut theme = FigureStudyTheme::from(&US_AG_PESTS_THEME);
     if manifest.calibrated_nodes.len() >= 8 {
         let cn = &manifest.calibrated_nodes;
         theme.backbone_node_ages = [
@@ -5205,7 +5380,7 @@ pub fn generate_gram_positive_locked_figures(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let mut theme = GRAM_POSITIVE_THEME;
+    let mut theme = FigureStudyTheme::from(&GRAM_POSITIVE_THEME);
     if manifest.calibrated_nodes.len() >= 8 {
         let cn = &manifest.calibrated_nodes;
         theme.backbone_node_ages = [

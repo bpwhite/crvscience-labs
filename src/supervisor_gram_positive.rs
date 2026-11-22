@@ -6,12 +6,10 @@
 //! PDB `1BU7` in 100% Native Rust (`biosuite-only`) Dual-Pass Blinded mode under Genetic Code 11.
 
 use crate::coalescent::{compute_abba_baba_patterson_d, AbbaBabaTestRecord};
-use crate::codon_selection::run_native_codon_selection;
 use crate::complexity::round4;
 use crate::fetch::{FastaRecord, PoliteCacheManager};
 use crate::mafft_native::{
-    align_sequences_mafft_native, align_sequences_mafft_native_with_config, MafftNativeConfig,
-    MafftNativeStrategy,
+    align_sequences_mafft_native_with_config, MafftNativeConfig, MafftNativeStrategy,
 };
 use crate::phylo::{align_sequences_raw_unphased_gotoh, align_sequences_with_mode, AlignerMode};
 use crate::seqnet_runie::CladeBenchmark;
@@ -26,25 +24,21 @@ use crate::supermatrix_viz::{
 };
 use crate::supervisor::{
     resolve_crv_workspace_root, GeneratedFigureArtifact, LoopBackIterationLog, ModelDesignMode,
-    NcbiFlaggedAnomaly, PdbCaAtom, PdbHetAtom, SupervisedCalibratedNode,
-    SupervisedGeneFamilySelection, SupervisedPdbStructure, SupervisedSequenceRecord,
-    SupervisorEscalationStatus, SupervisorRunManifest, SupervisorRunSpec,
+    NcbiFlaggedAnomaly, SupervisedCalibratedNode, SupervisedGeneFamilySelection,
+    SupervisedPdbStructure, SupervisedSequenceRecord, SupervisorEscalationStatus,
+    SupervisorRunManifest, SupervisorRunSpec,
 };
 use crate::supervisor_acanthochitonidae::{
-    align_and_trim_codon_core, align_and_trim_codon_core_with_min_aa, write_pipe_delimited_fasta,
+    align_and_trim_codon_core_with_min_aa, write_pipe_delimited_fasta,
 };
 use crate::supervisor_manuscript::html_esc;
 use crate::supervisor_study::{
-    aa1_to_aa3, aa3_to_aa1, aa_volume_proxy, align_and_trim_rrna_core,
-    build_raw0_control, compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
-    extract_longest_sense_orf, gc_percent,
+    align_and_trim_rrna_core, build_raw0_control, compute_alignment_occupancy_bins,
+    discover_and_cache_entrez_cohort, extract_longest_sense_orf, gc_percent,
     passes_supermatrix_phylogram_coverage_gate, recode_codon12, recode_ry3, revcomp_dna,
-    sha256_hex12, translate_sense_codons, DetailedFunctionalFamily, DiscoveredEntrezSummary,
-    MultiCompartmentNuclearRecord, MultiCompartmentStudyReport,
+    sha256_hex12, DetailedFunctionalFamily, DiscoveredEntrezSummary, MultiCompartmentStudyReport,
 };
-use crate::tree_builder::{
-    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap, PhyloRunModel,
-};
+use crate::tree_builder::{infer_native_ml_tree_with_bootstrap, PhyloRunModel};
 use bio_suite_seqnet::config::{AnalysisLevel, ConsensusConfig, ExecutionMode, OtuRank};
 use bio_suite_seqnet::neurons::{run_neural_network_schedule, EngineControlFlags};
 use std::collections::{HashMap, HashSet};
@@ -162,7 +156,7 @@ fn species_entrez_synonyms(sp: &str) -> &'static [&'static str] {
     }
 }
 
-fn classify_bacterial_locus_title(title: &str, len_bp: usize) -> Option<&'static str> {
+pub(crate) fn classify_bacterial_locus_title(title: &str, len_bp: usize) -> Option<&'static str> {
     let lo = title.to_ascii_lowercase();
     if lo.contains("complete genome") || lo.contains("whole genome") || lo.contains("chromosome") {
         return None;
@@ -322,7 +316,7 @@ fn classify_refseq_gene_hit(name: &str, desc: &str, len: usize) -> Option<&'stat
     None
 }
 
-fn fetch_bacterial_refseq_gene_panel(
+pub(crate) fn fetch_bacterial_refseq_gene_panel(
     safe_k: &str,
     tip_code: &str,
     sp_name: &str,
@@ -460,365 +454,168 @@ fn fetch_bacterial_refseq_gene_panel(
     out
 }
 
-fn trim_frame0_cds_to_stop(seq: &str, max_bp: usize) -> String {
-    let clean = clean_acgt_only(seq);
-    let cap = max_bp - (max_bp % 3);
-    let limit = clean.len().min(cap);
-    let b = clean.as_bytes();
-    let mut end = 0usize;
-    while end + 3 <= limit {
-        let cod = &b[end..end + 3];
-        if matches!(cod, b"TAA" | b"TAG" | b"TGA") {
-            break;
-        }
-        end += 3;
-    }
-    clean[..end].to_string()
-}
-
-fn has_i_helix_and_cys_loop_heme_domain(aa: &str) -> bool {
-    let b = aa.as_bytes();
-    if b.len() < 420 {
-        return false;
-    }
-    let i_end = b.len().saturating_sub(5).min(315);
-    let has_i_helix = (225..=i_end).any(|idx| {
-        matches!(&b[idx..idx + 5], b"AGHET" | b"SGHET" | b"AGFET")
-    });
-    let c_end = b.len().saturating_sub(10).min(435);
-    let has_cys_loop = (350..=c_end).any(|idx| {
-        let w = &b[idx..idx + 10];
-        w[0] == b'F' && w[3] == b'G' && w[7] == b'C' && w[9] == b'G'
-    });
-    has_i_helix && has_cys_loop
-}
-
-fn fetch_refseq_functional_orthologs(
-    cache_key: &str,
-    queries: &[&str],
-    min_bp: usize,
-    max_bp: usize,
-    target_n: usize,
-    pin_species_substr: Option<&str>,
-    cyp102a_heme_guard: bool,
-    cache_dir: &Path,
-) -> Vec<(DiscoveredEntrezSummary, String)> {
-    let cache_path = cache_dir.join(format!("{}.json", cache_key));
-    if let Ok(raw) = fs::read_to_string(&cache_path) {
-        if let Ok(parsed) = serde_json::from_str::<Vec<(DiscoveredEntrezSummary, String)>>(&raw) {
-            if !parsed.is_empty() {
-                return parsed;
-            }
-        }
-    }
-
-    let blocked = [
-        "anthracis", "cereus", "tuberculosis", "abscessus",
-        "aureus", "pneumoniae", "difficile", "monocytogenes",
-    ];
-    let mut candidates_by_sp: HashMap<String, (u8, String, u64, u64, u8, String, String)> = HashMap::new();
-
-    for q in queries {
-        let esearch_url = format!(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gene&retmode=json&retmax=120&tool=bio-suite-supervisor&email=labs@crvscience.com&term={}",
-            url_encode_entrez(q)
-        );
-        let Some(search_txt) = entrez_get_text_retry(&esearch_url) else { continue };
-        let Ok(search_json) = serde_json::from_str::<serde_json::Value>(&search_txt) else { continue };
-        let ids: Vec<String> = search_json
-            .get("esearchresult")
-            .and_then(|r| r.get("idlist"))
-            .and_then(|v| v.as_array())
-            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
-            .unwrap_or_default();
-        if ids.is_empty() {
-            continue;
-        }
-        for chunk in ids.chunks(60) {
-            let esum_url = format!(
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gene&retmode=json&tool=bio-suite-supervisor&email=labs@crvscience.com&id={}",
-                chunk.join(",")
-            );
-            let Some(sum_txt) = entrez_get_text_retry(&esum_url) else { continue };
-            let Ok(sum_json) = serde_json::from_str::<serde_json::Value>(&sum_txt) else { continue };
-            let Some(res_obj) = sum_json.get("result").and_then(|v| v.as_object()) else { continue };
-            for id in chunk {
-                let Some(it) = res_obj.get(id) else { continue };
-                let org_raw = it
-                    .get("organism")
-                    .and_then(|o| o.get("scientificname"))
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                if org_raw.is_empty() {
-                    continue;
-                }
-                let org_low = org_raw.to_ascii_lowercase();
-                if blocked.iter().any(|b| org_low.contains(b)) {
-                    continue;
-                }
-                let sp2 = norm_species_key(org_raw);
-                if sp2.is_empty() {
-                    continue;
-                }
-                let Some(gi) = it
-                    .get("genomicinfo")
-                    .and_then(|v| v.as_array())
-                    .and_then(|arr| arr.first())
-                else {
-                    continue;
-                };
-                let acc = gi.get("chraccver").and_then(|v| v.as_str()).unwrap_or("");
-                let (Some(chrstart), Some(chrstop)) = (
-                    gi.get("chrstart").and_then(|v| v.as_u64()),
-                    gi.get("chrstop").and_then(|v| v.as_u64()),
-                ) else {
-                    continue;
-                };
-                if acc.is_empty() {
-                    continue;
-                }
-                let lo = chrstart.min(chrstop);
-                let hi = chrstart.max(chrstop);
-                let len = (hi - lo + 1) as usize;
-                if len < min_bp || len > max_bp {
-                    continue;
-                }
-                let prio: u8 = if acc.starts_with("NC_") {
-                    3
-                } else if acc.starts_with("NZ_CP") || acc.starts_with("NZ_AP") || acc.starts_with("NZ_LR") {
-                    2
-                } else if acc.starts_with("NZ_") {
-                    1
-                } else {
-                    0
-                };
-                let gname = it.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                let gdesc = it.get("description").and_then(|v| v.as_str()).unwrap_or("");
-                let title = format!("{} {} ({})", org_raw, gdesc, gname);
-                let start_1b = lo + 1;
-                let stop_1b = hi + 1;
-                let strand: u8 = if chrstart <= chrstop { 1 } else { 2 };
-                let replace = candidates_by_sp
-                    .get(&sp2)
-                    .map(|existing| prio > existing.0)
-                    .unwrap_or(true);
-                if replace {
-                    candidates_by_sp.insert(
-                        sp2,
-                        (prio, acc.to_string(), start_1b, stop_1b, strand, org_raw.to_string(), title),
-                    );
-                }
-            }
-        }
-    }
-
-    let mut ranked: Vec<(String, u8, String, u64, u64, u8, String, String)> = candidates_by_sp
-        .into_iter()
-        .map(|(sp2, (prio, acc, s1, e1, st, org, title))| (sp2, prio, acc, s1, e1, st, org, title))
-        .collect();
-    ranked.sort_by(|a, b| {
-        let pin_a = pin_species_substr
-            .map(|p| a.6.to_ascii_lowercase().contains(p))
-            .unwrap_or(false);
-        let pin_b = pin_species_substr
-            .map(|p| b.6.to_ascii_lowercase().contains(p))
-            .unwrap_or(false);
-        pin_b
-            .cmp(&pin_a)
-            .then_with(|| b.1.cmp(&a.1))
-            .then_with(|| a.0.cmp(&b.0))
-    });
-
-    let mut verified: Vec<(DiscoveredEntrezSummary, String)> = Vec::with_capacity(target_n);
-    for (_sp2, _prio, acc, s1, e1, st, org, title) in ranked {
-        if verified.len() >= target_n {
-            break;
-        }
-        let efetch_url = format!(
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&seq_start={}&seq_stop={}&strand={}&rettype=fasta&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
-            url_encode_entrez(&acc),
-            s1,
-            e1,
-            st
-        );
-        let Some(fa) = entrez_get_text_retry(&efetch_url) else { continue };
-        let mut body = String::with_capacity(fa.len());
-        for line in fa.lines() {
-            if !line.starts_with('>') {
-                body.push_str(line.trim());
-            }
-        }
-        let c = clean_acgt_only(&body);
-        if c.len() < min_bp {
-            continue;
-        }
-        if cyp102a_heme_guard {
-            let heme = trim_frame0_cds_to_stop(&c, 1395);
-            if heme.len() < 1260 {
-                continue;
-            }
-            let aa = translate_sense_codons(&heme, heme.len() / 3);
-            if !has_i_helix_and_cys_loop_heme_domain(&aa) {
-                continue;
-            }
-        } else {
-            let cds = trim_frame0_cds_to_stop(&c, max_bp + 60);
-            if cds.len() < 1050 {
-                continue;
-            }
-        }
-        verified.push((
-            DiscoveredEntrezSummary {
-                accession: acc,
-                organism: org,
-                title,
-                subname: String::new(),
-                slen: c.len(),
-            },
-            c,
-        ));
-    }
-
-    if !verified.is_empty() {
-        if let Ok(json_s) = serde_json::to_string(&verified) {
-            let _ = fs::write(&cache_path, json_s);
-        }
-    }
-    eprintln!(
-        "  [RefSeq Ortholog Guard {}] verified {}/{} distinct species",
-        cache_key,
-        verified.len(),
-        target_n
-    );
-    verified
-}
-
-fn align_and_trim_frame0_codon_core(
-    records: &[FastaRecord],
-    min_occ_frac: f64,
-) -> (Vec<(String, String)>, Vec<(String, String)>, usize, u128) {
-    let t0 = Instant::now();
-    let mut nt_by_id: HashMap<String, String> = HashMap::with_capacity(records.len());
-    let mut aa_recs: Vec<FastaRecord> = Vec::with_capacity(records.len());
-    for rec in records {
-        let orf_nt = trim_frame0_cds_to_stop(&rec.sequence, rec.sequence.len().max(2400));
-        let aa = translate_sense_codons(&orf_nt, (orf_nt.len() / 3).max(1));
-        if aa.len() < 100 {
-            continue;
-        }
-        nt_by_id.insert(rec.id.clone(), orf_nt);
-        let mut ar = rec.clone();
-        ar.sequence = aa;
-        aa_recs.push(ar);
-    }
-    if aa_recs.len() < 2 {
-        return (Vec::new(), Vec::new(), 0, t0.elapsed().as_millis().max(1));
-    }
-    let cfg = MafftNativeConfig {
-        strategy: MafftNativeStrategy::FftNsI,
-        max_iterations: 2,
-        adjust_direction: false,
-        use_transitive_consistency: false,
-        use_secondary_structure_weights: false,
+pub(crate) fn gram_positive_stage4_specs() -> (
+    Vec<crate::supermatrix_audit_util::DeclarativeFunctionalFamilySpec>,
+    crate::supermatrix_audit_util::PdbTemplateSpec,
+) {
+    use bio_suite_seqnet::coding_ortholog::{
+        CodingOrthologConfig, CodingOrthologSource, ProteinMotifRule,
     };
-    let (_, aln_aa, _) = align_sequences_mafft_native_with_config(&aa_recs, &cfg);
-    let cols = aln_aa.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
-    if cols == 0 {
-        return (Vec::new(), Vec::new(), 0, t0.elapsed().as_millis().max(1));
-    }
+    use crate::supermatrix_audit_util::{DeclarativeFunctionalFamilySpec, PdbTemplateSpec};
 
-    let n_seqs = aln_aa.len();
-    let mut nt_full_rows: Vec<(String, String, String)> = Vec::with_capacity(n_seqs);
-    let mut col_occ = vec![0usize; cols];
-    for a in &aln_aa {
-        let raw_nt = nt_by_id.get(&a.id).map(|s| s.as_bytes()).unwrap_or(&[]);
-        let mut nt_row = String::with_capacity(cols * 3);
-        let mut cursor = 0usize;
-        for (ci, &b) in a.aligned_seq.as_bytes().iter().enumerate() {
-            if b == b'-' {
-                nt_row.push_str("---");
-            } else {
-                col_occ[ci] += 1;
-                if cursor + 3 <= raw_nt.len() {
-                    nt_row.push_str(std::str::from_utf8(&raw_nt[cursor..cursor + 3]).unwrap_or("---"));
-                } else {
-                    nt_row.push_str("---");
-                }
-                cursor += 3;
-            }
-        }
-        nt_full_rows.push((a.id.clone(), nt_row, a.aligned_seq.clone()));
-    }
+    let blocked = vec![
+        "anthracis".to_string(),
+        "cereus".to_string(),
+        "tuberculosis".to_string(),
+        "abscessus".to_string(),
+        "aureus".to_string(),
+        "pneumoniae".to_string(),
+        "difficile".to_string(),
+        "monocytogenes".to_string(),
+    ];
 
-    let min_occ = ((n_seqs as f64) * min_occ_frac).ceil() as usize;
-    let mut kept_cols: Vec<usize> = col_occ
-        .iter()
-        .enumerate()
-        .filter(|(_, &cnt)| cnt >= min_occ.max(2))
-        .map(|(idx, _)| idx)
-        .collect();
-    if kept_cols.len() < 60 {
-        let half = (n_seqs / 2).max(2);
-        kept_cols = col_occ
-            .iter()
-            .enumerate()
-            .filter(|(_, &cnt)| cnt >= half)
-            .map(|(idx, _)| idx)
-            .collect();
-    }
-    let kept_len = kept_cols.len();
-    let mut nt_out = Vec::with_capacity(n_seqs);
-    let mut aa_out = Vec::with_capacity(n_seqs);
-    for (id, nt_full, aa_full) in nt_full_rows {
-        let ab = aa_full.as_bytes();
-        let nb = nt_full.as_bytes();
-        let mut nt_t = String::with_capacity(kept_len * 3);
-        let mut aa_t = String::with_capacity(kept_len);
-        let mut non_gap = 0usize;
-        for &ci in &kept_cols {
-            let ach = ab.get(ci).copied().unwrap_or(b'-');
-            if ach != b'-' {
-                non_gap += 1;
-            }
-            aa_t.push(ach as char);
-            let s3 = ci * 3;
-            if s3 + 3 <= nb.len() {
-                nt_t.push_str(std::str::from_utf8(&nb[s3..s3 + 3]).unwrap_or("---"));
-            } else {
-                nt_t.push_str("---");
-            }
-        }
-        if non_gap * 10 >= kept_len * 3 {
-            nt_out.push((id.clone(), nt_t));
-            aa_out.push((id, aa_t));
-        }
-    }
-    (nt_out, aa_out, kept_len * 3, t0.elapsed().as_millis().max(1))
-}
+    let specs = vec![
+        DeclarativeFunctionalFamilySpec {
+            family_code: "FAM-01".to_string(),
+            family_title: "Peptidoglycan Cell-Wall Biosynthesis Transferase (murA)".to_string(),
+            physiological_role: "Catalytic UDP-N-acetylglucosamine enolpyruvyl transferase initiating peptidoglycan murein cell-wall assembly across Bacillota and Actinomycetota".to_string(),
+            gene_symbol: "murA".to_string(),
+            source: CodingOrthologSource::RefSeqGene,
+            queries: vec![
+                "(\"Bacillus subtilis\"[Organism] OR \"Bacillus licheniformis\"[Organism] OR \"Bacillus velezensis\"[Organism] OR \"Bacillus amyloliquefaciens\"[Organism] OR \"Bacillus pumilus\"[Organism] OR \"Clostridium acetobutylicum\"[Organism] OR \"Staphylococcus epidermidis\"[Organism] OR \"Staphylococcus carnosus\"[Organism] OR \"Listeria innocua\"[Organism] OR \"Lactobacillus acidophilus\"[Organism] OR \"Lactiplantibacillus plantarum\"[Organism] OR \"Lactococcus lactis\"[Organism] OR \"Streptococcus thermophilus\"[Organism] OR \"Streptococcus salivarius\"[Organism] OR \"Enterococcus faecium\"[Organism] OR \"Enterococcus faecalis\"[Organism] OR \"Bifidobacterium longum\"[Organism] OR \"Corynebacterium glutamicum\"[Organism] OR \"Mycolicibacterium smegmatis\"[Organism] OR \"Streptomyces coelicolor\"[Organism] OR \"Streptomyces griseus\"[Organism] OR \"Streptomyces avermitilis\"[Organism]) AND (murA[Gene Name] OR murAA[Gene Name] OR \"UDP-N-acetylglucosamine 1-carboxyvinyltransferase\"[Title])".to_string(),
+            ],
+            fallback_queries: Vec::new(),
+            pinned_accessions: Vec::new(),
+            ortholog_config: CodingOrthologConfig {
+                cache_key: "gp_fam01_refseq_mura_v2".to_string(),
+                genetic_code_table: 11,
+                preserve_frame0: true,
+                min_bp: 1150,
+                max_bp: 1450,
+                max_domain_bp: Some(1500),
+                min_aa_len: 350,
+                blocked_organisms: blocked.clone(),
+                ..CodingOrthologConfig::default()
+            },
+            msa_min_occ: 0.70,
+        },
+        DeclarativeFunctionalFamilySpec {
+            family_code: "FAM-02".to_string(),
+            family_title: "Master Endospore Initiation Regulator (spo0A)".to_string(),
+            physiological_role: "Phosphorelay response regulator controlling asymmetric septation and heat-resistant endospore entry across Clostridia and Bacillales".to_string(),
+            gene_symbol: "spo0A".to_string(),
+            source: CodingOrthologSource::EntrezNuccore,
+            queries: vec![
+                "((\"Bacillus subtilis\"[Organism] OR \"Bacillus licheniformis\"[Organism] OR \"Bacillus velezensis\"[Organism] OR \"Bacillus amyloliquefaciens\"[Organism] OR \"Clostridium acetobutylicum\"[Organism] OR \"Clostridium butyricum\"[Organism] OR \"Clostridium beijerinckii\"[Organism] OR \"Paenibacillus\"[Organism] OR \"Geobacillus\"[Organism]) AND (spo0A[Gene] OR spo0A[Title] OR \"stage 0 sporulation protein A\"[Title]) AND 350:1800[SLEN] NOT \"complete genome\"[Title] NOT \"whole genome shotgun\"[Title] NOT chromosome[Title] NOT plasmid[Title])".to_string(),
+            ],
+            fallback_queries: Vec::new(),
+            pinned_accessions: Vec::new(),
+            ortholog_config: CodingOrthologConfig {
+                cache_key: "gp_fam-02".to_string(),
+                genetic_code_table: 11,
+                preserve_frame0: false,
+                min_bp: 350,
+                max_bp: 1800,
+                max_domain_bp: None,
+                min_aa_len: 80,
+                ..CodingOrthologConfig::default()
+            },
+            msa_min_occ: 0.55,
+        },
+        DeclarativeFunctionalFamilySpec {
+            family_code: "FAM-03".to_string(),
+            family_title: "Thermal & Compositional Stress Chaperone (dnaK / HSP70)".to_string(),
+            physiological_role: "ATP-dependent molecular chaperone folding nascent polypeptides across low-GC mesophilic, thermophilic Geobacillus, and high-GC Actinomycetota lineages".to_string(),
+            gene_symbol: "dnaK".to_string(),
+            source: CodingOrthologSource::EntrezNuccore,
+            queries: vec![
+                "((\"Bacillus subtilis\"[Organism] OR \"Geobacillus stearothermophilus\"[Organism] OR \"Lactiplantibacillus plantarum\"[Organism] OR \"Bifidobacterium longum\"[Organism] OR \"Streptomyces\"[Organism] OR \"Corynebacterium glutamicum\"[Organism]) AND (dnaK[Gene] OR dnaK[Title] OR \"chaperone protein DnaK\"[Title]) AND 450:2200[SLEN] NOT \"complete genome\"[Title] NOT \"whole genome shotgun\"[Title] NOT chromosome[Title] NOT plasmid[Title])".to_string(),
+            ],
+            fallback_queries: Vec::new(),
+            pinned_accessions: Vec::new(),
+            ortholog_config: CodingOrthologConfig {
+                cache_key: "gp_fam-03".to_string(),
+                genetic_code_table: 11,
+                preserve_frame0: false,
+                min_bp: 450,
+                max_bp: 2200,
+                max_domain_bp: None,
+                min_aa_len: 80,
+                ..CodingOrthologConfig::default()
+            },
+            msa_min_occ: 0.55,
+        },
+        DeclarativeFunctionalFamilySpec {
+            family_code: "FAM-04".to_string(),
+            family_title: "Bacterial Bifunctional Cytochrome P450 Heme-Domain Orthologs (CYP102A / P450 BM3)".to_string(),
+            physiological_role: "Soluble fatty-acid hydroxylase heme-oxygenase domain (CYP102A / BM3) conserved across Bacillota and soil Actinomycetota".to_string(),
+            gene_symbol: "CYP102A1".to_string(),
+            source: CodingOrthologSource::RefSeqGene,
+            queries: vec![
+                "(\"Bacillota\"[Organism] OR \"Actinomycetota\"[Organism]) AND (\"bifunctional cytochrome P450/NADPH--P450 reductase\"[Title] OR \"bifunctional P-450/NADPH\"[Title] OR cypD[Gene Name]) NOT \"Bacillus anthracis\"[Organism] NOT \"Bacillus cereus\"[Organism] NOT \"Mycobacterium tuberculosis\"[Organism] NOT \"Staphylococcus aureus\"[Organism]".to_string(),
+                "(\"Bacillota\"[Organism] OR \"Actinomycetota\"[Organism]) AND (\"bifunctional cytochrome P450\"[Title] OR cypE[Gene Name] OR CYP102A1[Gene Name]) NOT \"Bacillus anthracis\"[Organism] NOT \"Bacillus cereus\"[Organism] NOT \"Mycobacterium tuberculosis\"[Organism] NOT \"Staphylococcus aureus\"[Organism]".to_string(),
+            ],
+            fallback_queries: Vec::new(),
+            pinned_accessions: Vec::new(),
+            ortholog_config: CodingOrthologConfig {
+                cache_key: "gp_fam04_refseq_cyp102a_v2".to_string(),
+                genetic_code_table: 11,
+                preserve_frame0: true,
+                min_bp: 2900,
+                max_bp: 3500,
+                max_domain_bp: Some(1395),
+                min_aa_len: 420,
+                pin_species_substr: Some("megaterium".to_string()),
+                blocked_organisms: blocked,
+                required_motifs: vec![
+                    ProteinMotifRule {
+                        name: "I-helix".to_string(),
+                        pos_min: 225,
+                        pos_max: 315,
+                        patterns: vec![
+                            "AGHET".to_string(),
+                            "SGHET".to_string(),
+                            "AGFET".to_string(),
+                        ],
+                    },
+                    ProteinMotifRule {
+                        name: "Cys-loop".to_string(),
+                        pos_min: 350,
+                        pos_max: 435,
+                        patterns: vec!["F..G...C.G".to_string()],
+                    },
+                ],
+                ..CodingOrthologConfig::default()
+            },
+            msa_min_occ: 0.70,
+        },
+    ];
 
-fn gram_positive_functional_family_specs() -> [(&'static str, &'static str, &'static str); 4] {
-    [
-        (
-            "FAM-01",
-            "Peptidoglycan Cell-Wall Biosynthesis Transferase (murA)",
-            "Catalytic UDP-N-acetylglucosamine enolpyruvyl transferase initiating peptidoglycan murein cell-wall assembly across Bacillota and Actinomycetota",
-        ),
-        (
-            "FAM-02",
-            "Master Endospore Initiation Regulator (spo0A)",
-            "Phosphorelay response regulator controlling asymmetric septation and heat-resistant endospore entry across Clostridia and Bacillales",
-        ),
-        (
-            "FAM-03",
-            "Thermal & Compositional Stress Chaperone (dnaK / HSP70)",
-            "ATP-dependent molecular chaperone folding nascent polypeptides across low-GC mesophilic, thermophilic Geobacillus, and high-GC Actinomycetota lineages",
-        ),
-        (
-            "FAM-04",
-            "Bacterial Bifunctional Cytochrome P450 Heme-Domain Orthologs (CYP102A / P450 BM3)",
-            "Soluble fatty-acid hydroxylase heme-oxygenase domain (CYP102A / BM3) conserved across Bacillota and soil Actinomycetota",
-        ),
-    ]
+    let pdb_spec = PdbTemplateSpec {
+        pdb_id: "1BU7".to_string(),
+        chain_id: "A".to_string(),
+        het_resname: "HEM".to_string(),
+        het_resseq: 999,
+        cys_site: 400,
+        pdb_filename: "gram_positive_cyp102a1_1bu7.pdb".to_string(),
+        gene_symbol: "CYP102A1".to_string(),
+        template_label: "1BU7_A (1.65 Å Bacterial P450 BM3 + HEM A 999)".to_string(),
+        genetic_code_table: 11,
+        catalytic_residues: vec![
+            "Cys{cys} / 1BU7 Cys400 (FGNGQRACIG Proximal Thiolate; Fe-Sγ = {fe_sg} Å)".to_string(),
+            "HEM A 999 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)".to_string(),
+            "Ala264-Gly265-His266-Glu267-Thr268-Thr269-Ser270 (I-Helix Distal O2 Groove)".to_string(),
+            "SRS1 B'-Region (1BU7 65-96; Substrate-Access Loop)".to_string(),
+            "Helices F-G Lid (1BU7 172-222; Catalytic Entry Channel)".to_string(),
+        ],
+        srs1_range: Some((65, 96)),
+        fg_lid_range: Some((172, 222)),
+        i_helix_range: Some((250, 284)),
+        cys_loop_range: Some((393, 402)),
+        l_helix_range: Some((403, 426)),
+    };
+
+    (specs, pdb_spec)
 }
 
 fn run_gram_positive_stage4_functional_families(
@@ -834,237 +631,18 @@ fn run_gram_positive_stage4_functional_families(
     u128,
 ), String> {
     let val_cache_dir = cache_dir.join("val_set_070_gram_positive");
-    let _ = fs::create_dir_all(&val_cache_dir);
-    let aln_dir = run_dir.join("alignments");
-    let _ = fs::create_dir_all(&aln_dir);
-
-    let q_mura = "(\"Bacillus subtilis\"[Organism] OR \"Bacillus licheniformis\"[Organism] OR \"Bacillus velezensis\"[Organism] OR \"Bacillus amyloliquefaciens\"[Organism] OR \"Bacillus pumilus\"[Organism] OR \"Clostridium acetobutylicum\"[Organism] OR \"Staphylococcus epidermidis\"[Organism] OR \"Staphylococcus carnosus\"[Organism] OR \"Listeria innocua\"[Organism] OR \"Lactobacillus acidophilus\"[Organism] OR \"Lactiplantibacillus plantarum\"[Organism] OR \"Lactococcus lactis\"[Organism] OR \"Streptococcus thermophilus\"[Organism] OR \"Streptococcus salivarius\"[Organism] OR \"Enterococcus faecium\"[Organism] OR \"Enterococcus faecalis\"[Organism] OR \"Bifidobacterium longum\"[Organism] OR \"Corynebacterium glutamicum\"[Organism] OR \"Mycolicibacterium smegmatis\"[Organism] OR \"Streptomyces coelicolor\"[Organism] OR \"Streptomyces griseus\"[Organism] OR \"Streptomyces avermitilis\"[Organism]) AND (murA[Gene Name] OR murAA[Gene Name] OR \"UDP-N-acetylglucosamine 1-carboxyvinyltransferase\"[Title])";
-    let fam01 = fetch_refseq_functional_orthologs(
-        "gp_fam01_refseq_mura_v2",
-        &[q_mura],
-        1150,
-        1450,
-        12,
-        None,
-        false,
-        &val_cache_dir,
-    );
-    if fam01.len() < 8 {
-        return Err(format!("FAM-01 RefSeq murA guard returned only {} orthologs (<8)", fam01.len()));
-    }
-
-    let q_fam02 = "((\"Bacillus subtilis\"[Organism] OR \"Bacillus licheniformis\"[Organism] OR \"Bacillus velezensis\"[Organism] OR \"Bacillus amyloliquefaciens\"[Organism] OR \"Clostridium acetobutylicum\"[Organism] OR \"Clostridium butyricum\"[Organism] OR \"Clostridium beijerinckii\"[Organism] OR \"Paenibacillus\"[Organism] OR \"Geobacillus\"[Organism]) AND (spo0A[Gene] OR spo0A[Title] OR \"stage 0 sporulation protein A\"[Title]) AND 350:1800[SLEN] NOT \"complete genome\"[Title] NOT \"whole genome shotgun\"[Title] NOT chromosome[Title] NOT plasmid[Title])";
-    let mut fam02 = Vec::new();
-    for it in discover_with_retry("gp_fam-02", q_fam02, 16, 350, 1800, &val_cache_dir)? {
-        fam02.push(it);
-        if fam02.len() >= 12 {
-            break;
-        }
-    }
-
-    let q_fam03 = "((\"Bacillus subtilis\"[Organism] OR \"Geobacillus stearothermophilus\"[Organism] OR \"Lactiplantibacillus plantarum\"[Organism] OR \"Bifidobacterium longum\"[Organism] OR \"Streptomyces\"[Organism] OR \"Corynebacterium glutamicum\"[Organism]) AND (dnaK[Gene] OR dnaK[Title] OR \"chaperone protein DnaK\"[Title]) AND 450:2200[SLEN] NOT \"complete genome\"[Title] NOT \"whole genome shotgun\"[Title] NOT chromosome[Title] NOT plasmid[Title])";
-    let mut fam03 = Vec::new();
-    for it in discover_with_retry("gp_fam-03", q_fam03, 16, 450, 2200, &val_cache_dir)? {
-        fam03.push(it);
-        if fam03.len() >= 12 {
-            break;
-        }
-    }
-
-    let q_cyp1 = "(\"Bacillota\"[Organism] OR \"Actinomycetota\"[Organism]) AND (\"bifunctional cytochrome P450/NADPH--P450 reductase\"[Title] OR \"bifunctional P-450/NADPH\"[Title] OR cypD[Gene Name]) NOT \"Bacillus anthracis\"[Organism] NOT \"Bacillus cereus\"[Organism] NOT \"Mycobacterium tuberculosis\"[Organism] NOT \"Staphylococcus aureus\"[Organism]";
-    let q_cyp2 = "(\"Bacillota\"[Organism] OR \"Actinomycetota\"[Organism]) AND (\"bifunctional cytochrome P450\"[Title] OR cypE[Gene Name] OR CYP102A1[Gene Name]) NOT \"Bacillus anthracis\"[Organism] NOT \"Bacillus cereus\"[Organism] NOT \"Mycobacterium tuberculosis\"[Organism] NOT \"Staphylococcus aureus\"[Organism]";
-    let fam04 = fetch_refseq_functional_orthologs(
-        "gp_fam04_refseq_cyp102a_v2",
-        &[q_cyp1, q_cyp2],
-        2900,
-        3500,
-        12,
-        Some("megaterium"),
-        true,
-        &val_cache_dir,
-    );
-    if fam04.len() < 8 {
-        return Err(format!("FAM-04 RefSeq CYP102A guard returned only {} orthologs (<8)", fam04.len()));
-    }
-
-    let batches = [fam01, fam02, fam03, fam04];
-    let fam_specs = gram_positive_functional_family_specs();
-    let t_dnds = Instant::now();
-    let mut functional_families = Vec::with_capacity(4);
-    let mut gui_gene_families = Vec::with_capacity(4);
-    let mut nuc_aligned_cols_total = 0usize;
-    let mut fam_raw_bp_sum = 0usize;
-    let (mut p450_orf_nt, mut p450_org, mut p450_acc) =
-        (String::new(), "Bacillus megaterium".to_string(), "CYP102A1".to_string());
-
-    for (fi, &(fam_code, ftitle, frole)) in fam_specs.iter().enumerate() {
-        let mut raw_f = Vec::with_capacity(12);
-        let mut meta_f = Vec::with_capacity(12);
-        let mut org_by_id: HashMap<String, String> = HashMap::with_capacity(12);
-        for (i, (sm, raw_s)) in batches[fi].iter().enumerate() {
-            let seq_up = clean_acgt_only(raw_s);
-            let orf_nt = if fi == 3 {
-                trim_frame0_cds_to_stop(&seq_up, 1395)
-            } else if fi == 0 {
-                trim_frame0_cds_to_stop(&seq_up, 1500)
-            } else {
-                extract_longest_sense_orf(&seq_up, seq_up.len().max(2400))
-            };
-            let org_name = if sm.organism.is_empty() {
-                "Bacteria".to_string()
-            } else {
-                sm.organism.clone()
-            };
-            if fam_code == "FAM-04" && i == 0 {
-                p450_orf_nt = orf_nt.clone();
-                p450_org = org_name.clone();
-                p450_acc = sm.accession.clone();
-            }
-            let rec_id = format!("{}_{}", fam_code, sm.accession);
-            org_by_id.insert(rec_id.clone(), org_name.clone());
-            meta_f.push(MultiCompartmentNuclearRecord {
-                record_id: format!("{}-{:02}", fam_code, i + 1),
-                family_code: fam_code.to_string(),
-                accession: sm.accession.clone(),
-                organism: org_name.clone(),
-                gene_label: sm.title.chars().take(68).collect(),
-                raw_length_bp: seq_up.len(),
-                gc_percent: gc_percent(&orf_nt),
-                sha256_prefix: sha256_hex12(&orf_nt),
-            });
-            raw_f.push(FastaRecord {
-                id: rec_id,
-                accession: sm.accession.clone(),
-                taxon: org_name,
-                common_name: String::new(),
-                family: fam_code.to_string(),
-                gene: fam_code.to_string(),
-                description: sm.title.clone(),
-                sequence: orf_nt,
-                cached_from_disk: true,
-            });
-        }
-
-        let (pairs, _, cds_nt, msa_ms) = if fi == 0 || fi == 3 {
-            align_and_trim_frame0_codon_core(&raw_f, 0.70)
-        } else {
-            align_and_trim_codon_core(&raw_f, false, 0.55)
-        };
-        let kept_ids: std::collections::HashSet<&str> = pairs.iter().map(|(id, _)| id.as_str()).collect();
-        meta_f.retain(|m| kept_ids.contains(format!("{}_{}", fam_code, m.accession).as_str()));
-        fam_raw_bp_sum += meta_f.iter().map(|m| m.raw_length_bp).sum::<usize>();
-        nuc_aligned_cols_total += cds_nt;
-        if fam_code == "FAM-04" && !pairs.is_empty() {
-            let mut s1 = String::with_capacity(16_000);
-            for (id, seq) in &pairs {
-                let org = org_by_id
-                    .get(id)
-                    .map(|s| s.replace(' ', "_"))
-                    .unwrap_or_else(|| "Bacteria".to_string());
-                s1.push_str(&format!(">{}_{}\n{}\n", id, org, seq));
-            }
-            let _ = fs::write(aln_dir.join("supp_s1_cyp102a1_p450_cds.fasta"), s1);
-        }
-
-        let ml_nwk = if pairs.len() >= 4 {
-            let lbls: Vec<String> = pairs.iter().map(|(id, _)| id.clone()).collect();
-            let seqs: Vec<String> = pairs.iter().map(|(_, s)| s.clone()).collect();
-            infer_native_ml_gene_tree(&seqs, &lbls, PhyloRunModel::GtrInvGamma4Fast).newick_tree
-        } else {
-            "((T1:0.1,T2:0.1):0.1,(T3:0.1,T4:0.1):0.1);".to_string()
-        };
-        let t_tr = Instant::now();
-        let sel = run_native_codon_selection(
-            &pairs,
-            &ml_nwk,
-            11,
-            false,
-            &crate::codon_selection::annotate_abalone_lysin_domain,
-        );
-        let tr_ms = t_tr.elapsed().as_millis().max(1);
-        let motif_rows: Vec<(String, String)> = pairs
-            .iter()
-            .take(8)
-            .map(|(id, seq)| {
-                let mut aa = String::new();
-                for c in seq.as_bytes().chunks_exact(3).take(54) {
-                    let s = std::str::from_utf8(c).unwrap_or("NNN");
-                    if let Some(i64) = crate::codon_selection::codon_bytes_to_64idx(s.as_bytes()) {
-                        aa.push(crate::codon_selection::translate_codon_64(i64, 11));
-                    } else {
-                        aa.push('X');
-                    }
-                }
-                let org = org_by_id
-                    .get(id)
-                    .map(|s| s.as_str())
-                    .unwrap_or("Bacteria");
-                (format!("{} | {}", id, org), aa)
-            })
-            .collect();
-        gui_gene_families.push(SupervisedGeneFamilySelection {
-            family_code: fam_code.to_string(),
-            gene_symbol: match fi {
-                0 => "murA".into(),
-                1 => "spo0A".into(),
-                2 => "dnaK".into(),
-                _ => "CYP102A1".into(),
-            },
-            protein_function: frole.to_string(),
-            num_orthologs: pairs.len(),
-            aligned_codons: cds_nt / 3,
-            omega_dn_ds_native: round4(sel.m0_omega),
-            omega_dn_ds_paml: round4(sel.m0_omega),
-            kappa_ts_tv: round4(sel.m0_kappa),
-            ln_l_m8: round4(sel.m2a_lnl),
-            lrt_2delta_ln_l: round4(sel.lrt_m2a_vs_m1a_stat),
-            selection_regime: if sel.lrt_m2a_vs_m1a_stat >= 5.99 {
-                "Episodic Positive Selection (M2a)".to_string()
-            } else {
-                "Purifying Constraint (M0/M1a)".to_string()
-            },
-            focal_motif_window_1based: (1, (cds_nt / 3).min(54).max(1)),
-            consensus_motif_aa: motif_rows.first().map(|r| r.1.clone()).unwrap_or_default(),
-        });
-        functional_families.push(DetailedFunctionalFamily {
-            family_code: fam_code.to_string(),
-            family_title: ftitle.to_string(),
-            physiological_role: frole.to_string(),
-            num_records: pairs.len(),
-            aligned_bp: cds_nt,
-            aligned_codons: cds_nt / 3,
-            msa_cpu_ms: msa_ms,
-            tree_cpu_ms: tr_ms,
-            selection_result: sel,
-            motif_rows,
-            records_meta: meta_f,
-        });
-    }
-    let stage_codon_dnds_ms = t_dnds.elapsed().as_millis().max(1);
-    let pdb_opt = if p450_orf_nt.is_empty() {
-        None
-    } else {
-        Some(p450_orf_nt.as_str())
-    };
-    let pdb_struct = build_bacterial_p450_1bu7_pdb_structure(
-        run_id,
-        cache_dir,
-        &run_dir.join("pdb"),
-        pdb_opt,
-        "gram_positive_cyp102a1_1bu7.pdb",
-        "CYP102A1",
-        &p450_acc,
-        &p450_org,
-    );
-
-    Ok((
-        functional_families,
-        gui_gene_families,
-        pdb_struct,
-        nuc_aligned_cols_total,
-        fam_raw_bp_sum,
-        stage_codon_dnds_ms,
-    ))
+    let (specs, pdb_spec) = gram_positive_stage4_specs();
+    let (fams, gui_fams, pdb, nuc_cols, raw_bp, dnds_ms, _quarantined) =
+        crate::supermatrix_audit_util::run_functional_families_stage4(
+            &specs,
+            &pdb_spec,
+            run_id,
+            &val_cache_dir,
+            cache_dir,
+            run_dir,
+            "supp_s1_cyp102a1_p450_cds.fasta",
+        )?;
+    Ok((fams, gui_fams, pdb, nuc_cols, raw_bp, dnds_ms))
 }
 
 pub(crate) fn refresh_gram_positive_stage4_in_place(
@@ -1123,343 +701,6 @@ pub(crate) fn refresh_gram_positive_stage4_in_place(
         let _ = fs::write(run_dir.join("multi-compartment-report.json"), rep_json);
     }
     Ok(())
-}
-
-/// Real crystallographic bacterial `1BU7` (*Bacillus megaterium* P450 BM3 `CYP102A1`, `1.65 Å`)
-/// structure parser and `mafft-native` 3D structural homology threader (`HEM A 999` + `Cys400–Sγ`).
-pub(crate) fn build_bacterial_p450_1bu7_pdb_structure(
-    run_id: &str,
-    cache_dir: &Path,
-    pdb_dir: &Path,
-    target_nt_opt: Option<&str>,
-    pdb_filename: &str,
-    gene_symbol: &str,
-    accession: &str,
-    organism: &str,
-) -> SupervisedPdbStructure {
-    let _ = fs::create_dir_all(pdb_dir);
-    let pdb_cache_dir = cache_dir.join("pdb");
-    let _ = fs::create_dir_all(&pdb_cache_dir);
-    let template_path = pdb_cache_dir.join("1BU7.pdb");
-
-    if !template_path.is_file() {
-        if let Ok(resp) = ureq::get("https://files.rcsb.org/download/1BU7.pdb").call() {
-            if let Ok(body) = resp.into_string() {
-                if body.contains("HETATM") && body.contains("HEM A 999") {
-                    let _ = fs::write(&template_path, &body);
-                }
-            }
-        }
-    }
-
-    let raw_pdb = fs::read_to_string(&template_path).unwrap_or_default();
-    let mut helix_ranges: Vec<(usize, usize)> = Vec::new();
-    let mut sheet_ranges: Vec<(usize, usize)> = Vec::new();
-    let mut template_cas: Vec<(usize, String, char, f64, f64, f64, f64)> = Vec::with_capacity(480);
-    let mut seen_res = HashSet::new();
-    let mut het_atoms: Vec<PdbHetAtom> = Vec::with_capacity(45);
-    let mut cys_sg_xyz: Option<(f64, f64, f64)> = None;
-    let mut fe_xyz: Option<(f64, f64, f64)> = None;
-
-    for line in raw_pdb.lines() {
-        if line.starts_with("HELIX ") && line.len() >= 37 {
-            let chain = line.as_bytes().get(19).copied().unwrap_or(b' ') as char;
-            if chain == 'A' {
-                if let (Ok(s), Ok(e)) = (
-                    line[21..25].trim().parse::<usize>(),
-                    line[33..37].trim().parse::<usize>(),
-                ) {
-                    helix_ranges.push((s, e));
-                }
-            }
-        } else if line.starts_with("SHEET ") && line.len() >= 37 {
-            let chain = line.as_bytes().get(21).copied().unwrap_or(b' ') as char;
-            if chain == 'A' {
-                if let (Ok(s), Ok(e)) = (
-                    line[22..26].trim().parse::<usize>(),
-                    line[33..37].trim().parse::<usize>(),
-                ) {
-                    sheet_ranges.push((s, e));
-                }
-            }
-        } else if line.starts_with("ATOM  ") && line.len() >= 66 {
-            let alt = line.as_bytes().get(16).copied().unwrap_or(b' ') as char;
-            let chain = line.as_bytes().get(21).copied().unwrap_or(b' ') as char;
-            if chain != 'A' || (alt != ' ' && alt != 'A') {
-                continue;
-            }
-            let atom_name = line[12..16].trim();
-            let res3 = line[17..20].trim();
-            let Ok(res_seq) = line[22..26].trim().parse::<usize>() else { continue };
-            let Ok(x) = line[30..38].trim().parse::<f64>() else { continue };
-            let Ok(y) = line[38..46].trim().parse::<f64>() else { continue };
-            let Ok(z) = line[46..54].trim().parse::<f64>() else { continue };
-            let bfac = line[60..66].trim().parse::<f64>().unwrap_or(28.0);
-
-            if atom_name == "CA" && seen_res.insert(res_seq) {
-                template_cas.push((res_seq, res3.to_string(), aa3_to_aa1(res3), x, y, z, bfac));
-            } else if atom_name == "SG" && res3 == "CYS" && res_seq == 400 {
-                cys_sg_xyz = Some((x, y, z));
-            }
-        } else if line.starts_with("HETATM") && line.len() >= 54 {
-            let res3 = line[17..20].trim();
-            let chain = line.as_bytes().get(21).copied().unwrap_or(b' ') as char;
-            if res3 == "HEM" && chain == 'A' {
-                let atom_name = line[12..16].trim().to_string();
-                let Ok(x) = line[30..38].trim().parse::<f64>() else { continue };
-                let Ok(y) = line[38..46].trim().parse::<f64>() else { continue };
-                let Ok(z) = line[46..54].trim().parse::<f64>() else { continue };
-                let elem = if line.len() >= 78 {
-                    line[76..78].trim().to_string()
-                } else {
-                    atom_name.chars().take(1).collect()
-                };
-                if atom_name == "FE" {
-                    fe_xyz = Some((x, y, z));
-                }
-                het_atoms.push(PdbHetAtom {
-                    atom_name,
-                    res_name: "HEM".to_string(),
-                    element: elem,
-                    x,
-                    y,
-                    z,
-                });
-            }
-        }
-    }
-
-    let target_aa_seq = if let Some(nt) = target_nt_opt {
-        let orf = extract_longest_sense_orf(nt, 1800);
-        translate_sense_codons(&orf, (orf.len() / 3).min(480).max(1))
-    } else {
-        String::new()
-    };
-    let template_aa_seq: String = template_cas.iter().map(|t| t.2).collect();
-    let mut threaded_map: Vec<(usize, char)> = Vec::with_capacity(template_cas.len());
-    let mut cys_target_res_seq = 400usize;
-
-    if !target_aa_seq.is_empty() && !template_cas.is_empty() {
-        let pair_recs = vec![
-            FastaRecord {
-                id: "1BU7_A".to_string(),
-                accession: "1BU7".to_string(),
-                taxon: "CYP102A1_BM3_Template".to_string(),
-                common_name: String::new(),
-                family: "CYP102".to_string(),
-                gene: "CYP102A1".to_string(),
-                description: String::new(),
-                sequence: template_aa_seq,
-                cached_from_disk: true,
-            },
-            FastaRecord {
-                id: gene_symbol.to_string(),
-                accession: accession.to_string(),
-                taxon: organism.to_string(),
-                common_name: String::new(),
-                family: "CYP102".to_string(),
-                gene: gene_symbol.to_string(),
-                description: String::new(),
-                sequence: target_aa_seq,
-                cached_from_disk: true,
-            },
-        ];
-        let (_, aln_pair, _) = align_sequences_mafft_native(&pair_recs);
-        if aln_pair.len() == 2 {
-            let t_aln = aln_pair[0].aligned_seq.as_bytes();
-            let q_aln = aln_pair[1].aligned_seq.as_bytes();
-            let (mut t_cursor, mut q_cursor) = (0usize, 0usize);
-            for col in 0..t_aln.len().min(q_aln.len()) {
-                let (tb, qb) = (t_aln[col], q_aln[col]);
-                if qb != b'-' {
-                    q_cursor += 1;
-                }
-                if tb != b'-' && t_cursor < template_cas.len() {
-                    let q_ch = if qb != b'-' { qb as char } else { template_cas[t_cursor].2 };
-                    let q_num = q_cursor.max(t_cursor + 1);
-                    if template_cas[t_cursor].0 == 400 {
-                        cys_target_res_seq = q_num;
-                    }
-                    threaded_map.push((q_num, q_ch));
-                    t_cursor += 1;
-                }
-            }
-        }
-    }
-    while threaded_map.len() < template_cas.len() {
-        let idx = threaded_map.len();
-        threaded_map.push((template_cas[idx].0, template_cas[idx].2));
-    }
-
-    let classify_region = |tpl_res: usize| -> &'static str {
-        if (65..=96).contains(&tpl_res) {
-            "SRS1_POCKET"
-        } else if (172..=222).contains(&tpl_res) {
-            "FG_LID"
-        } else if (250..=284).contains(&tpl_res) {
-            "I_HELIX"
-        } else if (393..=402).contains(&tpl_res) {
-            "CYS_LOOP"
-        } else if (403..=426).contains(&tpl_res) {
-            "L_HELIX"
-        } else if helix_ranges.iter().any(|&(s, e)| tpl_res >= s && tpl_res <= e) {
-            "HELIX"
-        } else if sheet_ranges.iter().any(|&(s, e)| tpl_res >= s && tpl_res <= e) {
-            "STRAND"
-        } else {
-            "LOOP"
-        }
-    };
-
-    let mut atoms = Vec::with_capacity(template_cas.len());
-    let mut pdb_txt = String::with_capacity(64_000);
-    pdb_txt.push_str("HEADER    OXIDOREDUCTASE (BACTERIAL P450 BM3)    21-NOV-26   1BU7\n");
-    pdb_txt.push_str(&format!(
-        "TITLE     {} {} ({}) THREADED ON 1.65A 1BU7 HEME POCKET\n",
-        organism.to_ascii_uppercase(),
-        gene_symbol.to_ascii_uppercase(),
-        accession
-    ));
-    pdb_txt.push_str("REMARK   1 TEMPLATE: RCSB PDB 1BU7 CHAIN A (BACILLUS MEGATERIUM CYP102A1)\n");
-    pdb_txt.push_str("REMARK   2 COFACTOR: HETATM HEM A 999 (IRON-PROTOPORPHYRIN IX, 43 ATOMS)\n");
-    for (hi, &(hs, he)) in helix_ranges.iter().enumerate() {
-        pdb_txt.push_str(&format!(
-            "HELIX  {:3} {:3} GLY A{:4}  GLY A{:4}  1                                 {:3}\n",
-            hi + 1, hi + 1, hs, he, he.saturating_sub(hs) + 1
-        ));
-    }
-
-    let mut rmsd_sq_sum = 0.0f64;
-    let mut tm_sum = 0.0f64;
-    let l_norm = (template_cas.len().max(20) as f64) - 15.0;
-    let d0 = (1.24 * l_norm.cbrt() - 1.8).max(1.5);
-
-    for (idx, &(tpl_res, ref _res3, tpl_aa, tx, ty, tz, _tpl_b)) in template_cas.iter().enumerate() {
-        let (_q_res_seq, q_aa) = threaded_map[idx];
-        let region = classify_region(tpl_res);
-        let vol_delta = if q_aa == tpl_aa || tpl_res == 400 || (264..=270).contains(&tpl_res) || (393..=402).contains(&tpl_res) {
-            0.0
-        } else {
-            ((aa_volume_proxy(q_aa) - aa_volume_proxy(tpl_aa)) / 180.0).clamp(-0.85, 0.85)
-        };
-        let prev = if idx > 0 { &template_cas[idx - 1] } else { &template_cas[idx] };
-        let next = if idx + 1 < template_cas.len() { &template_cas[idx + 1] } else { &template_cas[idx] };
-        let ux = next.3 - prev.3;
-        let uy = next.4 - prev.4;
-        let uz = next.5 - prev.5;
-        let unorm = (ux * ux + uy * uy + uz * uz).sqrt().max(1.0);
-        let (nx, ny, nz) = (-uy / unorm, ux / unorm, (uz / unorm) * 0.35);
-        let disp_scale = if matches!(region, "CYS_LOOP" | "I_HELIX") { 0.32 } else { 0.68 };
-        let (dx, dy, dz) = (vol_delta * disp_scale * nx, vol_delta * disp_scale * ny, vol_delta * disp_scale * nz);
-        let (x, y, z) = (round4(tx + dx), round4(ty + dy), round4(tz + dz));
-        let d_i = round4((dx * dx + dy * dy + dz * dz).sqrt());
-        rmsd_sq_sum += d_i * d_i;
-        tm_sum += 1.0 / (1.0 + (d_i / d0).powi(2));
-
-        let bfac = if q_aa == tpl_aa {
-            97.2
-        } else if matches!(region, "CYS_LOOP" | "I_HELIX" | "SRS1_POCKET") {
-            90.4
-        } else {
-            79.8
-        };
-        let res3 = aa1_to_aa3(q_aa);
-        pdb_txt.push_str(&format!(
-            "ATOM  {:5}  CA  {} A{:4}    {:8.3}{:8.3}{:8.3}  1.00{:6.2}           C\n",
-            idx + 1, res3, tpl_res, x, y, z, bfac
-        ));
-        atoms.push(PdbCaAtom {
-            residue_seq: tpl_res,
-            residue_name_3: res3.to_string(),
-            residue_aa_1: q_aa,
-            chain_id: 'A',
-            x,
-            y,
-            z,
-            template_x: round4(tx),
-            template_y: round4(ty),
-            template_z: round4(tz),
-            per_residue_rmsd_angstrom: d_i,
-            b_factor_conservation: bfac,
-            secondary_structure: region.to_string(),
-        });
-    }
-
-    let mut serial = atoms.len() + 1;
-    let sg_serial = serial;
-    let proximal_cys_sg = if let (Some((sx, sy, sz)), Some((fx, fy, fz))) = (cys_sg_xyz, fe_xyz) {
-        pdb_txt.push_str(&format!(
-            "ATOM  {:5}  SG  CYS A 400    {:8.3}{:8.3}{:8.3}  1.00 98.80           S\n",
-            serial, sx, sy, sz
-        ));
-        serial += 1;
-        let dist = round4(((sx - fx).powi(2) + (sy - fy).powi(2) + (sz - fz).powi(2)).sqrt());
-        Some((round4(sx), round4(sy), round4(sz), cys_target_res_seq, dist))
-    } else {
-        None
-    };
-
-    pdb_txt.push_str(&format!("TER   {:5}      LEU A 455\n", serial));
-    serial += 1;
-
-    let mut fe_serial = 0usize;
-    let mut n_serials = Vec::new();
-    for ha in &het_atoms {
-        if ha.atom_name == "FE" {
-            fe_serial = serial;
-        } else if matches!(ha.atom_name.as_str(), "NA" | "NB" | "NC" | "ND") {
-            n_serials.push(serial);
-        }
-        pdb_txt.push_str(&format!(
-            "HETATM{:5} {:<4} HEM A 999    {:8.3}{:8.3}{:8.3}  1.00 28.40          {:>2}\n",
-            serial, ha.atom_name, ha.x, ha.y, ha.z, ha.element
-        ));
-        serial += 1;
-    }
-    if fe_serial > 0 {
-        pdb_txt.push_str(&format!("CONECT{:5}{:5}", fe_serial, sg_serial));
-        for ns in &n_serials {
-            pdb_txt.push_str(&format!("{:5}", ns));
-        }
-        pdb_txt.push('\n');
-    }
-    pdb_txt.push_str("END\n");
-
-    let rel_path = format!("pdb/{}", pdb_filename);
-    let _ = fs::write(pdb_dir.join(pdb_filename), &pdb_txt);
-
-    let n_res = atoms.len().max(1);
-    let global_rmsd = round4((rmsd_sq_sum / (n_res as f64)).sqrt());
-    let tm_score = round4((tm_sum / (n_res as f64)).clamp(0.75, 0.99));
-    let pocket_center = fe_xyz
-        .map(|(fx, fy, fz)| (round4(fx), round4(fy), round4(fz)))
-        .unwrap_or((51.969, 67.648, 45.223));
-    let fe_sg_ang = proximal_cys_sg.map(|p| p.4).unwrap_or(2.382);
-
-    SupervisedPdbStructure {
-        structure_id: format!("{}-{}-1BU7", run_id.to_ascii_uppercase(), gene_symbol.to_ascii_uppercase()),
-        target_protein: format!("{} Cytochrome P450 {} ({}) + Heme IX Active Site", organism, gene_symbol, accession),
-        template_pdb_code: "1BU7_A (1.65 Å Bacterial P450 BM3 + HEM A 999)".to_string(),
-        organism: organism.to_string(),
-        num_residues: atoms.len(),
-        kabsch_rmsd_angstrom: global_rmsd,
-        tm_score,
-        pocket_center_xyz: pocket_center,
-        pocket_radius_angstrom: 7.4,
-        pocket_volume_a3: 1094.2,
-        docking_affinity_kcal_mol: -9.42,
-        catalytic_residues: vec![
-            format!("Cys{} / 1BU7 Cys400 (FGNGQRACIG Proximal Thiolate; Fe-Sγ = {:.2} Å)", cys_target_res_seq, fe_sg_ang),
-            "HEM A 999 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)".to_string(),
-            "Ala264-Gly265-His266-Glu267-Thr268-Thr269-Ser270 (I-Helix Distal O2 Groove)".to_string(),
-            "SRS1 B'-Region (1BU7 65-96; Substrate-Access Loop)".to_string(),
-            "Helices F-G Lid (1BU7 172-222; Catalytic Entry Channel)".to_string(),
-        ],
-        pdb_file_rel_path: rel_path,
-        atoms,
-        het_atoms,
-        proximal_cys_sg,
-    }
 }
 
 fn prepare_bacterial_haplotype_records(

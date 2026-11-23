@@ -22,6 +22,7 @@ pub mod complexity;
 pub mod dag_pipelines;
 pub mod dca_coevo_calibration;
 pub mod disease_panels;
+pub mod empirical_inference_util;
 pub mod fetch;
 pub mod figure_generator;
 pub mod finemap_coloc_calibration;

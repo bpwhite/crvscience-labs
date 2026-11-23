@@ -33,7 +33,8 @@ use crate::supervisor::{
     SupervisedSkylineCohort, SupervisorEscalationStatus, SupervisorRunManifest, SupervisorRunSpec,
 };
 use crate::tree_builder::{
-    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap, PhyloRunModel,
+    infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap,
+    infer_native_ml_tree_with_bootstrap_control, PhyloRunModel,
 };
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -1625,6 +1626,11 @@ pub(crate) fn export_trimmed_supp_s2_rdna_fasta(
 pub(crate) struct CohortFourRegimeTelemetry {
     pub core_aligned_labels: Vec<String>,
     pub core_aligned_seqs: Vec<String>,
+    pub r2_aligned_seqs: Vec<String>,
+    pub r3_aligned_seqs: Vec<String>,
+    pub r4_aligned_seqs: Vec<String>,
+    pub regime_cpu_ms: [u128; 4],
+    pub regime_kh_z: [f64; 4],
     pub core_cols: usize,
     pub rep_count: usize,
     pub used_ry3: bool,
@@ -1965,12 +1971,6 @@ pub(crate) fn evaluate_population_cohort_4regimes(
                         core_seqs[i] = trimmed;
                     }
                 }
-                for i in 0..n_iso {
-                    if core_seqs[i].is_empty() {
-                        let rep_i = clean_indices[i % clean_indices.len()];
-                        core_seqs[i] = core_seqs[rep_i].clone();
-                    }
-                }
             }
         }
     }
@@ -2088,31 +2088,53 @@ pub(crate) fn evaluate_population_cohort_4regimes(
                 })
                 .collect();
         }
+    }
+
+    // Retain only isolates that genuinely passed alignment (never duplicate sequences across isolates)
+    let kept_iso: Vec<usize> = (0..n_iso).filter(|&i| !core_seqs[i].is_empty()).collect();
+    if kept_iso.len() >= 4 && kept_iso.len() < n_iso {
+        let filter_s = |v: &[String]| -> Vec<String> { kept_iso.iter().map(|&i| v[i].clone()).collect() };
+        core_seqs = filter_s(&core_seqs);
+    } else if kept_iso.is_empty() {
         for i in 0..n_iso {
-            if core_seqs[i].is_empty() && !clean_idx.is_empty() {
-                let ri = clean_idx[i % clean_idx.len()];
-                core_seqs[i] = core_seqs[ri].clone();
+            let mut s: String = clean_raw[i].chars().take(500).collect();
+            let w = clean_raw.iter().map(|x| x.len()).max().unwrap_or(100).clamp(60, 500);
+            if s.len() < w {
+                s.push_str(&"-".repeat(w - s.len()));
+            }
+            core_seqs[i] = s;
+        }
+    } else {
+        let max_w = core_seqs.iter().map(|x| x.len()).max().unwrap_or(60).max(60);
+        for s in &mut core_seqs {
+            if s.is_empty() {
+                *s = "-".repeat(max_w);
             }
         }
     }
+    let active_indices: Vec<usize> = if kept_iso.len() >= 4 { kept_iso } else { (0..n_iso).collect() };
+    let lbls_active: Vec<String> = active_indices.iter().map(|&i| lbls_36[i].clone()).collect();
+    let nt_recs_active: Vec<FastaRecord> = active_indices.iter().map(|&i| nt_recs[i].clone()).collect();
+    let clean_raw_active: Vec<String> = active_indices.iter().map(|&i| clean_raw[i].clone()).collect();
+    let n_active = lbls_active.len().max(1);
 
-    let core_cols = core_seqs.first().map(|s| s.len()).unwrap_or(300).max(60);
+    let core_cols = core_seqs.first().map(|s| s.len()).unwrap_or(60).max(60);
 
     // 2. Build Regime 2 (single-pass progressive FFT-NS-i across all sites),
-    //    Regime 3 (untrimmed gotoh-msa), and Regime 4 (unaligned sense+antisense staggered raw slices)
-    let (_, aln_fft_raw, _) = align_sequences_mafft_native_with_config(&nt_recs, &fft_cfg);
+    //    Regime 3 (untrimmed gotoh-msa), and Regime 4 (real unaligned raw sequences truncated/gap-padded to core_cols)
+    let (_, aln_fft_raw, _) = align_sequences_mafft_native_with_config(&nt_recs_active, &fft_cfg);
     let aln_fft_map: HashMap<String, String> =
         aln_fft_raw.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
     let f_len = aln_fft_map.values().next().map(|s| s.len()).unwrap_or(0);
     let aln_fft: Vec<String> = if f_len > 0 {
-        lbls_36
+        lbls_active
             .iter()
             .map(|id| aln_fft_map.get(id).cloned().unwrap_or_else(|| "-".repeat(f_len)))
             .collect()
     } else {
         Vec::new()
     };
-    let min_f_occ = (((n_iso as f64) * 0.45).ceil() as usize).max(2);
+    let min_f_occ = (((n_active as f64) * 0.45).ceil() as usize).max(2);
     let kept_f: Vec<usize> = (0..f_len)
         .filter(|&c| {
             aln_fft
@@ -2122,7 +2144,7 @@ pub(crate) fn evaluate_population_cohort_4regimes(
                 >= min_f_occ
         })
         .collect();
-    let r2_36: Vec<String> = if !kept_f.is_empty() && aln_fft.len() == n_iso {
+    let r2_36: Vec<String> = if !kept_f.is_empty() && aln_fft.len() == n_active {
         aln_fft
             .iter()
             .map(|s| {
@@ -2139,27 +2161,22 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     } else {
         core_seqs.clone()
     };
-    let (_, aln_gotoh_raw, _) = align_sequences_with_mode(&nt_recs, AlignerMode::Native);
+    let (_, aln_gotoh_raw, _) = align_sequences_with_mode(&nt_recs_active, AlignerMode::Native);
     let aln_gotoh_map: HashMap<String, String> =
         aln_gotoh_raw.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
     let g_len = aln_gotoh_map.values().next().map(|s| s.len()).unwrap_or(core_cols).max(1);
-    let r3_36: Vec<String> = lbls_36
+    let r3_36: Vec<String> = lbls_active
         .iter()
         .map(|id| aln_gotoh_map.get(id).cloned().unwrap_or_else(|| "-".repeat(g_len)))
         .collect();
-    let r4_36: Vec<String> = (0..n_iso)
-        .map(|k| {
-            let src = &clean_raw[k % clean_raw.len()];
-            let raw_b: Vec<u8> = if k % 3 == 1 {
-                crate::phylo::reverse_complement_bytes(src.as_bytes())
-            } else {
-                src.as_bytes().to_vec()
-            };
-            let unit = if raw_b.len() >= 12 { raw_b.as_slice() } else { b"ACGTACGTACGT" };
-            let off = (k * 37 + 11) % unit.len();
-            (0..core_cols)
-                .map(|j| unit[(off + j) % unit.len()] as char)
-                .collect()
+    let r4_36: Vec<String> = clean_raw_active
+        .iter()
+        .map(|src| {
+            let mut s: String = src.chars().take(core_cols).collect();
+            if s.len() < core_cols {
+                s.push_str(&"-".repeat(core_cols - s.len()));
+            }
+            s
         })
         .collect();
 
@@ -2170,8 +2187,8 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     };
     let mut seen_seq = std::collections::HashSet::new();
     let mut uniq_clean: Vec<usize> = Vec::new();
-    for i in 0..n_iso {
-        if valid_mask[i]
+    for i in 0..n_active {
+        if valid_mask.get(active_indices[i]).copied().unwrap_or(true)
             && valid_base_cnt(i) * 20 >= core_cols * 17
             && seen_seq.insert(core_seqs[i].clone())
         {
@@ -2179,14 +2196,14 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         }
     }
     if uniq_clean.len() < 4 {
-        for i in 0..n_iso {
+        for i in 0..n_active {
             if valid_base_cnt(i) * 10 >= core_cols * 7 && seen_seq.insert(core_seqs[i].clone()) {
                 uniq_clean.push(i);
             }
         }
     }
     if uniq_clean.len() < 4 {
-        for i in 0..n_iso {
+        for i in 0..n_active {
             if seen_seq.insert(core_seqs[i].clone()) {
                 uniq_clean.push(i);
             }
@@ -2202,7 +2219,7 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     };
     let rep_indices_r1: Vec<usize> = if uniq_clean.len() <= 4 {
         let mut v = uniq_clean;
-        for i in 0..n_iso {
+        for i in 0..n_active {
             if v.len() >= 4 {
                 break;
             }
@@ -2306,9 +2323,9 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     };
     let rep_count = rep_indices_r1.len();
 
-    let target_r2 = 7.min(n_iso);
+    let target_r2 = 7.min(n_active);
     let mut rep_indices_r2 = rep_indices_r1.clone();
-    let mut r2_cands: Vec<(usize, usize)> = (0..n_iso)
+    let mut r2_cands: Vec<(usize, usize)> = (0..n_active)
         .filter(|i| !rep_indices_r1.contains(i))
         .filter_map(|i| {
             let min_d = rep_indices_r1
@@ -2330,7 +2347,7 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         }
         rep_indices_r2.push(i);
     }
-    for i in 0..n_iso {
+    for i in 0..n_active {
         if rep_indices_r2.len() >= target_r2 {
             break;
         }
@@ -2339,16 +2356,16 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         }
     }
 
-    let target_r3 = 10.min(n_iso);
+    let target_r3 = 10.min(n_active);
     let mut rep_indices_r3 = Vec::with_capacity(target_r3);
     for k in 0..target_r3 {
-        let idx = (k * n_iso) / target_r3;
+        let idx = (k * n_active) / target_r3;
         if !rep_indices_r3.contains(&idx) {
             rep_indices_r3.push(idx);
         }
     }
-    for i in 0..n_iso {
-        if rep_indices_r3.len() >= target_r3.max(4.min(n_iso)) {
+    for i in 0..n_active {
+        if rep_indices_r3.len() >= target_r3.max(4.min(n_active)) {
             break;
         }
         if !rep_indices_r3.contains(&i) {
@@ -2360,7 +2377,7 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     let slice_by = |v: &[String], idxs: &[usize]| -> Vec<String> {
         idxs.iter().map(|&i| v[i].clone()).collect()
     };
-    let rep_lbls_r1: Vec<String> = slice_by(&lbls_36, &rep_indices_r1);
+    let rep_lbls_r1: Vec<String> = slice_by(&lbls_active, &rep_indices_r1);
     let rep_raw = slice_by(&core_seqs, &rep_indices_r1);
     let mut pdiffs = Vec::new();
     for a in 0..rep_raw.len() {
@@ -2384,7 +2401,7 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     }
     pdiffs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let med_p = pdiffs.get(pdiffs.len() / 2).copied().unwrap_or(0.0);
-    let (rcfv1_4, _, pi_core) =
+    let (rcfv1_4, _, _pi_core) =
         compute_rcfv_4state_and_ry(&core_seqs.iter().map(|s| s.as_bytes().to_vec()).collect::<Vec<_>>());
     let use_ry_r1 = is_coding_cds && (med_p >= 0.22 || rcfv1_4 >= 0.040);
     let r1_36: Vec<String> = if use_ry_r1 {
@@ -2414,11 +2431,11 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         }
     }
     let rm2 = PhyloRunModel::K80Gamma4;
-    let rep_lbls_r2 = slice_by(&lbls_36, &rep_indices_r2);
-    let rep_lbls_r3 = slice_by(&lbls_36, &rep_indices_r3);
+    let rep_lbls_r2 = slice_by(&lbls_active, &rep_indices_r2);
+    let rep_lbls_r3 = slice_by(&lbls_active, &rep_indices_r3);
     let b1 = infer_native_ml_tree_with_bootstrap(&rep_r1, &rep_lbls_r1, win_rm1, b_coh, seed_base)
         .map(|(_, b)| b.mean_split_support_pct)
-        .unwrap_or(95.0);
+        .unwrap_or(0.0);
     let b2 = infer_native_ml_tree_with_bootstrap(
         &slice_by(&r2_36, &rep_indices_r2),
         &rep_lbls_r2,
@@ -2427,7 +2444,7 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         seed_base + 100,
     )
     .map(|(_, b)| b.mean_split_support_pct)
-    .unwrap_or(90.0);
+    .unwrap_or(0.0);
     let b3 = infer_native_ml_tree_with_bootstrap(
         &slice_by(&r3_36, &rep_indices_r3),
         &rep_lbls_r3,
@@ -2436,8 +2453,8 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         seed_base + 200,
     )
     .map(|(_, b)| b.mean_split_support_pct)
-    .unwrap_or(78.0);
-    let b4 = infer_native_ml_tree_with_bootstrap(
+    .unwrap_or(0.0);
+    let b4 = infer_native_ml_tree_with_bootstrap_control(
         &slice_by(&r4_36, &rep_indices_r3),
         &rep_lbls_r3,
         PhyloRunModel::JcUniform,
@@ -2445,13 +2462,21 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         seed_base + 300,
     )
     .map(|(_, b)| b.mean_split_support_pct)
-    .unwrap_or(50.0);
+    .unwrap_or(0.0);
 
-    // 5. Solve 36-isolate ML trees & comparable Felsenstein 4-state `ln L` + RCFV across all 4 regimes
-    let ml1 = infer_native_ml_gene_tree(&r1_36, &lbls_36, win_rm1);
-    let ml2 = infer_native_ml_gene_tree(&r2_36, &lbls_36, rm2);
-    let ml3 = infer_native_ml_gene_tree(&r3_36, &lbls_36, PhyloRunModel::JcUniform);
-    let ml4 = infer_native_ml_gene_tree(&r4_36, &lbls_36, PhyloRunModel::JcUniform);
+    // 5. Solve full-cohort ML trees & true MLE Felsenstein ln L + per-site KH z across all 4 regimes
+    let t_r1 = std::time::Instant::now();
+    let ml1 = infer_native_ml_gene_tree(&r1_36, &lbls_active, win_rm1);
+    let ms1 = t_r1.elapsed().as_millis().max(1);
+    let t_r2 = std::time::Instant::now();
+    let ml2 = infer_native_ml_gene_tree(&r2_36, &lbls_active, rm2);
+    let ms2 = t_r2.elapsed().as_millis().max(1);
+    let t_r3 = std::time::Instant::now();
+    let ml3 = infer_native_ml_gene_tree(&r3_36, &lbls_active, PhyloRunModel::JcUniform);
+    let ms3 = t_r3.elapsed().as_millis().max(1);
+    let t_r4 = std::time::Instant::now();
+    let ml4 = infer_native_ml_gene_tree(&r4_36, &lbls_active, PhyloRunModel::JcUniform);
+    let ms4 = t_r4.elapsed().as_millis().max(1);
 
     let r1_vecs: Vec<Vec<u8>> = r1_36.iter().map(|s| s.as_bytes().to_vec()).collect();
     let r2_vecs: Vec<Vec<u8>> = r2_36.iter().map(|s| s.as_bytes().to_vec()).collect();
@@ -2461,129 +2486,45 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     let (rcfv2_4, _rcfv2_ry, _) = compute_rcfv_4state_and_ry(&r2_vecs);
     let (rcfv3, _, _) = compute_rcfv_4state_and_ry(&r3_vecs);
     let (rcfv4, _, _) = compute_rcfv_4state_and_ry(&r4_vecs);
-    let rcfv1 = rcfv1_ry_v;
+    let rcfv1 = if use_ry_r1 { rcfv1_ry_v } else { rcfv1_4 };
     let rcfv2 = rcfv2_4;
 
-    let map_core: HashMap<String, Vec<u8>> = lbls_36
-        .iter()
-        .cloned()
-        .zip(core_seqs.iter().map(|s| s.as_bytes().to_vec()))
-        .collect();
-    let map_raw0: HashMap<String, Vec<u8>> = lbls_36
-        .iter()
-        .cloned()
-        .zip(r4_36.iter().map(|s| s.as_bytes().to_vec()))
-        .collect();
-    let (_, _, pats_core) = compress_alignment_patterns(&lbls_36, &map_core);
-    let (_, _, pats_raw0) = compress_alignment_patterns(&lbls_36, &map_raw0);
-
-    let mut idx_map = HashMap::with_capacity(n_iso);
-    for (i, l) in lbls_36.iter().enumerate() {
-        idx_map.insert(l.clone(), i);
-    }
-    let empty_ages = HashMap::new();
-    let eval_tree = |nwk: &str| {
-        let rt = parse_phylo_tree(nwk, false, &empty_ages).unwrap_or(ParsedPhyloNode {
-            name: "R".to_string(),
-            branch_length: 0.0,
-            height_ka: 0.0,
-            height_mean_ka: 0.0,
-            height_hpd_lo_ka: 0.0,
-            height_hpd_hi_ka: 0.0,
-            posterior: 0.0,
-            tips: Vec::new(),
-            children: Vec::new(),
-        });
-        let mut flat = Vec::new();
-        flatten_postorder(&rt, &idx_map, &mut flat);
-        flat
+    // Evaluate true MLE log-likelihood and per-site log-likelihoods using `tree_builder`
+    let eval_mle_regime = |seqs: &[String], nwk: &str, rm: PhyloRunModel, force_no_inv: bool| -> (f64, Vec<f64>, Vec<f64>) {
+        let aln = crate::tree_builder::compress_alignment_and_estimate_rates(seqs);
+        if let Some(nodes) = crate::tree_builder::parse_newick_to_ml_nodes(nwk, &lbls_active) {
+            let (q, pi, pinv, cats, lnl) =
+                crate::tree_builder::optimize_substitution_model_on_tree_seq(&nodes, &aln, rm, force_no_inv);
+            let ell = crate::tree_builder::evaluate_site_pattern_lnls(
+                &nodes, &aln, &q, &pi, pinv, &cats, 1.0, false,
+            );
+            (lnl, ell, aln.weights)
+        } else {
+            (0.0, Vec::new(), Vec::new())
+        }
     };
-    let f1 = eval_tree(&ml1.newick_tree);
-    let f2 = eval_tree(&ml2.newick_tree);
-    let f3 = eval_tree(&ml3.newick_tree);
-    let f4 = eval_tree(&ml4.newick_tree);
-
-    let scales = [0.50_f64, 0.75, 0.90, 1.0, 1.15, 1.35, 1.65];
-    let mut lnl1 = f64::NEG_INFINITY;
-    for freq in [pi_core, [0.25_f64; 4]] {
-        for &pinv in &[0.0_f64, 0.22] {
-            for &sc in &scales {
-                let v = evaluate_felsenstein_ln_l(
-                    &f1,
-                    &pats_core,
-                    &freq,
-                    4.4,
-                    3.8,
-                    &[0.16, 0.52, 1.05, 2.27],
-                    &[0.25; 4],
-                    pinv,
-                    sc,
-                );
-                if v > lnl1 {
-                    lnl1 = v;
-                }
-            }
-        }
-    }
-    let mut lnl2 = f64::NEG_INFINITY;
-    for &sc in &scales {
-        let v = evaluate_felsenstein_ln_l(
-            &f2,
-            &pats_core,
-            &[0.25; 4],
-            3.2,
-            3.2,
-            &[0.18, 0.55, 1.06, 2.21],
-            &[0.25; 4],
-            0.0,
-            sc,
-        );
-        if v > lnl2 {
-            lnl2 = v;
-        }
-    }
-    let mut lnl3 = f64::NEG_INFINITY;
-    for &sc in &scales {
-        let v = evaluate_felsenstein_ln_l(
-            &f3,
-            &pats_core,
-            &[0.25; 4],
-            1.0,
-            1.0,
-            &[1.0],
-            &[1.0],
-            0.0,
-            sc,
-        );
-        if v > lnl3 {
-            lnl3 = v;
-        }
-    }
-    let lnl4 = evaluate_felsenstein_ln_l(
-        &f4,
-        &pats_raw0,
-        &[0.25; 4],
-        1.0,
-        1.0,
-        &[1.0],
-        &[1.0],
-        0.0,
-        1.0,
-    );
+    let (lnl1, ell1, w1) = eval_mle_regime(&core_seqs, &ml1.newick_tree, win_rm1, false);
+    let (lnl2, ell2, w2) = eval_mle_regime(&core_seqs, &ml2.newick_tree, rm2, true);
+    let (lnl3, ell3, w3) = eval_mle_regime(&core_seqs, &ml3.newick_tree, PhyloRunModel::JcUniform, true);
+    let (lnl4, ell4, w4) = eval_mle_regime(&r4_36, &ml4.newick_tree, PhyloRunModel::JcUniform, true);
+    let z14 = crate::empirical_inference_util::compute_kh_paired_sites_z(&ell1, &w1, &ell4, &w4);
+    let z24 = crate::empirical_inference_util::compute_kh_paired_sites_z(&ell2, &w2, &ell4, &w4);
+    let z34 = crate::empirical_inference_util::compute_kh_paired_sites_z(&ell3, &w3, &ell4, &w4);
+    let z41 = crate::empirical_inference_util::compute_kh_paired_sites_z(&ell4, &w4, &ell1, &w1);
 
     CohortFourRegimeTelemetry {
-        core_aligned_labels: lbls_36,
+        core_aligned_labels: lbls_active,
         core_aligned_seqs: core_seqs,
+        r2_aligned_seqs: r2_36,
+        r3_aligned_seqs: r3_36,
+        r4_aligned_seqs: r4_36,
+        regime_cpu_ms: [ms1, ms2, ms3, ms4],
+        regime_kh_z: [z14, z24, z34, z41],
         core_cols,
         rep_count,
         used_ry3: use_ry_r1,
         boot_quad: [b1, b2, b3, b4],
-        rcfv_quad: [
-            round4(rcfv1.max(0.0008)),
-            round4(rcfv2.max(0.0015)),
-            round4(rcfv3.max(0.0032)),
-            round4(rcfv4.max(0.0120)),
-        ],
+        rcfv_quad: [round4(rcfv1), round4(rcfv2), round4(rcfv3), round4(rcfv4)],
         raw_lnl_quad: [round4(lnl1), round4(lnl2), round4(lnl3), round4(lnl4)],
         primary_ml_newick: ml1.newick_tree,
         winning_model_code: win_rm1.code().to_string(),

@@ -139,6 +139,12 @@ pub struct BiomolAtom {
     pub raw_pdb_line: String,
 }
 
+impl BiomolAtom {
+    pub(crate) fn vdw_radius(&self) -> f64 {
+        self.xs_type.vdw_radius()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectedPocketSummary {
     pub pocket_rank: usize,
@@ -413,7 +419,7 @@ fn assign_xs_atom_types(atoms: &mut [BiomolAtom], is_ligand: bool) {
 }
 
 /// Parses a PDB file into receptor heavy atoms (`ATOM` on `chain_id`) and ligand heavy atoms (`HETATM` matching `ligand_id`).
-fn parse_pdb_receptor_and_ligand(
+pub(crate) fn parse_pdb_receptor_and_ligand(
     pdb_path: &Path,
     chain_id: char,
     ligand_id: &str,
@@ -717,7 +723,7 @@ fn transform_ligand_pose(
     out
 }
 
-fn ligand_centroid(atoms: &[BiomolAtom]) -> [f64; 3] {
+pub(crate) fn ligand_centroid(atoms: &[BiomolAtom]) -> [f64; 3] {
     if atoms.is_empty() {
         return [0.0, 0.0, 0.0];
     }
@@ -823,7 +829,7 @@ fn optimize_native_vina_pose(
 }
 
 /// Native Stage 1 & 2 Alpha-Sphere Voronoi Cavity & Shrake-Rupley SASA / Schmidtke-Barril Druggability Engine.
-fn run_native_pocket_detector(
+pub(crate) fn run_native_pocket_detector(
     rec_atoms: &[BiomolAtom],
     lig_atoms: &[BiomolAtom],
     fpocket_pockets: &[DetectedPocketSummary],

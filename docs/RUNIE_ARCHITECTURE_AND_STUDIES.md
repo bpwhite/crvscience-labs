@@ -14,7 +14,7 @@ Its primary engineering goal is to chain calibrated native Rust bioinformatics m
 - **Engine Version**: `RuNIE v2.0.2` (`candle-core v0.11.1` + `candle-nn v0.11.1` + `rayon v1.10`; Zenodo Master DOI: [10.5281/zenodo.23969275](https://doi.org/10.5281/zenodo.23969275))
 - **Tool Operator Vocabulary**: **`37` Core Validated Native Rust Tools** (`23.19×` mean end-to-end CPU speedup; `22` synthesized/upgraded in-memory DAG operators across `37` logged interventions in [`runie_changelog.md`](../runie_changelog.md))
 - **Stage 4 `ModelTest` Gate & `RuNIE Pipeline Flowchart`**: Evaluates 88 DNA / 44 AA substitution models via exact `BIC`/`AICc` and Relative Composition Frequency Variability (`RCFV <= 0.050`), routing heterotachous/compositional cohorts to `GTR+F+I+G4`, `LG+C60+F+G4`, `RY3`, and `Dayhoff-6`/`SR4` recoding ([**`RuNIE Pipeline Flowchart` PDF**](https://crvscience.com/labs/pdfs/runie-engine-pipeline-atlas.pdf))
-- **Empirically Verified Preprints & Tool Calibrations**: **`31` Verified Empirical Preprints (`PREPRINT-01`–`PREPRINT-31`, `v2.0.2`)** and **`37` Head-to-Head Tool Calibrations** across `69` curated Development/Reserve validation datasets (`VAL-SET-001`–`VAL-SET-069`)
+- **Empirically Verified Preprints & Tool Calibrations**: **`32` Verified Empirical Preprints (`PREPRINT-01`–`PREPRINT-32`, `v2.0.2`)** and **`37` Head-to-Head Tool Calibrations** across `70` curated Development/Reserve validation datasets (`VAL-SET-001`–`VAL-SET-070`)
 - **Falsification & Negative-Control Rejects**: **`55` `0🧪` Negative Controls** rejected at Generation 2 and logged to `runs/zero-star-calibration-dump.json`
 <!-- AUTO-RUNIE-SUMMARY:END -->
 
@@ -61,7 +61,7 @@ Every `RuNIE` study records a concise 4-row model comparison table at the conclu
 
 ---
 
-## 5. Cataloged Empirical Preprints (`PREPRINT-01`–`PREPRINT-31` of `31` `v2.0.2` Preprints) & Three Empirical Capability Proofs
+## 5. Cataloged Empirical Preprints (`PREPRINT-01`–`PREPRINT-31` Zenodo-Archived; `PREPRINT-32` Pending Minting) & Three Empirical Capability Proofs
 
 Full visual pipeline diagrams across all 9 stage classes (including **Stage 4: `ModelTest`**) are compiled in the companion **[RuNIE Pipeline Flowchart (`/labs/pdfs/runie-engine-pipeline-atlas.pdf`)](https://crvscience.com/labs/pdfs/runie-engine-pipeline-atlas.pdf)**.
 
@@ -104,7 +104,7 @@ In **`PREPRINT-01` (`v2.0.2`, Master Concept DOI: [`10.5281/zenodo.23969275`](ht
 | **`PREPRINT-30` (`v1`)** | [`10.5281/zenodo.24359245`](https://doi.org/10.5281/zenodo.24359245) | `--` | *Partitioned Per-Locus ModelTest Phylogenomics, Xenobiotic Resistance Selection, and Coalescent Phylodynamics of U.S. Agricultural Arthropod Pests* |
 | **`PREPRINT-31` (`v1`)** | [`10.5281/zenodo.24455504`](https://doi.org/10.5281/zenodo.24455504) | [Figshare 35087839](https://figshare.com/articles/preprint/Partitioned_ModelTest_Phylogenomics_Cell-Wall_Evolution_and_Coalescent_Dynamics_Across_Gram-Positive_Bacteria_Bacillota_and_Actinomycetota_/35087839) | *Partitioned ModelTest Phylogenomics, Cell-Wall Evolution, and Coalescent Dynamics Across Gram-Positive Bacteria (Bacillota and Actinomycetota)* |
 
-> **Catalog Synchronization (`PREPRINT-01`–`PREPRINT-31`)**: All `31` cataloged `v2.0.2` preprints use canonical Zenodo Concept DOIs alongside verified Figshare article URLs (`PREPRINT-01`–`PREPRINT-04` also carry minted Figshare DOIs; `PREPRINT-30` awaits Figshare indexing). Note that persistent Figshare URL path slugs retain initial pre-correction working phrases (e.g., `1_648_0_Ma` on `PREPRINT-08`, `440_0_Ma_Crown_Tetrapoda` on `PREPRINT-09`, and `318_4_to_0_0_Ma` on `PREPRINT-13`), whereas current Zenodo records, Figshare titles, and web discoveries incorporate calibrated estimates (`2536.2–0 Ma` Archaeplastida root, `346.63 Ma` Crown Tetrapoda, and `292.0–295.0 Ma` Crown Coleoptera, respectively).
+> **Catalog Synchronization (`PREPRINT-01`–`PREPRINT-32`)**: All `31` Zenodo-archived `v2.0.2` preprints (`PREPRINT-01`–`PREPRINT-31`) use canonical Zenodo Concept DOIs alongside verified Figshare article URLs (`PREPRINT-01`–`PREPRINT-04` also carry minted Figshare DOIs; `PREPRINT-30` awaits Figshare indexing). `PREPRINT-32` (*Asgardarchaeota-to-LECA Phylogenomics, Nuclear Pore Ran-GTPase Switching (1BYU), and Transcriptional Compartmentalization in the Origin of the Eukaryotic Nucleus*, web Discovery `eukaryotic-nucleus-asgard-origin`, arXiv bundle in `preprints/arxiv-submission-eukaryotic-nucleus-origin/`) is the 32nd empirical study and is pending Zenodo/Figshare DOI minting. Note that persistent Figshare URL path slugs retain initial pre-correction working phrases (e.g., `1_648_0_Ma` on `PREPRINT-08`, `440_0_Ma_Crown_Tetrapoda` on `PREPRINT-09`, and `318_4_to_0_0_Ma` on `PREPRINT-13`), whereas current Zenodo records, Figshare titles, and web discoveries incorporate calibrated estimates (`2536.2–0 Ma` Archaeplastida root, `346.63 Ma` Crown Tetrapoda, and `292.0–295.0 Ma` Crown Coleoptera, respectively).
 
 ---
 

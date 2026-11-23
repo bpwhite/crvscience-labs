@@ -153,15 +153,14 @@ pub(crate) fn build_balanced_sector_clade(
         (tips.len() + 1) / 2
     };
     let (left_slice, right_slice) = tips.split_at(mid.max(1).min(tips.len() - 1));
-    let sub_ma = (max_clade_ma * 0.74).max(0.45);
+    let sub_ma = (max_clade_ma * 0.75).max(0.5);
     let left = build_balanced_sector_clade(left_slice, int_bls, seed_idx * 2 + 1, depth + 1, sub_ma);
-    let right = build_balanced_sector_clade(right_slice, int_bls, seed_idx * 2 + 2, depth + 1, sub_ma * 0.91);
+    let right = build_balanced_sector_clade(right_slice, int_bls, seed_idx * 2 + 2, depth + 1, sub_ma);
     let emp_bl = int_bls
         .get(seed_idx % int_bls.len().max(1))
         .copied()
-        .unwrap_or(0.014);
+        .unwrap_or(0.0);
     let sec = tips[0].1.clone();
-    let boot = 92.0 + ((seed_idx * 7) % 8) as f64 + 0.4;
     EmpiricalBifNode {
         label: String::new(),
         branch_len: emp_bl,
@@ -170,7 +169,7 @@ pub(crate) fn build_balanced_sector_clade(
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: sec,
-        ufboot: boot.min(100.0),
+        ufboot: 0.0,
         children: vec![left, right],
     }
 }
@@ -1205,30 +1204,776 @@ fn count_parsed_phylo_tips(n: &ParsedPhyloNode) -> usize {
     }
 }
 
-fn collect_leaf_sector_ranges(n: &EmpiricalBifNode) -> [Option<(usize, usize)>; 7] {
-    fn walk(node: &EmpiricalBifNode, idx: &mut usize, ranges: &mut [Option<(usize, usize)>; 7]) {
+fn collect_contiguous_sector_runs(n: &EmpiricalBifNode) -> Vec<(usize, usize, usize)> {
+    let mut seq: Vec<usize> = Vec::new();
+    fn walk(node: &EmpiricalBifNode, seq: &mut Vec<usize>) {
         if node.children.is_empty() {
-            let rk = sector_rank(&node.label).min(6);
-            let slot = *idx;
-            *idx += 1;
-            match &mut ranges[rk] {
-                Some((lo, hi)) => {
-                    *lo = (*lo).min(slot);
-                    *hi = (*hi).max(slot);
-                }
-                slot_opt @ None => {
-                    *slot_opt = Some((slot, slot));
-                }
-            }
+            seq.push(sector_rank(&node.label).min(6));
         } else {
             for ch in &node.children {
-                walk(ch, idx, ranges);
+                walk(ch, seq);
             }
         }
     }
-    let mut ranges = [None; 7];
-    let mut idx = 0usize;
-    walk(n, &mut idx, &mut ranges);
+    walk(n, &mut seq);
+    let mut runs = Vec::new();
+    if seq.is_empty() {
+        return runs;
+    }
+    let mut cur_rk = seq[0];
+    let mut start = 0usize;
+    for (i, &rk) in seq.iter().enumerate().skip(1) {
+        if rk != cur_rk {
+            runs.push((cur_rk, start, i - 1));
+            cur_rk = rk;
+            start = i;
+        }
+    }
+    runs.push((cur_rk, start, seq.len() - 1));
+    runs
+}
+
+#[derive(Debug, Clone)]
+struct RawNewickNode {
+    label: String,
+    branch_len: f64,
+    age_ma: Option<f64>,
+    ci_95: Option<(f64, f64)>,
+    children: Vec<RawNewickNode>,
+}
+
+fn sector_tag_of_rank(rk: usize) -> &'static str {
+    match rk {
+        0 => "[A]",
+        1 => "[B]",
+        2 => "[C]",
+        3 => "[D]",
+        4 => "[E]",
+        5 => "[F]",
+        _ => "[G]",
+    }
+}
+
+fn parse_comment_block_annotations(comment: &str) -> (Option<f64>, Option<(f64, f64)>) {
+    let inner = comment
+        .trim()
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .trim_start_matches('&')
+        .trim();
+    let lower = inner.to_ascii_lowercase();
+    let mut age_ma = None;
+    for key in ["age_ma=", "age=", "height="] {
+        if let Some(pos) = lower.find(key) {
+            let tail = &inner[pos + key.len()..];
+            let end = tail.find(|c: char| c == ',' || c == ']' || c.is_whitespace()).unwrap_or(tail.len());
+            if let Ok(v) = tail[..end].trim().parse::<f64>() {
+                if v.is_finite() {
+                    age_ma = Some(v);
+                    break;
+                }
+            }
+        }
+    }
+    let mut ci_95 = None;
+    for key in ["ci95=", "ci95_ma=", "95%_hpd=", "hpd95=", "hpd="] {
+        if let Some(pos) = lower.find(key) {
+            let tail = inner[pos + key.len()..].trim_start();
+            let rest = tail.trim_start_matches(|c: char| c == '{' || c == '[');
+            if let Some(close) = rest.find(|c: char| c == '}' || c == ']') {
+                let parts: Vec<&str> = rest[..close].split(',').collect();
+                if parts.len() == 2 {
+                    if let (Ok(a), Ok(b)) = (parts[0].trim().parse::<f64>(), parts[1].trim().parse::<f64>()) {
+                        if a.is_finite() && b.is_finite() {
+                            ci_95 = Some((a.min(b), a.max(b)));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    (age_ma, ci_95)
+}
+
+fn parse_annotated_newick(newick: &str) -> Option<RawNewickNode> {
+    let bytes = newick.trim().as_bytes();
+    if bytes.is_empty() {
+        return None;
+    }
+    fn skip_ws(b: &[u8], i: &mut usize) {
+        while *i < b.len() && b[*i].is_ascii_whitespace() {
+            *i += 1;
+        }
+    }
+    fn read_comment(b: &[u8], i: &mut usize, age: &mut Option<f64>, ci: &mut Option<(f64, f64)>) {
+        while *i < b.len() {
+            skip_ws(b, i);
+            if *i < b.len() && b[*i] == b'[' {
+                let start = *i;
+                *i += 1;
+                while *i < b.len() && b[*i] != b']' {
+                    *i += 1;
+                }
+                if *i < b.len() && b[*i] == b']' {
+                    *i += 1;
+                }
+                let s = String::from_utf8_lossy(&b[start..*i]);
+                let (a, c) = parse_comment_block_annotations(&s);
+                if a.is_some() {
+                    *age = a;
+                }
+                if c.is_some() {
+                    *ci = c;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+    fn parse_node(b: &[u8], i: &mut usize) -> Option<RawNewickNode> {
+        skip_ws(b, i);
+        let mut children = Vec::new();
+        if *i < b.len() && b[*i] == b'(' {
+            *i += 1;
+            loop {
+                children.push(parse_node(b, i)?);
+                skip_ws(b, i);
+                if *i < b.len() && b[*i] == b',' {
+                    *i += 1;
+                } else {
+                    break;
+                }
+            }
+            skip_ws(b, i);
+            if *i < b.len() && b[*i] == b')' {
+                *i += 1;
+            }
+        }
+        let mut age_ma = None;
+        let mut ci_95 = None;
+        read_comment(b, i, &mut age_ma, &mut ci_95);
+        skip_ws(b, i);
+        let label = if *i < b.len() && (b[*i] == b'\'' || b[*i] == b'"') {
+            let q = b[*i];
+            *i += 1;
+            let start = *i;
+            while *i < b.len() && b[*i] != q {
+                *i += 1;
+            }
+            let s = String::from_utf8_lossy(&b[start..*i]).trim().to_string();
+            if *i < b.len() && b[*i] == q {
+                *i += 1;
+            }
+            s
+        } else {
+            let start = *i;
+            while *i < b.len()
+                && !matches!(b[*i], b':' | b',' | b')' | b';' | b'[')
+            {
+                *i += 1;
+            }
+            String::from_utf8_lossy(&b[start..*i]).trim().to_string()
+        };
+        read_comment(b, i, &mut age_ma, &mut ci_95);
+        skip_ws(b, i);
+        let mut branch_len = 0.0_f64;
+        if *i < b.len() && b[*i] == b':' {
+            *i += 1;
+            read_comment(b, i, &mut age_ma, &mut ci_95);
+            skip_ws(b, i);
+            let start = *i;
+            while *i < b.len()
+                && !matches!(b[*i], b',' | b')' | b';' | b'[')
+                && !b[*i].is_ascii_whitespace()
+            {
+                *i += 1;
+            }
+            let num_s = String::from_utf8_lossy(&b[start..*i]);
+            if let Ok(v) = num_s.trim().parse::<f64>() {
+                if v.is_finite() {
+                    branch_len = v.max(0.0);
+                }
+            }
+            read_comment(b, i, &mut age_ma, &mut ci_95);
+        }
+        Some(RawNewickNode {
+            label,
+            branch_len,
+            age_ma,
+            ci_95,
+            children,
+        })
+    }
+    let mut pos = 0usize;
+    let mut root = parse_node(bytes, &mut pos)?;
+    // Unwrap redundant single-child wrapper at root if present
+    while root.children.len() == 1 {
+        root = root.children.remove(0);
+    }
+    Some(root)
+}
+
+fn count_raw_leaves(n: &RawNewickNode) -> usize {
+    if n.children.is_empty() {
+        1
+    } else {
+        n.children.iter().map(count_raw_leaves).sum()
+    }
+}
+
+fn raw_tree_has_annotations(n: &RawNewickNode) -> bool {
+    n.age_ma.is_some() || n.ci_95.is_some() || n.children.iter().any(raw_tree_has_annotations)
+}
+
+fn raw_is_rooted_on_sector_a(n: &RawNewickNode) -> bool {
+    if n.children.len() != 2 {
+        return false;
+    }
+    fn count_a_nona(node: &RawNewickNode) -> (usize, usize) {
+        if node.children.is_empty() {
+            let tc = normalize_tip_colon(&node.label);
+            if sector_rank(&tc) == 0 {
+                (1, 0)
+            } else {
+                (0, 1)
+            }
+        } else {
+            let mut a = 0;
+            let mut na = 0;
+            for c in &node.children {
+                let (ca, cna) = count_a_nona(c);
+                a += ca;
+                na += cna;
+            }
+            (a, na)
+        }
+    }
+    let (a0, na0) = count_a_nona(&n.children[0]);
+    let (a1, na1) = count_a_nona(&n.children[1]);
+    (a0 > 0 && na0 == 0 && na1 > 0) || (a1 > 0 && na1 == 0 && na0 > 0)
+}
+
+fn reroot_raw_tree_on_outgroup(root: RawNewickNode) -> RawNewickNode {
+    if root.children.len() == 2 && (raw_is_rooted_on_sector_a(&root) || raw_tree_has_annotations(&root)) {
+        return root;
+    }
+    #[derive(Clone)]
+    struct UndirNode {
+        tip_label: String,
+        neighbors: Vec<(usize, f64, f64)>, // (to, edge_len, split_ufboot)
+    }
+    let mut graph: Vec<UndirNode> = Vec::new();
+    fn add_subtree(n: &RawNewickNode, graph: &mut Vec<UndirNode>) -> usize {
+        let id = graph.len();
+        let tip_label = if n.children.is_empty() {
+            normalize_tip_colon(&n.label)
+        } else {
+            String::new()
+        };
+        graph.push(UndirNode {
+            tip_label,
+            neighbors: Vec::new(),
+        });
+        for c in &n.children {
+            let cid = add_subtree(c, graph);
+            let ufb = c.label.trim().parse::<f64>().unwrap_or(0.0).clamp(0.0, 100.0);
+            let len = c.branch_len.max(0.0);
+            graph[id].neighbors.push((cid, len, ufb));
+            graph[cid].neighbors.push((id, len, ufb));
+        }
+        id
+    }
+    let root_id = add_subtree(&root, &mut graph);
+    if graph.is_empty() {
+        return root;
+    }
+    // Collapse degree-2 original root into a direct edge so split support/len are unified
+    if graph[root_id].neighbors.len() == 2 {
+        let (u, lu, bu) = graph[root_id].neighbors[0];
+        let (v, lv, bv) = graph[root_id].neighbors[1];
+        let tot_l = (lu + lv).max(0.0);
+        let tot_b = bu.max(bv);
+        graph[u].neighbors.retain(|&(x, _, _)| x != root_id);
+        graph[v].neighbors.retain(|&(x, _, _)| x != root_id);
+        graph[u].neighbors.push((v, tot_l, tot_b));
+        graph[v].neighbors.push((u, tot_l, tot_b));
+        graph[root_id].neighbors.clear();
+    }
+
+    fn count_sub(u: usize, p: usize, graph: &[UndirNode]) -> (usize, usize) {
+        if graph[u].neighbors.len() == 1 && !graph[u].tip_label.is_empty() {
+            return if sector_rank(&graph[u].tip_label) == 0 {
+                (1, 0)
+            } else {
+                (0, 1)
+            };
+        }
+        let mut a = 0usize;
+        let mut na = 0usize;
+        for &(v, _, _) in &graph[u].neighbors {
+            if v != p {
+                let (ca, cna) = count_sub(v, u, graph);
+                a += ca;
+                na += cna;
+            }
+        }
+        (a, na)
+    }
+
+    let mut best: Option<(usize, usize, f64, f64, i64)> = None;
+    for u in 0..graph.len() {
+        for &(v, len, ufb) in &graph[u].neighbors {
+            if u < v {
+                let (au, nau) = count_sub(u, v, &graph);
+                let (av, nav) = count_sub(v, u, &graph);
+                let sc_u = (au as i64) * 100 - (nau as i64) * 100
+                    + if nau == 0 && au > 0 { 10_000 } else { 0 };
+                let sc_v = (av as i64) * 100 - (nav as i64) * 100
+                    + if nav == 0 && av > 0 { 10_000 } else { 0 };
+                let (out_n, in_n, sc) = if sc_u >= sc_v { (u, v, sc_u) } else { (v, u, sc_v) };
+                if best.as_ref().is_none_or(|b| sc > b.4 || (sc == b.4 && len > b.2)) {
+                    best = Some((out_n, in_n, len, ufb, sc));
+                }
+            }
+        }
+    }
+
+    let Some((out_n, in_n, r_len, r_ufb, _)) = best else {
+        return root;
+    };
+    fn build_dir(u: usize, p: usize, edge_len: f64, ufb: f64, graph: &[UndirNode]) -> RawNewickNode {
+        let mut kids: Vec<RawNewickNode> = graph[u]
+            .neighbors
+            .iter()
+            .filter(|&&(v, _, _)| v != p)
+            .map(|&(v, l, b)| build_dir(v, u, l, b, graph))
+            .collect();
+        while kids.len() > 2 {
+            let r = kids.pop().unwrap();
+            let l = kids.pop().unwrap();
+            kids.push(RawNewickNode {
+                label: if ufb > 0.0 { format!("{:.0}", ufb) } else { String::new() },
+                branch_len: 0.0,
+                age_ma: None,
+                ci_95: None,
+                children: vec![l, r],
+            });
+        }
+        RawNewickNode {
+            label: if kids.is_empty() {
+                graph[u].tip_label.clone()
+            } else if ufb > 0.0 {
+                format!("{:.0}", ufb)
+            } else {
+                String::new()
+            },
+            branch_len: edge_len.max(0.0),
+            age_ma: None,
+            ci_95: None,
+            children: kids,
+        }
+    }
+    let left = build_dir(out_n, in_n, 0.5 * r_len, r_ufb, &graph);
+    let right = build_dir(in_n, out_n, 0.5 * r_len, r_ufb, &graph);
+    RawNewickNode {
+        label: String::new(),
+        branch_len: 0.0,
+        age_ma: None,
+        ci_95: None,
+        children: vec![left, right],
+    }
+}
+
+#[derive(Debug, Clone)]
+struct SortStats {
+    min_sec_rank: usize,
+    sec_sum: usize,
+    leaf_count: usize,
+    min_tip_idx: usize,
+}
+
+#[derive(Debug, Clone)]
+struct AnnotatedBif {
+    node: EmpiricalBifNode,
+    stats: SortStats,
+    ci_95: Option<(f64, f64)>,
+    children: Vec<AnnotatedBif>,
+}
+
+fn raw_to_annotated_bif(raw: &RawNewickNode) -> AnnotatedBif {
+    if raw.children.is_empty() {
+        let tc = normalize_tip_colon(&raw.label);
+        let rk = sector_rank(&tc).min(6);
+        let tn = tip_num(&tc);
+        let sec = sector_tag_of_rank(rk).to_string();
+        return AnnotatedBif {
+            node: EmpiricalBifNode {
+                label: tc,
+                branch_len: raw.branch_len.max(0.0),
+                cum_patristic: 0.0,
+                age_ma: raw.age_ma.unwrap_or(0.0).max(0.0),
+                y_slot: 0.0,
+                angle_rad: 0.0,
+                sector: sec,
+                ufboot: 100.0,
+                children: Vec::new(),
+            },
+            stats: SortStats {
+                min_sec_rank: rk,
+                sec_sum: rk,
+                leaf_count: 1,
+                min_tip_idx: tn,
+            },
+            ci_95: raw.ci_95,
+            children: Vec::new(),
+        };
+    }
+    let mut kids: Vec<AnnotatedBif> = raw.children.iter().map(raw_to_annotated_bif).collect();
+    kids.sort_by(|a, b| {
+        let mean_a = (a.stats.sec_sum * 1024) / a.stats.leaf_count.max(1);
+        let mean_b = (b.stats.sec_sum * 1024) / b.stats.leaf_count.max(1);
+        (a.stats.min_sec_rank, mean_a, a.stats.min_tip_idx).cmp(&(
+            b.stats.min_sec_rank,
+            mean_b,
+            b.stats.min_tip_idx,
+        ))
+    });
+    let ufb = raw.label.trim().parse::<f64>().unwrap_or(0.0).clamp(0.0, 100.0);
+    while kids.len() > 2 {
+        let r = kids.pop().unwrap();
+        let l = kids.pop().unwrap();
+        let stats = SortStats {
+            min_sec_rank: l.stats.min_sec_rank.min(r.stats.min_sec_rank),
+            sec_sum: l.stats.sec_sum + r.stats.sec_sum,
+            leaf_count: l.stats.leaf_count + r.stats.leaf_count,
+            min_tip_idx: l.stats.min_tip_idx.min(r.stats.min_tip_idx),
+        };
+        let sec = if l.node.sector == r.node.sector {
+            l.node.sector.clone()
+        } else {
+            sector_tag_of_rank(stats.min_sec_rank).to_string()
+        };
+        let age = l.node.age_ma.max(r.node.age_ma);
+        kids.push(AnnotatedBif {
+            node: EmpiricalBifNode {
+                label: String::new(),
+                branch_len: 0.0,
+                cum_patristic: 0.0,
+                age_ma: age,
+                y_slot: 0.0,
+                angle_rad: 0.0,
+                sector: sec,
+                ufboot: ufb,
+                children: Vec::new(),
+            },
+            stats,
+            ci_95: None,
+            children: vec![l, r],
+        });
+    }
+    let min_sr = kids.iter().map(|c| c.stats.min_sec_rank).min().unwrap_or(6);
+    let sec_sum: usize = kids.iter().map(|c| c.stats.sec_sum).sum();
+    let leaf_cnt: usize = kids.iter().map(|c| c.stats.leaf_count).sum();
+    let min_ti = kids.iter().map(|c| c.stats.min_tip_idx).min().unwrap_or(999);
+    let sec = if kids.iter().all(|c| c.node.sector == kids[0].node.sector) {
+        kids[0].node.sector.clone()
+    } else {
+        sector_tag_of_rank(min_sr).to_string()
+    };
+    let max_ch_age = kids.iter().map(|c| c.node.age_ma).fold(0.0_f64, f64::max);
+    AnnotatedBif {
+        node: EmpiricalBifNode {
+            label: if raw.label.trim().parse::<f64>().is_err() {
+                raw.label.clone()
+            } else {
+                String::new()
+            },
+            branch_len: raw.branch_len.max(0.0),
+            cum_patristic: 0.0,
+            age_ma: raw.age_ma.unwrap_or(max_ch_age).max(0.0),
+            y_slot: 0.0,
+            angle_rad: 0.0,
+            sector: sec,
+            ufboot: ufb,
+            children: Vec::new(),
+        },
+        stats: SortStats {
+            min_sec_rank: min_sr,
+            sec_sum,
+            leaf_count: leaf_cnt,
+            min_tip_idx: min_ti,
+        },
+        ci_95: raw.ci_95,
+        children: kids,
+    }
+}
+
+fn finalize_annotated_bif_coords(
+    mut ann: AnnotatedBif,
+    has_explicit_ages: bool,
+    fallback_root_age: f64,
+) -> (EmpiricalBifNode, HashMap<(usize, usize), (f64, f64)>) {
+    fn assign_pat(n: &mut AnnotatedBif, parent_pat: f64, is_root: bool) -> f64 {
+        n.node.cum_patristic = if is_root { 0.0 } else { parent_pat + n.node.branch_len };
+        if n.children.is_empty() {
+            n.node.cum_patristic
+        } else {
+            let cp = n.node.cum_patristic;
+            let mut mx = cp;
+            for c in &mut n.children {
+                mx = mx.max(assign_pat(c, cp, false));
+            }
+            mx
+        }
+    }
+    let max_pat = assign_pat(&mut ann, 0.0, true).max(1e-6);
+
+    fn layout_rec(
+        mut n: AnnotatedBif,
+        parent_age: f64,
+        is_root: bool,
+        has_explicit_ages: bool,
+        fallback_root_age: f64,
+        max_pat: f64,
+        leaf_counter: &mut usize,
+        hpd_map: &mut HashMap<(usize, usize), (f64, f64)>,
+    ) -> (EmpiricalBifNode, usize, usize) {
+        if n.children.is_empty() {
+            n.node.age_ma = 0.0;
+            let idx = *leaf_counter;
+            *leaf_counter += 1;
+            n.node.y_slot = idx as f64;
+            let span = std::f64::consts::TAU * 0.955;
+            let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
+            n.node.angle_rad = start_ang + (idx as f64 / (n.stats.leaf_count.max(1) as f64)) * span;
+            return (n.node, idx, idx);
+        }
+        let mut node_age = if has_explicit_ages {
+            n.node.age_ma
+        } else {
+            fallback_root_age * (1.0 - (n.node.cum_patristic / max_pat)).clamp(0.0, 1.0)
+        };
+        if !is_root && node_age > parent_age {
+            node_age = parent_age;
+        }
+        n.node.age_ma = node_age.max(0.0);
+
+        let ci_opt = n.ci_95;
+        let mut min_slot = usize::MAX;
+        let mut max_slot = 0usize;
+        let mut built_children = Vec::with_capacity(n.children.len());
+        let ch_vec = std::mem::take(&mut n.children);
+        for ch in ch_vec {
+            let (child_node, c_min, c_max) = layout_rec(
+                ch,
+                n.node.age_ma,
+                false,
+                has_explicit_ages,
+                fallback_root_age,
+                max_pat,
+                leaf_counter,
+                hpd_map,
+            );
+            min_slot = min_slot.min(c_min);
+            max_slot = max_slot.max(c_max);
+            built_children.push(child_node);
+        }
+        let y_sum: f64 = built_children.iter().map(|c| c.y_slot).sum();
+        let a_sum: f64 = built_children.iter().map(|c| c.angle_rad).sum();
+        let k = built_children.len() as f64;
+        n.node.y_slot = y_sum / k;
+        n.node.angle_rad = a_sum / k;
+        n.node.children = built_children;
+        if let Some((lo, hi)) = ci_opt {
+            if hi > lo && hi > 0.0 {
+                hpd_map.insert((min_slot, max_slot), (lo, hi));
+            }
+        }
+        (n.node, min_slot, max_slot)
+    }
+
+    // Recompute tip angle denominator using true total leaf count
+    let tot_leaves = ann.stats.leaf_count.max(1);
+    let mut lc = 0usize;
+    let mut hpd_map = HashMap::new();
+    let (mut root, _, _) = layout_rec(
+        ann,
+        fallback_root_age.max(1.0),
+        true,
+        has_explicit_ages,
+        fallback_root_age,
+        max_pat,
+        &mut lc,
+        &mut hpd_map,
+    );
+    fn fix_angles(n: &mut EmpiricalBifNode, tot_leaves: usize) {
+        if n.children.is_empty() {
+            let span = std::f64::consts::TAU * 0.955;
+            let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
+            n.angle_rad = start_ang + (n.y_slot / (tot_leaves as f64)) * span;
+        } else {
+            for c in &mut n.children {
+                fix_angles(c, tot_leaves);
+            }
+            let a_sum: f64 = n.children.iter().map(|c| c.angle_rad).sum();
+            n.angle_rad = a_sum / (n.children.len() as f64);
+        }
+    }
+    fix_angles(&mut root, tot_leaves);
+    (root, hpd_map)
+}
+
+fn build_empirical_chronogram_tree(
+    timetree_newick: &str,
+    manifest: &SupervisorRunManifest,
+    fallback_max_ma: f64,
+) -> (EmpiricalBifNode, HashMap<(usize, usize), (f64, f64)>) {
+    let raw_opt = parse_annotated_newick(timetree_newick)
+        .filter(|r| count_raw_leaves(r) >= 4)
+        .or_else(|| parse_annotated_newick(&manifest.solved_newick_topology));
+    if let Some(raw) = raw_opt {
+        let has_ages = raw_tree_has_annotations(&raw);
+        let rooted = reroot_raw_tree_on_outgroup(raw);
+        let fallback_root_age = manifest
+            .calibrated_nodes
+            .first()
+            .map(|c| c.age_ma)
+            .filter(|&a| a > 0.0)
+            .unwrap_or(fallback_max_ma);
+        let mut ann = raw_to_annotated_bif(&rooted);
+        ann.node.branch_len = 0.0;
+        return finalize_annotated_bif_coords(ann, has_ages, fallback_root_age);
+    }
+    let tips: Vec<(String, String, f64)> = manifest
+        .sequences
+        .iter()
+        .filter(|s| s.included_in_cleaned_cohort)
+        .map(|s| (s.tip_code.clone(), s.sector_code.clone(), 0.0))
+        .collect();
+    let root = build_balanced_sector_clade(&tips, &[0.0], 0, 0, 0.0);
+    (root, HashMap::new())
+}
+
+fn build_empirical_ml_phylogram_tree(manifest: &SupervisorRunManifest) -> EmpiricalBifNode {
+    if let Some(raw) = parse_annotated_newick(&manifest.solved_newick_topology)
+        .filter(|r| count_raw_leaves(r) >= 4)
+    {
+        let rooted = reroot_raw_tree_on_outgroup(raw);
+        let mut ann = raw_to_annotated_bif(&rooted);
+        ann.node.branch_len = 0.0;
+        return finalize_annotated_bif_coords(ann, false, 0.0).0;
+    }
+    let tips: Vec<(String, String, f64)> = manifest
+        .sequences
+        .iter()
+        .filter(|s| s.included_in_cleaned_cohort)
+        .map(|s| (s.tip_code.clone(), s.sector_code.clone(), 0.0))
+        .collect();
+    build_balanced_sector_clade(&tips, &[0.0], 0, 0, 0.0)
+}
+
+fn sector_letters_mask(sector_code: &str) -> u8 {
+    let mut m = 0u8;
+    let parts: Vec<&str> = sector_code.split('-').collect();
+    let parse_one = |tok: &str| -> Option<usize> {
+        let ch = tok
+            .trim()
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .chars()
+            .next()?;
+        if ('A'..='G').contains(&ch) {
+            Some((ch as u8 - b'A') as usize)
+        } else {
+            None
+        }
+    };
+    if parts.len() == 2 {
+        if let (Some(a), Some(b)) = (parse_one(parts[0]), parse_one(parts[1])) {
+            for r in a.min(b)..=a.max(b) {
+                m |= 1u8 << r;
+            }
+            return m;
+        }
+    }
+    for tok in sector_code.split(|c: char| !c.is_ascii_uppercase()) {
+        if let Some(r) = parse_one(tok) {
+            m |= 1u8 << r;
+        }
+    }
+    m
+}
+
+fn find_mrca_slot_by_sector(
+    n: &EmpiricalBifNode,
+    sector_code: &str,
+) -> Option<(usize, f64, f64)> {
+    let want = sector_letters_mask(sector_code);
+    if want == 0 {
+        return None;
+    }
+    fn walk(n: &EmpiricalBifNode, want: u8) -> (u8, Option<(usize, f64, f64)>, usize) {
+        if n.children.is_empty() {
+            let rk = sector_rank(&n.label).min(6);
+            return (1u8 << rk, None, 1);
+        }
+        let mut mask = 0u8;
+        let mut size = 0usize;
+        let mut best: Option<(usize, f64, f64)> = None;
+        for c in &n.children {
+            let (cm, cb, cs) = walk(c, want);
+            mask |= cm;
+            size += cs;
+            if let Some(candidate) = cb {
+                if best.as_ref().is_none_or(|cur| candidate.0 < cur.0) {
+                    best = Some(candidate);
+                }
+            }
+        }
+        if (mask & want) == want && best.is_none() {
+            best = Some((size, n.y_slot, n.age_ma));
+        }
+        (mask, best, size)
+    }
+    walk(n, want).1
+}
+
+fn collect_node_slot_spans(n: &EmpiricalBifNode) -> HashMap<(u64, u64), (usize, usize)> {
+    fn walk(
+        n: &EmpiricalBifNode,
+        spans: &mut HashMap<(u64, u64), (usize, usize)>,
+    ) -> (usize, usize) {
+        if n.children.is_empty() {
+            let idx = n.y_slot.round() as usize;
+            return (idx, idx);
+        }
+        let mut lo = usize::MAX;
+        let mut hi = 0usize;
+        for c in &n.children {
+            let (cl, ch) = walk(c, spans);
+            lo = lo.min(cl);
+            hi = hi.max(ch);
+        }
+        spans.insert((n.y_slot.to_bits(), n.age_ma.to_bits()), (lo, hi));
+        (lo, hi)
+    }
+    let mut spans = HashMap::new();
+    walk(n, &mut spans);
+    spans
+}
+
+fn collect_leaf_sector_ranges(n: &EmpiricalBifNode) -> [Option<(usize, usize)>; 7] {
+    let mut ranges: [Option<(usize, usize)>; 7] = [None; 7];
+    for (rk, lo, hi) in collect_contiguous_sector_runs(n) {
+        match &mut ranges[rk] {
+            Some((r_lo, r_hi)) => {
+                *r_lo = (*r_lo).min(lo);
+                *r_hi = (*r_hi).max(hi);
+            }
+            slot @ None => *slot = Some((lo, hi)),
+        }
+    }
     ranges
 }
 
@@ -1266,135 +2011,6 @@ fn resolve_dynamic_title_and_caption(
             .replacen("64-taxon ", &format!("{}-taxon ", n_phy), 1);
         (title, caption)
     }
-}
-
-fn build_unified_rooted_tree(manifest: &SupervisorRunManifest, theme: &FigureStudyTheme) -> EmpiricalBifNode {
-    let empty = HashMap::new();
-    let parsed = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty);
-    let mut tip_bls = HashMap::new();
-    let mut int_bls = Vec::new();
-    if let Some(ref r) = parsed {
-        extract_empirical_tip_lengths(r, &mut tip_bls);
-        collect_empirical_internal_bls(r, &mut int_bls);
-    }
-    if int_bls.is_empty() {
-        int_bls.extend_from_slice(&[0.018, 0.014, 0.011, 0.022, 0.009, 0.016]);
-    }
-
-    let mut by_sec: Vec<Vec<(String, String, f64)>> = vec![Vec::new(); 7];
-    let mut cleaned: Vec<_> = manifest
-        .sequences
-        .iter()
-        .filter(|s| s.included_in_cleaned_cohort)
-        .collect();
-    if !tip_bls.is_empty() {
-        let matched = cleaned
-            .iter()
-            .filter(|s| {
-                let safe_id = s.tip_code.replace(':', "_");
-                tip_bls.contains_key(&s.tip_code) || tip_bls.contains_key(&safe_id)
-            })
-            .count();
-        if matched >= 4 {
-            cleaned.retain(|s| {
-                let safe_id = s.tip_code.replace(':', "_");
-                tip_bls.contains_key(&s.tip_code) || tip_bls.contains_key(&safe_id)
-            });
-        }
-    }
-    cleaned.sort_by_key(|s| (sector_rank(&s.tip_code), tip_num(&s.tip_code)));
-
-    for s in cleaned {
-        let rk = sector_rank(&s.tip_code);
-        let safe_id = s.tip_code.replace(':', "_");
-        let bl = tip_bls
-            .get(&s.tip_code)
-            .or_else(|| tip_bls.get(&safe_id))
-            .copied()
-            .unwrap_or(0.024);
-        by_sec[rk].push((s.tip_code.clone(), s.sector_code.clone(), bl));
-    }
-
-    // Build each non-empty monophyletic/basal sector clade using empirical branch lengths
-    let sec_crown_ages = theme.sec_crown_ages;
-    let mut non_empty_secs: Vec<(usize, EmpiricalBifNode)> = Vec::with_capacity(7);
-    for s_i in 0..7 {
-        if by_sec[s_i].is_empty() {
-            continue;
-        }
-        let mut node =
-            build_balanced_sector_clade(&by_sec[s_i], &int_bls, s_i + 3, 0, sec_crown_ages[s_i]);
-        node.branch_len = int_bls.get(s_i).copied().unwrap_or(0.028);
-        non_empty_secs.push((s_i, node));
-    }
-
-    // Fold non-empty sectors right-to-left along the canonical bifurcating backbone
-    let mut it = non_empty_secs.into_iter().rev();
-    let (_, mut root) = it
-        .next()
-        .expect("At least one non-empty sector required to render chronogram/phylogram");
-    for (left_sec, left_node) in it {
-        let (lbl, age_idx, uf, sec_tag, bl_idx) = match left_sec {
-            5 => ("Node VII", 0usize, 99.7, "[F]", 7usize),
-            4 => ("Node VI", 1usize, 99.6, "[E]", 8usize),
-            3 => ("Node IV", 2usize, 100.0, "[D]", 9usize),
-            2 => ("Node III", 3usize, 99.8, "[C]", 10usize),
-            1 => ("Node II", 4usize, 100.0, "[B]", 11usize),
-            _ => ("Node I", 5usize, 100.0, "[A]", 12usize),
-        };
-        let node_age = theme.backbone_node_ages[age_idx].max(root.age_ma * 1.15);
-        root = EmpiricalBifNode {
-            label: lbl.to_string(),
-            branch_len: int_bls.get(bl_idx % int_bls.len()).copied().unwrap_or(0.024),
-            cum_patristic: 0.0,
-            age_ma: node_age,
-            y_slot: 0.0,
-            angle_rad: 0.0,
-            sector: sec_tag.to_string(),
-            ufboot: uf,
-            children: vec![left_node, root],
-        };
-    }
-    root.branch_len = 0.0;
-
-    fn assign_coords(
-        n: &mut EmpiricalBifNode,
-        parent_pat: f64,
-        parent_age: f64,
-        is_root: bool,
-        leaf_counter: &mut usize,
-        total_leaves: usize,
-    ) {
-        n.cum_patristic = if is_root { 0.0 } else { parent_pat + n.branch_len };
-        if !is_root && !n.children.is_empty() && n.age_ma >= parent_age {
-            n.age_ma = parent_age * 0.78;
-        }
-        if n.children.is_empty() {
-            n.age_ma = 0.0;
-            let idx = *leaf_counter;
-            *leaf_counter += 1;
-            n.y_slot = idx as f64;
-            let span = std::f64::consts::TAU * 0.955;
-            let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
-            n.angle_rad = start_ang + (idx as f64 / (total_leaves.max(1) as f64)) * span;
-        } else {
-            let cur_pat = n.cum_patristic;
-            let cur_age = n.age_ma;
-            for ch in &mut n.children {
-                assign_coords(ch, cur_pat, cur_age, false, leaf_counter, total_leaves);
-            }
-            let y_sum: f64 = n.children.iter().map(|c| c.y_slot).sum();
-            let a_sum: f64 = n.children.iter().map(|c| c.angle_rad).sum();
-            let k = n.children.len() as f64;
-            n.y_slot = y_sum / k;
-            n.angle_rad = a_sum / k;
-        }
-    }
-
-    let total_leaves = count_tree_leaves(&root).max(1);
-    let mut lc = 0usize;
-    assign_coords(&mut root, 0.0, theme.fig1_max_ma, true, &mut lc, total_leaves);
-    root
 }
 
 pub(crate) fn max_patristic_in_tree(n: &EmpiricalBifNode) -> f64 {
@@ -1454,6 +2070,7 @@ pub(crate) fn save_figure_triple_and_web_svg(
 fn render_bemisia_fig1_chronogram(
     manifest: &SupervisorRunManifest,
     root: &EmpiricalBifNode,
+    hpd_map: &HashMap<(usize, usize), (f64, f64)>,
     theme: &FigureStudyTheme,
     run_dir: &Path,
     web_dir: Option<&Path>,
@@ -1468,11 +2085,29 @@ fn render_bemisia_fig1_chronogram(
 
     let x_root = 68.0_f64;
     let x_tips = 740.0_f64;
-    let max_ma = theme.fig1_max_ma;
+    let max_cal_ci = manifest
+        .calibrated_nodes
+        .iter()
+        .map(|c| c.ci_max_ma.max(c.age_ma))
+        .fold(0.0_f64, f64::max);
+    let max_hpd_ci = hpd_map
+        .values()
+        .map(|&(_, hi)| hi)
+        .fold(0.0_f64, f64::max);
+    let max_ma = theme
+        .fig1_max_ma
+        .max(root.age_ma * 1.04)
+        .max(max_cal_ci * 1.03)
+        .max(max_hpd_ci * 1.03);
     let x_ma = |ma: f64| -> f64 { x_tips - (ma / max_ma).clamp(0.0, 1.0) * (x_tips - x_root) };
 
     for (nm, hi, lo, bg) in &theme.fig1_eras {
-        let bx0 = x_ma(*hi);
+        let hi_adj = if (*hi - theme.fig1_max_ma).abs() <= 1.0 && max_ma > *hi {
+            max_ma
+        } else {
+            *hi
+        };
+        let bx0 = x_ma(hi_adj);
         let bw = (x_ma(*lo) - bx0).max(2.0);
         svg.push_str(&format!(
             r##"<rect x="{:.1}" y="18" width="{:.1}" height="1158" fill="{}" stroke="#e2e8f0" stroke-width="0.8"/>"##,
@@ -1538,8 +2173,9 @@ fn render_bemisia_fig1_chronogram(
 
     fn draw_chrono_rec(
         n: &EmpiricalBifNode,
-        max_ma: f64,
         cal_ages: &[f64],
+        slot_spans: &HashMap<(u64, u64), (usize, usize)>,
+        hpd_map: &HashMap<(usize, usize), (f64, f64)>,
         x_ma: &dyn Fn(f64) -> f64,
         y_of: &dyn Fn(f64) -> f64,
         org_map: &HashMap<String, String>,
@@ -1584,53 +2220,67 @@ fn render_bemisia_fig1_chronogram(
                     nx, cy, cx, cy, ccol
                 ));
                 fb.fill_rect(nx as i32, cy as i32, (cx - nx).max(2.0) as i32, 2, crgb);
-                draw_chrono_rec(ch, max_ma, cal_ages, x_ma, y_of, org_map, svg, fb);
+                draw_chrono_rec(ch, cal_ages, slot_spans, hpd_map, x_ma, y_of, org_map, svg, fb);
             }
-            // Two-sided 95% HPD credible interval bar on non-calibrated internal sub-clade nodes
-            let is_cal = cal_ages.iter().any(|&ca| (ca - n.age_ma).abs() <= 1.5);
+            // Two-sided 95% HPD credible interval bar from empirical LSD2 bootstrap (never synthesized)
+            let is_cal = cal_ages.iter().any(|&ca| ca > 0.0 && (ca - n.age_ma).abs() <= 1.5);
+            let node_hpd = slot_spans
+                .get(&(n.y_slot.to_bits(), n.age_ma.to_bits()))
+                .and_then(|span| hpd_map.get(span));
             if !is_cal {
-                let ci_lo_ma = (n.age_ma * 0.89).max(0.2);
-                let ci_hi_ma = (n.age_ma * 1.11).min(max_ma - 1.2);
-                let x_lo = x_ma(ci_hi_ma);
-                let x_hi = x_ma(ci_lo_ma);
-                let bar_w = (x_hi - x_lo).max(4.0);
-                svg.push_str(&format!(
-                    r##"<rect x="{:.2}" y="{:.2}" width="{:.2}" height="5.6" rx="2" fill="{}" fill-opacity="0.26" stroke="{}" stroke-width="1.0"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><circle cx="{:.2}" cy="{:.2}" r="2.5" fill="#ffffff" stroke="{}" stroke-width="1.4"/>"##,
-                    x_lo, ny - 2.8, bar_w, col, col,
-                    x_lo, ny - 4.4, x_lo, ny + 4.4, col,
-                    x_hi, ny - 4.4, x_hi, ny + 4.4, col,
-                    nx, ny, col
-                ));
-                let tint = (
-                    ((rgb.0 as u16 + 255 * 2) / 3) as u8,
-                    ((rgb.1 as u16 + 255 * 2) / 3) as u8,
-                    ((rgb.2 as u16 + 255 * 2) / 3) as u8,
-                );
-                fb.fill_rect(x_lo as i32, ny as i32 - 3, bar_w as i32, 6, tint);
-                fb.fill_rect(x_lo as i32, ny as i32 - 4, 2, 9, rgb);
-                fb.fill_rect(x_hi as i32, ny as i32 - 4, 2, 9, rgb);
-                fb.fill_rect(nx as i32 - 2, ny as i32 - 2, 5, 5, rgb);
+                if let Some(&(ci_lo_ma, ci_hi_ma)) = node_hpd {
+                    if ci_hi_ma > ci_lo_ma {
+                        let x_lo = x_ma(ci_hi_ma);
+                        let x_hi = x_ma(ci_lo_ma);
+                        let bar_w = (x_hi - x_lo).max(4.0);
+                        svg.push_str(&format!(
+                            r##"<rect x="{:.2}" y="{:.2}" width="{:.2}" height="5.6" rx="2" fill="{}" fill-opacity="0.26" stroke="{}" stroke-width="1.0"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><circle cx="{:.2}" cy="{:.2}" r="2.5" fill="#ffffff" stroke="{}" stroke-width="1.4"/>"##,
+                            x_lo, ny - 2.8, bar_w, col, col,
+                            x_lo, ny - 4.4, x_lo, ny + 4.4, col,
+                            x_hi, ny - 4.4, x_hi, ny + 4.4, col,
+                            nx, ny, col
+                        ));
+                        let tint = (
+                            ((rgb.0 as u16 + 255 * 2) / 3) as u8,
+                            ((rgb.1 as u16 + 255 * 2) / 3) as u8,
+                            ((rgb.2 as u16 + 255 * 2) / 3) as u8,
+                        );
+                        fb.fill_rect(x_lo as i32, ny as i32 - 3, bar_w as i32, 6, tint);
+                        fb.fill_rect(x_lo as i32, ny as i32 - 4, 2, 9, rgb);
+                        fb.fill_rect(x_hi as i32, ny as i32 - 4, 2, 9, rgb);
+                        fb.fill_rect(nx as i32 - 2, ny as i32 - 2, 5, 5, rgb);
+                    }
+                }
             }
         }
     }
     let cal_ages: Vec<f64> = manifest.calibrated_nodes.iter().map(|c| c.age_ma).collect();
-    draw_chrono_rec(root, max_ma, &cal_ages, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
+    let slot_spans = collect_node_slot_spans(root);
+    draw_chrono_rec(root, &cal_ages, &slot_spans, hpd_map, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
 
-    // Render highlighted two-sided 95% HPD error bars + non-overlapping white badges for Nodes I..VIII
+    // Render highlighted two-sided 95% HPD error bars + non-overlapping white badges for active Nodes I..VIII
     let node_y_slots = theme.fig1_node_y_slots;
     let mut bar_coords: Vec<(f64, f64, f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
     for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
+        if cn.age_ma <= 0.0 {
+            bar_coords.push((0.0, 0.0, 0.0, 0.0));
+            continue;
+        }
         let bx = x_ma(cn.age_ma);
         let x_lo = x_ma(cn.ci_max_ma);
         let x_hi = x_ma(cn.ci_min_ma);
         let fallback_slot = node_y_slots[idx.min(node_y_slots.len() - 1)]
             .min((leaf_count.saturating_sub(2).max(1)) as f64);
-        let mut best_slot = (f64::MAX, fallback_slot);
-        find_nearest_internal_slot(root, cn.age_ma, &mut best_slot);
-        let exact_slot = if best_slot.0 <= 8.0 {
-            best_slot.1
+        let exact_slot = if let Some((_, mrca_slot, _)) = find_mrca_slot_by_sector(root, &cn.sector_code) {
+            mrca_slot
         } else {
-            fallback_slot
+            let mut best_slot = (f64::MAX, fallback_slot);
+            find_nearest_internal_slot(root, cn.age_ma, &mut best_slot);
+            if best_slot.0 <= 25.0 {
+                best_slot.1
+            } else {
+                fallback_slot
+            }
         };
         let by = y_of(exact_slot);
         bar_coords.push((bx, by, x_lo, x_hi));
@@ -1638,6 +2288,9 @@ fn render_bemisia_fig1_chronogram(
 
     let mut placed_badges: Vec<(f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
     for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
+        if cn.age_ma <= 0.0 {
+            continue;
+        }
         let (bx, by, x_lo, x_hi) = bar_coords[idx];
         let bar_w = (x_hi - x_lo).max(6.0);
         svg.push_str(&format!(
@@ -1735,9 +2388,17 @@ fn render_bemisia_fig1_chronogram(
         ));
     }
 
-    // Right-hand Clade Brackets & Summary Cards across active non-empty sectors
-    let sec_slot_ranges = collect_leaf_sector_ranges(root);
-    let mut prev_card_bottom = 16.0_f64;
+    // Right-hand Clade Brackets (per contiguous run) & Summary Cards (anchored to longest contiguous run)
+    let contiguous_runs = collect_contiguous_sector_runs(root);
+    struct CardAnchor<'a> {
+        sec: &'a str,
+        anchor_i0: usize,
+        anchor_ym: f64,
+        dyn_hdr: String,
+        line1: &'a str,
+        line2: &'a str,
+    }
+    let mut card_anchors: Vec<CardAnchor<'_>> = Vec::with_capacity(theme.fig1_clade_cards.len());
     for (sec, _i0_def, _i1_def, hdr, line1, line2) in &theme.fig1_clade_cards {
         let sec_rk = match sec.as_str() {
             "[A]" => 0,
@@ -1748,25 +2409,50 @@ fn render_bemisia_fig1_chronogram(
             "[F]" => 5,
             _ => 6,
         };
-        let Some((i0, i1)) = sec_slot_ranges[sec_rk] else {
+        let sec_runs: Vec<(usize, usize)> = contiguous_runs
+            .iter()
+            .filter(|&&(rk, _, _)| rk == sec_rk)
+            .map(|&(_, i0, i1)| (i0, i1))
+            .collect();
+        if sec_runs.is_empty() {
             continue;
-        };
-        let dyn_hdr = rewrite_n_count(hdr, i1 - i0 + 1);
-        let y0 = y_of(i0 as f64) - 4.0;
-        let y1 = y_of(i1 as f64) + 4.0;
-        let ym = 0.5 * (y0 + y1);
+        }
+        let sec_total: usize = sec_runs.iter().map(|&(i0, i1)| i1 - i0 + 1).sum();
         let col = sector_hex(sec);
-        let rgb = sector_rgb(sec);
-        svg.push_str(&format!(
-            r##"<path d="M 1038,{:.1} L 1048,{:.1} L 1048,{:.1} L 1038,{:.1}" fill="none" stroke="{}" stroke-width="2.2"/>"##,
-            y0, y0, y1, y1, col
-        ));
+        for &(i0, i1) in &sec_runs {
+            let y0 = y_of(i0 as f64) - 4.0;
+            let y1 = y_of(i1 as f64) + 4.0;
+            svg.push_str(&format!(
+                r##"<path d="M 1038,{:.1} L 1048,{:.1} L 1048,{:.1} L 1038,{:.1}" fill="none" stroke="{}" stroke-width="2.2"/>"##,
+                y0, y0, y1, y1, col
+            ));
+        }
+        let &(best_i0, best_i1) = sec_runs.iter().max_by_key(|&&(lo, hi)| hi - lo).unwrap();
+        let ym = 0.5 * ((y_of(best_i0 as f64) - 4.0) + (y_of(best_i1 as f64) + 4.0));
+        card_anchors.push(CardAnchor {
+            sec,
+            anchor_i0: best_i0,
+            anchor_ym: ym,
+            dyn_hdr: rewrite_n_count(hdr, sec_total),
+            line1,
+            line2,
+        });
+    }
+    card_anchors.sort_by(|a, b| {
+        a.anchor_i0
+            .cmp(&b.anchor_i0)
+            .then_with(|| a.anchor_ym.partial_cmp(&b.anchor_ym).unwrap_or(std::cmp::Ordering::Equal))
+    });
+    let mut prev_card_bottom = 16.0_f64;
+    for card in &card_anchors {
+        let col = sector_hex(card.sec);
+        let rgb = sector_rgb(card.sec);
         let card_h = 54.0_f64;
-        let card_y = (ym - card_h * 0.5).clamp(prev_card_bottom + 8.0, 1120.0);
+        let card_y = (card.anchor_ym - card_h * 0.5).clamp(prev_card_bottom + 8.0, 1120.0);
         prev_card_bottom = card_y + card_h;
         svg.push_str(&format!(
             r##"<line x1="1048" y1="{:.1}" x2="1068" y2="{:.1}" stroke="{}" stroke-width="1.4" stroke-dasharray="3,2"/>"##,
-            ym,
+            card.anchor_ym,
             card_y + card_h * 0.5,
             col
         ));
@@ -1778,21 +2464,28 @@ fn render_bemisia_fig1_chronogram(
             r##"<text x="1080" y="{:.1}" font-size="10.5" font-weight="800" fill="{}">{} {}</text>"##,
             card_y + 16.0,
             col,
-            sec,
-            xml_esc(&dyn_hdr)
+            card.sec,
+            xml_esc(&card.dyn_hdr)
         ));
         svg.push_str(&format!(
             r##"<text x="1080" y="{:.1}" font-size="9.5" fill="#334155">{}</text>"##,
             card_y + 32.0,
-            xml_esc(line1)
+            xml_esc(card.line1)
         ));
         svg.push_str(&format!(
             r##"<text x="1080" y="{:.1}" font-size="9.2" font-weight="600" fill="#475569">Functional Signature: {}</text>"##,
             card_y + 46.0,
-            xml_esc(line2)
+            xml_esc(card.line2)
         ));
         fb.fill_rect(1068, card_y as i32, 530, card_h as i32, (248, 250, 252));
-        fb.draw_text(1080, card_y as i32 + 12, &format!("{} {}", sec, dyn_hdr), rgb, 1, Some(510));
+        fb.draw_text(
+            1080,
+            card_y as i32 + 12,
+            &format!("{} {}", card.sec, card.dyn_hdr),
+            rgb,
+            1,
+            Some(510),
+        );
     }
 
     svg.push_str("</svg>\n");
@@ -1867,115 +2560,27 @@ fn render_bemisia_fig2_circular_phylogram(
         Some((w - 56) as i32),
     );
 
-    // Sector angular ranges for alternating B&W pie wedges (`#f1f5f9` vs `#ffffff`) + patterned outer bracket arcs
+    // Contiguous angular runs for alternating B&W pie wedges (`#f1f5f9` vs `#ffffff`) + outer bracket arcs
     let sec_ranges = &theme.fig2_sec_ranges;
+    let contiguous_runs = collect_contiguous_sector_runs(root);
     let sec_slot_ranges = collect_leaf_sector_ranges(root);
     let span = std::f64::consts::TAU * 0.955;
     let start_ang = -std::f64::consts::FRAC_PI_2 + 0.045;
     let ang_of_idx = |idx: f64| -> f64 { start_ang + (idx / (leaf_count as f64)) * span };
 
-    struct ActiveCircSec<'a> {
-        s_idx: usize,
+    struct ActiveCircPill<'a> {
         sec: &'a str,
         dyn_lbl: String,
-        dash: &'a str,
-        a0: f64,
-        a1: f64,
         amid: f64,
     }
-    let mut active_secs: Vec<ActiveCircSec<'_>> = Vec::with_capacity(7);
-    for (s_idx, (sec, _i0_def, _i1_def, lbl, dash)) in sec_ranges.iter().enumerate() {
-        let sec_rk = match sec.as_str() {
-            "[A]" => 0,
-            "[B]" => 1,
-            "[C]" => 2,
-            "[D]" => 3,
-            "[E]" => 4,
-            "[F]" => 5,
-            _ => 6,
-        };
-        let Some((i0, i1)) = sec_slot_ranges[sec_rk] else {
-            continue;
-        };
+    let mut active_pills: Vec<ActiveCircPill<'_>> = Vec::with_capacity(7);
+
+    // Draw a crisp pie wedge + outer bracket arc for every contiguous leaf run (handles paraphyly cleanly)
+    for (run_idx, &(sec_rk, i0, i1)) in contiguous_runs.iter().enumerate() {
         let a0 = ang_of_idx(i0 as f64 - 0.42);
         let a1 = ang_of_idx(i1 as f64 + 0.42);
-        active_secs.push(ActiveCircSec {
-            s_idx,
-            sec,
-            dyn_lbl: rewrite_n_count(lbl, i1 - i0 + 1),
-            dash,
-            a0,
-            a1,
-            amid: 0.5 * (a0 + a1),
-        });
-    }
-
-    let pw = 246.0_f64;
-    let ph = 32.0_f64;
-    let mut pill_coords: Vec<(f64, f64)> = vec![(0.0, 0.0); active_secs.len()];
-    if active_secs.len() == 7 {
-        for (ai, act) in active_secs.iter().enumerate() {
-            pill_coords[ai] = match act.s_idx {
-                0 => (860.0, 26.0),
-                1 => (1165.0, 62.0),
-                2 => (1200.0, 440.0),
-                3 => (1155.0, 910.0),
-                4 => (295.0, 922.0),
-                5 => (38.0, 560.0),
-                _ => (52.0, 82.0),
-            };
-        }
-    } else {
-        let mut right_idxs: Vec<usize> = Vec::new();
-        let mut left_idxs: Vec<usize> = Vec::new();
-        for (ai, act) in active_secs.iter().enumerate() {
-            if act.amid.cos() >= -0.05 {
-                right_idxs.push(ai);
-            } else {
-                left_idxs.push(ai);
-            }
-        }
-        right_idxs.sort_by(|&a, &b| {
-            active_secs[a]
-                .amid
-                .sin()
-                .partial_cmp(&active_secs[b].amid.sin())
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        left_idxs.sort_by(|&a, &b| {
-            active_secs[a]
-                .amid
-                .sin()
-                .partial_cmp(&active_secs[b].amid.sin())
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        let mut prev_r_bot = 16.0_f64;
-        for ai in right_idxs {
-            let py = (cy + 475.0 * active_secs[ai].amid.sin() - ph * 0.5)
-                .clamp(prev_r_bot + 10.0, 980.0);
-            prev_r_bot = py + ph;
-            let dy = (py + ph * 0.5) - cy;
-            let x_circ = (474.0_f64.powi(2) - dy * dy).max(0.0).sqrt();
-            let px = (cx + x_circ + 36.0).clamp(760.0, 1218.0);
-            pill_coords[ai] = (px, py);
-        }
-        let mut prev_l_bot = 16.0_f64;
-        for ai in left_idxs {
-            let py = (cy + 475.0 * active_secs[ai].amid.sin() - ph * 0.5)
-                .clamp(prev_l_bot + 10.0, 980.0);
-            prev_l_bot = py + ph;
-            let dy = (py + ph * 0.5) - cy;
-            let x_circ = (474.0_f64.powi(2) - dy * dy).max(0.0).sqrt();
-            let px = (cx - x_circ - 36.0 - pw).clamp(16.0, 720.0 - pw);
-            pill_coords[ai] = (px, py);
-        }
-    }
-
-    for (ai, act) in active_secs.iter().enumerate() {
-        let a0 = act.a0;
-        let a1 = act.a1;
         let large = if (a1 - a0) > std::f64::consts::PI { 1 } else { 0 };
-        let fill_w = if ai % 2 == 0 { "#f1f5f9" } else { "#ffffff" };
+        let fill_w = if run_idx % 2 == 0 { "#f1f5f9" } else { "#ffffff" };
         let (x0i, y0i) = (cx + r_inner * a0.cos(), cy + r_inner * a0.sin());
         let (x0o, y0o) = (cx + r_arc * a0.cos(), cy + r_arc * a0.sin());
         let (x1o, y1o) = (cx + r_arc * a1.cos(), cy + r_arc * a1.sin());
@@ -1984,17 +2589,22 @@ fn render_bemisia_fig2_circular_phylogram(
             r##"<path d="M {:.1},{:.1} L {:.1},{:.1} A {:.1},{:.1} 0 {},1 {:.1},{:.1} L {:.1},{:.1} A {:.1},{:.1} 0 {},0 {:.1},{:.1} Z" fill="{}" stroke="#cbd5e1" stroke-width="0.7" stroke-dasharray="3,3"/>"##,
             x0i, y0i, x0o, y0o, r_arc, r_arc, large, x1o, y1o, x1i, y1i, r_inner, r_inner, large, x0i, y0i, fill_w
         ));
-        let col = sector_hex(act.sec);
-        let dash_attr = if act.dash.is_empty() {
+        let sec_str = sector_tag_of_rank(sec_rk);
+        let dash = sec_ranges
+            .iter()
+            .find(|(s, _, _, _, _)| *s == sec_str)
+            .map(|(_, _, _, _, d)| d.as_str())
+            .unwrap_or("");
+        let col = sector_hex(sec_str);
+        let dash_attr = if dash.is_empty() {
             String::new()
         } else {
-            format!(r#" stroke-dasharray="{}""#, act.dash)
+            format!(r#" stroke-dasharray="{}""#, dash)
         };
         svg.push_str(&format!(
             r##"<path d="M {:.1},{:.1} A {:.1},{:.1} 0 {},1 {:.1},{:.1}" fill="none" stroke="{}" stroke-width="3.4"{}/>"##,
             x0o, y0o, r_arc, r_arc, large, x1o, y1o, col, dash_attr
         ));
-        // End-cap ticks on outer sector bracket arc
         for &ang_t in &[a0, a1] {
             svg.push_str(&format!(
                 r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="{}" stroke-width="2.0"/>"##,
@@ -2005,8 +2615,87 @@ fn render_bemisia_fig2_circular_phylogram(
                 col
             ));
         }
+    }
 
-        // Horizontal (0-deg) perimeter callout pill connected by leader line to sector arc midpoint
+    // Attach one perimeter summary pill per sector to its longest contiguous run
+    for (sec, _i0_def, _i1_def, lbl, _dash) in sec_ranges.iter() {
+        let sec_rk = match sec.as_str() {
+            "[A]" => 0,
+            "[B]" => 1,
+            "[C]" => 2,
+            "[D]" => 3,
+            "[E]" => 4,
+            "[F]" => 5,
+            _ => 6,
+        };
+        let sec_runs: Vec<(usize, usize)> = contiguous_runs
+            .iter()
+            .filter(|&&(rk, _, _)| rk == sec_rk)
+            .map(|&(_, i0, i1)| (i0, i1))
+            .collect();
+        if sec_runs.is_empty() {
+            continue;
+        }
+        let sec_total: usize = sec_runs.iter().map(|&(lo, hi)| hi - lo + 1).sum();
+        let &(best_lo, best_hi) = sec_runs.iter().max_by_key(|&&(lo, hi)| hi - lo).unwrap();
+        let a0 = ang_of_idx(best_lo as f64 - 0.42);
+        let a1 = ang_of_idx(best_hi as f64 + 0.42);
+        active_pills.push(ActiveCircPill {
+            sec,
+            dyn_lbl: rewrite_n_count(lbl, sec_total),
+            amid: 0.5 * (a0 + a1),
+        });
+    }
+
+    let pw = 246.0_f64;
+    let ph = 32.0_f64;
+    let mut pill_coords: Vec<(f64, f64)> = vec![(0.0, 0.0); active_pills.len()];
+    let mut right_idxs: Vec<usize> = Vec::new();
+    let mut left_idxs: Vec<usize> = Vec::new();
+    for (ai, act) in active_pills.iter().enumerate() {
+        if act.amid.cos() >= -0.05 {
+            right_idxs.push(ai);
+        } else {
+            left_idxs.push(ai);
+        }
+    }
+    right_idxs.sort_by(|&a, &b| {
+        active_pills[a]
+            .amid
+            .sin()
+            .partial_cmp(&active_pills[b].amid.sin())
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    left_idxs.sort_by(|&a, &b| {
+        active_pills[a]
+            .amid
+            .sin()
+            .partial_cmp(&active_pills[b].amid.sin())
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    let mut prev_r_bot = 16.0_f64;
+    for ai in right_idxs {
+        let py = (cy + 475.0 * active_pills[ai].amid.sin() - ph * 0.5)
+            .clamp(prev_r_bot + 10.0, 980.0);
+        prev_r_bot = py + ph;
+        let dy = (py + ph * 0.5) - cy;
+        let x_circ = (474.0_f64.powi(2) - dy * dy).max(0.0).sqrt();
+        let px = (cx + x_circ + 36.0).clamp(760.0, 1218.0);
+        pill_coords[ai] = (px, py);
+    }
+    let mut prev_l_bot = 16.0_f64;
+    for ai in left_idxs {
+        let py = (cy + 475.0 * active_pills[ai].amid.sin() - ph * 0.5)
+            .clamp(prev_l_bot + 10.0, 980.0);
+        prev_l_bot = py + ph;
+        let dy = (py + ph * 0.5) - cy;
+        let x_circ = (474.0_f64.powi(2) - dy * dy).max(0.0).sqrt();
+        let px = (cx - x_circ - 36.0 - pw).clamp(16.0, 720.0 - pw);
+        pill_coords[ai] = (px, py);
+    }
+
+    for (ai, act) in active_pills.iter().enumerate() {
+        let col = sector_hex(act.sec);
         let (mx, my) = (cx + (r_arc + 4.0) * act.amid.cos(), cy + (r_arc + 4.0) * act.amid.sin());
         let (px, py) = pill_coords[ai];
         let target_x = if px > cx { px } else { px + pw };
@@ -2865,20 +3554,11 @@ fn render_bemisia_fig3_quartet_msc(
         0.994
     };
 
-    let is_bacterial = theme.supp_s3_source.contains("Bacterial");
-    let is_universal_ae = theme.supp_s3_source.contains("Universal");
-    let q_dp_lbl = if is_bacterial || is_universal_ae {
-        format!(
-            "Bitwise DP: {} quartets in {:.2} ms",
-            study.msc_regime1_ry3.total_quartets_evaluated,
-            study.msc_regime1_ry3.wall_clock_ms
-        )
-    } else {
-        format!(
-            "Bitwise DP: 11,436,768 quartets in {:.2} ms",
-            study.msc_regime1_ry3.wall_clock_ms
-        )
-    };
+    let q_dp_lbl = format!(
+        "Bitwise DP: {} quartets in {:.2} ms",
+        study.msc_regime1_ry3.total_quartets_evaluated,
+        study.msc_regime1_ry3.wall_clock_ms
+    );
     svg.push_str(&format!(
         r##"<rect x="994" y="276" width="248" height="44" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.9"/><text x="1004" y="292" font-size="8.4" font-weight="800" fill="#0f172a">● Codon-12 vs. RY3 (r = {:.4}, {} splits)</text><text x="1004" y="305" font-size="8.1" font-weight="700" fill="#2563eb">□ Unrecoded 4-State   |   △ 0-Beaker Control</text><text x="1004" y="316" font-size="7.7" fill="#475569">{}</text>"##,
         pearson_r,
@@ -3145,14 +3825,20 @@ pub(crate) fn render_bemisia_skyline_6panel(
             path_c12.push_str(&format!("{} {:.1},{:.1} ", cmd, xp, yc));
             path_rw0.push_str(&format!("{} {:.1},{:.1} ", cmd, xp, y0));
 
-            // X-axis epoch ticks
-            let x_lbl = match ei {
-                0 => "112ka",
-                1 => "20ka",
-                2 => "8ka",
-                3 => "1.5ka",
-                4 => "1990",
-                _ => "Present",
+            // Dynamic X-axis epoch ticks from actual empirical UPGMA+MCMC skyline time midpoints
+            let t_ka = ep.time_midpoint_ka;
+            let x_lbl = if ei + 1 == c.epochs.len() && t_ka < 0.5 {
+                "Present".to_string()
+            } else if t_ka >= 1000.0 {
+                format!("{:.1}Ma", t_ka / 1000.0)
+            } else if t_ka >= 10.0 {
+                format!("{:.0}ka", t_ka)
+            } else if t_ka >= 1.0 {
+                format!("{:.1}ka", t_ka)
+            } else if t_ka >= 0.05 {
+                format!("{:.2}ka", t_ka)
+            } else {
+                "Present".to_string()
             };
             svg.push_str(&format!(
                 r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#e2e8f0" stroke-width="0.8"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="8.6" font-weight="600" fill="#475569">{}</text>"##,
@@ -4125,7 +4811,10 @@ fn render_bemisia_fig5_selection_and_sweep(
             )
         } else {
             format!(
-                "Template 1TQN_A (2.05 Å) | 461 Cα + 43 HEM | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                "Template {} | {} Cα + {} HET | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                pdb.template_pdb_code.split(" (").next().unwrap_or("1TQN_A"),
+                pdb.atoms.len(),
+                pdb.het_atoms.len(),
                 pdb.kabsch_rmsd_angstrom,
                 pdb.tm_score
             )
@@ -4134,21 +4823,15 @@ fn render_bemisia_fig5_selection_and_sweep(
             r##"<text x="1336" y="1080" text-anchor="middle" font-size="8.8" font-weight="800" fill="#0f172a">{}</text>"##,
             xml_esc(&tpl_footer)
         ));
-        let fe_sg_val = pdb
-            .proximal_cys_sg
-            .map(|p| p.4)
-            .unwrap_or(if is_non_heme { 2.08 } else if is_bacterial { 2.38 } else { 2.35 });
-        let bond_footer = if is_non_heme {
-            format!(
-                "Active-Site Pocket Volume = {:.1} Å³ | Mg²⁺–Oγ1 = {:.2} Å | Affinity = {:.2} kcal/mol",
-                pdb.pocket_volume_a3, fe_sg_val, pdb.docking_affinity_kcal_mol
-            )
-        } else {
-            format!(
-                "Active-Site Pocket Volume = {:.1} Å³ | Fe–Sγ = {:.2} Å | Affinity = {:.2} kcal/mol",
-                pdb.pocket_volume_a3, fe_sg_val, pdb.docking_affinity_kcal_mol
-            )
+        let bond_part = match pdb.proximal_cys_sg {
+            Some(p) if is_non_heme => format!(" | Mg²⁺–Oγ1 = {:.2} Å", p.4),
+            Some(p) => format!(" | Fe–Sγ = {:.2} Å", p.4),
+            None => String::new(),
         };
+        let bond_footer = format!(
+            "Active-Site Pocket Volume = {:.1} Å³{} | Affinity = {:.2} kcal/mol",
+            pdb.pocket_volume_a3, bond_part, pdb.docking_affinity_kcal_mol
+        );
         svg.push_str(&format!(
             r##"<text x="1336" y="1096" text-anchor="middle" font-size="8.6" fill="#475569">{}</text>"##,
             xml_esc(&bond_footer)
@@ -4188,12 +4871,17 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     fb.stroke_rect(2, 2, (w - 4) as i32, (h - 4) as i32, (148, 163, 184));
 
     let empty_map = HashMap::new();
+    let fallback_n_phy = manifest
+        .sequences
+        .iter()
+        .filter(|s| s.included_in_cleaned_cohort)
+        .count();
     let n_phy = parse_phylo_tree(&manifest.solved_newick_topology, false, &empty_map)
         .map(|r| count_parsed_phylo_tips(&r))
         .filter(|&k| k > 0)
-        .unwrap_or(64);
-    let n1_age = study.calibrated_nodes.first().map(|n| n.age_ma).unwrap_or(234.6);
-    let n8_age = study.calibrated_nodes.get(7).map(|n| n.age_ma).unwrap_or(8.14);
+        .unwrap_or(fallback_n_phy);
+    let n1_age = study.calibrated_nodes.first().map(|n| n.age_ma).unwrap_or(0.0);
+    let n8_age = study.calibrated_nodes.get(7).map(|n| n.age_ma).unwrap_or(0.0);
     let msa_s = study.stage_msa_ms as f64 / 1000.0;
     let mt_s = study.stage_modeltest_ms as f64 / 1000.0;
     let ml_s = study.stage_ml_ufboot_ms as f64 / 1000.0;
@@ -4203,51 +4891,107 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let rcfv_drop_pct = if study.rcfv_unrec4 > 0.0 {
         ((study.rcfv_unrec4 - study.rcfv_ry3) / study.rcfv_unrec4) * 100.0
     } else {
-        80.0
+        0.0
     };
 
+    let k_branches = (2 * n_phy.saturating_sub(3) + 1) as f64;
+    let ln_super_cols = (study.supermatrix_aligned_cols.max(2) as f64).ln();
     let bic_r1 = study
         .combinatorial_sweep_32_chains
         .iter()
         .find(|c| (c.regime_id.contains("Regime 1") || c.regime_id == "RY3") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
-        .unwrap_or(-2.0 * study.regime1_ry3_marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols as f64).ln());
+        .unwrap_or(-2.0 * study.regime1_ry3_marginal_ln_l + (k_branches + 8.0) * ln_super_cols);
     let bic_r2 = study
         .combinatorial_sweep_32_chains
         .iter()
         .find(|c| (c.regime_id.contains("Regime 2") || c.regime_id == "Codon-12") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
-        .unwrap_or(-2.0 * study.regime2_codon12_marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols as f64).ln());
+        .unwrap_or(-2.0 * study.regime2_codon12_marginal_ln_l + (k_branches + 8.0) * ln_super_cols);
     let bic_r3 = study
         .combinatorial_sweep_32_chains
         .iter()
         .find(|c| (c.regime_id.contains("Regime 3") || c.regime_id == "Unrecoded-4") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
-        .unwrap_or(-2.0 * study.regime3_unrec4_marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols as f64).ln());
+        .unwrap_or(-2.0 * study.regime3_unrec4_marginal_ln_l + (k_branches + 8.0) * ln_super_cols);
     let bic_r4 = study
         .combinatorial_sweep_32_chains
         .iter()
         .find(|c| (c.regime_id.contains("Regime 4") || c.regime_id == "Raw-0Beaker") && c.chain_rank_in_regime == 1)
         .map(|c| c.bic)
-        .unwrap_or(-2.0 * study.regime4_raw0_marginal_ln_l + 125.0 * (study.supermatrix_aligned_cols as f64).ln());
+        .unwrap_or(-2.0 * study.regime4_raw0_marginal_ln_l + (k_branches + 1.0) * ln_super_cols);
     let b_lbl = infer_bootstrap_count_label(manifest);
 
+    let pop_cohorts = study.popset_skylines.len().max(1);
+    let pop_n_tot: usize = study.popset_skylines.iter().map(|p| p.num_isolates).sum();
+    let pop_axis_a_n: usize = study
+        .popset_skylines
+        .iter()
+        .filter(|p| p.cohort_code.starts_with('R'))
+        .map(|p| p.num_isolates)
+        .sum();
+    let pop_axis_b_n: usize = study
+        .popset_skylines
+        .iter()
+        .filter(|p| p.cohort_code.starts_with('L'))
+        .map(|p| p.num_isolates)
+        .sum();
+    let pop_min_ess = study
+        .popset_skylines
+        .iter()
+        .map(|p| p.ess)
+        .fold(f64::INFINITY, f64::min);
+    let pop_min_ess_disp = if pop_min_ess.is_finite() { pop_min_ess } else { 0.0 };
+    let pop_max_rhat = study
+        .popset_skylines
+        .iter()
+        .map(|p| p.rhat)
+        .fold(0.0_f64, f64::max);
     let pop_ry3_lnl: f64 = study.popset_skylines.iter().map(|p| p.runie_ry3_marginal_ln_l).sum();
     let pop_cod_lnl: f64 = study.popset_skylines.iter().map(|p| p.codon12_ln_l).sum();
     let pop_unr_lnl: f64 = study.popset_skylines.iter().map(|p| p.unrec4_ln_l).sum();
     let pop_raw_lnl: f64 = study.popset_skylines.iter().map(|p| p.raw0_ln_l).sum();
     let pop_rcfv_ry3 = study.popset_skylines.iter().map(|p| p.rcfv_ry3).sum::<f64>()
-        / study.popset_skylines.len().max(1) as f64;
+        / pop_cohorts as f64;
     let pop_rcfv_cod = study.popset_skylines.iter().map(|p| p.rcfv_codon12).sum::<f64>()
-        / study.popset_skylines.len().max(1) as f64;
+        / pop_cohorts as f64;
     let pop_rcfv_unr = study.popset_skylines.iter().map(|p| p.rcfv_unrecoded).sum::<f64>()
-        / study.popset_skylines.len().max(1) as f64;
+        / pop_cohorts as f64;
     let pop_rcfv_raw = study.popset_skylines.iter().map(|p| p.rcfv_raw0).sum::<f64>()
-        / study.popset_skylines.len().max(1) as f64;
-    let pop_bic_ry3 = -2.0 * pop_ry3_lnl + 1140.0;
-    let pop_bic_cod = -2.0 * pop_cod_lnl + 1140.0;
-    let pop_bic_unr = -2.0 * pop_unr_lnl + 1180.0;
-    let pop_bic_raw = -2.0 * pop_raw_lnl + 960.0;
+        / pop_cohorts as f64;
+    let (pop_bic_ry3, pop_bic_cod, pop_bic_unr, pop_bic_raw): (f64, f64, f64, f64) =
+        study.popset_skylines.iter().fold((0.0, 0.0, 0.0, 0.0), |acc, p| {
+            let ln_n = (p.aligned_cols_bp.max(2) as f64).ln();
+            let k_b = (2 * p.num_isolates.saturating_sub(3) + 1) as f64;
+            (
+                acc.0 + (-2.0 * p.runie_ry3_marginal_ln_l + (k_b + 8.0) * ln_n),
+                acc.1 + (-2.0 * p.codon12_ln_l + (k_b + 3.0) * ln_n),
+                acc.2 + (-2.0 * p.unrec4_ln_l + (k_b + 1.0) * ln_n),
+                acc.3 + (-2.0 * p.raw0_ln_l + (k_b + 1.0) * ln_n),
+            )
+        });
+    let paired_pop_z = |extract: &dyn Fn(&DetailedPopsetSkyline) -> f64| -> f64 {
+        let diffs: Vec<f64> = study
+            .popset_skylines
+            .iter()
+            .map(|p| {
+                let mu = 0.25 * (p.runie_ry3_marginal_ln_l + p.codon12_ln_l + p.unrec4_ln_l + p.raw0_ln_l);
+                extract(p) - mu
+            })
+            .collect();
+        if diffs.len() < 2 {
+            return 0.0;
+        }
+        let n = diffs.len() as f64;
+        let mean = diffs.iter().sum::<f64>() / n;
+        let var = diffs.iter().map(|d| (d - mean).powi(2)).sum::<f64>() / (n - 1.0);
+        let se = (var / n).sqrt();
+        if se > 1e-9 { mean / se } else { 0.0 }
+    };
+    let pop_z_ry3 = paired_pop_z(&|p| p.runie_ry3_marginal_ln_l);
+    let pop_z_cod = paired_pop_z(&|p| p.codon12_ln_l);
+    let pop_z_unr = paired_pop_z(&|p| p.unrec4_ln_l);
+    let pop_z_raw = paired_pop_z(&|p| p.raw0_ln_l);
 
     let f4_w2 = study
         .functional_families
@@ -4261,7 +5005,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
                 .fold(1.0_f64, f64::max);
             f.selection_result.m2a_omega2.max(max_beb)
         })
-        .unwrap_or(2.85);
+        .unwrap_or(1.0);
 
     let r0 = manifest.runie_9col_comparison_table.first();
     let r1 = manifest.runie_9col_comparison_table.get(1);
@@ -4326,13 +5070,13 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         (
             "A1. Entrez + Blind Audit",
             if n_phy < 64 {
-                format!("• {} >=80% OTUs / 64 Quartet", n_phy)
+                format!("• {} >=80% OTUs / {} Taxa", n_phy, manifest.sequences.len().min(64))
             } else if is_bacterial {
-                "• 64 Taxa + 48 Bact CDS".to_string()
+                format!("• {} Taxa + 48 Bact CDS", n_phy)
             } else if is_universal_ae {
-                "• 64 Archaea/Euk + 4 Fam".to_string()
+                format!("• {} Archaea/Euk + {} Fam", n_phy, study.functional_families.len())
             } else {
-                "• 64 Mito + 48 Nuc CDS".to_string()
+                format!("• {} Mito + {} Nuc Fam", n_phy, study.functional_families.len())
             },
             format!("• SHA-256 Pass 1/2 |ΔZ|=0"),
             format!("• Quarantined {} UNVERIFIED", study.quarantined_records_on_disk),
@@ -4399,7 +5143,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "A6. TimeTreeLSD2 Clock",
-            format!("• 8 Fossil Calibrations"),
+            format!("• {} Fossil Calibrations", manifest.calibrated_nodes.iter().filter(|c| c.age_ma > 0.0).count()),
             format!("• Root Node I: {:.1} Ma", n1_age),
             format!("• Crown Node VIII: {:.1} Ma", n8_age),
             format!("• 100% 2-Sided 95% HPD"),
@@ -4498,9 +5242,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         r##"  <rect x="16" y="256" width="888" height="232" rx="8" fill="#ffffff" stroke="#2563eb" stroke-width="1.6"/>
   <rect x="16" y="256" width="888" height="26" rx="8" fill="#eff6ff"/>
   <line x1="16" y1="282" x2="904" y2="282" stroke="#93c5fd" stroke-width="1.2"/>
-  <text x="28" y="273" font-size="9.6" font-weight="800" fill="#1e3a8a">PANEL B — PIPELINE B: 12 SINGLE-SPECIES REGIONAL &amp; MULTI-LOCUS COALESCENT SKYLINE CHAIN (N = 432 ISOLATES • ln L = {:.2})</text>
+  <text x="28" y="273" font-size="9.6" font-weight="800" fill="#1e3a8a">PANEL B — PIPELINE B: {} SINGLE-SPECIES REGIONAL &amp; MULTI-LOCUS COALESCENT SKYLINE CHAIN (N = {} ISOLATES • ln L = {:.2})</text>
 "##,
-        pop_ry3_lnl
+        pop_cohorts, pop_n_tot, pop_ry3_lnl
     ));
     fb.stroke_rect(16, 256, 888, 232, (37, 99, 235));
     fb.fill_rect(17, 257, 886, 25, (239, 246, 255));
@@ -4508,8 +5252,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         28,
         264,
         &format!(
-            "PANEL B | PIPELINE B: 12 REGIONAL & MULTI-LOCUS SKYLINE COHORTS (N = 432 | ln L = {:.2})",
-            pop_ry3_lnl
+            "PANEL B | PIPELINE B: {} REGIONAL & MULTI-LOCUS SKYLINE COHORTS (N = {} | ln L = {:.2})",
+            pop_cohorts, pop_n_tot, pop_ry3_lnl
         ),
         (30, 58, 138),
         1,
@@ -4519,10 +5263,10 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let b_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
         (
             "B1. Conspecific PopSets",
-            format!("• 12 Single-Spp. Cohorts"),
-            format!("• 12 × N = 36 = 432 Recs"),
-            format!("• Axis A: R1-R6 Regional"),
-            format!("• Axis B: L1-L6 Multi-Locus"),
+            format!("• {} Single-Spp. Cohorts", pop_cohorts),
+            format!("• Aligned N = {} Recs", pop_n_tot),
+            format!("• Axis A: R1-R6 (n={})", pop_axis_a_n),
+            format!("• Axis B: L1-L6 (n={})", pop_axis_b_n),
             "#f8fafc",
             "#64748b",
             "#1d4ed8",
@@ -4539,16 +5283,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             } else {
                 "• L2/L5: mafft-native ITS".to_string()
             },
-            format!("• Local Affine + 2-Tree"),
-            format!("• L3/L6: Coding Sweep MSA"),
+            "• Local Affine + 2-Tree".to_string(),
+            "• L3/L6: Coding Sweep MSA".to_string(),
             "#f8fafc",
             "#64748b",
             "#1d4ed8",
         ),
         (
             "B3. RCFV & Ploidy Gate",
-            format!("• Maternal mtDNA: 1Ne"),
-            format!("• Diploid Nuclear: 4Ne"),
+            "• Maternal mtDNA: 1Ne".to_string(),
+            "• Diploid Nuclear: 4Ne".to_string(),
             format!("• Raw RCFV = {:.4} (FAIL)", pop_rcfv_raw),
             format!("• RY3 RCFV = {:.4} (PASS)", pop_rcfv_ry3),
             "#eff6ff",
@@ -4557,9 +5301,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "B4. 25k-Gen Skyline MCMC",
-            format!("• runie-mcmc-skyline"),
-            format!("• 12 × 25,000 = 300k Gen"),
-            format!("• 20% Burn-In (5k States)"),
+            "• runie-mcmc-skyline".to_string(),
+            format!("• {} × 25k = {}k Gen", pop_cohorts, pop_cohorts * 25),
+            "• 20% Burn-In (5k States)".to_string(),
             format!("• Sum ln L = {:.2}", pop_ry3_lnl),
             "#eff6ff",
             "#2563eb",
@@ -4567,9 +5311,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "B5. ESS & R-hat Gate",
-            format!("• Post-Burn-In: 20k States"),
-            format!("• All 12 Cohorts ESS > 480"),
-            format!("• Gelman-Rubin R-hat ~ 1.00"),
+            "• Post-Burn-In: 20k States".to_string(),
+            format!("• Min Cohort ESS = {:.1}", pop_min_ess_disp),
+            format!("• Max Gelman R-hat = {:.4}", pop_max_rhat),
             format!("• Runtime = {:.2} s (Rayon)", pop_s),
             "#ecfdf5",
             "#059669",
@@ -4577,10 +5321,10 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "B6. Orthogonal Matrices",
-            format!("• Fig 4A: R1-R6 Regional"),
-            format!("• Fig 4B: L1-L6 Multi-Locus"),
-            format!("• Separates Bottlenecks"),
-            format!("• vs. Coding Selective Sweeps"),
+            "• Fig 4A: R1-R6 Regional".to_string(),
+            "• Fig 4B: L1-L6 Multi-Locus".to_string(),
+            "• Separates Bottlenecks".to_string(),
+            "• vs. Coding Selective Sweeps".to_string(),
             "#f0f9ff",
             "#0284c7",
             "#0369a1",
@@ -4636,31 +5380,32 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
 
     let (axis_a_txt, axis_b_txt, recs_tot_lbl) = if is_bacterial {
         (
-            "Axis A Chromosomal Housekeeping Skylines (Cohorts R1–R6, N = 216): Reconstructs single-species gyrB, rpoB, recA &amp; groEL coalescent histories across Bacillota and Actinomycetota.",
-            format!("Axis B Multi-Locus Contrast (Cohorts L1–L6, N = 216): Contrasts fast housekeeping rpoB/recA evolution against deeply buffered Katoh E-INS-i {}.", xml_esc(&theme.fig6_its_label)),
-            format!("End-to-End Multi-Compartment Execution: {} active verified bacterial NCBI records completed in {:.2} s total wall-clock time.", study.total_records_on_disk, tot_s),
+            format!("Axis A Chromosomal Housekeeping Skylines (Cohorts R1–R6, N = {}): Reconstructs single-species gyrB, rpoB, recA &amp; groEL coalescent histories across Bacillota and Actinomycetota.", pop_axis_a_n),
+            format!("Axis B Multi-Locus Contrast (Cohorts L1–L6, N = {}): Contrasts fast housekeeping rpoB/recA evolution against deeply buffered Katoh E-INS-i {}.", pop_axis_b_n, xml_esc(&theme.fig6_its_label)),
+            format!("End-to-End Multi-Compartment Execution: {} active verified bacterial NCBI records (+ {} quarantined) completed in {:.2} s total wall-clock time.", study.total_records_on_disk, study.quarantined_records_on_disk, tot_s),
         )
     } else if is_universal_ae {
         (
-            "Axis A Single-Species Nuclear/Archaeal Skylines (Cohorts R1–R6, N = 216): Reconstructs intraspecific EF1A, RPB2, RAD51 &amp; HSP70 coalescent histories across model eukaryotes and archaea.",
-            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts coding EF1A/RPB2 (4Ne) against slowly evolving Katoh E-INS-i {}.", xml_esc(&theme.fig6_its_label)),
-            format!("End-to-End Multi-Compartment Execution: {} active verified Archaea &amp; Eukaryota NCBI records completed in {:.2} s total wall-clock time.", study.total_records_on_disk, tot_s),
+            format!("Axis A Single-Species Nuclear/Archaeal Skylines (Cohorts R1–R6, N = {}): Reconstructs intraspecific EF1A, RPB2, RAD51 &amp; HSP70 coalescent histories across model eukaryotes and archaea.", pop_axis_a_n),
+            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = {}): Contrasts coding EF1A/RPB2 (4Ne) against slowly evolving Katoh E-INS-i {}.", pop_axis_b_n, xml_esc(&theme.fig6_its_label)),
+            format!("End-to-End Multi-Compartment Execution: {} active verified Archaea &amp; Eukaryota NCBI records (+ {} quarantined) completed in {:.2} s total wall-clock time.", study.total_records_on_disk, study.quarantined_records_on_disk, tot_s),
         )
     } else {
         (
-            "Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = 216): Separates Pleistocene refugial stability from historical founder bottlenecks and modern agro-ecological expansions.",
-            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.", xml_esc(&theme.fig6_its_label)),
-            format!("End-to-End Multi-Compartment Execution: All 544 active verified NCBI records (+ 6 quarantined UNVERIFIED anomalies) completed in {:.2} s total wall-clock time.", tot_s),
+            format!("Axis A Cross-Regional COX1 Skylines (Cohorts R1–R6, N = {}): Separates Pleistocene refugial stability from historical founder bottlenecks and modern agro-ecological expansions.", pop_axis_a_n),
+            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = {}): Contrasts neutral maternal COX1 (1Ne) and Katoh E-INS-i nuclear {} (4Ne) against coding sweeps.", pop_axis_b_n, xml_esc(&theme.fig6_its_label)),
+            format!("End-to-End Multi-Compartment Execution: {} active verified NCBI records (+ {} quarantined anomalies) completed in {:.2} s total wall-clock time.", study.total_records_on_disk, study.quarantined_records_on_disk, tot_s),
         )
     };
     svg.push_str(&format!(
         r##"  <text x="28" y="406" font-size="7.8" font-weight="600" fill="#1e293b">• {}</text>
   <text x="28" y="422" font-size="7.8" font-weight="700" fill="#1e3a8a">• {}</text>
-  <text x="28" y="438" font-size="7.8" font-weight="600" fill="#1d4ed8">• 12-Cohort Aggregate Likelihoods (Table 3B): 1st Codon/E-INS-i Core (ln L = {:.2}) beats 2nd Codon-12/K80 ({:.2}), 3rd gotoh-msa ({:.2}), and 4th 0-Beaker Unaligned ({:.2}).</text>
+  <text x="28" y="438" font-size="7.8" font-weight="600" fill="#1d4ed8">• {}-Cohort Aggregate Likelihoods (Table 3B): 1st Codon/E-INS-i Core (ln L = {:.2}) vs. 2nd Codon-12/K80 ({:.2}), 3rd gotoh-msa ({:.2}), and 4th 0-Beaker Unaligned ({:.2}).</text>
   <text x="28" y="454" font-size="7.8" font-weight="600" fill="#334155">• {}</text>
 "##,
         axis_a_txt,
         axis_b_txt,
+        pop_cohorts,
         pop_ry3_lnl,
         pop_cod_lnl,
         pop_unr_lnl,
@@ -4698,13 +5443,13 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         Some(860),
     );
 
-    let fmt_fig6_boot = |opt_r: Option<&RunieComparisonRow>, fallback_pct: f64| -> String {
+    let fmt_fig6_boot = |opt_r: Option<&RunieComparisonRow>| -> String {
         match opt_r {
             Some(r) => r
                 .runie_bootstrap
                 .replace("B = 500, Unclean", &format!("B={}", b_lbl))
                 .replace("B = 500", &format!("B={}", b_lbl)),
-            None => format!("{:.1}% (B={})", fallback_pct, b_lbl),
+            None => format!("0.0% (B={})", b_lbl),
         }
     };
     let short_model = |opt_r: Option<&RunieComparisonRow>, def_lbl: &str| -> String {
@@ -4723,10 +5468,25 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     };
     let bic_for_row = |opt_r: Option<&RunieComparisonRow>, fallback_lnl: f64, fallback_bic: f64| -> f64 {
         match opt_r {
-            Some(r) if r.model_summary.contains("Unrecoded") => -2.0 * r.marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols.max(2) as f64).ln(),
-            Some(r) if r.model_summary.contains("Codon-12") => -2.0 * r.marginal_ln_l + 137.0 * (study.supermatrix_aligned_cols.max(2) as f64).ln(),
-            Some(r) => -2.0 * r.marginal_ln_l + 132.0 * (study.supermatrix_aligned_cols.max(2) as f64).ln(),
-            None => if fallback_bic != 0.0 { fallback_bic } else { -2.0 * fallback_lnl },
+            Some(r) => {
+                if let Some(c) = study
+                    .combinatorial_sweep_32_chains
+                    .iter()
+                    .find(|c| (c.marginal_ln_l - r.marginal_ln_l).abs() < 0.05)
+                {
+                    return c.bic;
+                }
+                let k_b = (2 * n_phy.saturating_sub(3) + 1) as f64;
+                let k_m = if r.model_summary.contains("JC69") { 1.0 } else { 8.0 };
+                -2.0 * r.marginal_ln_l + (k_b + k_m) * (study.supermatrix_aligned_cols.max(2) as f64).ln()
+            }
+            None => {
+                if fallback_bic != 0.0 {
+                    fallback_bic
+                } else {
+                    -2.0 * fallback_lnl
+                }
+            }
         }
     };
     let pop_boot_json_opt = Some(run_dir.join("trees/popset_cohort_bootstraps.json"))
@@ -4738,16 +5498,24 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         })
         .and_then(|p| fs::read_to_string(p).ok())
         .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
-    let (pop_b_k, pop_b1, pop_b2, pop_b3, pop_b4) = if let Some(ref v) = pop_boot_json_opt {
+    let (pop_b_k, pop_b1, pop_b2, pop_b3, pop_b4, pop_cpu_s) = if let Some(ref v) = pop_boot_json_opt {
+        let reg_arr = v.get("regime_cpu_ms").and_then(|a| a.as_array());
+        let reg_s = [
+            reg_arr.and_then(|a| a.first()).and_then(|x| x.as_u64()).map(|m| m as f64 / 1000.0).unwrap_or(pop_s),
+            reg_arr.and_then(|a| a.get(1)).and_then(|x| x.as_u64()).map(|m| m as f64 / 1000.0).unwrap_or(pop_s),
+            reg_arr.and_then(|a| a.get(2)).and_then(|x| x.as_u64()).map(|m| m as f64 / 1000.0).unwrap_or(pop_s),
+            reg_arr.and_then(|a| a.get(3)).and_then(|x| x.as_u64()).map(|m| m as f64 / 1000.0).unwrap_or(pop_s),
+        ];
         (
-            v.get("b_per_cohort").and_then(|x| x.as_u64()).unwrap_or(100),
-            v.get("mean_ry3_pct").and_then(|x| x.as_f64()).unwrap_or(95.0),
-            v.get("mean_codon12_pct").and_then(|x| x.as_f64()).unwrap_or(91.0),
-            v.get("mean_unrec4_pct").and_then(|x| x.as_f64()).unwrap_or(79.0),
-            v.get("mean_raw0_pct").and_then(|x| x.as_f64()).unwrap_or(52.0),
+            v.get("b_per_cohort").and_then(|x| x.as_u64()).unwrap_or(0),
+            v.get("mean_ry3_pct").and_then(|x| x.as_f64()).unwrap_or(0.0),
+            v.get("mean_codon12_pct").and_then(|x| x.as_f64()).unwrap_or(0.0),
+            v.get("mean_unrec4_pct").and_then(|x| x.as_f64()).unwrap_or(0.0),
+            v.get("mean_raw0_pct").and_then(|x| x.as_f64()).unwrap_or(0.0),
+            reg_s,
         )
     } else {
-        (100, 95.0, 91.0, 79.0, 52.0)
+        (0, 0.0, 0.0, 0.0, 0.0, [pop_s, pop_s, pop_s, pop_s])
     };
     let fmt_pop_boot = |pct: f64, suffix: &str| -> String {
         format!("{:.1}% (B={}, {})", pct, pop_b_k, suffix)
@@ -4778,8 +5546,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", r0_lnl),
             format!("{:.2}", bic_for_row(r0, r0_lnl, bic_r1)),
             format!("{:.4}", r0.map(|r| r.rcfv).unwrap_or(study.rcfv_ry3)),
-            fmt_fig6_boot(r0, 99.6),
-            format!("+{:.2} SD", r0.map(|r| r.posterior_z).unwrap_or(5.42)),
+            fmt_fig6_boot(r0),
+            format!("{:+.2} SD", r0.map(|r| r.posterior_z).unwrap_or(0.0)),
             format!("{:.2} s", msa_s + mt_s + ml_s),
             "#ecfdf5",
             "#10b981",
@@ -4797,8 +5565,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", r1_lnl),
             format!("{:.2}", bic_for_row(r1, r1_lnl, bic_r2)),
             format!("{:.4}", r1.map(|r| r.rcfv).unwrap_or(study.rcfv_codon12)),
-            fmt_fig6_boot(r1, 98.8),
-            format!("+{:.2} SD", r1.map(|r| r.posterior_z).unwrap_or(4.86)),
+            fmt_fig6_boot(r1),
+            format!("{:+.2} SD", r1.map(|r| r.posterior_z).unwrap_or(0.0)),
             format!("{:.2} s", msa_s + mt_s + ml_s),
             "#f8fafc",
             "#cbd5e1",
@@ -4816,8 +5584,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", r2_lnl),
             format!("{:.2}", bic_for_row(r2, r2_lnl, bic_r3)),
             format!("{:.4}", r2.map(|r| r.rcfv).unwrap_or(study.rcfv_unrec4)),
-            fmt_fig6_boot(r2, 93.2),
-            format!("+{:.2} SD", r2.map(|r| r.posterior_z).unwrap_or(3.58)),
+            fmt_fig6_boot(r2),
+            format!("{:+.2} SD", r2.map(|r| r.posterior_z).unwrap_or(0.0)),
             format!("{:.2} s", msa_s + ml_s),
             "#fffbeb",
             "#fcd34d",
@@ -4835,9 +5603,9 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", r3_lnl),
             format!("{:.2}", bic_for_row(r3, r3_lnl, bic_r4)),
             format!("{:.4}", r3.map(|r| r.rcfv).unwrap_or(study.rcfv_raw0)),
-            fmt_fig6_boot(r3, 58.4),
-            format!("+{:.2} SD", r3.map(|r| r.posterior_z).unwrap_or(0.41)),
-            format!("{:.2} s", msa_s + ml_s * 0.85),
+            fmt_fig6_boot(r3),
+            format!("{:+.2} SD", r3.map(|r| r.posterior_z).unwrap_or(0.0)),
+            format!("{:.2} s", msa_s + ml_s),
             "#fef2f2",
             "#fca5a5",
             "#991b1b",
@@ -4845,16 +5613,17 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         (
             "Chain B • 1st (Best)",
             "Codon / E-INS-i Core".to_string(),
-            format!("super-blast → Frame/E-INS-i Core → ModelTest → UFBoot2 + 25k Skyline MCMC"),
+            "super-blast → Frame/E-INS-i Core → ModelTest → UFBoot2 + 25k Skyline MCMC".to_string(),
             format!(
-                "432 conspecific isolates (R1–R6 & L1–L6); ESS > 480, R-hat = 1.000; contrasts regional vs. sweep Ne"
+                "{} aligned isolates (R1–R6 & L1–L6); Min ESS = {:.1}, Max R-hat = {:.4}",
+                pop_n_tot, pop_min_ess_disp, pop_max_rhat
             ),
             format!("{:.2}", pop_ry3_lnl),
             format!("{:.2}", pop_bic_ry3),
             format!("{:.4}", pop_rcfv_ry3),
             fmt_pop_boot(pop_b1, "12 coh"),
-            "+4.86 SD".to_string(),
-            format!("{:.2} s", pop_s),
+            format!("{:+.2} SD", pop_z_ry3),
+            format!("{:.2} s", pop_cpu_s[0]),
             "#eff6ff",
             "#2563eb",
             "#1e3a8a",
@@ -4862,7 +5631,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         (
             "Chain B • 2nd (Nearest)",
             "FFT-NS-i / K80+G4".to_string(),
-            format!("super-blast → mafft-native FFT-NS-i → K80+G4 → UFBoot2 + 25k Skyline"),
+            "super-blast → mafft-native FFT-NS-i → K80+G4 → UFBoot2 + 25k Skyline".to_string(),
             format!(
                 "Progressive MSA under equal-frequency K80+G4 without +I/+F or Buneman pruning; Δln L = {:.2} nats",
                 pop_cod_lnl - pop_ry3_lnl
@@ -4871,8 +5640,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", pop_bic_cod),
             format!("{:.4}", pop_rcfv_cod),
             fmt_pop_boot(pop_b2, "12 coh"),
-            "+3.72 SD".to_string(),
-            format!("{:.2} s", pop_s * 1.06),
+            format!("{:+.2} SD", pop_z_cod),
+            format!("{:.2} s", pop_cpu_s[1]),
             "#f8fafc",
             "#cbd5e1",
             "#0f766e",
@@ -4880,7 +5649,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         (
             "Chain B • 3rd (Medium)",
             "Untrimmed gotoh-msa".to_string(),
-            format!("super-blast → gotoh-msa (No End Trim) → JC69 Uniform → UFBoot2 + Skyline"),
+            "super-blast → gotoh-msa (No End Trim) → JC69 Uniform → UFBoot2 + Skyline".to_string(),
             format!(
                 "Overhang gaps and unmodeled transition bias degrade resolution; Δln L = {:.2} nats",
                 pop_unr_lnl - pop_ry3_lnl
@@ -4889,8 +5658,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", pop_bic_unr),
             format!("{:.4}", pop_rcfv_unr),
             fmt_pop_boot(pop_b3, "12 coh"),
-            "+2.18 SD".to_string(),
-            format!("{:.2} s", pop_s * 1.11),
+            format!("{:+.2} SD", pop_z_unr),
+            format!("{:.2} s", pop_cpu_s[2]),
             "#fffbeb",
             "#fcd34d",
             "#92400e",
@@ -4898,7 +5667,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         (
             "Chain B • 4th (Rejected)",
             "0-Beaker Unaligned".to_string(),
-            format!("Unaligned Staggered Slices (No MSA Homology) → JC69 → 0-Beaker Control"),
+            "Unaligned Staggered Slices (No MSA Homology) → JC69 → 0-Beaker Control".to_string(),
             format!(
                 "Zero positional homology collapses split support and ln L; Δln L = {:.2} nats",
                 pop_raw_lnl - pop_ry3_lnl
@@ -4907,8 +5676,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             format!("{:.2}", pop_bic_raw),
             format!("{:.4}", pop_rcfv_raw),
             fmt_pop_boot(pop_b4, "Reject"),
-            "-3.94 SD".to_string(),
-            format!("{:.2} s", pop_s * 0.94),
+            format!("{:+.2} SD", pop_z_raw),
+            format!("{:.2} s", pop_cpu_s[3]),
             "#fef2f2",
             "#fca5a5",
             "#991b1b",
@@ -5391,11 +6160,16 @@ pub(crate) fn generate_locked_figures_with_theme(
     run_dir: &Path,
     web_figures_dir: Option<&Path>,
 ) -> Result<(), String> {
-    let root = build_unified_rooted_tree(manifest, theme);
+    let (chrono_root, chrono_hpd_map) = build_empirical_chronogram_tree(
+        &study.solved_timetree_newick,
+        manifest,
+        theme.fig1_max_ma,
+    );
+    let phy_root = build_empirical_ml_phylogram_tree(manifest);
     let mut figs = Vec::with_capacity(7);
 
-    figs.push(render_bemisia_fig1_chronogram(manifest, &root, theme, run_dir, web_figures_dir)?);
-    figs.push(render_bemisia_fig2_circular_phylogram(manifest, &root, theme, run_dir, web_figures_dir)?);
+    figs.push(render_bemisia_fig1_chronogram(manifest, &chrono_root, &chrono_hpd_map, theme, run_dir, web_figures_dir)?);
+    figs.push(render_bemisia_fig2_circular_phylogram(manifest, &phy_root, theme, run_dir, web_figures_dir)?);
     figs.push(render_bemisia_fig3_quartet_msc(manifest, study, theme, run_dir, web_figures_dir)?);
 
     let reg_cohorts: Vec<DetailedPopsetSkyline> = study

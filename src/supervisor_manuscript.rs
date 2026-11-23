@@ -1711,6 +1711,42 @@ fn clamp_ms_pre_line(s: &str) -> String {
 /// Generic JSON-driven manuscript, telemetry, LaTeX, and strictly staged bundle exporter
 /// for any `DeclarativeStudyConfig` (`--study-config <path.json>`). Preserves Hold Gate by
 /// writing only to `labs/preprints/.staged/` and `labs/articles/.staged/`.
+fn format_utc_month_day_year() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    let z = secs.div_euclid(86_400) + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = mp + if mp < 10 { 3 } else { -9 };
+    let yr = y + i64::from(m <= 2);
+    let months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+    let m_name = months
+        .get((m - 1).clamp(0, 11) as usize)
+        .copied()
+        .unwrap_or("January");
+    format!("{} {}, {}", m_name, d, yr)
+}
+
 pub fn export_declarative_manuscript_and_staged_bundle(
     cfg: &crate::supermatrix_audit_util::DeclarativeStudyConfig,
     report: &MultiCompartmentStudyReport,
@@ -1784,18 +1820,18 @@ pub fn export_declarative_manuscript_and_staged_bundle(
     let unphased_gl = cov_sum["unphased_mitogenome_gotoh_cols"]
         .as_u64()
         .unwrap_or(manifest.native_gotoh_aligned_cols_l as u64) as usize;
-    let single_boot = cov_sum["single_gene_ufboot_pct"].as_f64().unwrap_or(72.0);
+    let single_boot = cov_sum["single_gene_ufboot_pct"].as_f64().unwrap_or(0.0);
     let unfilt_boot = cov_sum["unfiltered_all64_ufboot_pct"]
         .as_f64()
         .unwrap_or(single_boot);
     let sup_boot = part_opt
         .as_ref()
         .map(|p| p.partitioned_bootstrap.mean_split_support_pct)
-        .unwrap_or(95.0);
+        .unwrap_or(0.0);
     let unpart_boot = part_opt
         .as_ref()
         .map(|p| p.unpartitioned_bootstrap.mean_split_support_pct)
-        .unwrap_or(91.0);
+        .unwrap_or(0.0);
     let part_lnl = part_opt
         .as_ref()
         .map(|p| p.partitioned_ln_l)
@@ -2131,24 +2167,12 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             "RuNIE Bootstrap (B = 500)",
             "Primary Engine: partitioned_modeltest + bio-suite-supervisor (Edge-Linked Proportional Partitioned ML + UFBoot2)",
         );
-        let pop_boot_arr = cov_sum["popset_cohort_bootstraps"].as_array();
+        let pop_boot = load_run_json(Some(run_dir), "trees/popset_cohort_bootstraps.json");
         let coh_pcts = [
-            pop_boot_arr
-                .and_then(|a| a.first())
-                .and_then(|v| v.as_f64())
-                .unwrap_or(92.4),
-            pop_boot_arr
-                .and_then(|a| a.get(1))
-                .and_then(|v| v.as_f64())
-                .unwrap_or(87.2),
-            pop_boot_arr
-                .and_then(|a| a.get(2))
-                .and_then(|v| v.as_f64())
-                .unwrap_or(79.6),
-            pop_boot_arr
-                .and_then(|a| a.get(3))
-                .and_then(|v| v.as_f64())
-                .unwrap_or(44.8),
+            pop_boot["mean_ry3_pct"].as_f64().unwrap_or(0.0),
+            pop_boot["mean_codon12_pct"].as_f64().unwrap_or(0.0),
+            pop_boot["mean_unrec4_pct"].as_f64().unwrap_or(0.0),
+            pop_boot["mean_raw0_pct"].as_f64().unwrap_or(0.0),
         ];
         let table3b = render_canonical_table_3b_html(
             &format!("{} ({} Single-Species Coalescent Cohorts; N = {})", cfg.study_slug, report.popset_skylines.len(), tot_pop_isos),
@@ -2393,6 +2417,20 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             disc_ps.push_str(&format!("  <p>{}</p>\n", html_esc(p)));
         }
 
+        let pop_cnt = report.popset_skylines.len();
+        let pop_min_ess = report
+            .popset_skylines
+            .iter()
+            .map(|p| p.ess)
+            .filter(|e| e.is_finite())
+            .fold(f64::INFINITY, f64::min);
+        let pop_min_ess_disp = if pop_min_ess.is_finite() { pop_min_ess } else { 0.0 };
+        let pop_max_rhat = report
+            .popset_skylines
+            .iter()
+            .map(|p| p.rhat)
+            .filter(|r| r.is_finite())
+            .fold(0.0_f64, f64::max);
         let mp = &cfg.manuscript_prose;
         let raw_html = format!(
 r#"<section class="labs-study-section">
@@ -2423,7 +2461,7 @@ r#"<section class="labs-study-section">
 
 <section class="labs-study-section">
   <h2>5. {s5_title}</h2>
-  <p>Twelve single-species 25,000-generation Bayesian coalescent skylines ({tot_pop_isos} verified isolates; Gelman-Rubin R-hat &lt;= 1.01) contrast regional and multi-locus effective population trajectories alongside Stage 3C haplotype cluster graphs.</p>
+  <p>{pop_cnt} single-species 25,000-generation Bayesian coalescent skylines ({tot_pop_isos} aligned isolates; Min ESS = {pop_min_ess:.1}, Max Gelman-Rubin R-hat = {pop_max_rhat:.4}) contrast regional and multi-locus effective population trajectories alongside Stage 3C haplotype cluster graphs.</p>
   <figure id="fig-4a" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 4A. {f4at}</span></div><div class="labs-inline-svg-figure">{f4a}</div><figcaption>{f4ac}</figcaption></figure>
   <figure id="fig-4b" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 4B. {f4bt}</span></div><div class="labs-inline-svg-figure">{f4b}</div><figcaption>{f4bc}</figcaption></figure>
   {hap_section}
@@ -2500,7 +2538,10 @@ r#"<section class="labs-study-section">
             f5 = fig5_svg,
             f5c = html_esc(&th.fig5_caption),
             s5_title = html_esc(&mp.section5_title),
+            pop_cnt = pop_cnt,
             tot_pop_isos = tot_pop_isos,
+            pop_min_ess = pop_min_ess_disp,
+            pop_max_rhat = pop_max_rhat,
             f4at = html_esc(&th.fig4a_title),
             f4a = fig4a_svg,
             f4ac = html_esc(&th.fig4a_caption),
@@ -2644,6 +2685,7 @@ r#"<section class="labs-study-section">
     .map_err(|e| e.to_string())?;
     written.push(staged_preprint_path.to_string_lossy().to_string());
 
+    let utc_date_label = format_utc_month_day_year();
     let full_body = render_body(true);
     let single_col_html = format!(
 r#"<!DOCTYPE html>
@@ -2693,7 +2735,7 @@ r#"<!DOCTYPE html>
     <div class="arxiv-meta">
       <strong>Author:</strong> Bryan P. White &nbsp;|&nbsp;
       <strong>Affiliation:</strong> CRV Science Labs &nbsp;|&nbsp;
-      <strong>Date:</strong> November 21, 2026 &nbsp;|&nbsp;
+      <strong>Date:</strong> {pub_date} &nbsp;|&nbsp;
       <strong>Preprint ID:</strong> {preprint_label} (v{preprint_ver} Empirical Preprint){doi_meta} &nbsp;|&nbsp;
       <strong>Validation Dataset:</strong> <code>{val_set}</code>
     </div>
@@ -2705,6 +2747,7 @@ r#"<!DOCTYPE html>
 </body>
 </html>"#,
         title = html_esc(&cfg.title),
+        pub_date = html_esc(&utc_date_label),
         preprint_label = html_esc(&cfg.preprint_label),
         preprint_ver = html_esc(&cfg.preprint_version),
         doi_meta = cfg
@@ -2748,7 +2791,7 @@ r#"<!DOCTYPE html>
 \\usepackage{{hyperref}}
 \\title{{{title_tex}}}
 \\author{{Bryan P. White \\\\ CRV Science Labs}}
-\\date{{November 21, 2026 \\quad|\\quad Preprint ID: {preprint_label} (v{preprint_ver} Empirical Preprint)}}
+\\date{{{pub_date_tex} \\quad|\\quad Preprint ID: {preprint_label} (v{preprint_ver} Empirical Preprint)}}
 \\begin{{document}}
 \\maketitle
 \\begin{{abstract}}
@@ -2772,6 +2815,7 @@ r#"<!DOCTYPE html>
 \\end{{document}}
 ",
         title_tex = tex_esc(&cfg.title),
+        pub_date_tex = tex_esc(&utc_date_label),
         preprint_label = tex_esc(&cfg.preprint_label),
         preprint_ver = tex_esc(&cfg.preprint_version),
         abs_tex = tex_esc(&abstract_text),

@@ -38,6 +38,12 @@ impl DeterministicLcg64 {
         self.state
     }
 
+    /// Draws a uniform floating-point variate in `[0.0, 1.0)` from the upper 53 bits.
+    #[inline]
+    pub fn next_f64(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 * (1.0 / ((1u64 << 53) as f64))
+    }
+
     /// Samples an unsigned integer in `[0, upper_exclusive)` using the upper 31 bits.
     #[inline]
     pub fn gen_range_usize(&mut self, upper_exclusive: usize) -> usize {

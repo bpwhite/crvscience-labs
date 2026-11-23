@@ -5189,6 +5189,155 @@ fn render_54_vertebrate_ascii_cladogram() -> String {
     .to_string()
 }
 
+/// Parses a Newick tree string into post-order `MlTreeNode` indices aligned to `labels[0..n_taxa]`,
+/// right-binarizing any unrooted trifurcation at the root so Felsenstein pruning and substitution
+/// model optimization run directly on the inferred empirical topology.
+pub(crate) fn parse_newick_to_ml_nodes(newick: &str, labels: &[String]) -> Option<Vec<MlTreeNode>> {
+    let n_taxa = labels.len();
+    if n_taxa < 2 {
+        return None;
+    }
+    let mut tip_map: HashMap<String, usize> = HashMap::with_capacity(n_taxa * 2);
+    for (idx, lbl) in labels.iter().enumerate() {
+        tip_map.insert(lbl.clone(), idx);
+        tip_map.insert(lbl.replace(':', "_"), idx);
+    }
+
+    let mut nodes: Vec<MlTreeNode> = labels
+        .iter()
+        .enumerate()
+        .map(|(i, lbl)| MlTreeNode {
+            _id: i,
+            label: Some(lbl.clone()),
+            left: None,
+            right: None,
+            branch_len: 1e-4,
+            support_pct: 100.0,
+        })
+        .collect();
+
+    let s = newick.trim().trim_end_matches(';').trim();
+    let b = s.as_bytes();
+    let mut pos = 0usize;
+
+    fn skip_ws(b: &[u8], pos: &mut usize) {
+        while *pos < b.len() && b[*pos].is_ascii_whitespace() {
+            *pos += 1;
+        }
+    }
+
+    fn skip_brackets(b: &[u8], pos: &mut usize) {
+        while *pos < b.len() && b[*pos] == b'[' {
+            let mut depth = 0usize;
+            while *pos < b.len() {
+                if b[*pos] == b'[' {
+                    depth += 1;
+                } else if b[*pos] == b']' {
+                    depth = depth.saturating_sub(1);
+                    if depth == 0 {
+                        *pos += 1;
+                        break;
+                    }
+                }
+                *pos += 1;
+            }
+        }
+    }
+
+    fn parse_sub(
+        b: &[u8],
+        pos: &mut usize,
+        tip_map: &HashMap<String, usize>,
+        nodes: &mut Vec<MlTreeNode>,
+    ) -> Option<usize> {
+        skip_ws(b, pos);
+        let mut child_ids: Vec<usize> = Vec::new();
+        if *pos < b.len() && b[*pos] == b'(' {
+            *pos += 1;
+            loop {
+                child_ids.push(parse_sub(b, pos, tip_map, nodes)?);
+                skip_ws(b, pos);
+                if *pos < b.len() && b[*pos] == b',' {
+                    *pos += 1;
+                } else if *pos < b.len() && b[*pos] == b')' {
+                    *pos += 1;
+                    break;
+                } else {
+                    break;
+                }
+            }
+        }
+        skip_ws(b, pos);
+        let mut label_raw = String::new();
+        while *pos < b.len() && !matches!(b[*pos], b':' | b',' | b')' | b'(' | b';') {
+            if b[*pos] == b'[' {
+                skip_brackets(b, pos);
+            } else {
+                label_raw.push(b[*pos] as char);
+                *pos += 1;
+            }
+        }
+        let mut bl = 1e-4_f64;
+        if *pos < b.len() && b[*pos] == b':' {
+            *pos += 1;
+            skip_brackets(b, pos);
+            let start = *pos;
+            while *pos < b.len() && !matches!(b[*pos], b',' | b')' | b'(' | b'[' | b';') {
+                *pos += 1;
+            }
+            if let Ok(num_s) = std::str::from_utf8(&b[start..*pos]) {
+                bl = num_s.trim().parse::<f64>().unwrap_or(1e-4).clamp(1e-6, 10.0);
+            }
+            skip_brackets(b, pos);
+        }
+
+        let lbl = label_raw.trim();
+        if child_ids.is_empty() {
+            let tid = *tip_map
+                .get(lbl)
+                .or_else(|| tip_map.get(&lbl.replace(':', "_")))?;
+            nodes[tid].branch_len = bl;
+            Some(tid)
+        } else {
+            while child_ids.len() > 2 {
+                let r = child_ids.pop()?;
+                let l = child_ids.pop()?;
+                let mid_id = nodes.len();
+                nodes.push(MlTreeNode {
+                    _id: mid_id,
+                    label: None,
+                    left: Some(l),
+                    right: Some(r),
+                    branch_len: 1e-5,
+                    support_pct: 100.0,
+                });
+                child_ids.push(mid_id);
+            }
+            if child_ids.len() == 1 {
+                return Some(child_ids[0]);
+            }
+            let sup = lbl.parse::<f64>().unwrap_or(100.0).clamp(0.0, 100.0);
+            let nid = nodes.len();
+            nodes.push(MlTreeNode {
+                _id: nid,
+                label: if lbl.is_empty() { None } else { Some(lbl.to_string()) },
+                left: Some(child_ids[0]),
+                right: Some(child_ids[1]),
+                branch_len: bl,
+                support_pct: sup,
+            });
+            Some(nid)
+        }
+    }
+
+    let root_id = parse_sub(b, &mut pos, &tip_map, &mut nodes)?;
+    if root_id + 1 != nodes.len() {
+        return None;
+    }
+    nodes[root_id].branch_len = 0.0;
+    Some(nodes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

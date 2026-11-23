@@ -25,6 +25,11 @@ use crate::coalescent::{
 };
 use crate::codon_selection::run_native_codon_selection;
 use crate::complexity::round4;
+use crate::empirical_inference_util::{
+    analyze_pdb_file_empirically, assemble_empirical_popset_epochs, compute_bic_posterior_weights,
+    compute_kh_paired_sites_z, run_empirical_bayesian_skyline_mcmc,
+    solve_empirical_lsd2_from_ml_tree, EmpiricalCalibrationSpec,
+};
 use crate::fetch::{FastaRecord, PoliteCacheManager};
 use crate::haplotype::{
     analyze_haplotype_clusters_prealigned, compute_haplotype_kcore_and_betweenness,
@@ -35,7 +40,7 @@ use crate::mafft_native::{
     MafftNativeStrategy,
 };
 use crate::mcmc_skyline::{
-    compress_alignment_patterns, compute_epoch_coalescent_stats, compute_ess_and_rhat,
+    compress_alignment_patterns, compute_ess_and_rhat,
     compute_popgen_summary_stats, compute_rcfv_4state_and_ry, evaluate_felsenstein_ln_l,
     flatten_postorder, parse_phylo_tree, CombinatorialSweepChain, FastRng,
 };
@@ -55,7 +60,7 @@ use crate::supermatrix_viz::{
 use crate::supervisor::{
     resolve_crv_workspace_root, GeneratedFigureArtifact, LoopBackIterationLog, ModelDesignMode,
     NcbiFlaggedAnomaly, PdbCaAtom, PdbHetAtom, RunieCombinatorialSweepEntry, RunieComparisonRow,
-    SupervisedCalibratedNode, SupervisedGeneFamilySelection, SupervisedPdbStructure,
+    SupervisedGeneFamilySelection, SupervisedPdbStructure,
     SupervisedSequenceRecord, SupervisedSkylineCohort, SupervisorEscalationStatus,
     SupervisorRunManifest, SupervisorRunSpec,
 };
@@ -69,7 +74,7 @@ use crate::supervisor_manuscript::{
     sanitize_no_scratch_extensions, tex_esc, ManuscriptReference,
 };
 use crate::supervisor_study::{
-    aa1_to_aa3, aa3_to_aa1, aa_volume_proxy, align_and_trim_rrna_core,
+    aa1_to_aa3, aa3_to_aa1, align_and_trim_rrna_core,
     append_zero_star_dump_entry, batch_fetch_ncbi_accessions,
     compute_alignment_occupancy_bins, discover_and_cache_entrez_cohort,
     evaluate_population_cohort_4regimes, export_trimmed_supp_s2_rdna_fasta,
@@ -77,14 +82,15 @@ use crate::supervisor_study::{
     parse_locality_and_host, passes_supermatrix_phylogram_coverage_gate,
     phase_circular_mitogenome, recode_codon12, recode_ry3, revcomp_dna,
     sanitize_coding_dna_preserve_frame, sha256_hex12, translate_mito_table5_orf_min,
-    DetailedFunctionalFamily, DetailedPopsetEpoch, DetailedPopsetSkyline,
+    DetailedFunctionalFamily, DetailedPopsetSkyline,
     DiscoveredEntrezSummary, MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord,
     MultiCompartmentStudyReport,
 };
 use crate::tree_builder::{
+    compress_alignment_and_estimate_rates, evaluate_site_pattern_lnls,
     infer_native_ml_gene_tree, infer_native_ml_tree_with_bootstrap,
-    infer_native_ml_tree_with_bootstrap_control, MlBootstrapReport, PhyloRunModel,
-    SingleTreeRunMetrics,
+    infer_native_ml_tree_with_bootstrap_control, optimize_substitution_model_on_tree_seq,
+    parse_newick_to_ml_nodes, MlBootstrapReport, PhyloRunModel, SingleTreeRunMetrics,
 };
 
 pub fn clean_acgt_only(s: &str) -> String {
@@ -104,16 +110,6 @@ pub fn norm_species_key(s: &str) -> String {
         .map(|t| t.to_ascii_lowercase())
         .collect();
     toks.join(" ")
-}
-
-fn append_rotated_acgt(dst: &mut String, seq: &str, offset_hint: usize) {
-    let c = clean_acgt_only(seq);
-    if c.is_empty() {
-        return;
-    }
-    let off = offset_hint % c.len();
-    dst.push_str(&c[off..]);
-    dst.push_str(&c[..off]);
 }
 
 #[allow(dead_code)]
@@ -492,46 +488,24 @@ pub(crate) fn assemble_per_locus_supermatrix(
     let mut raw0_pairs = Vec::with_capacity(n_slots);
     let mut gated_otu_by_sector = [0usize; 7];
 
-    // Dense unphased Raw-0Beaker control builder (zero gap padding, zero short-slice tiling)
+    // Raw unphased single-taxon negative control builder (strictly using each taxon's own unaligned sequence)
     let build_raw0_for = |idx: usize| -> String {
         let mut raw_acgt = String::with_capacity(ortho64_cols_bp);
         if let Some(r0) = raw0_control_records.get(idx) {
             raw_acgt.push_str(&clean_acgt_only(&r0.sequence));
         }
-        if raw_acgt.len() < ortho64_cols_bp {
+        if raw_acgt.is_empty() {
             let safe_id = slot_entries[idx].0.replace(':', "_");
             let spk = norm_species_key(&slot_entries[idx].3);
             if let Some(ms) = mito_by_sp_low
                 .get(&safe_id)
                 .or_else(|| mito_by_sp_low.get(&spk))
             {
-                append_rotated_acgt(&mut raw_acgt, ms, idx.saturating_mul(2311));
+                raw_acgt.push_str(&clean_acgt_only(ms));
             }
         }
-        if !full_mitogenome_records.is_empty() {
-            let n_full = full_mitogenome_records.len();
-            let mut step = 0usize;
-            while raw_acgt.len() < ortho64_cols_bp && step < n_full * 2 {
-                let rec = &full_mitogenome_records[(idx + step) % n_full];
-                append_rotated_acgt(
-                    &mut raw_acgt,
-                    &rec.sequence,
-                    idx.saturating_mul(2311).saturating_add(step.saturating_mul(997)),
-                );
-                step += 1;
-            }
-        }
-        if raw_acgt.len() < ortho64_cols_bp {
-            let mut step = 0usize;
-            while raw_acgt.len() < ortho64_cols_bp && step < n_slots {
-                let s_alt = clean_acgt_only(&slot_entries[(idx + step) % n_slots].7);
-                if !s_alt.is_empty() {
-                    raw_acgt.push_str(&s_alt);
-                } else {
-                    break;
-                }
-                step += 1;
-            }
+        if raw_acgt.is_empty() {
+            raw_acgt.push_str(&clean_acgt_only(&slot_entries[idx].7));
         }
         raw_acgt.truncate(ortho64_cols_bp);
         if raw_acgt.len() < ortho64_cols_bp {
@@ -705,6 +679,8 @@ pub(crate) struct PartitionedStage3Output {
     pub msc_regime3_unrec4: CoalescentEngineRunResult,
     pub msc_regime4_raw0: CoalescentEngineRunResult,
     pub emp_tip_bls: HashMap<String, f64>,
+    pub phy_labels: Vec<String>,
+    pub full_mask_phy: u64,
     pub stage_ml_ufboot_ms: u128,
     pub stage_modeltest_ms: u128,
     pub stage_msc_ms: u128,
@@ -750,15 +726,15 @@ pub(crate) fn run_partitioned_4regime_stage3(
             .collect()
     };
     let (_, rcfv_ry3_v, pi_ry3) = compute_rcfv_4state_and_ry(&to_byte_vecs(&bundle.ry3_pairs));
-    let (rcfv_c12_4, rcfv_c12_ry, pi_c12) =
+    let (rcfv_c12_4, rcfv_c12_ry, _) =
         compute_rcfv_4state_and_ry(&to_byte_vecs(&bundle.codon12_pairs));
-    let (rcfv_unrec_v, _, pi_unrec) =
+    let (rcfv_unrec_v, _, _) =
         compute_rcfv_4state_and_ry(&to_byte_vecs(&bundle.unrec4_pairs));
-    let (rcfv_raw0_v, _, pi_raw0) = compute_rcfv_4state_and_ry(&to_byte_vecs(&bundle.raw0_pairs));
-    let rcfv_ry3 = round4(rcfv_ry3_v.max(0.0005));
-    let rcfv_codon12 = round4((0.5 * (rcfv_c12_4 + rcfv_c12_ry)).max(0.0008));
-    let rcfv_unrec4 = round4(rcfv_unrec_v.max(0.0015));
-    let rcfv_raw0 = round4(rcfv_raw0_v.max(rcfv_unrec4 + 0.002));
+    let (rcfv_raw0_v, _, _) = compute_rcfv_4state_and_ry(&to_byte_vecs(&bundle.raw0_pairs));
+    let rcfv_ry3 = round4(rcfv_ry3_v);
+    let rcfv_codon12 = round4(0.5 * (rcfv_c12_4 + rcfv_c12_ry));
+    let rcfv_unrec4 = round4(rcfv_unrec_v);
+    let rcfv_raw0 = round4(rcfv_raw0_v);
     append_zero_star_dump_entry(
         runs_root_dir,
         run_id,
@@ -770,12 +746,6 @@ pub(crate) fn run_partitioned_4regime_stage3(
     let (_, parsimony_informative_ry3, ry3_pats) =
         compress_alignment_patterns(&tip_labels, &to_byte_map(&bundle.ry3_pairs));
     let distinct_patterns_ry3 = ry3_pats.len();
-    let (_, _, c12_pats) =
-        compress_alignment_patterns(&tip_labels, &to_byte_map(&bundle.codon12_pairs));
-    let (_, _, unrec_pats) =
-        compress_alignment_patterns(&tip_labels, &to_byte_map(&bundle.unrec4_pairs));
-    let (_, _, raw0_pats) =
-        compress_alignment_patterns(&tip_labels, &to_byte_map(&bundle.raw0_pairs));
 
     let t_ml = Instant::now();
     eprintln!(
@@ -859,19 +829,6 @@ pub(crate) fn run_partitioned_4regime_stage3(
             .ok_or_else(|| format!("{}: failed parsing Partitioned RY3 ML tree", study_slug))?;
     let mut flat_tree = Vec::new();
     flatten_postorder(&parsed_root, &tip_to_idx, &mut flat_tree);
-    let flatten_regime = |nwk: &str, lbl: &str| {
-        let r = parse_phylo_tree(nwk, false, &empty_ages)
-            .ok_or_else(|| format!("Failed parsing {} tree", lbl))?;
-        let mut f = Vec::new();
-        flatten_postorder(&r, &tip_to_idx, &mut f);
-        Ok::<_, String>(f)
-    };
-    let flat_trees_4 = [
-        flat_tree.clone(),
-        flatten_regime(&part_res.unpartitioned_metrics.newick_tree, "Unpartitioned RY3")?,
-        flatten_regime(&ml_unrec.newick_tree, "Unrecoded-4")?,
-        flatten_regime(&ml_raw0.newick_tree, "Raw-0Beaker")?,
-    ];
 
     let full_mask_phy: u64 = if n_phy >= 64 {
         u64::MAX
@@ -895,7 +852,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
     };
     let lookup_split_boot = |indices: &[usize]| -> f64 {
         if indices.len() < 2 || indices.len() >= n_phy {
-            return part_res.partitioned_bootstrap.mean_split_support_pct;
+            return 0.0;
         }
         let mut mask = 0u64;
         for &i in indices {
@@ -918,7 +875,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 if clade_bipartition_recovered(indices, n_phy, &ml_split_set) {
                     100.0
                 } else {
-                    part_res.partitioned_bootstrap.mean_split_support_pct
+                    0.0
                 }
             })
     };
@@ -933,179 +890,109 @@ pub(crate) fn run_partitioned_4regime_stage3(
         lookup_split_boot(&sec_idxs(&['G'])),
     ];
 
-    // 32-Chain Combinatorial Sweep scored on each regime's own solved ML tree
+    // 32-Chain Combinatorial Sweep scored on each regime's own solved ML tree + alignment via true per-model MLE
     let t_mt = Instant::now();
-    let models: [(&str, usize, f64, f64, Vec<f64>, Vec<f64>, f64, bool); 8] = [
-        ("JC", 125, 1.0, 1.0, vec![1.0], vec![1.0], 0.0, true),
-        (
-            "K80+G4",
-            127,
-            3.62,
-            3.62,
-            vec![0.14, 0.48, 1.02, 2.36],
-            vec![0.25; 4],
-            0.0,
-            true,
-        ),
-        (
-            "HKY+F+I+G4",
-            131,
-            4.12,
-            4.12,
-            vec![0.16, 0.52, 1.05, 2.27],
-            vec![0.25; 4],
-            0.22,
-            false,
-        ),
-        (
-            "TN+F+I+G4",
-            132,
-            4.52,
-            3.68,
-            vec![0.16, 0.51, 1.04, 2.29],
-            vec![0.25; 4],
-            0.23,
-            false,
-        ),
-        (
-            "TIM2+F+I+G4",
-            133,
-            4.68,
-            3.82,
-            vec![0.15, 0.50, 1.05, 2.30],
-            vec![0.25; 4],
-            0.24,
-            false,
-        ),
-        (
-            "GTR+F+G4",
-            134,
-            4.86,
-            3.94,
-            vec![0.12, 0.44, 0.98, 2.46],
-            vec![0.25; 4],
-            0.0,
-            false,
-        ),
-        (
-            "GTR+F+I+G4",
-            135,
-            4.98,
-            4.06,
-            vec![0.15, 0.49, 1.03, 2.33],
-            vec![0.25; 4],
-            0.25,
-            false,
-        ),
-        (
-            "GTR+F+R2",
-            137,
-            5.18,
-            4.22,
-            vec![0.12, 0.65, 1.35, 2.38],
-            vec![0.35, 0.30, 0.20, 0.15],
-            0.20,
-            false,
-        ),
+    let branch_k = 2 * n_phy.saturating_sub(3) + 1;
+    let models: [(&str, usize, PhyloRunModel, bool); 8] = [
+        ("JC", 0, PhyloRunModel::JcUniform, true),
+        ("K80+G4", 2, PhyloRunModel::K80Gamma4, true),
+        ("HKY+F+I+G4", 6, PhyloRunModel::HkyInvGamma4, false),
+        ("TN+F+I+G4", 7, PhyloRunModel::Tn93InvGamma4, false),
+        ("TIM2+F+I+G4", 8, PhyloRunModel::Tim2InvGamma4, false),
+        ("GTR+F+G4", 9, PhyloRunModel::GtrInvGamma4Full, true),
+        ("GTR+F+I+G4", 10, PhyloRunModel::GtrInvGamma4Full, false),
+        ("GTR+F+R2", 10, PhyloRunModel::GtrFreeRate2, true),
     ];
+
+    let aln_ry3_cmp = compress_alignment_and_estimate_rates(&ry3_strings);
+    let aln_unrec_cmp = compress_alignment_and_estimate_rates(&unrec_strings);
+    let aln_raw0_cmp = compress_alignment_and_estimate_rates(&raw0_strings);
+
+    let nodes_r0 = parse_newick_to_ml_nodes(&part_res.partitioned_metrics.newick_tree, &tip_labels)
+        .ok_or_else(|| format!("{}: failed parsing Partitioned RY3 nodes", study_slug))?;
+    let nodes_r1 = parse_newick_to_ml_nodes(&part_res.unpartitioned_metrics.newick_tree, &tip_labels)
+        .ok_or_else(|| format!("{}: failed parsing Unpartitioned RY3 nodes", study_slug))?;
+    let nodes_r2 = parse_newick_to_ml_nodes(&ml_unrec.newick_tree, &tip_labels)
+        .ok_or_else(|| format!("{}: failed parsing Unrecoded-4 nodes", study_slug))?;
+    let nodes_r3 = parse_newick_to_ml_nodes(&ml_raw0.newick_tree, &tip_labels)
+        .ok_or_else(|| format!("{}: failed parsing Raw-0Beaker nodes", study_slug))?;
+
     let reg_defs = [
         (
             "Regime 1 (1st Best — 5 Beakers): Edge-Linked Partitioned RY3",
             "Partitioned-RY3",
-            &ry3_pats,
-            pi_ry3,
+            aln_ry3_cmp.patterns.len(),
             rcfv_ry3,
             part_res.partitioned_bootstrap.mean_split_support_pct,
         ),
         (
             "Regime 2 (2nd Nearest — 5 Beakers): Unpartitioned Concatenated RY3",
             "Unpartitioned-RY3",
-            &c12_pats,
-            pi_c12,
+            aln_ry3_cmp.patterns.len(),
             rcfv_ry3,
             part_res.unpartitioned_bootstrap.mean_split_support_pct,
         ),
         (
             "Regime 3 (3rd Medium — 4 Beakers): Unrecoded 4-State Concatenated",
             "Unrecoded-4",
-            &unrec_pats,
-            pi_unrec,
+            aln_unrec_cmp.patterns.len(),
             rcfv_unrec4,
             boot_rep_unrec.mean_split_support_pct,
         ),
         (
             "Regime 4 (4th Rejected — 0 Beakers): Uncleaned 0-Beaker Control",
             "Raw-0Beaker",
-            &raw0_pats,
-            pi_raw0,
+            aln_raw0_cmp.patterns.len(),
             rcfv_raw0,
             boot_rep_raw0.mean_split_support_pct,
         ),
     ];
-    let opt_sc_r: Vec<f64> = (0..4)
-        .map(|ri| {
-            let mut best_sc = 1.0_f64;
-            let mut best_l = f64::NEG_INFINITY;
-            for &cand in &[0.45_f64, 0.70, 0.95, 1.20, 1.50] {
-                let l = evaluate_felsenstein_ln_l(
-                    &flat_trees_4[ri],
-                    reg_defs[ri].2,
-                    &reg_defs[ri].3,
-                    4.98,
-                    4.06,
-                    &[0.15, 0.49, 1.03, 2.33],
-                    &[0.25; 4],
-                    0.25,
-                    cand,
-                );
-                if l > best_l {
-                    best_l = l;
-                    best_sc = cand;
-                }
-            }
-            best_sc
-        })
-        .collect();
 
     let n_ln_eff = (ortho64_cols_bp.max(2) as f64).ln();
-    let eval_results: Vec<(usize, usize, f64, f64, f64, u128)> = (0..32)
+    let eval_results: Vec<(usize, usize, usize, f64, f64, f64, u128, Vec<f64>)> = (0..32)
         .into_par_iter()
         .map(|cid| {
             let ri = cid / 8;
             let mi = cid % 8;
-            let (_, k_p, kp, ky, ref rc, ref rw, p_inv, eq_f) = models[mi];
-            let pi_u = if eq_f { [0.25; 4] } else { reg_defs[ri].3 };
+            let (_, k_sub, rm, force_no_inv) = models[mi];
+            let k_p = branch_k + k_sub;
+            let (nodes_ref, aln_ref) = match ri {
+                0 => (&nodes_r0, &aln_ry3_cmp),
+                1 => (&nodes_r1, &aln_ry3_cmp),
+                2 => (&nodes_r2, &aln_unrec_cmp),
+                _ => (&nodes_r3, &aln_raw0_cmp),
+            };
             let c0 = Instant::now();
-            let lnl = round4(evaluate_felsenstein_ln_l(
-                &flat_trees_4[ri],
-                reg_defs[ri].2,
-                &pi_u,
-                kp,
-                ky,
-                rc,
-                rw,
-                p_inv,
-                opt_sc_r[ri],
-            ));
+            let (q, pi_m, pinv, cats, raw_lnl) =
+                optimize_substitution_model_on_tree_seq(nodes_ref, aln_ref, rm, force_no_inv);
+            let lnl = round4(raw_lnl);
+            let aic = round4(-2.0 * raw_lnl + 2.0 * (k_p as f64));
+            let bic = round4(-2.0 * raw_lnl + (k_p as f64) * n_ln_eff);
+            // Cache per-site pattern likelihoods only for each regime's canonical reference model (mi == 6 GTR+F+I+G4 or mi == 2 HKY+F+I+G4)
+            let site_ell = if (ri == 0 && mi == 6)
+                || (ri == 1 && mi == 6)
+                || (ri == 2 && mi == 6)
+                || (ri == 3 && mi == 2)
+            {
+                evaluate_site_pattern_lnls(nodes_ref, aln_ref, &q, &pi_m, pinv, &cats, 1.0, false)
+            } else {
+                Vec::new()
+            };
             let cpu = c0.elapsed().as_millis().max(1);
-            (
-                ri,
-                mi,
-                lnl,
-                round4(-2.0 * lnl + 2.0 * (k_p as f64)),
-                round4(-2.0 * lnl + (k_p as f64) * n_ln_eff),
-                cpu,
-            )
+            (ri, mi, k_p, lnl, aic, bic, cpu, site_ell)
         })
         .collect();
 
+    let all_32_bics: Vec<f64> = eval_results.iter().map(|x| x.5).collect();
+    let bic_weights_32 = compute_bic_posterior_weights(&all_32_bics);
+
     let mut combinatorial_sweep_32_chains = Vec::with_capacity(32);
     let mut supervisor_sweep_entries = Vec::with_capacity(32);
-    for (ri, &(_, rshort, pats_r, _, r_rcfv, r_boot)) in reg_defs.iter().enumerate() {
+    for (ri, &(r_long, rshort, pats_len, r_rcfv, r_boot)) in reg_defs.iter().enumerate() {
         let best_r_lnl = eval_results
             .iter()
             .filter(|x| x.0 == ri)
-            .map(|x| x.2)
+            .map(|x| x.3)
             .fold(f64::NEG_INFINITY, f64::max);
         let b_eff = if ri == 3 {
             boot_rep_raw0.b_replicates
@@ -1113,11 +1000,9 @@ pub(crate) fn run_partitioned_4regime_stage3(
             b_reps
         };
         let mut r_chains = Vec::with_capacity(8);
-        for (mi, &(mname, k_p, _, _, _, _, _, _)) in models.iter().enumerate() {
-            let entry = eval_results
-                .iter()
-                .find(|x| x.0 == ri && x.1 == mi)
-                .unwrap();
+        for (mi, &(mname, _, _, _)) in models.iter().enumerate() {
+            let cid = ri * 8 + mi;
+            let entry = &eval_results[cid];
             r_chains.push(CombinatorialSweepChain {
                 regime_id: rshort.to_string(),
                 chain_rank_in_regime: 8 - mi,
@@ -1127,39 +1012,34 @@ pub(crate) fn run_partitioned_4regime_stage3(
                     rshort, mname, b_eff
                 ),
                 model_name: mname.to_string(),
-                k_free_params: k_p,
-                marginal_ln_l: entry.2,
-                delta_ln_l_vs_best: round4(entry.2 - best_r_lnl),
-                aic: entry.3,
-                bic: entry.4,
+                k_free_params: entry.2,
+                marginal_ln_l: entry.3,
+                delta_ln_l_vs_best: round4(entry.3 - best_r_lnl),
+                aic: entry.4,
+                bic: entry.5,
                 rcfv: r_rcfv,
                 bootstrap_support_pct: round4(r_boot),
-                posterior_prob: match ri {
-                    0 => 0.9994,
-                    1 => 0.9820,
-                    2 => 0.9010,
-                    _ => 0.3620,
-                },
+                posterior_prob: bic_weights_32[cid],
                 msa_time_ms: stage_msa_ms,
-                modeltest_time_ms: entry.5,
+                modeltest_time_ms: entry.6,
                 tree_mcmc_time_ms: stage_ml_ufboot_ms,
-                total_cpu_time_ms: stage_msa_ms + entry.5 + stage_ml_ufboot_ms,
+                total_cpu_time_ms: stage_msa_ms + entry.6 + stage_ml_ufboot_ms,
             });
             supervisor_sweep_entries.push(RunieCombinatorialSweepEntry {
                 chain_id: format!("R{}-M{}", ri + 1, mi + 1),
-                regime_name: reg_defs[ri].0.to_string(),
+                regime_name: r_long.to_string(),
                 substitution_model: mname.to_string(),
                 recoding_mode: rshort.to_string(),
                 aligned_cols_l: ortho64_cols_bp,
-                distinct_patterns: pats_r.len(),
+                distinct_patterns: pats_len,
                 parsimony_informative: parsimony_informative_ry3,
-                ln_l: entry.2,
-                aic: entry.3,
-                bic: entry.4,
+                ln_l: entry.3,
+                aic: entry.4,
+                bic: entry.5,
                 rcfv: r_rcfv,
                 msa_cpu_ms: stage_msa_ms,
-                tree_cpu_ms: stage_ml_ufboot_ms + entry.5,
-                total_cpu_ms: stage_msa_ms + stage_ml_ufboot_ms + entry.5,
+                tree_cpu_ms: stage_ml_ufboot_ms + entry.6,
+                total_cpu_ms: stage_msa_ms + stage_ml_ufboot_ms + entry.6,
             });
         }
         r_chains.sort_by(|a, b| {
@@ -1296,16 +1176,58 @@ pub(crate) fn run_partitioned_4regime_stage3(
         })
         .collect();
 
+    let raw0_map_64: HashMap<String, &str> = bundle
+        .raw0_pairs
+        .iter()
+        .map(|(k, v)| (k.clone(), v.as_str()))
+        .collect();
+    let span_by_loc: HashMap<&str, (usize, usize)> = bundle
+        .part_inputs
+        .iter()
+        .map(|p| (p.locus_name.as_str(), (p.start_col_1based.saturating_sub(1), p.end_col_1based)))
+        .collect();
+    let msc_trees_raw0: Vec<String> = bundle
+        .msc_partitions
+        .par_iter()
+        .filter_map(|(loc_nm, _, _, plen, pmap)| {
+            if pmap.len() < 8 {
+                return None;
+            }
+            let lbls: Vec<String> = pmap.keys().cloned().collect();
+            let seqs: Vec<String> = lbls
+                .iter()
+                .map(|k| {
+                    let full_r0 = raw0_map_64.get(k).copied().unwrap_or("");
+                    let mut seg = if let Some(&(s0, s1)) = span_by_loc.get(loc_nm.as_str()) {
+                        if s0 < full_r0.len() {
+                            full_r0[s0..s1.min(full_r0.len())].to_string()
+                        } else {
+                            String::new()
+                        }
+                    } else {
+                        full_r0.chars().take(*plen).collect()
+                    };
+                    if seg.bytes().filter(|b| matches!(b, b'A' | b'C' | b'G' | b'T')).count() < 12 {
+                        seg = full_r0.chars().take(*plen).collect();
+                    }
+                    if seg.len() < *plen {
+                        seg.push_str(&"-".repeat(*plen - seg.len()));
+                    }
+                    seg
+                })
+                .collect();
+            Some(infer_native_ml_gene_tree(&seqs, &lbls, PhyloRunModel::JcUniform).newick_tree)
+        })
+        .collect();
+
     let (msc_regime1_ry3, _, _) =
         run_native_quartet_coalescent(&format!("{}-RY3", msc_prefix), &msc_trees_ry3)?;
     let (msc_regime2_codon12, _, _) =
         run_native_quartet_coalescent(&format!("{}-Codon12", msc_prefix), &msc_trees_c12)?;
     let (msc_regime3_unrec4, _, _) =
         run_native_quartet_coalescent(&format!("{}-Unrec4", msc_prefix), &msc_trees_unrec)?;
-    let mut msc_regime4_raw0 = msc_regime3_unrec4.clone();
-    msc_regime4_raw0.engine_name = "Raw-0Beaker Negative Control".to_string();
-    msc_regime4_raw0.normalized_quartet_score =
-        round4((msc_regime3_unrec4.normalized_quartet_score - 0.14).max(0.34));
+    let (msc_regime4_raw0, _, _) =
+        run_native_quartet_coalescent(&format!("{}-Raw0", msc_prefix), &msc_trees_raw0)?;
     let val_msc = validate_tree(
         &format!(
             "Quartet MSC ({} Loci, {} Taxa)",
@@ -1395,7 +1317,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
         .map(|&x| (x - regime1_ry3_post_mean_ln_l).powi(2))
         .sum::<f64>()
         / (sm_post.len().max(1) as f64);
-    let regime1_ry3_marginal_ln_l = round4(regime1_ry3_post_mean_ln_l - 0.5 * sm_var.clamp(0.80, 5.50));
+    let regime1_ry3_marginal_ln_l = round4(regime1_ry3_post_mean_ln_l - 0.5 * sm_var.max(0.0));
     let (supermatrix_ess, supermatrix_rhat) = compute_ess_and_rhat(&sm_post);
     let stage_sm_mcmc_ms = t_sm_mcmc.elapsed().as_millis().max(1);
     eprintln!(
@@ -1403,6 +1325,15 @@ pub(crate) fn run_partitioned_4regime_stage3(
         stage_sm_mcmc_ms
     );
     let emp_tip_bls = extract_terminal_branch_map(&part_res.partitioned_metrics.newick_tree);
+
+    let ell_r0 = &eval_results[0 * 8 + 6].7;
+    let ell_r1 = &eval_results[1 * 8 + 6].7;
+    let ell_r2 = &eval_results[2 * 8 + 6].7;
+    let ell_r3 = &eval_results[3 * 8 + 2].7;
+    let z_r0_vs_r3 = compute_kh_paired_sites_z(ell_r0, &aln_ry3_cmp.weights, ell_r3, &aln_raw0_cmp.weights);
+    let z_r1_vs_r3 = compute_kh_paired_sites_z(ell_r1, &aln_ry3_cmp.weights, ell_r3, &aln_raw0_cmp.weights);
+    let z_r2_vs_r3 = compute_kh_paired_sites_z(ell_r2, &aln_unrec_cmp.weights, ell_r3, &aln_raw0_cmp.weights);
+    let z_r3_vs_r0 = compute_kh_paired_sites_z(ell_r3, &aln_raw0_cmp.weights, ell_r0, &aln_ry3_cmp.weights);
 
     let runie_9col_comparison_table = vec![
         RunieComparisonRow {
@@ -1422,7 +1353,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 "{:.1}% (B = {})",
                 part_res.partitioned_bootstrap.mean_split_support_pct, b_reps
             ),
-            posterior_z: 5.24,
+            posterior_z: z_r0_vs_r3,
             cpu_time_summary: format!(
                 "{} ms (MSA: {} ms, ML+Boot: {} ms)",
                 stage_msa_ms + stage_modeltest_ms + stage_ml_ufboot_ms,
@@ -1447,7 +1378,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 "{:.1}% (B = {})",
                 part_res.unpartitioned_bootstrap.mean_split_support_pct, b_reps
             ),
-            posterior_z: 4.58,
+            posterior_z: z_r1_vs_r3,
             cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
         },
         RunieComparisonRow {
@@ -1464,7 +1395,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 "{:.1}% (B = {})",
                 boot_rep_unrec.mean_split_support_pct, b_reps
             ),
-            posterior_z: 3.12,
+            posterior_z: z_r2_vs_r3,
             cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
         },
         RunieComparisonRow {
@@ -1481,7 +1412,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 "{:.1}% (B = {})",
                 boot_rep_raw0.mean_split_support_pct, boot_rep_raw0.b_replicates
             ),
-            posterior_z: -4.18,
+            posterior_z: z_r3_vs_r0,
             cpu_time_summary: format!("{} ms", stage_msa_ms + stage_ml_ufboot_ms),
         },
     ];
@@ -1511,6 +1442,8 @@ pub(crate) fn run_partitioned_4regime_stage3(
         msc_regime3_unrec4,
         msc_regime4_raw0,
         emp_tip_bls,
+        phy_labels: tip_labels,
+        full_mask_phy,
         stage_ml_ufboot_ms,
         stage_modeltest_ms,
         stage_msc_ms,
@@ -1534,7 +1467,7 @@ pub(crate) struct CohortRawInput {
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn run_standardized_12cohort_skylines(
     pop_inputs: &[CohortRawInput],
-    epoch_defs: &[(&str, f64, f64, &str, &str); 6],
+    _epoch_defs: &[(&str, f64, f64, &str, &str); 6],
     drv_summary_fn: fn(&str, f64) -> String,
     b_replicates: usize,
     seed_base: u64,
@@ -1566,7 +1499,7 @@ pub(crate) fn run_standardized_12cohort_skylines(
         }
     }
 
-    let cohort_results: Vec<(SupervisedSkylineCohort, DetailedPopsetSkyline, [f64; 4])> = (0..pop_inputs.len())
+    let cohort_results: Vec<(SupervisedSkylineCohort, DetailedPopsetSkyline, [f64; 4], [u128; 4], [f64; 4])> = (0..pop_inputs.len())
         .into_par_iter()
         .map(|ci| {
             let cin = &pop_inputs[ci];
@@ -1622,25 +1555,7 @@ pub(crate) fn run_standardized_12cohort_skylines(
                     cached_from_disk: true,
                 });
             }
-            let raw_bp_c: usize = recs.iter().map(|r| r.sequence.len()).sum();
             let t_pmsa = Instant::now();
-            let aligned_p = if is_coding {
-                align_sequences_mafft_native_with_config(
-                    &recs,
-                    &MafftNativeConfig {
-                        strategy: MafftNativeStrategy::FftNsI,
-                        ..Default::default()
-                    },
-                )
-            } else {
-                align_sequences_mafft_native(&recs)
-            };
-            let p_msa_ms = t_pmsa.elapsed().as_millis().max(1);
-            let a_seqs_full: Vec<Vec<u8>> = aligned_p
-                .1
-                .iter()
-                .map(|a| a.aligned_seq.as_bytes().to_vec())
-                .collect();
             let coh_tel = evaluate_population_cohort_4regimes(
                 &cin.cohort_code,
                 cin.ploidy_scalar,
@@ -1650,100 +1565,90 @@ pub(crate) fn run_standardized_12cohort_skylines(
                 b_coh,
                 seed_base ^ ((ci as u64 + 1) * 7919),
             );
-            let core_byte_vecs: Vec<Vec<u8>> = coh_tel
+            let p_msa_ms = t_pmsa.elapsed().as_millis().max(1);
+            let active_id_set: HashSet<&str> = coh_tel
+                .core_aligned_labels
+                .iter()
+                .map(|s| s.as_str())
+                .collect();
+            let active_metas: Vec<MultiCompartmentIsolateMeta> = iso_metas
+                .into_iter()
+                .filter(|m| active_id_set.contains(m.isolate_id.as_str()))
+                .collect();
+            let raw_bp_c: usize = active_metas.iter().map(|m| m.raw_length_bp).sum();
+            let r1_vecs: Vec<Vec<u8>> = coh_tel
                 .core_aligned_seqs
                 .iter()
                 .map(|s| s.as_bytes().to_vec())
                 .collect();
-            let (stat_vecs, full_cols_bp) =
-                if coh_tel.core_cols >= 180 && core_byte_vecs.len() >= 4 {
-                    (&core_byte_vecs, coh_tel.core_cols)
-                } else {
-                    (
-                        &a_seqs_full,
-                        a_seqs_full.first().map(|s| s.len()).unwrap_or(0),
-                    )
-                };
-            let (theta_w, pi_val, taj_d) = compute_popgen_summary_stats(stat_vecs);
-            let tip_ages: Vec<f64> = vec![0.0; recs.len()];
-            let mut coal_h = Vec::with_capacity(recs.len().saturating_sub(1));
-            for i in 1..recs.len() {
-                let frac = (i as f64) / (recs.len().max(1) as f64);
-                let time_scale = if cin.ploidy_scalar >= 2.0 { 160.0 } else { 95.0 };
-                coal_h.push(
-                    (theta_w / (2.0 * cin.mu_rate.max(1e-9))).clamp(0.4, 2.5)
-                        * frac.powf(1.3)
-                        * time_scale,
-                );
-            }
-            let base_ne = ((pi_val / (2.0 * cin.mu_rate.max(1e-9))) * 120_000.0)
-                .clamp(18_000.0, 950_000.0)
-                * cin.ploidy_scalar;
-            let mut epochs = Vec::with_capacity(6);
-            let (mut ep_ka, mut ep_med, mut ep_lo, mut ep_hi, mut ep_c12, mut ep_rw0) = (
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
-            );
-            for (ei, &(elbl, s_ka, e_ka, hlbl, drv)) in epoch_defs.iter().enumerate() {
-                let (act, ce, exp) = compute_epoch_coalescent_stats(&tip_ages, &coal_h, s_ka, e_ka);
-                let mod_f = match ei {
-                    0 => 0.72,
-                    1 => 0.44,
-                    2 => 1.05,
-                    3 => 1.85,
-                    4 => 2.65,
-                    _ => {
-                        if !is_coding {
-                            2.40
-                        } else if taj_d < -0.5 {
-                            4.20
-                        } else {
-                            3.10
-                        }
-                    }
-                };
-                let med = (base_ne * mod_f).round();
-                let lo = (med * 0.58).round();
-                let hi = (med * 1.62).round();
-                epochs.push(DetailedPopsetEpoch {
-                    epoch_index: ei + 1,
-                    epoch_label: elbl.to_string(),
-                    time_start_ka: s_ka,
-                    time_end_ka: e_ka,
-                    time_midpoint_ka: (s_ka + e_ka) * 0.5,
-                    horizon_label: hlbl.to_string(),
-                    biogeographic_driver: drv.to_string(),
-                    runie_ry3_ne_median: med,
-                    runie_ry3_ne_lo95: lo,
-                    runie_ry3_ne_hi95: hi,
-                    codon12_ne_median: (med * 1.12).round(),
-                    unrec4_ne_median: (med * 1.38).round(),
-                    raw0_ne_median: (med * 2.45).round(),
-                    active_lineages: act,
-                    coalescent_events: ce,
-                    coalescent_exposure: round4(exp),
-                });
-                ep_ka.push((s_ka + e_ka) * 0.5);
-                ep_med.push(med);
-                ep_lo.push(lo);
-                ep_hi.push(hi);
-                ep_c12.push((med * 1.12).round());
-                ep_rw0.push((med * 2.45).round());
-            }
-            let mut p_rng = FastRng::new(seed_base ^ ((ci as u64 + 1) * 131));
-            let base_p_l = coh_tel.raw_lnl_quad[0];
-            let p_post: Vec<f64> = (0..1200)
-                .map(|k| base_p_l - 0.5 * ((k as f64) % 9.0) * 0.08 + p_rng.next_f64() * 0.16)
+            let r2_vecs: Vec<Vec<u8>> = coh_tel
+                .r2_aligned_seqs
+                .iter()
+                .map(|s| s.as_bytes().to_vec())
                 .collect();
-            let (p_ess, p_rhat) = compute_ess_and_rhat(&p_post);
+            let r3_vecs: Vec<Vec<u8>> = coh_tel
+                .r3_aligned_seqs
+                .iter()
+                .map(|s| s.as_bytes().to_vec())
+                .collect();
+            let r4_vecs: Vec<Vec<u8>> = coh_tel
+                .r4_aligned_seqs
+                .iter()
+                .map(|s| s.as_bytes().to_vec())
+                .collect();
+            let full_cols_bp = r1_vecs.first().map(|s| s.len()).unwrap_or(coh_tel.core_cols);
+            let (theta_w, pi_val, taj_d) = compute_popgen_summary_stats(&r1_vecs);
+
+            let coh_seed = seed_base ^ ((ci as u64 + 1) * 131);
+            let bsp_r1 = run_empirical_bayesian_skyline_mcmc(
+                &coh_tel.core_aligned_labels,
+                &r1_vecs,
+                cin.mu_rate,
+                cin.ploidy_scalar,
+                theta_w,
+                25_000,
+                coh_seed,
+            );
+            let bsp_r2 = run_empirical_bayesian_skyline_mcmc(
+                &coh_tel.core_aligned_labels,
+                &r2_vecs,
+                cin.mu_rate,
+                cin.ploidy_scalar,
+                theta_w,
+                25_000,
+                coh_seed ^ 0x22,
+            );
+            let bsp_r3 = run_empirical_bayesian_skyline_mcmc(
+                &coh_tel.core_aligned_labels,
+                &r3_vecs,
+                cin.mu_rate,
+                cin.ploidy_scalar,
+                theta_w,
+                25_000,
+                coh_seed ^ 0x33,
+            );
+            let bsp_r4 = run_empirical_bayesian_skyline_mcmc(
+                &coh_tel.core_aligned_labels,
+                &r4_vecs,
+                cin.mu_rate,
+                cin.ploidy_scalar,
+                theta_w,
+                25_000,
+                coh_seed ^ 0x44,
+            );
+            let epochs = assemble_empirical_popset_epochs(&bsp_r1, &bsp_r2, &bsp_r3, &bsp_r4);
+            let ep_ka: Vec<f64> = epochs.iter().map(|e| e.time_midpoint_ka).collect();
+            let ep_med: Vec<f64> = epochs.iter().map(|e| e.runie_ry3_ne_median).collect();
+            let ep_lo: Vec<f64> = epochs.iter().map(|e| e.runie_ry3_ne_lo95).collect();
+            let ep_hi: Vec<f64> = epochs.iter().map(|e| e.runie_ry3_ne_hi95).collect();
+            let ep_c12: Vec<f64> = epochs.iter().map(|e| e.codon12_ne_median).collect();
+            let ep_rw0: Vec<f64> = epochs.iter().map(|e| e.raw0_ne_median).collect();
+
             let ptot_ms = pt0.elapsed().as_millis().max(p_msa_ms + 1);
-            let sp_resolved = recs
+            let sp_resolved = active_metas
                 .first()
-                .map(|r| r.taxon.clone())
+                .map(|r| r.organism.clone())
+                .or_else(|| recs.first().map(|r| r.taxon.clone()))
                 .unwrap_or_else(|| cin.clade_lineage.clone());
             let gui_c = SupervisedSkylineCohort {
                 cohort_id: cin.cohort_code.clone(),
@@ -1753,12 +1658,12 @@ pub(crate) fn run_standardized_12cohort_skylines(
                 country_lat_lon: cin.country_lat_lon.clone(),
                 isolation_source: cin.locus_name.clone(),
                 locus_name: cin.locus_name.clone(),
-                sample_size_n: recs.len(),
+                sample_size_n: coh_tel.core_aligned_seqs.len(),
                 aligned_bp: full_cols_bp,
                 tajima_d: round4(taj_d),
                 nucleotide_diversity_pi: round4(pi_val),
-                ess: round4(p_ess),
-                rhat: round4(p_rhat),
+                ess: bsp_r1.ess,
+                rhat: bsp_r1.rhat,
                 epochs_ka: ep_ka,
                 runie_mcmc_ne_median: ep_med,
                 runie_mcmc_ne_lo95: ep_lo,
@@ -1777,11 +1682,11 @@ pub(crate) fn run_standardized_12cohort_skylines(
                 locus_name: cin.locus_name.clone(),
                 ploidy_scalar: cin.ploidy_scalar,
                 evolutionary_context: drv_summary_fn(&cin.cohort_code, taj_d),
-                num_isolates: recs.len(),
+                num_isolates: coh_tel.core_aligned_seqs.len(),
                 raw_bp: raw_bp_c,
                 aligned_cols_bp: full_cols_bp,
-                distinct_patterns_ry3: coh_tel.core_cols.max(10),
-                parsimony_informative_ry3: (coh_tel.core_cols / 12).max(4),
+                distinct_patterns_ry3: bsp_r1.distinct_patterns,
+                parsimony_informative_ry3: bsp_r1.parsimony_informative_sites,
                 rcfv_ry3: round4(coh_tel.rcfv_quad[0]),
                 rcfv_codon12: round4(coh_tel.rcfv_quad[1]),
                 rcfv_unrecoded: round4(coh_tel.rcfv_quad[2]),
@@ -1789,31 +1694,41 @@ pub(crate) fn run_standardized_12cohort_skylines(
                 tajima_d: round4(taj_d),
                 watterson_theta: round4(theta_w),
                 nucleotide_diversity_pi: round4(pi_val),
-                runie_ry3_marginal_ln_l: round4(base_p_l),
-                runie_ry3_post_mean_ln_l: round4(base_p_l + 0.4),
+                runie_ry3_marginal_ln_l: round4(coh_tel.raw_lnl_quad[0]),
+                runie_ry3_post_mean_ln_l: round4(coh_tel.raw_lnl_quad[0]),
                 codon12_ln_l: round4(coh_tel.raw_lnl_quad[1]),
                 unrec4_ln_l: round4(coh_tel.raw_lnl_quad[2]),
                 raw0_ln_l: round4(coh_tel.raw_lnl_quad[3]),
-                ess: round4(p_ess),
-                rhat: round4(p_rhat),
+                ess: bsp_r1.ess,
+                rhat: bsp_r1.rhat,
                 msa_cpu_ms: p_msa_ms,
                 tree_mcmc_cpu_ms: ptot_ms.saturating_sub(p_msa_ms),
                 total_cpu_ms: ptot_ms,
                 epochs,
-                isolates: iso_metas,
+                isolates: active_metas,
             };
-            (gui_c, pop_c, coh_tel.boot_quad)
+            (
+                gui_c,
+                pop_c,
+                coh_tel.boot_quad,
+                coh_tel.regime_cpu_ms,
+                coh_tel.regime_kh_z,
+            )
         })
         .collect();
 
     let mut gui_skylines = Vec::with_capacity(pop_inputs.len());
     let mut popset_skylines = Vec::with_capacity(pop_inputs.len());
     let mut coh_boot_sums = [0.0_f64; 4];
-    for (g_c, p_c, bq) in cohort_results {
+    let mut reg_cpu_sums = [0u128; 4];
+    let mut reg_kh_sums = [0.0_f64; 4];
+    for (g_c, p_c, bq, r_ms, r_kh) in cohort_results {
         gui_skylines.push(g_c);
         popset_skylines.push(p_c);
         for k in 0..4 {
             coh_boot_sums[k] += bq[k];
+            reg_cpu_sums[k] += r_ms[k];
+            reg_kh_sums[k] += r_kh[k];
         }
     }
     let stage_popsets_mcmc_ms = t_pop.elapsed().as_millis().max(1);
@@ -1824,6 +1739,12 @@ pub(crate) fn run_standardized_12cohort_skylines(
         round4(coh_boot_sums[2] / d),
         round4(coh_boot_sums[3] / d),
     ];
+    let kh_means = [
+        round4(reg_kh_sums[0] / d),
+        round4(reg_kh_sums[1] / d),
+        round4(reg_kh_sums[2] / d),
+        round4(reg_kh_sums[3] / d),
+    ];
     let coh_json = json!({
         "b_per_cohort": b_coh,
         "cohorts_evaluated": popset_skylines.len(),
@@ -1831,6 +1752,8 @@ pub(crate) fn run_standardized_12cohort_skylines(
         "mean_codon12_pct": means[1],
         "mean_unrec4_pct": means[2],
         "mean_raw0_pct": means[3],
+        "regime_cpu_ms": reg_cpu_sums,
+        "mean_regime_kh_z": kh_means,
     });
     if let Ok(s) = serde_json::to_string_pretty(&coh_json) {
         let _ = fs::write(run_dir.join("trees/popset_cohort_bootstraps.json"), s);
@@ -2044,18 +1967,45 @@ pub(crate) fn render_canonical_table_3b_html(
     let avg_rcfv_cod = popsets.iter().map(|p| p.rcfv_codon12).sum::<f64>() / n;
     let avg_rcfv_unr = popsets.iter().map(|p| p.rcfv_unrecoded).sum::<f64>() / n;
     let avg_rcfv_raw = popsets.iter().map(|p| p.rcfv_raw0).sum::<f64>() / n;
+    let paired_z = |vals_a: Vec<f64>, vals_b: Vec<f64>| -> f64 {
+        let k = vals_a.len().min(vals_b.len());
+        if k < 2 {
+            return 0.0;
+        }
+        let diffs: Vec<f64> = (0..k).map(|i| vals_a[i] - vals_b[i]).collect();
+        let mean_d = diffs.iter().sum::<f64>() / (k as f64);
+        let var_d = diffs.iter().map(|&d| (d - mean_d).powi(2)).sum::<f64>() / ((k - 1) as f64);
+        let se = (var_d / (k as f64)).sqrt();
+        if se > 1e-9 { round4(mean_d / se) } else { 0.0 }
+    };
+    let z_r1 = paired_z(
+        popsets.iter().map(|p| p.runie_ry3_marginal_ln_l).collect(),
+        popsets.iter().map(|p| p.raw0_ln_l).collect(),
+    );
+    let z_r2 = paired_z(
+        popsets.iter().map(|p| p.codon12_ln_l).collect(),
+        popsets.iter().map(|p| p.raw0_ln_l).collect(),
+    );
+    let z_r3 = paired_z(
+        popsets.iter().map(|p| p.unrec4_ln_l).collect(),
+        popsets.iter().map(|p| p.raw0_ln_l).collect(),
+    );
+    let z_r4 = paired_z(
+        popsets.iter().map(|p| p.raw0_ln_l).collect(),
+        popsets.iter().map(|p| p.runie_ry3_marginal_ln_l).collect(),
+    );
     format!(
         r#"<div class="labs-copy-box" data-copy-mode="table" id="table-3b">
   <div class="labs-copy-box-header"><span class="labs-copy-title">Table 3B. RuNIE Pipeline Comparison Table: {}</span></div>
   <div class="labs-table-scroll"><table class="labs-data-table labs-compact-table">
     <thead>
-      <tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap (B = 500)</th><th>Posterior Z</th><th>CPU Time</th></tr>
+      <tr><th>Rank</th><th>Tool Chain (Execution Order: Unmarked = Internal; * = External)</th><th>Model Summary</th><th>Marginal ln L (nats)</th><th>Delta ln L vs. Best</th><th>RCFV</th><th>RuNIE Bootstrap</th><th>Paired Cohort Z</th><th>Wall Time</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>1st (Best)</strong></td><td>popgen-blind-dualpass -&gt; mafft-native (FFT-NS-i / E-INS-i) -&gt; Clone Deduplication + Buneman Quartets -&gt; runie-mcmc-skyline</td><td>HKY/GTR+F+I+G4 Cohort Core (Shallow Guarded)</td><td><strong>{}</strong></td><td>0.00 (Ref)</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>+4.86</td><td>{:.2} s (12 cohorts)</td></tr>
-      <tr><td><strong>2nd (Nearest)</strong></td><td>popgen-blind-dualpass -&gt; mafft-native -&gt; Full 3-Pos Coding -&gt; runie-mcmc-skyline</td><td>TN93+F+I+G4 Progressive Skyline</td><td><strong>{}</strong></td><td>{}</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>+3.72</td><td>{:.2} s (12 cohorts)</td></tr>
-      <tr><td><strong>3rd (Medium)</strong></td><td>popgen-blind-dualpass -&gt; gotoh-msa -&gt; Unrecoded 4-State -&gt; runie-mcmc-skyline</td><td>4-State JC/GTR+G4 Skyline Baseline</td><td><strong>{}</strong></td><td>{}</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>+2.18</td><td>{:.2} s (12 cohorts)</td></tr>
-      <tr><td><strong>4th (Rejected)</strong></td><td>Uncleaned Overhang Control (0-Beaker) -&gt; raw0 -&gt; runie-mcmc-skyline</td><td>0-Beaker Unfiltered Negative Control</td><td><strong>{}</strong></td><td>{}</td><td>{:.4}</td><td>{:.1}% (B = 500)</td><td>-3.94</td><td>{:.2} s (Rejected 0-Beaker)</td></tr>
+      <tr><td><strong>1st (Best)</strong></td><td>popgen-blind-dualpass -&gt; mafft-native (FFT-NS-i / E-INS-i) -&gt; Homologous Core + Buneman Quartets -&gt; GMRF Skyline MCMC</td><td>HKY/GTR+F+I+G4 Cohort Core (Shallow Guarded)</td><td><strong>{}</strong></td><td>0.00 (Ref)</td><td>{:.4}</td><td>{:.1}%</td><td>{:+.2}</td><td>{:.2} s (12 cohorts)</td></tr>
+      <tr><td><strong>2nd (Nearest)</strong></td><td>popgen-blind-dualpass -&gt; mafft-native -&gt; Progressive Alignment -&gt; GMRF Skyline MCMC</td><td>K80+G4 Progressive Skyline</td><td><strong>{}</strong></td><td>{}</td><td>{:.4}</td><td>{:.1}%</td><td>{:+.2}</td><td>Shared Stage 5 ({:.2} s)</td></tr>
+      <tr><td><strong>3rd (Medium)</strong></td><td>popgen-blind-dualpass -&gt; gotoh-msa -&gt; Unrecoded 4-State -&gt; GMRF Skyline MCMC</td><td>4-State JC Uniform Skyline Baseline</td><td><strong>{}</strong></td><td>{}</td><td>{:.4}</td><td>{:.1}%</td><td>{:+.2}</td><td>Shared Stage 5 ({:.2} s)</td></tr>
+      <tr><td><strong>4th (Rejected)</strong></td><td>Uncleaned Overhang Control (0-Beaker) -&gt; raw0 -&gt; GMRF Skyline MCMC</td><td>0-Beaker Unfiltered Negative Control</td><td><strong>{}</strong></td><td>{}</td><td>{:.4}</td><td>{:.1}%</td><td>{:+.2}</td><td>Shared Stage 5 ({:.2} s)</td></tr>
     </tbody>
   </table></div>
   <div class="labs-box-tool-footer" role="note" aria-label="Computational Tool Attribution">{}</div>
@@ -2064,22 +2014,26 @@ pub(crate) fn render_canonical_table_3b_html(
         fmt_lnl(sum_ry3_lnl),
         avg_rcfv_ry3,
         coh_boot_pcts[0],
+        z_r1,
         pop_s,
         fmt_lnl(sum_cod_lnl),
         fmt_lnl(sum_cod_lnl - sum_ry3_lnl),
         avg_rcfv_cod,
         coh_boot_pcts[1],
-        pop_s * 1.06,
+        z_r2,
+        pop_s,
         fmt_lnl(sum_unr_lnl),
         fmt_lnl(sum_unr_lnl - sum_ry3_lnl),
         avg_rcfv_unr,
         coh_boot_pcts[2],
-        pop_s * 1.11,
+        z_r3,
+        pop_s,
         fmt_lnl(sum_raw_lnl),
         fmt_lnl(sum_raw_lnl - sum_ry3_lnl),
         avg_rcfv_raw,
         coh_boot_pcts[3],
-        pop_s * 0.94,
+        z_r4,
+        pop_s,
         footer_note,
     )
 }
@@ -3215,6 +3169,9 @@ pub fn build_pdb_structure_from_template(
     let template_aa_seq: String = template_cas.iter().map(|t| t.2).collect();
     let mut threaded_map: Vec<(usize, char)> = Vec::with_capacity(template_cas.len());
     let mut cys_target_res_seq = spec.cys_site;
+    let mut aa_ident_pct = 0.0_f64;
+    let mut aa_matches_cnt = 0usize;
+    let mut aa_aligned_cnt = 0usize;
 
     if !target_aa_seq.is_empty() && !template_cas.is_empty() {
         let pair_recs = vec![
@@ -3248,6 +3205,12 @@ pub fn build_pdb_structure_from_template(
             let (mut t_cursor, mut q_cursor) = (0usize, 0usize);
             for col in 0..t_aln.len().min(q_aln.len()) {
                 let (tb, qb) = (t_aln[col], q_aln[col]);
+                if tb != b'-' && qb != b'-' {
+                    aa_aligned_cnt += 1;
+                    if tb == qb {
+                        aa_matches_cnt += 1;
+                    }
+                }
                 if qb != b'-' {
                     q_cursor += 1;
                 }
@@ -3264,6 +3227,9 @@ pub fn build_pdb_structure_from_template(
                     threaded_map.push((q_num, q_ch));
                     t_cursor += 1;
                 }
+            }
+            if aa_aligned_cnt > 0 {
+                aa_ident_pct = round4((aa_matches_cnt as f64) * 100.0 / (aa_aligned_cnt as f64));
             }
         }
     }
@@ -3302,9 +3268,10 @@ pub fn build_pdb_structure_from_template(
     };
 
     let mut atoms = Vec::with_capacity(template_cas.len());
+    let mut chain_a_cas: Vec<(usize, f64, f64, f64)> = Vec::with_capacity(template_cas.len());
     let mut pdb_txt = String::with_capacity(64_000);
     pdb_txt.push_str(&format!(
-        "HEADER    {}    21-NOV-26   {}\nTITLE     {} {} ({}) THREADED ON {}\n",
+        "HEADER    {}    EMPIRICAL   {}\nTITLE     {} {} ({}) ALIGNED TO {}\n",
         spec.gene_symbol.to_ascii_uppercase(),
         pdb_up,
         organism.to_ascii_uppercase(),
@@ -3312,56 +3279,15 @@ pub fn build_pdb_structure_from_template(
         accession,
         pdb_up
     ));
-    let mut rmsd_sq_sum = 0.0f64;
-    let mut tm_sum = 0.0f64;
-    let l_norm = (template_cas.len().max(20) as f64) - 15.0;
-    let d0 = (1.24 * l_norm.cbrt() - 1.8).max(1.5);
 
-    for (idx, &(tpl_res, ref _res3, tpl_aa, tx, ty, tz, _tpl_b)) in template_cas.iter().enumerate()
-    {
+    // Preserve exact experimental crystal coordinates and B-factors from PDB template (no heuristic coordinate perturbation)
+    for (idx, &(tpl_res, ref _res3, _tpl_aa, tx, ty, tz, tpl_b)) in template_cas.iter().enumerate() {
         let (_q_res_seq, q_aa) = threaded_map[idx];
         let region = classify_region(tpl_res);
-        let vol_delta = if q_aa == tpl_aa
-            || tpl_res == spec.cys_site
-            || (ih_lo..=ih_hi).contains(&tpl_res)
-            || (cl_lo..=cl_hi).contains(&tpl_res)
-        {
-            0.0
-        } else {
-            ((aa_volume_proxy(q_aa) - aa_volume_proxy(tpl_aa)) / 180.0).clamp(-0.85, 0.85)
-        };
-        let prev = if idx > 0 { &template_cas[idx - 1] } else { &template_cas[idx] };
-        let next = if idx + 1 < template_cas.len() {
-            &template_cas[idx + 1]
-        } else {
-            &template_cas[idx]
-        };
-        let ux = next.3 - prev.3;
-        let uy = next.4 - prev.4;
-        let uz = next.5 - prev.5;
-        let unorm = (ux * ux + uy * uy + uz * uz).sqrt().max(1.0);
-        let (nx, ny, nz) = (-uy / unorm, ux / unorm, (uz / unorm) * 0.35);
-        let disp_scale = if matches!(region, "CYS_LOOP" | "I_HELIX") {
-            0.32
-        } else {
-            0.68
-        };
-        let (dx, dy, dz) = (
-            vol_delta * disp_scale * nx,
-            vol_delta * disp_scale * ny,
-            vol_delta * disp_scale * nz,
-        );
-        let (x, y, z) = (round4(tx + dx), round4(ty + dy), round4(tz + dz));
-        let d_i = round4((dx * dx + dy * dy + dz * dz).sqrt());
-        rmsd_sq_sum += d_i * d_i;
-        tm_sum += 1.0 / (1.0 + (d_i / d0).powi(2));
-        let bfac = if q_aa == tpl_aa {
-            97.2
-        } else if matches!(region, "CYS_LOOP" | "I_HELIX" | "SRS1_POCKET") {
-            90.4
-        } else {
-            79.8
-        };
+        let x = round4(tx);
+        let y = round4(ty);
+        let z = round4(tz);
+        let bfac = round4(tpl_b);
         let res3 = aa1_to_aa3(q_aa);
         pdb_txt.push_str(&format!(
             "ATOM  {:5}  CA  {} {}{:4}    {:8.3}{:8.3}{:8.3}  1.00{:6.2}           C\n",
@@ -3374,6 +3300,7 @@ pub fn build_pdb_structure_from_template(
             z,
             bfac
         ));
+        chain_a_cas.push((tpl_res, x, y, z));
         atoms.push(PdbCaAtom {
             residue_seq: tpl_res,
             residue_name_3: res3.to_string(),
@@ -3382,10 +3309,10 @@ pub fn build_pdb_structure_from_template(
             x,
             y,
             z,
-            template_x: round4(tx),
-            template_y: round4(ty),
-            template_z: round4(tz),
-            per_residue_rmsd_angstrom: d_i,
+            template_x: x,
+            template_y: y,
+            template_z: z,
+            per_residue_rmsd_angstrom: 0.0,
             b_factor_conservation: bfac,
             secondary_structure: region.to_string(),
         });
@@ -3445,14 +3372,33 @@ pub fn build_pdb_structure_from_template(
     pdb_txt.push_str("END\n");
     let _ = fs::write(pdb_dir.join(&spec.pdb_filename), &pdb_txt);
 
-    let n_res = atoms.len().max(1);
-    let global_rmsd = round4((rmsd_sq_sum / (n_res as f64)).sqrt());
-    let tm_score = round4((tm_sum / (n_res as f64)).clamp(0.75, 0.99));
-    let pocket_center = fe_xyz
-        .map(|(fx, fy, fz)| (round4(fx), round4(fy), round4(fz)))
-        .unwrap_or((51.969, 67.648, 45.223));
-    let fe_sg_ang = proximal_cys_sg.map(|p| p.4).unwrap_or(2.382);
-    let catalytic_residues = if spec.catalytic_residues.is_empty() {
+    let emp_struct = analyze_pdb_file_empirically(
+        &template_path,
+        chain_ch,
+        &spec.het_resname,
+        (spec.het_resseq > 0).then_some(spec.het_resseq as i32),
+        &chain_a_cas,
+    )
+    .ok();
+
+    let (global_rmsd, tm_score, pocket_center, pocket_radius, pocket_volume, docking_affinity) =
+        if let Some(ref es) = emp_struct {
+            (
+                es.kabsch_rmsd_angstrom,
+                es.tm_score,
+                es.pocket_center_xyz,
+                es.pocket_radius_angstrom,
+                es.pocket_volume_a3,
+                es.docking_affinity_kcal_mol,
+            )
+        } else {
+            let pc = fe_xyz
+                .map(|(fx, fy, fz)| (round4(fx), round4(fy), round4(fz)))
+                .unwrap_or((0.0, 0.0, 0.0));
+            (0.0, 1.0, pc, 0.0, 0.0, 0.0)
+        };
+    let fe_sg_ang = proximal_cys_sg.map(|p| p.4).unwrap_or(0.0);
+    let mut catalytic_residues = if spec.catalytic_residues.is_empty() {
         vec![
             format!(
                 "Cys{} / {} Cys{} (Proximal Thiolate; Fe-Sγ = {:.2} Å)",
@@ -3469,6 +3415,12 @@ pub fn build_pdb_structure_from_template(
             })
             .collect()
     };
+    if aa_aligned_cnt > 0 {
+        catalytic_residues.push(format!(
+            "Target vs. {} Identity: {:.1}% ({}/{} aligned residues)",
+            pdb_up, aa_ident_pct, aa_matches_cnt, aa_aligned_cnt
+        ));
+    }
 
     SupervisedPdbStructure {
         structure_id: format!(
@@ -3484,9 +3436,9 @@ pub fn build_pdb_structure_from_template(
         kabsch_rmsd_angstrom: global_rmsd,
         tm_score,
         pocket_center_xyz: pocket_center,
-        pocket_radius_angstrom: 7.4,
-        pocket_volume_a3: 1094.2,
-        docking_affinity_kcal_mol: -9.42,
+        pocket_radius_angstrom: pocket_radius,
+        pocket_volume_a3: pocket_volume,
+        docking_affinity_kcal_mol: docking_affinity,
         catalytic_residues,
         pdb_file_rel_path: format!("pdb/{}", spec.pdb_filename),
         atoms,
@@ -6204,13 +6156,9 @@ pub fn execute_declarative_study(
                 .enumerate()
                 .map(|(i, (r, raw_u))| {
                     let mut c = r.clone();
-                    let shift = (i * 1973) % raw_u.len().max(1);
-                    let mut rot = String::with_capacity(2400);
-                    append_rotated_acgt(&mut rot, raw_u, shift);
-                    if rot.len() > 2400 {
-                        rot.truncate(2400);
-                    }
-                    c.sequence = if i % 2 == 1 { revcomp_dna(&rot) } else { rot };
+                    let cleaned = clean_acgt_only(raw_u);
+                    let slice = &cleaned[..cleaned.len().min(2400)];
+                    c.sequence = if i % 2 == 1 { revcomp_dna(slice) } else { slice.to_string() };
                     c
                 })
                 .collect();
@@ -6363,71 +6311,11 @@ pub fn execute_declarative_study(
                 s_viz.push_str(&"?".repeat(*plen));
             }
         }
-        let mut raw0_buf = String::with_capacity(supermatrix_cols_bp);
-        let base_raw = clean_acgt_only(&raw0_control_records[idx].sequence);
-        if !base_raw.is_empty() {
-            let shift = idx.saturating_mul(1973) % base_raw.len();
-            let mut rot = format!("{}{}", &base_raw[shift..], &base_raw[..shift]);
-            if idx % 2 == 1 {
-                rot = revcomp_dna(&rot);
-            }
-            raw0_buf.push_str(&rot);
+        let mut raw0_s = clean_acgt_only(&raw0_control_records[idx].sequence);
+        raw0_s.truncate(supermatrix_cols_bp);
+        if raw0_s.len() < supermatrix_cols_bp {
+            raw0_s.push_str(&"-".repeat(supermatrix_cols_bp - raw0_s.len()));
         }
-        if raw0_buf.len() < supermatrix_cols_bp && !full_mitogenome_records.is_empty() {
-            let n_full = full_mitogenome_records.len();
-            for step in 1..=(n_full * 2) {
-                if raw0_buf.len() >= supermatrix_cols_bp {
-                    break;
-                }
-                let rec = &full_mitogenome_records[(idx + step) % n_full];
-                let mut rot = String::new();
-                append_rotated_acgt(
-                    &mut rot,
-                    &rec.sequence,
-                    idx.saturating_mul(2311).saturating_add(step.saturating_mul(997)),
-                );
-                if (idx + step) % 2 == 1 {
-                    rot = revcomp_dna(&rot);
-                }
-                raw0_buf.push_str(&rot);
-            }
-        }
-        if raw0_buf.len() < supermatrix_cols_bp && !raw0_control_records.is_empty() {
-            let n_r0 = raw0_control_records.len();
-            for step in 1..n_r0 {
-                if raw0_buf.len() >= supermatrix_cols_bp {
-                    break;
-                }
-                let rec = &raw0_control_records[(idx + step) % n_r0];
-                let mut rot = String::new();
-                append_rotated_acgt(
-                    &mut rot,
-                    &rec.sequence,
-                    idx.saturating_mul(2311).saturating_add(step.saturating_mul(997)),
-                );
-                if (idx + step) % 2 == 1 {
-                    rot = revcomp_dna(&rot);
-                }
-                raw0_buf.push_str(&rot);
-            }
-        }
-        raw0_buf.truncate(supermatrix_cols_bp);
-        if raw0_buf.len() < supermatrix_cols_bp {
-            raw0_buf.push_str(&"-".repeat(supermatrix_cols_bp - raw0_buf.len()));
-        }
-        let mut raw0_bytes = raw0_buf.into_bytes();
-        let r0_len = raw0_bytes.len();
-        for b in raw0_bytes.iter_mut().take(84.min(r0_len)) {
-            if *b == b'C' {
-                *b = b'T';
-            }
-        }
-        for b in raw0_bytes.iter_mut().skip(r0_len.saturating_sub(84)) {
-            if *b == b'G' {
-                *b = b'A';
-            }
-        }
-        let raw0_s = String::from_utf8(raw0_bytes).unwrap_or_default();
 
         all64_labels.push(safe_id.clone());
         all64_ry3_strs.push(s_ry3.clone());
@@ -6654,81 +6542,39 @@ pub fn execute_declarative_study(
         &cfg.figure_theme.supp_s1_fasta_name,
     )?;
 
-    // Stage 5: Chronogram + 12 Single-Species Skylines
+    // Stage 5: Empirical Constrained LSD2 Chronogram + 12 Single-Species GMRF Skylines
     eprintln!(
-        "[bio-suite-supervisor] Stage 5/5: Chronogram + {} Single-Species Skylines...",
+        "[bio-suite-supervisor] Stage 5/5: Empirical LSD2 Chronogram + {} Single-Species Skylines...",
         cfg.skyline_cohorts.len()
     );
-    let mut mean_sec_bl = [0.0f64; 7];
-    let mut sec_cnt = [0usize; 7];
-    for sr in &sequences_manifest {
-        let s_idx = match sr.sector_code.as_bytes().get(1).copied().unwrap_or(b'G') {
-            b'A' => 0,
-            b'B' => 1,
-            b'C' => 2,
-            b'D' => 3,
-            b'E' => 4,
-            b'F' => 5,
-            _ => 6,
-        };
-        if let Some(&bl) = st3.emp_tip_bls.get(&sr.tip_code.replace(':', "_")) {
-            mean_sec_bl[s_idx] += bl;
-            sec_cnt[s_idx] += 1;
-        }
-    }
-    for s_idx in 0..7 {
-        mean_sec_bl[s_idx] = if sec_cnt[s_idx] > 0 {
-            (mean_sec_bl[s_idx] / (sec_cnt[s_idx] as f64)).clamp(0.015, 0.85)
-        } else {
-            0.12
-        };
-    }
-    let base_q = st3.msc_regime1_ry3.normalized_quartet_score;
-    let base_lpp = st3.msc_regime1_ry3.mean_local_posterior_pp1;
-    let mut calibrated_nodes = Vec::with_capacity(cfg.calibrated_nodes.len());
-    let mut prev_backbone_age = f64::INFINITY;
-    for (ni, np) in cfg.calibrated_nodes.iter().enumerate() {
-        let si = np.sector_idx.min(6);
-        let shift = (mean_sec_bl[si] - 0.14) * (np.target_age_ma * 0.05);
-        let ci_pad = ((np.ci_max_ma - np.ci_min_ma) * 0.08).clamp(1.0, 5.0);
-        let margin = (np.target_age_ma * 0.025).clamp(2.0, 20.0);
-        let is_backbone_step = ni == 0
-            || (ni <= 5
-                && np.sector_code != cfg.calibrated_nodes[ni - 1].sector_code
-                && np.target_age_ma <= prev_backbone_age);
-        let mut age_ma =
-            round4((np.target_age_ma + shift).clamp(np.ci_min_ma + ci_pad, np.ci_max_ma - ci_pad));
-        if is_backbone_step && ni > 0 && age_ma >= prev_backbone_age - margin {
-            age_ma = round4((prev_backbone_age - margin * 1.3).max(np.ci_min_ma + ci_pad));
-        }
-        if is_backbone_step {
-            prev_backbone_age = age_ma;
-        }
-        let half = ((np.ci_max_ma - np.ci_min_ma) * 0.44).max(10.0);
-        let lo = round4((age_ma - half).max(np.ci_min_ma * 0.88));
-        let hi = round4((age_ma + half).min(np.ci_max_ma * 1.12));
-        let q1 = round4((base_q + (0.98 - base_q) * (1.0 - (ni as f64) * 0.08)).clamp(0.45, 0.995));
-        let rem = round4((1.0 - q1) * 0.5);
-        let cu = round4((st3.msc_regime1_ry3.mean_branch_length_cu * (1.6 - (ni as f64) * 0.12)).max(0.45));
-        calibrated_nodes.push(SupervisedCalibratedNode {
+    let emp_tip_bls = st3.emp_tip_bls.clone();
+    let cal_specs: Vec<EmpiricalCalibrationSpec> = cfg
+        .calibrated_nodes
+        .iter()
+        .map(|np| EmpiricalCalibrationSpec {
             node_id: np.node_id.clone(),
             clade_name: np.clade_name.clone(),
             sector_code: np.sector_code.clone(),
             fossil_or_biogeo_anchor: np.fossil_or_biogeo_anchor.clone(),
-            age_ma,
-            ci_min_ma: lo,
-            ci_max_ma: hi,
-            ufboot_pct: round4(*st3.node_ufboot.get(ni).unwrap_or(&98.0)),
-            quartet_q1: q1,
-            quartet_q2: rem,
-            quartet_q3: rem,
-            quartet_lpp: round4(base_lpp.max(0.85)),
-            coalescent_units_cu: cu,
+            ci_min_ma: np.ci_min_ma,
+            ci_max_ma: np.ci_max_ma,
             trophic_guild: np.trophic_guild.clone(),
             key_enzymes_or_loci: np.key_enzymes_or_loci.clone(),
             ecosystem_role: np.ecosystem_role.clone(),
-        });
-    }
+        })
+        .collect();
+    let lsd2_out = solve_empirical_lsd2_from_ml_tree(
+        &st3.part_res.partitioned_metrics.newick_tree,
+        &st3.phy_labels,
+        st3.full_mask_phy,
+        &st3.part_res.partitioned_bootstrap.split_support_pct_by_mask,
+        &st3.msc_regime1_ry3,
+        &cal_specs,
+        bundle.supermatrix_cols_bp,
+        cfg.manuscript_prose.seed_base,
+    )?;
+    let calibrated_nodes = lsd2_out.calibrated_nodes;
+    let solved_timetree_newick = lsd2_out.timetree_newick;
 
     let ep_arr: [(&str, f64, f64, &str, &str); 6] = std::array::from_fn(|ei| {
         let ep = &cfg.skyline_epochs[ei.min(cfg.skyline_epochs.len().saturating_sub(1))];
@@ -6778,7 +6624,12 @@ pub fn execute_declarative_study(
             total_records_on_disk, st3.part_res.n_partitions, b_replicates
         ),
         taxonomic_scope: cfg.taxonomic_scope.clone(),
-        created_timestamp_utc: "2026-11-21T08:00:00Z".to_string(),
+        created_timestamp_utc: format!(
+            "2026-11-23T{:02}:{:02}:{:02}Z",
+            ((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0) / 3600) % 24),
+            ((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0) / 60) % 60),
+            (std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0) % 60),
+        ),
         model_design: ModelDesignMode::BioSuiteNativeOnly,
         model_design_label: ModelDesignMode::BioSuiteNativeOnly.label().to_string(),
         input_source_summary: format!(
@@ -6852,7 +6703,7 @@ pub fn execute_declarative_study(
         rcfv_ry3_cleaned: st3.rcfv_ry3,
         rcfv_dayhoff6_codon12: st3.rcfv_codon12,
         rcfv_zero_beaker_raw: st3.rcfv_raw0,
-        k2p_native_vs_external_r: 0.9968,
+        k2p_native_vs_external_r: 0.0,
         aligned_fasta_rel_path,
         runie_9col_comparison_table: st3.runie_9col_comparison_table,
         combinatorial_32chain_sweep: st3.supervisor_sweep_entries,
@@ -6868,6 +6719,8 @@ pub fn execute_declarative_study(
         html_manuscript_rel_path: "manuscript/single-column-manuscript.html".to_string(),
         pdf_preprint_rel_path: format!("manuscript/{}-preprint.pdf", spec.run_id),
     };
+
+    let _ = &emp_tip_bls;
 
     let study_report = MultiCompartmentStudyReport {
         study_id: cfg.study_slug.clone(),
@@ -6902,7 +6755,7 @@ pub fn execute_declarative_study(
         supermatrix_ess: st3.supermatrix_ess,
         supermatrix_rhat: st3.supermatrix_rhat,
         solved_ry3_ml_newick: st3.part_res.partitioned_metrics.newick_tree.clone(),
-        solved_timetree_newick: st3.part_res.partitioned_metrics.newick_tree,
+        solved_timetree_newick,
         msc_regime1_ry3: st3.msc_regime1_ry3,
         msc_regime2_codon12: st3.msc_regime2_codon12,
         msc_regime3_unrec4: st3.msc_regime3_unrec4,

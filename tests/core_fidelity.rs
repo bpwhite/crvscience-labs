@@ -2217,4 +2217,340 @@ fn test_bootstrap_control_no_rell_collapse_on_unaligned_noise() {
     );
 }
 
+mod empirical_anti_shortcut_tests {
+    use bio_suite::coalescent::run_native_quartet_coalescent;
+    use bio_suite::empirical_inference_util::{
+        analyze_pdb_file_empirically, compute_bic_posterior_weights, compute_kh_paired_sites_z,
+        run_empirical_bayesian_skyline_mcmc, solve_empirical_lsd2_from_ml_tree,
+        EmpiricalCalibrationSpec,
+    };
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_no_hardcoded_shortcuts_in_generalized_empirical_engines() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let src_dir = root.join("src");
+
+        // Guard Blackbird < 384 KB source file ceiling across all src/*.rs
+        fn check_sizes(dir: &std::path::Path) {
+            if let Ok(entries) = fs::read_dir(dir) {
+                for ent in entries.flatten() {
+                    let p = ent.path();
+                    if p.is_dir() {
+                        check_sizes(&p);
+                    } else if p.extension().is_some_and(|e| e == "rs") {
+                        let sz = fs::metadata(&p).map(|m| m.len()).unwrap_or(0);
+                        assert!(
+                            sz < 393_216,
+                            "Rust source {} exceeds 384 KB Blackbird limit ({} bytes)",
+                            p.display(),
+                            sz
+                        );
+                    }
+                }
+            }
+        }
+        check_sizes(&src_dir);
+
+        let audit_util = fs::read_to_string(src_dir.join("supermatrix_audit_util.rs")).unwrap();
+        let emp_util = fs::read_to_string(src_dir.join("empirical_inference_util.rs")).unwrap();
+        let study_full = fs::read_to_string(src_dir.join("supervisor_study.rs")).unwrap();
+        let study_gen_end = study_full.find("evaluate_population_cohort_4regimes").unwrap_or(0) + 12000;
+        let study_slice = &study_full[..study_gen_end.min(study_full.len())];
+
+        let figs_full = fs::read_to_string(src_dir.join("supervisor_figures.rs")).unwrap();
+        let figs_start = figs_full.find("fn collect_contiguous_sector_runs").unwrap();
+        let figs_end = figs_full.find("fn generate_acanthochitonidae_locked_figures").unwrap_or(figs_full.len());
+        let figs_slice = &figs_full[figs_start..figs_end];
+
+        let ms_full = fs::read_to_string(src_dir.join("supervisor_manuscript.rs")).unwrap();
+        let ms_start = ms_full.find("pub fn export_declarative_manuscript_and_staged_bundle").unwrap();
+        let ms_slice = &ms_full[ms_start..];
+
+        let banned_tokens = [
+            "n.age_ma * 0.89",
+            "n.age_ma * 1.11",
+            "0.32 * (",
+            "-9.42",
+            "1094.2",
+            "ACGTACGT",
+            "append_rotated_acgt",
+            "aa_volume_proxy",
+            "build_unified_rooted_tree",
+            "normalized_quartet_score - 0.14",
+            ".clamp(0.80, 5.50)",
+            "+4.86 SD",
+            "+3.72 SD",
+            "+2.18 SD",
+            "-3.94 SD",
+            "11,436,768 quartets",
+            "\"112ka\"",
+            "ESS > 480",
+            "R-hat = 1.000",
+            "N = 432",
+            "pop_s * 1.06",
+            "ml_s * 0.85",
+            "unwrap_or(92.4)",
+            "November 21, 2026",
+        ];
+
+        for (fname, slice) in [
+            ("supermatrix_audit_util.rs", audit_util.as_str()),
+            ("empirical_inference_util.rs", emp_util.as_str()),
+            ("supervisor_study.rs(generalized)", study_slice),
+            ("supervisor_figures.rs(generalized)", figs_slice),
+            ("supervisor_manuscript.rs(declarative)", ms_slice),
+        ] {
+            for tok in banned_tokens {
+                assert!(
+                    !slice.contains(tok),
+                    "Banned hardcoded shortcut token `{}` reappeared inside {}",
+                    tok,
+                    fname
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_empirical_algorithms_respond_to_data_perturbation() {
+        // 1. LSD2 Sensitivity & Non-Monophyletic Zeroing
+        let ml_a = "((A_T001:0.10,A_T002:0.10)100:0.15,((C_T017:0.06,C_T018:0.06)100:0.12,(D_T025:0.04,D_T026:0.04)100:0.08)100:0.15);";
+        let ml_b = "((A_T001:0.10,A_T002:0.10)100:0.15,((C_T017:0.06,C_T018:0.06)100:0.12,(D_T025:0.02,D_T026:0.02)100:0.26)100:0.15);";
+        let tips: Vec<String> = ["A_T001", "A_T002", "C_T017", "C_T018", "D_T025", "D_T026"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        let full_mask = (1u64 << 6) - 1;
+        let split_map = vec![(vec![(1u64 << 4) | (1u64 << 5)], 97.5)];
+        let gts = vec![ml_a.to_string(), ml_a.to_string()];
+        let (msc_res, _, _) = run_native_quartet_coalescent("lsd2_pert", &gts).unwrap();
+
+        let cal_specs = vec![
+            EmpiricalCalibrationSpec {
+                node_id: "Node I".to_string(),
+                clade_name: "Root".to_string(),
+                sector_code: "[A]-[D]".to_string(),
+                fossil_or_biogeo_anchor: "Root bound".to_string(),
+                ci_min_ma: 1000.0,
+                ci_max_ma: 1200.0,
+                trophic_guild: String::new(),
+                key_enzymes_or_loci: String::new(),
+                ecosystem_role: String::new(),
+            },
+            EmpiricalCalibrationSpec {
+                node_id: "Node D".to_string(),
+                clade_name: "Ingroup D".to_string(),
+                sector_code: "[D]".to_string(),
+                fossil_or_biogeo_anchor: "Loose wide prior".to_string(),
+                ci_min_ma: 80.0,
+                ci_max_ma: 950.0,
+                trophic_guild: String::new(),
+                key_enzymes_or_loci: String::new(),
+                ecosystem_role: String::new(),
+            },
+            EmpiricalCalibrationSpec {
+                node_id: "Node Absent".to_string(),
+                clade_name: "Absent Sector E".to_string(),
+                sector_code: "[E]".to_string(),
+                fossil_or_biogeo_anchor: "None".to_string(),
+                ci_min_ma: 200.0,
+                ci_max_ma: 400.0,
+                trophic_guild: String::new(),
+                key_enzymes_or_loci: String::new(),
+                ecosystem_role: String::new(),
+            },
+        ];
+
+        let lsd_a = solve_empirical_lsd2_from_ml_tree(
+            ml_a,
+            &tips,
+            full_mask,
+            &split_map,
+            &msc_res,
+            &cal_specs,
+            1200,
+            42,
+        )
+        .expect("LSD2 A");
+        let lsd_b = solve_empirical_lsd2_from_ml_tree(
+            ml_b,
+            &tips,
+            full_mask,
+            &split_map,
+            &msc_res,
+            &cal_specs,
+            1200,
+            42,
+        )
+        .expect("LSD2 B");
+
+        assert!(lsd_a.timetree_newick.contains("[&age_ma="));
+        assert_eq!(lsd_a.calibrated_nodes[1].ufboot_pct, 97.5);
+        assert!(lsd_a.calibrated_nodes[1].quartet_lpp > 0.0);
+        // Absent clade must strictly report 0.0 instead of fabricating an age or support
+        assert_eq!(lsd_a.calibrated_nodes[2].age_ma, 0.0);
+        assert_eq!(lsd_a.calibrated_nodes[2].ci_min_ma, 0.0);
+        assert_eq!(lsd_a.calibrated_nodes[2].ci_max_ma, 0.0);
+        assert_eq!(lsd_a.calibrated_nodes[2].ufboot_pct, 0.0);
+        assert_eq!(lsd_a.calibrated_nodes[2].quartet_lpp, 0.0);
+        // Doubling/shifting branch lengths must noticeably shift solved node age
+        let delta_age = (lsd_a.calibrated_nodes[1].age_ma - lsd_b.calibrated_nodes[1].age_ma).abs();
+        assert!(
+            delta_age > 1.0,
+            "LSD2 age failed to respond to ML branch perturbation (A={}, B={})",
+            lsd_a.calibrated_nodes[1].age_ma,
+            lsd_b.calibrated_nodes[1].age_ma
+        );
+
+        // 2. Bayesian Skyline MCMC Sensitivity
+        let base_seq: Vec<u8> = b"ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT"
+            .iter()
+            .cycle()
+            .take(180)
+            .copied()
+            .collect();
+        let mut lbls = Vec::with_capacity(10);
+        let mut star_seqs = Vec::with_capacity(10);
+        let mut deep_seqs = Vec::with_capacity(10);
+        for i in 0..10 {
+            lbls.push(format!("ISO_{:02}", i + 1));
+            let mut s1 = base_seq.clone();
+            s1[i * 3] = match s1[i * 3] {
+                b'A' => b'G',
+                b'G' => b'A',
+                b'C' => b'T',
+                _ => b'C',
+            };
+            star_seqs.push(s1);
+
+            let mut s2 = base_seq.clone();
+            let offset = if i < 5 { 0 } else { 15 };
+            for p in 0..14 {
+                let idx = (offset + p * 7) % 180;
+                s2[idx] = match s2[idx] {
+                    b'A' => b'T',
+                    b'T' => b'A',
+                    b'C' => b'G',
+                    _ => b'C',
+                };
+            }
+            s2[i * 2] = if i % 2 == 0 { b'G' } else { b'C' };
+            deep_seqs.push(s2);
+        }
+        let sky_star = run_empirical_bayesian_skyline_mcmc(&lbls, &star_seqs, 0.01, 1.0, 0.005, 4_000, 101);
+        let sky_deep = run_empirical_bayesian_skyline_mcmc(&lbls, &deep_seqs, 0.01, 1.0, 0.04, 4_000, 101);
+        assert!(
+            (sky_star.marginal_ln_l - sky_deep.marginal_ln_l).abs() > 5.0,
+            "Skyline lnL must change sharply between star and deep alignments ({} vs {})",
+            sky_star.marginal_ln_l,
+            sky_deep.marginal_ln_l
+        );
+        let max_ne_ratio = sky_star
+            .epochs
+            .iter()
+            .zip(sky_deep.epochs.iter())
+            .map(|(a, b)| (a.2.max(b.2)) / a.2.min(b.2).max(1.0))
+            .fold(1.0_f64, f64::max);
+        assert!(
+            max_ne_ratio > 1.5,
+            "Skyline Ne profile failed to scale with underlying sequence divergence (ratio={})",
+            max_ne_ratio
+        );
+
+        // 3. 3D Pocket Volume + AutoDock Vina Sensitivity
+        let cache_1byu = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("cache/pdb/1BYU.pdb");
+        let tmp_dir = std::env::temp_dir();
+        let orig_pdb_path = if cache_1byu.is_file() {
+            cache_1byu.clone()
+        } else {
+            let p = tmp_dir.join("crv_test_pocket_orig.pdb");
+            let mut pdb = String::new();
+            let mut ser = 1usize;
+            for &(x, y, z, res) in &[
+                (10.0, 0.0, 0.0, "GLY"), (8.5, 4.0, 2.0, "ALA"), (4.0, 6.5, -2.5, "VAL"),
+                (-3.5, 6.0, 3.0, "SER"), (-6.5, 2.0, -3.0, "THR"), (-6.0, -4.5, 2.0, "LYS"),
+                (-2.0, -6.5, -2.5, "ASP"), (4.0, -6.0, 2.5, "ASN"), (7.5, -3.5, -2.0, "GLU"),
+                (0.0, 0.0, 6.0, "PHE"), (0.0, 0.0, -6.0, "LEU"), (5.0, 5.0, 5.0, "ILE"),
+            ] {
+                pdb.push_str(&format!(
+                    "ATOM  {:>5}  CA  {} A{:>4}    {:>8.3}{:>8.3}{:>8.3}  1.00 18.00           C\n",
+                    ser, res, ser, x, y, z
+                ));
+                pdb.push_str(&format!(
+                    "ATOM  {:>5}  N   {} A{:>4}    {:>8.3}{:>8.3}{:>8.3}  1.00 18.00           N\n",
+                    ser + 100, res, ser, x + 0.8, y - 0.6, z + 0.4
+                ));
+                ser += 1;
+            }
+            pdb.push_str("HETATM  901  PG  GDP A 220       0.200   0.100   0.000  1.00 15.00           P\n");
+            pdb.push_str("HETATM  902  O1B GDP A 220       1.600   0.400   0.200  1.00 15.00           O\n");
+            pdb.push_str("HETATM  903  C1' GDP A 220      -1.200  -0.300   0.400  1.00 15.00           C\n");
+            pdb.push_str("END\n");
+            fs::write(&p, pdb).unwrap();
+            p
+        };
+        let shifted_path = tmp_dir.join("crv_test_pocket_shifted15A.pdb");
+        let raw_pdb = fs::read_to_string(&orig_pdb_path).unwrap();
+        let mut shifted_pdb = String::with_capacity(raw_pdb.len());
+        let mut cas = Vec::new();
+        for line in raw_pdb.lines() {
+            if line.starts_with("ATOM  ") && line.len() >= 54 && line.get(12..16).map(|s| s.trim()) == Some("CA") {
+                if let (Ok(r), Ok(x), Ok(y), Ok(z)) = (
+                    line[22..26].trim().parse::<usize>(),
+                    line[30..38].trim().parse::<f64>(),
+                    line[38..46].trim().parse::<f64>(),
+                    line[46..54].trim().parse::<f64>(),
+                ) {
+                    cas.push((r, x, y, z));
+                }
+            }
+            if line.starts_with("HETATM") && line.len() >= 54 && line.get(17..20).map(|s| s.trim()) == Some("GDP") {
+                if let (Ok(x), Ok(y), Ok(z)) = (
+                    line[30..38].trim().parse::<f64>(),
+                    line[38..46].trim().parse::<f64>(),
+                    line[46..54].trim().parse::<f64>(),
+                ) {
+                    shifted_pdb.push_str(&format!(
+                        "{}{:>8.3}{:>8.3}{:>8.3}{}\n",
+                        &line[..30],
+                        x + 15.0,
+                        y + 15.0,
+                        z + 15.0,
+                        &line[54..]
+                    ));
+                    continue;
+                }
+            }
+            shifted_pdb.push_str(line);
+            shifted_pdb.push('\n');
+        }
+        fs::write(&shifted_path, &shifted_pdb).unwrap();
+
+        let emp_orig = analyze_pdb_file_empirically(&orig_pdb_path, 'A', "GDP", None, &cas).unwrap();
+        let emp_shift = analyze_pdb_file_empirically(&shifted_path, 'A', "GDP", None, &cas).unwrap();
+        let _ = fs::remove_file(&shifted_path);
+        assert!(emp_orig.pocket_volume_a3 > 10.0, "Expected non-trivial voxel cavity (got {})", emp_orig.pocket_volume_a3);
+        assert!(emp_orig.docking_affinity_kcal_mol < -1.0, "Expected bound Vina affinity < -1 kcal/mol (got {})", emp_orig.docking_affinity_kcal_mol);
+        assert!(
+            emp_shift.docking_affinity_kcal_mol > emp_orig.docking_affinity_kcal_mol + 0.5,
+            "Displaced +15A ligand must weaken Vina affinity (orig={}, shifted={})",
+            emp_orig.docking_affinity_kcal_mol,
+            emp_shift.docking_affinity_kcal_mol
+        );
+
+        // 4. BIC Posterior Weights & KH Paired-Sites Z
+        let w = compute_bic_posterior_weights(&[1000.0, 1004.0, 1040.0]);
+        let w_sum: f64 = w.iter().sum();
+        assert!((w_sum - 1.0).abs() < 1e-2 && w[0] > w[1] && w[1] > w[2]);
+        let ell_a: Vec<f64> = (0..40).map(|i| -1.2 - (i % 3) as f64 * 0.05).collect();
+        let ell_b: Vec<f64> = (0..40).map(|i| -2.0 - (i % 5) as f64 * 0.1).collect();
+        let wts = vec![2.0; 40];
+        let z_ab = compute_kh_paired_sites_z(&ell_a, &wts, &ell_b, &wts);
+        let z_ba = compute_kh_paired_sites_z(&ell_b, &wts, &ell_a, &wts);
+        assert!((z_ab + z_ba).abs() < 1e-6 && z_ab > 2.0, "KH Z must be antisymmetric and significant (got {} / {})", z_ab, z_ba);
+    }
+}
+
 

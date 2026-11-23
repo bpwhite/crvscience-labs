@@ -271,448 +271,448 @@
     {
       "tip_code": "A:T001",
       "sector_code": "[A] Order Lepidopleurida Outgroups",
-      "family": "Order Lepidopleurida: Leptochitonidae",
+      "family": "Leptochitonidae",
       "species": "Leptochiton nexus",
       "synonyms": []
     },
     {
       "tip_code": "A:T002",
       "sector_code": "[A] Order Lepidopleurida Outgroups",
-      "family": "Order Lepidopleurida: Leptochitonidae",
+      "family": "Leptochitonidae",
       "species": "Lepidopleurus cajetanus",
       "synonyms": []
     },
     {
       "tip_code": "A:T003",
       "sector_code": "[A] Order Lepidopleurida Outgroups",
-      "family": "Order Lepidopleurida: Nierstraszellidae",
+      "family": "Nierstraszellidae",
       "species": "Nierstraszella lineata",
       "synonyms": []
     },
     {
       "tip_code": "A:T004",
       "sector_code": "[A] Order Lepidopleurida Outgroups",
-      "family": "Order Lepidopleurida: Hanleyidae",
+      "family": "Hanleyidae",
       "species": "Hanleyella oldroydi",
       "synonyms": []
     },
     {
       "tip_code": "B:T005",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Chiton albolineatus",
       "synonyms": []
     },
     {
       "tip_code": "B:T006",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Chiton olivaceus",
       "synonyms": []
     },
     {
       "tip_code": "B:T007",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Acanthopleura gemmata",
       "synonyms": []
     },
     {
       "tip_code": "B:T008",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Acanthopleura loochooana",
       "synonyms": []
     },
     {
       "tip_code": "B:T009",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Acanthopleura vaillantii",
       "synonyms": []
     },
     {
       "tip_code": "B:T010",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Liolophura japonica",
       "synonyms": []
     },
     {
       "tip_code": "B:T011",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Onithochiton hirasei",
       "synonyms": []
     },
     {
       "tip_code": "B:T012",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chitonidae",
+      "family": "Chitonidae",
       "species": "Sypharochiton pelliserpentis",
       "synonyms": []
     },
     {
       "tip_code": "B:T013",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Schizochitonidae",
+      "family": "Schizochitonidae",
       "species": "Schizochiton incisus",
       "synonyms": []
     },
     {
       "tip_code": "B:T014",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Ischnochitonidae",
+      "family": "Ischnochitonidae",
       "species": "Lepidozona coreanica",
       "synonyms": []
     },
     {
       "tip_code": "B:T015",
       "sector_code": "[B] Suborder Chitonina Outgroups",
-      "family": "Suborder Chitonina: Chaetopleuridae",
+      "family": "Chaetopleuridae",
       "species": "Chaetopleura apiculata",
       "synonyms": []
     },
     {
       "tip_code": "C:T016",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Katharina tunicata",
       "synonyms": []
     },
     {
       "tip_code": "C:T017",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae (Valve Burial #1)",
+      "family": "Mopaliidae",
       "species": "Cryptochiton stelleri",
       "synonyms": []
     },
     {
       "tip_code": "C:T018",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Mopalia retifera",
       "synonyms": []
     },
     {
       "tip_code": "C:T019",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Plaxiphora tricolor",
       "synonyms": []
     },
     {
       "tip_code": "C:T020",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Plaxiphora albida",
       "synonyms": []
     },
     {
       "tip_code": "C:T021",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Cyanoplax caverna",
       "synonyms": []
     },
     {
       "tip_code": "C:T022",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Lepidochitona cinerea",
       "synonyms": []
     },
     {
       "tip_code": "C:T023",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Mopaliidae",
+      "family": "Mopaliidae",
       "species": "Nuttallina californica",
       "synonyms": []
     },
     {
       "tip_code": "C:T024",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Tonicellidae",
+      "family": "Tonicellidae",
       "species": "Dendrochiton gothicus",
       "synonyms": []
     },
     {
       "tip_code": "C:T025",
       "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
-      "family": "Mopalioidea: Tonicellidae",
+      "family": "Tonicellidae",
       "species": "Tonicina zschaui",
       "synonyms": []
     },
     {
       "tip_code": "D:T026",
       "sector_code": "[D] Family Cryptoplacidae",
-      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "family": "Cryptoplacidae",
       "species": "Cryptoplax japonica",
       "synonyms": []
     },
     {
       "tip_code": "D:T027",
       "sector_code": "[D] Family Cryptoplacidae",
-      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "family": "Cryptoplacidae",
       "species": "Cryptoplax propior",
       "synonyms": []
     },
     {
       "tip_code": "D:T028",
       "sector_code": "[D] Family Cryptoplacidae",
-      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "family": "Cryptoplacidae",
       "species": "Cryptoplax iredalei",
       "synonyms": []
     },
     {
       "tip_code": "D:T029",
       "sector_code": "[D] Family Cryptoplacidae",
-      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "family": "Cryptoplacidae",
       "species": "Cryptoplax dupuisi",
       "synonyms": []
     },
     {
       "tip_code": "D:T030",
       "sector_code": "[D] Family Cryptoplacidae",
-      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "family": "Cryptoplacidae",
       "species": "Choneplax lata",
       "synonyms": []
     },
     {
       "tip_code": "E:T031",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Craspedochiton laqueatus",
       "synonyms": []
     },
     {
       "tip_code": "E:T032",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Craspedochiton tesselatus",
       "synonyms": []
     },
     {
       "tip_code": "E:T033",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Craspedochiton sp.",
       "synonyms": []
     },
     {
       "tip_code": "E:T034",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Leptoplax coarctata",
       "synonyms": []
     },
     {
       "tip_code": "E:T035",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Leptoplax curvisetosa",
       "synonyms": []
     },
     {
       "tip_code": "E:T036",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Leptoplax doederleini",
       "synonyms": []
     },
     {
       "tip_code": "E:T037",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "family": "Acanthochitonidae",
       "species": "Notoplax odysseyi",
       "synonyms": []
     },
     {
       "tip_code": "E:T038",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Acanthochitonidae (Valve Burial #2)",
+      "family": "Acanthochitonidae",
       "species": "Cryptoconchus floridanus",
       "synonyms": []
     },
     {
       "tip_code": "E:T039",
       "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
-      "family": "Cryptoplacoidea: Choriplacidae",
+      "family": "Choriplacidae",
       "species": "Choriplax grayi",
       "synonyms": []
     },
     {
       "tip_code": "F:T040",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: NE Atlantic/Med",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona fascicularis",
       "synonyms": []
     },
     {
       "tip_code": "F:T041",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: NE Atlantic/Med",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona crinita",
       "synonyms": []
     },
     {
       "tip_code": "F:T042",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: NE Atlantic/Med",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona discrepans",
       "synonyms": []
     },
     {
       "tip_code": "F:T043",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: NE Atlantic",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona pilosa",
       "synonyms": []
     },
     {
       "tip_code": "F:T044",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: Adriatic Med",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona sp. Adriatic",
       "synonyms": []
     },
     {
       "tip_code": "F:T045",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: South Africa",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona garnoti",
       "synonyms": []
     },
     {
       "tip_code": "F:T046",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: NE Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona avicula",
       "synonyms": []
     },
     {
       "tip_code": "F:T047",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: Gulf of California",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona exquisita",
       "synonyms": []
     },
     {
       "tip_code": "F:T048",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: Tropical E Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona ferreirai",
       "synonyms": []
     },
     {
       "tip_code": "F:T049",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: Caribbean",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona hemphilli",
       "synonyms": []
     },
     {
       "tip_code": "F:T050",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: Pan-American",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona hirudiniformis",
       "synonyms": []
     },
     {
       "tip_code": "F:T051",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: W Atlantic",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona lineata",
       "synonyms": []
     },
     {
       "tip_code": "F:T052",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: W Atlantic",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona pygmaea",
       "synonyms": []
     },
     {
       "tip_code": "F:T053",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: Caribbean/E Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona rhodea",
       "synonyms": []
     },
     {
       "tip_code": "F:T054",
       "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
-      "family": "Acanthochitonidae: W Atlantic/Caribbean",
+      "family": "Acanthochitonidae",
       "species": "Americhiton balesae",
       "synonyms": []
     },
     {
       "tip_code": "G:T055",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: NW Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona rubrolineata",
       "synonyms": []
     },
     {
       "tip_code": "G:T056",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: NW Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona defilippii",
       "synonyms": []
     },
     {
       "tip_code": "G:T057",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: NW Pacific/JTMD",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona achates",
       "synonyms": []
     },
     {
       "tip_code": "G:T058",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: NW Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona circellata",
       "synonyms": []
     },
     {
       "tip_code": "G:T059",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: Indian Ocean",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona mahensis",
       "synonyms": []
     },
     {
       "tip_code": "G:T060",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: Indo-West Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona sp. IWP",
       "synonyms": []
     },
     {
       "tip_code": "G:T061",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: Indo-West Pacific",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona viridis",
       "synonyms": []
     },
     {
       "tip_code": "G:T062",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: Japan",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona sp. A DJE-2018",
       "synonyms": []
     },
     {
       "tip_code": "G:T063",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: British Columbia",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona sp. B DJE-2018",
       "synonyms": []
     },
     {
       "tip_code": "G:T064",
       "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
-      "family": "Acanthochitonidae: Okinawa",
+      "family": "Acanthochitonidae",
       "species": "Acanthochitona sp. C DJE-2018",
       "synonyms": []
     }

@@ -6581,22 +6581,26 @@ pub fn execute_declarative_study(
         for row in &mut st3.runie_9col_comparison_table {
             row.tool_chain = row
                 .tool_chain
+                .replace("Locus-Phased MSA", "Table-11 Strand/Codon Phasing")
                 .replace("Table-5 COX1 Phasing", "Table-11 Strand/Codon Phasing");
         }
         for ch in &mut st3.combinatorial_sweep_32_chains {
             ch.tool_chain_summary = ch
                 .tool_chain_summary
+                .replace("Locus-Phased MSA", "Bacterial Table-11 Phasing")
                 .replace("Circular COX1 Phasing", "Bacterial Table-11 Phasing");
         }
     } else if cfg.universal_archaea_eukarya {
         for row in &mut st3.runie_9col_comparison_table {
             row.tool_chain = row
                 .tool_chain
+                .replace("Locus-Phased MSA", "Universal Archaea-Eukarya Codon Phasing")
                 .replace("Table-5 COX1 Phasing", "Universal Archaea-Eukarya Codon Phasing");
         }
         for ch in &mut st3.combinatorial_sweep_32_chains {
             ch.tool_chain_summary = ch
                 .tool_chain_summary
+                .replace("Locus-Phased MSA", "Universal Code-1/11 Phasing")
                 .replace("Circular COX1 Phasing", "Universal Code-1/11 Phasing");
         }
     }

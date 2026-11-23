@@ -2293,6 +2293,8 @@ mod empirical_anti_shortcut_tests {
             "ml_s * 0.85",
             "unwrap_or(92.4)",
             "November 21, 2026",
+            "&[0.15, 0.49, 1.03, 2.33]",
+            "4.98,",
         ];
 
         for (fname, slice) in [

@@ -2113,9 +2113,17 @@ fn render_bemisia_fig1_chronogram(
             r##"<rect x="{:.1}" y="18" width="{:.1}" height="1158" fill="{}" stroke="#e2e8f0" stroke-width="0.8"/>"##,
             bx0, bw, bg
         ));
+        let era_fs = if bw < 64.0 {
+            8.2
+        } else if bw < 95.0 {
+            9.5
+        } else {
+            11.0
+        };
         svg.push_str(&format!(
-            r##"<text x="{:.1}" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">{}</text>"##,
+            r##"<text x="{:.1}" y="36" text-anchor="middle" font-size="{:.1}" font-weight="700" fill="#475569">{}</text>"##,
             bx0 + bw * 0.5,
+            era_fs,
             nm
         ));
     }
@@ -2319,9 +2327,10 @@ fn render_bemisia_fig1_chronogram(
             6 => (-88.0, -22.0),
             _ => (-104.0, -22.0),
         };
-        let extra_offsets: [(f64, f64); 10] = [
+        let extra_offsets: [(f64, f64); 13] = [
             (0.0, 0.0),
             (0.0, -34.0),
+            (0.0, 46.0),
             (-96.0, -24.0),
             (96.0, -24.0),
             (0.0, 34.0),
@@ -2330,6 +2339,8 @@ fn render_bemisia_fig1_chronogram(
             (0.0, -64.0),
             (-145.0, -22.0),
             (145.0, -22.0),
+            (-146.0, 0.0),
+            (146.0, 0.0),
         ];
         let mut badge_cx = (bx + dx).clamp(x_root + badge_w * 0.5 + 2.0, x_tips - badge_w * 0.5 - 6.0);
         let mut badge_cy = (by + dy).clamp(52.0, 1152.0);
@@ -2339,7 +2350,7 @@ fn render_bemisia_fig1_chronogram(
             let cy = (by + dy + edy).clamp(52.0, 1152.0);
             let badge_hit = placed_badges
                 .iter()
-                .any(|&(ox, oy)| (cx - ox).abs() < badge_w + 5.0 && (cy - oy).abs() < badge_h + 6.0);
+                .any(|&(ox, oy)| (cx - ox).abs() < badge_w + 6.0 && (cy - oy).abs() < badge_h + 10.0);
             let bar_hit = bar_coords.iter().any(|&(_nbx, nby, nx_lo, nx_hi)| {
                 cx + badge_w * 0.5 > nx_lo - 4.0
                     && cx - badge_w * 0.5 < nx_hi + 4.0
@@ -2352,7 +2363,7 @@ fn render_bemisia_fig1_chronogram(
             }
             let badge_clr = placed_badges
                 .iter()
-                .map(|&(ox, oy)| ((cx - ox).abs() - (badge_w + 5.0)).max((cy - oy).abs() - (badge_h + 6.0)))
+                .map(|&(ox, oy)| ((cx - ox).abs() - (badge_w + 6.0)).max((cy - oy).abs() - (badge_h + 10.0)))
                 .fold(f64::MAX, f64::min);
             let bar_clr = bar_coords
                 .iter()
@@ -2473,9 +2484,9 @@ fn render_bemisia_fig1_chronogram(
             xml_esc(card.line1)
         ));
         svg.push_str(&format!(
-            r##"<text x="1080" y="{:.1}" font-size="9.2" font-weight="600" fill="#475569">Functional Signature: {}</text>"##,
+            r##"<text x="1080" y="{:.1}" font-size="8.4" font-weight="600" fill="#475569">Functional Signature: {}</text>"##,
             card_y + 46.0,
-            xml_esc(card.line2)
+            xml_esc(&truncate_word_clean(card.line2, 92))
         ));
         fb.fill_rect(1068, card_y as i32, 530, card_h as i32, (248, 250, 252));
         fb.draw_text(
@@ -3352,11 +3363,30 @@ fn render_bemisia_fig3_quartet_msc(
     );
 
     // Overlay compact Node I-VIII `[q1/q2/q3]` badges at sector midpoints on the left backbone
+    let mut placed_q_badges: Vec<(f64, f64)> = Vec::new();
     for (nlbl, anchor_tip, c_idx) in &theme.fig3_sec_tip_anchors {
         let c_idx = *c_idx;
         if let (Some(&ay), Some(cn)) = (tip_y_map.get(anchor_tip.as_str()), manifest.calibrated_nodes.get(c_idx)) {
+            if cn.age_ma <= 0.0 || cn.quartet_q1 <= 0.0 {
+                continue;
+            }
             let bx = 50.0 + (c_idx as f64) * 38.0;
-            let by = (ay - 12.0).clamp(86.0, 1258.0);
+            let mut by = (ay - 12.0).clamp(86.0, 1258.0);
+            for _ in 0..8 {
+                let conflict = placed_q_badges
+                    .iter()
+                    .any(|&(px, py)| (bx - px).abs() < 92.0 && (by - py).abs() < 25.0);
+                if !conflict {
+                    break;
+                }
+                let next_down = by + 26.0;
+                if next_down <= 1258.0 {
+                    by = next_down;
+                } else {
+                    by = (by - 26.0).max(86.0);
+                }
+            }
+            placed_q_badges.push((bx, by));
             let w1 = 44.0 * cn.quartet_q1;
             let w2 = 44.0 * cn.quartet_q2;
             let w3 = (44.0 - w1 - w2).max(1.5);
@@ -3743,15 +3773,24 @@ pub(crate) fn render_bemisia_skyline_6panel(
             r##"<rect x="{:.1}" y="{:.1}" width="{:.1}" height="44" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.0"/>"##,
             px, py, pw
         ));
+        let hdr_txt = truncate_word_clean(
+            &format!(
+                "Panel {} ({}) | {} — {}",
+                (b'A' + p_idx as u8) as char,
+                c.cohort_code,
+                c.clade_lineage,
+                c.locus_name
+            ),
+            78,
+        );
+        let hdr_fs = if hdr_txt.chars().count() > 62 { 9.0 } else { 10.5 };
         svg.push_str(&format!(
-            r##"<text x="{:.1}" y="{:.1}" font-size="10.8" font-weight="800" fill="{}">Panel {} ({}) | {} — {}</text>"##,
+            r##"<text x="{:.1}" y="{:.1}" font-size="{:.1}" font-weight="800" fill="{}">{}</text>"##,
             px + 12.0,
             py + 18.0,
+            hdr_fs,
             pcol,
-            (b'A' + p_idx as u8) as char,
-            xml_esc(&c.cohort_code),
-            xml_esc(&c.clade_lineage),
-            xml_esc(&c.locus_name)
+            xml_esc(&hdr_txt)
         ));
         svg.push_str(&format!(
             r##"<text x="{:.1}" y="{:.1}" font-size="9.2" fill="#475569">{} | N={} | L={} bp | ESS={:.0}, R-hat={:.4}</text>"##,
@@ -4497,6 +4536,7 @@ fn render_bemisia_fig5_selection_and_sweep(
             }
 
             // 2. Mg2+ octahedral coordination bonds to GDP beta/alpha-phosphate oxygens & Thr24 Ogamma1
+            let mut thr24_pill_info: Option<(f64, f64, usize, f64)> = None;
             if let Some((mg_idx, mg_atom)) = pdb
                 .het_atoms
                 .iter()
@@ -4526,7 +4566,7 @@ fn render_bemisia_fig5_selection_and_sweep(
                 if let Some((sgx, sgy, sgz, cys_num, mg_dist)) = pdb.proximal_cys_sg {
                     let og_raw = proj_lig(sgx, sgy, sgz);
                     let ox = og_raw.0.clamp(1136.0, 1290.0);
-                    let oy = og_raw.1.max(mg_xy.1 + 26.0).min(1036.0);
+                    let oy = og_raw.1.clamp(856.0, 996.0);
                     svg.push_str(&format!(
                         r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#d97706" stroke-width="3.2"/>"##,
                         mg_xy.0, mg_xy.1, ox, oy
@@ -4539,18 +4579,7 @@ fn render_bemisia_fig5_selection_and_sweep(
                         r##"<text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.4" font-weight="900" fill="#422006">Oγ</text>"##,
                         ox, oy + 2.2
                     ));
-                    let bx = (ox + 12.0).min(1344.0);
-                    svg.push_str(&format!(
-                        r##"<rect x="{:.1}" y="{:.1}" width="198" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
-                        bx, oy - 10.0
-                    ));
-                    svg.push_str(&format!(
-                        r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#92400e">Thr24 (ORF {}) Oγ1–Mg²⁺ = {:.2} Å</text>"##,
-                        bx + 6.0,
-                        oy + 3.0,
-                        cys_num,
-                        mg_dist
-                    ));
+                    thr24_pill_info = Some((ox, oy, cys_num, mg_dist));
                 }
             }
 
@@ -4591,6 +4620,25 @@ fn render_bemisia_fig5_selection_and_sweep(
                 svg.push_str(&format!(
                     r##"<circle cx="{:.1}" cy="{:.1}" r="7.2" fill="#10b981" stroke="#064e3b" stroke-width="1.3"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.6" font-weight="900" fill="#ffffff">Mg</text>"##,
                     mx, my, mx, my + 2.2
+                ));
+            }
+            if let Some((ox, oy, cys_num, mg_dist)) = thr24_pill_info {
+                let ly = 1020.0_f64;
+                let bx = (ox + 12.0).clamp(1124.0, 1344.0);
+                svg.push_str(&format!(
+                    r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#d97706" stroke-width="1.1" stroke-dasharray="2,2"/>"##,
+                    ox, oy + 6.0, bx + 40.0, ly - 10.0
+                ));
+                svg.push_str(&format!(
+                    r##"<rect x="{:.1}" y="{:.1}" width="198" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
+                    bx, ly - 10.0
+                ));
+                svg.push_str(&format!(
+                    r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#92400e">Thr24 (ORF {}) Oγ1–Mg²⁺ = {:.2} Å</text>"##,
+                    bx + 6.0,
+                    ly + 3.0,
+                    cys_num,
+                    mg_dist
                 ));
             }
             svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Mg²⁺  ● α/β-PO₄ P  ● Guanine N  ● Phosphate/Ribose O⁻  ● Thr24 Oγ1</text>"##);
@@ -5596,7 +5644,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             short_model(r3, "0-Beaker Raw Control"),
             format!("Raw Unphased Alignment ({} UNVERIFIED Anomalies + AT Skew) → ModelTest → BIONJ-NNI", study.quarantined_records_on_disk),
             format!(
-                "Loses {:.2} nats vs. Rank 1; Quartet MSC Q drops to {:.4}; logged to 0-Beaker dump",
+                "Δln L = {:+.2} nats vs. Rank 1; Quartet MSC Q = {:.4}; logged to 0-Beaker dump",
                 r3_lnl - r0_lnl,
                 study.msc_regime4_raw0.normalized_quartet_score
             ),
@@ -5694,7 +5742,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         svg.push_str(&format!(
             r##"  <rect x="28" y="{}" width="864" height="42" rx="4" fill="{}" stroke="{}" stroke-width="1.2"/>
   <text x="34" y="{}" font-size="7.9" font-weight="800" fill="{}">{}</text>
-  <text x="34" y="{}" font-size="7.0" font-weight="700" fill="{}">{}</text>
+  <text x="34" y="{}" font-size="6.3" font-weight="700" fill="{}">{}</text>
   <text x="146" y="{}" font-size="7.2" font-weight="700" fill="#0f172a">{}</text>
   <text x="146" y="{}" font-size="6.8" fill="#334155">{}</text>
   <text x="518" y="{}" font-size="7.7" font-weight="800" fill="{}">{}</text>
@@ -5712,7 +5760,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             xml_esc(rk),
             ry + 30,
             fg_hex,
-            xml_esc(sub_rk),
+            xml_esc(&truncate_word_clean(sub_rk, 24)),
             ry + 16,
             xml_esc(tc),
             ry + 30,

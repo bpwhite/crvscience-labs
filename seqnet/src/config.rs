@@ -199,6 +199,31 @@ pub fn build_named_locus_panel(names: &[String], invert_mito: bool) -> Vec<Locus
             entrez_synonyms: syns.iter().map(|s| (*s).to_string()).collect(),
         });
     }
+    // Universal Archaea-Eukaryote informational & ATPase/chaperone loci (Standard Code 1 / 11).
+    let core_universal_ae: &[(&str, bool, usize, usize, &[&str])] = &[
+        ("univ_rpb2", true, 350, 4200, &["rpoB", "RPB2", "POLR2B", "RNA polymerase II second largest subunit", "DNA-directed RNA polymerase subunit beta"]),
+        ("univ_rpb1", true, 350, 5800, &["rpoA1", "rpoA", "RPB1", "POLR2A", "RPO21", "RNA polymerase II largest subunit", "DNA-directed RNA polymerase subunit A'"]),
+        ("univ_ef1a", true, 350, 1600, &["tuf", "EEF1A", "EEF1A1", "TEF1", "TEF2", "EF-1a", "elongation factor 1-alpha", "translation elongation factor EF-1 subunit alpha"]),
+        ("univ_ef2", true, 350, 2700, &["fusA", "EEF2", "EFT1", "EFT2", "elongation factor 2", "elongation factor EF-2"]),
+        ("univ_vmaA", true, 350, 2100, &["VMA1", "ATP6V1A", "atpA", "V-type ATP synthase subunit A", "V-type proton ATPase catalytic subunit A"]),
+        ("univ_vmaB", true, 350, 1700, &["VMA2", "ATP6V1B", "atpB", "V-type ATP synthase subunit B", "V-type proton ATPase subunit B"]),
+        ("univ_rad51", true, 300, 1400, &["radA", "RAD51", "DMC1", "DNA repair protein RAD51", "DNA repair and recombination protein RadA"]),
+        ("univ_cct", true, 350, 2000, &["TCP1", "CCT1", "CCT2", "cpn60", "thermosome", "T-complex protein 1", "chaperonin"]),
+        ("univ_hsp70", true, 350, 2300, &["dnaK", "HSP70", "SSA1", "HSPA8", "molecular chaperone DnaK", "heat shock protein 70"]),
+        ("univ_ssu", false, 600, 2200, &["16S ribosomal RNA", "18S ribosomal RNA", "16S rRNA", "18S rRNA", "small subunit ribosomal RNA"]),
+        ("univ_lsu", false, 650, 3800, &["23S ribosomal RNA", "28S ribosomal RNA", "26S ribosomal RNA", "25S ribosomal RNA", "large subunit ribosomal RNA"]),
+    ];
+    for &(name, coding, min_bp, max_bp, syns) in core_universal_ae {
+        catalogue.push(LocusSpec {
+            canonical_name: name.to_string(),
+            locus_class: LocusClass::Nuclear,
+            protein_coding: coding,
+            genetic_code_table: 1,
+            min_expected_bp: min_bp,
+            max_expected_bp: max_bp,
+            entrez_synonyms: syns.iter().map(|s| (*s).to_string()).collect(),
+        });
+    }
     names
         .iter()
         .filter_map(|n| catalogue.iter().find(|l| l.canonical_name.eq_ignore_ascii_case(n)).cloned())
@@ -375,5 +400,18 @@ mod tests {
         let euk = build_named_locus_panel(&["COI".to_string(), "SSU_18S".to_string()], true);
         assert_eq!(euk.len(), 2);
         assert_eq!(euk[0].genetic_code_table, 5);
+
+        let univ_names: Vec<String> = [
+            "univ_rpb2", "univ_rpb1", "univ_ef1a", "univ_ef2", "univ_vmaA", "univ_vmaB",
+            "univ_rad51", "univ_cct", "univ_hsp70", "univ_ssu", "univ_lsu",
+        ]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect();
+        let univ = build_named_locus_panel(&univ_names, true);
+        assert_eq!(univ.len(), 11);
+        assert!(univ.iter().all(|l| l.genetic_code_table == 1));
+        assert!(univ.iter().take(9).all(|l| l.protein_coding));
+        assert!(univ.iter().skip(9).all(|l| !l.protein_coding));
     }
 }

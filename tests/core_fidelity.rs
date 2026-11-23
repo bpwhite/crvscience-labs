@@ -2117,6 +2117,7 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
 
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     for (fname, exp_loci, exp_pdb, exp_gcode) in [
+        ("eukaryotic_nucleus_preprint32.json", 10usize, "1BYU", 1u8),
         ("gram_positive_preprint31.json", 10usize, "1BU7", 11u8),
         ("us_ag_pests_preprint30.json", 16usize, "1TQN", 5u8),
         ("china_australia_pests_preprint29.json", 16usize, "1TQN", 5u8),

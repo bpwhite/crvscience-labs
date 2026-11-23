@@ -1,0 +1,171 @@
+{
+  "benchmark_id": "VAL-SET-071-EUKARYOTIC-NUCLEUS-ASGARD-LECA-ORIGIN",
+  "title": "Origin of the Eukaryotic Nucleus Across Asgardarchaeota, TACK Archaea, and Crown Eukarya Under Partitioned ModelTest, Quartet Coalescence, and Ran-GTPase (1BYU) Threading",
+  "taxon_group": "Archaea and Eukaryota",
+  "mitogenome_loci": false,
+  "loci": [
+    "univ_rpb2",
+    "univ_rpb1",
+    "univ_ef1a",
+    "univ_ef2",
+    "univ_vmaA",
+    "univ_vmaB",
+    "univ_rad51",
+    "univ_cct",
+    "univ_ssu",
+    "univ_lsu"
+  ],
+  "sampling_families": {
+    "A_Euryarchaeota_Outgroup": ["Halobacteriaceae", "Methanosarcinaceae", "Methanococcaceae", "Methanobacteriaceae", "Archaeoglobaceae"],
+    "B_TACK_Proteoarchaeota": ["Sulfolobaceae", "Acidianaceae", "Thermoproteaceae", "Nitrosopumilaceae", "Nitrososphaeraceae", "Korarchaeaceae"],
+    "C_Asgardarchaeota_Stem": ["Promethearchaeaceae", "Lokiarchaeaceae", "Heimdallarchaeaceae", "Odinarchaeaceae"],
+    "D_Discoba_Amoebozoa": ["Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae"],
+    "E_Opisthokonta_Fungi_Metazoa": ["Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae"],
+    "F_Archaeplastida": ["Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae"],
+    "G_SAR_Supergroup": ["Perkinsidae", "Phaeodactylaceae", "Thalassiosiraceae", "Monodopsidaceae", "Peronosporaceae", "Saprolegniaceae", "Chlorarachniaceae"]
+  },
+  "species_per_family": {
+    "Halobacteriaceae": 3,
+    "Methanosarcinaceae": 2,
+    "Methanococcaceae": 1,
+    "Methanobacteriaceae": 1,
+    "Archaeoglobaceae": 1,
+    "Sulfolobaceae": 3,
+    "Acidianaceae": 1,
+    "Thermoproteaceae": 1,
+    "Nitrosopumilaceae": 1,
+    "Nitrososphaeraceae": 1,
+    "Korarchaeaceae": 1,
+    "Promethearchaeaceae": 1,
+    "Lokiarchaeaceae": 4,
+    "Heimdallarchaeaceae": 2,
+    "Odinarchaeaceae": 1,
+    "Dictyosteliaceae": 3,
+    "Cavenderiaceae": 1,
+    "Acanthamoebidae": 1,
+    "Vahlkampfiidae": 1,
+    "Euglenaceae": 1,
+    "Apusomonadidae": 1,
+    "Saccharomycetaceae": 1,
+    "Schizosaccharomycetaceae": 1,
+    "Sordariaceae": 1,
+    "Aspergillaceae": 1,
+    "Ustilaginaceae": 1,
+    "Psathyrellaceae": 1,
+    "Hypocreaceae": 1,
+    "Salpingoecidae": 1,
+    "Capsasporidae": 1,
+    "Edwardsiidae": 1,
+    "Hydridae": 1,
+    "Cyprinidae": 1,
+    "Cyanidioschyzonaceae": 1,
+    "Gigartinaceae": 1,
+    "Galdieriaceae": 1,
+    "Bathycoccaceae": 1,
+    "Volvocaceae": 1,
+    "Funariaceae": 1,
+    "Selaginellaceae": 1,
+    "Brassicaceae": 1,
+    "Poaceae": 2,
+    "Perkinsidae": 1,
+    "Phaeodactylaceae": 1,
+    "Thalassiosiraceae": 1,
+    "Monodopsidaceae": 1,
+    "Peronosporaceae": 3,
+    "Saprolegniaceae": 2,
+    "Chlorarachniaceae": 1
+  },
+  "scored_clades": [
+    {
+      "id": "C1_Euryarchaeota",
+      "name": "Euryarchaeota Outgroups (Halobacteriales + Methanogens)",
+      "families": ["Halobacteriaceae", "Methanosarcinaceae", "Methanococcaceae", "Methanobacteriaceae", "Archaeoglobaceae"]
+    },
+    {
+      "id": "C2_TACK_Proteoarchaeota",
+      "name": "TACK Archaea (Thermoproteota + Nitrososphaerota + Korarchaeia)",
+      "families": ["Sulfolobaceae", "Acidianaceae", "Thermoproteaceae", "Nitrosopumilaceae", "Nitrososphaeraceae", "Korarchaeaceae"]
+    },
+    {
+      "id": "C3_Asgardarchaeota",
+      "name": "Asgardarchaeota / Promethearchaeota (Loki-, Odin-, Heimdallarchaeia)",
+      "families": ["Promethearchaeaceae", "Lokiarchaeaceae", "Heimdallarchaeaceae", "Odinarchaeaceae"]
+    },
+    {
+      "id": "C4_DiscobaAmoebozoa",
+      "name": "Early-Diverging Eukaryota (Amoebozoa + Discoba + Apusozoa)",
+      "families": ["Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae"]
+    },
+    {
+      "id": "C5_Opisthokonta",
+      "name": "Opisthokonta (Fungi + Choanoflagellata + Filasterea + Metazoa)",
+      "families": ["Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae"]
+    },
+    {
+      "id": "C6_Archaeplastida",
+      "name": "Archaeplastida (Rhodophyta + Chlorophyta + Streptophyta)",
+      "families": ["Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae"]
+    },
+    {
+      "id": "C7_SAR_Supergroup",
+      "name": "SAR Supergroup (Alveolata + Stramenopiles + Rhizaria)",
+      "families": ["Perkinsidae", "Phaeodactylaceae", "Thalassiosiraceae", "Monodopsidaceae", "Peronosporaceae", "Saprolegniaceae", "Chlorarachniaceae"]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "C8_AsgardEukaryotaSister",
+      "name": "Asgardarchaeota + Eukarya Nuclear-Origin Clade ([C]-[G])",
+      "families": ["Promethearchaeaceae", "Lokiarchaeaceae", "Heimdallarchaeaceae", "Odinarchaeaceae", "Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae", "Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae", "Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae", "Perkinsidae", "Phaeodactylaceae", "Thalassiosiraceae", "Monodopsidaceae", "Peronosporaceae", "Saprolegniaceae", "Chlorarachniaceae"],
+      "why_not_scored": "Eocyte-Asgard-Eukaryote sister clade uniting Asgardarchaeota ESP-encoding archaea with LECA."
+    },
+    {
+      "id": "C9_CrownEukarya_LECA",
+      "name": "Last Eukaryotic Common Ancestor (LECA) Crown ([D]-[G])",
+      "families": ["Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae", "Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae", "Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae", "Perkinsidae", "Phaeodactylaceae", "Thalassiosiraceae", "Monodopsidaceae", "Peronosporaceae", "Saprolegniaceae", "Chlorarachniaceae"],
+      "why_not_scored": "Crown eukaryotic clade post-dating nuclear envelope closure, Ran-GTPase NPC transport, and spliceosomal compartmentalization."
+    }
+  ],
+  "sources": [
+    {
+      "key": "White2026_RuNIE",
+      "citation": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs.",
+      "doi": "10.5281/zenodo.23969275"
+    },
+    {
+      "key": "ZarembaNiedzwiedzka2017_Asgard",
+      "citation": "Zaremba-Niedzwiedzka, K., Caceres, E. F., Saw, J. H., et al. (2017). Asgard archaea illuminate the origin of eukaryotic cellular complexity. Nature, 541(7637), 353-358.",
+      "doi": "10.1038/nature21031"
+    },
+    {
+      "key": "Eme2023_Hodarchaeales",
+      "citation": "Eme, L., Tamarit, D., Caceres, E. F., et al. (2023). Inference and reconstruction of the heimdallarchaeial ancestry of eukaryotes. Nature, 618(7967), 992-999.",
+      "doi": "10.1038/s41586-023-06186-2"
+    },
+    {
+      "key": "Imachi2020_Promethearchaeum",
+      "citation": "Imachi, H., Nobu, M. K., Nakahara, N., et al. (2020). Isolation of an archaeon at the prokaryote-eukaryote interface. Nature, 577(7791), 519-525.",
+      "doi": "10.1038/s41586-019-1916-6"
+    },
+    {
+      "key": "RodriguesOliveira2023_Lokiarchaeum",
+      "citation": "Rodrigues-Oliveira, T., Wollweber, F., Ponce-Toledo, R. I., et al. (2023). Actin cytoskeleton and complex cell architecture in an Asgard archaeon. Nature, 613(7943), 332-339.",
+      "doi": "10.1038/s41586-022-05550-y"
+    },
+    {
+      "key": "MartinKoonin2006_IntronsNucleus",
+      "citation": "Martin, W., & Koonin, E. V. (2006). Introns and the origin of nucleus-cytosol compartmentalization. Nature, 440(7080), 41-45.",
+      "doi": "10.1038/nature04531"
+    },
+    {
+      "key": "Betts2018_FungiPlantsEukClock",
+      "citation": "Betts, H. C., Puttick, M. N., Clark, J. W., et al. (2018). Integrated genomic and fossil evidence illuminates life's early evolution and eukaryote origin. Nature Ecology & Evolution, 2(10), 1556-1562.",
+      "doi": "10.1038/s41559-018-0644-x"
+    },
+    {
+      "key": "Scheffzek1995_RanGDP",
+      "citation": "Scheffzek, K., Klebe, C., Fritz-Wolf, K., Kabsch, W., & Wittinghofer, A. (1995). Crystal structure of the nuclear Ras-related protein Ran in its GDP-bound form. Nature, 374(6520), 378-381.",
+      "doi": "10.1038/374378a0"
+    }
+  ]
+}

@@ -1575,7 +1575,7 @@ pub(crate) fn run_standardized_12cohort_skylines(
                     } else {
                         clean_nt
                     }
-                } else if is_coding && cin.ploidy_scalar < 1.0 {
+                } else if is_coding && (cin.ploidy_scalar - 1.0).abs() > 1e-6 {
                     let orf_nt = extract_longest_sense_orf(&clean_nt, clean_nt.len().max(2400));
                     if orf_nt.len() >= 240 {
                         orf_nt
@@ -3025,6 +3025,12 @@ pub struct PdbTemplateSpec {
     pub het_resname: String,
     #[serde(default)]
     pub het_resseq: usize,
+    #[serde(default)]
+    pub metal_resname: Option<String>,
+    #[serde(default)]
+    pub anchor_resname: Option<String>,
+    #[serde(default)]
+    pub anchor_atom_name: Option<String>,
     pub cys_site: usize,
     pub pdb_filename: String,
     pub gene_symbol: String,
@@ -3083,6 +3089,9 @@ pub fn build_pdb_structure_from_template(
     let mut het_atoms: Vec<PdbHetAtom> = Vec::with_capacity(64);
     let mut cys_sg_xyz: Option<(f64, f64, f64)> = None;
     let mut fe_xyz: Option<(f64, f64, f64)> = None;
+    let anchor_res = spec.anchor_resname.as_deref().unwrap_or("CYS");
+    let anchor_atom = spec.anchor_atom_name.as_deref().unwrap_or("SG");
+    let mut seen_metal = false;
 
     for line in raw_pdb.lines() {
         if line.starts_with("HELIX ") && line.len() >= 37 {
@@ -3120,7 +3129,7 @@ pub fn build_pdb_structure_from_template(
             let bfac = line[60..66].trim().parse::<f64>().unwrap_or(28.0);
             if atom_name == "CA" && seen_res.insert(res_seq) {
                 template_cas.push((res_seq, res3.to_string(), aa3_to_aa1(res3), x, y, z, bfac));
-            } else if atom_name == "SG" && res3 == "CYS" && res_seq == spec.cys_site {
+            } else if atom_name == anchor_atom && res3 == anchor_res && res_seq == spec.cys_site {
                 cys_sg_xyz = Some((x, y, z));
             }
         } else if line.starts_with("HETATM") && line.len() >= 54 {
@@ -3135,7 +3144,14 @@ pub fn build_pdb_structure_from_template(
                     .map(|rs| rs == spec.het_resseq)
                     .unwrap_or(true)
             };
-            if res3 == spec.het_resname && chain == chain_ch && resseq_ok {
+            let is_primary_het = res3 == spec.het_resname && chain == chain_ch && resseq_ok;
+            let is_metal_het = !seen_metal
+                && spec.metal_resname.as_deref() == Some(res3)
+                && chain == chain_ch;
+            if is_primary_het || is_metal_het {
+                if is_metal_het {
+                    seen_metal = true;
+                }
                 let atom_name = line[12..16].trim().to_string();
                 let Ok(x) = line[30..38].trim().parse::<f64>() else { continue };
                 let Ok(y) = line[38..46].trim().parse::<f64>() else { continue };
@@ -3145,7 +3161,7 @@ pub fn build_pdb_structure_from_template(
                 } else {
                     atom_name.chars().take(1).collect()
                 };
-                if atom_name == "FE" {
+                if atom_name == "FE" || is_metal_het {
                     fe_xyz = Some((x, y, z));
                 }
                 het_atoms.push(PdbHetAtom {
@@ -3158,6 +3174,14 @@ pub fn build_pdb_structure_from_template(
                 });
             }
         }
+    }
+    if fe_xyz.is_none() && !het_atoms.is_empty() {
+        let n_h = het_atoms.len() as f64;
+        fe_xyz = Some((
+            het_atoms.iter().map(|h| h.x).sum::<f64>() / n_h,
+            het_atoms.iter().map(|h| h.y).sum::<f64>() / n_h,
+            het_atoms.iter().map(|h| h.z).sum::<f64>() / n_h,
+        ));
     }
 
     let target_aa_seq = if let Some(nt) = target_nt_opt {
@@ -3359,8 +3383,16 @@ pub fn build_pdb_structure_from_template(
     let proximal_cys_sg = if let (Some((sx, sy, sz)), Some((fx, fy, fz))) = (cys_sg_xyz, fe_xyz)
     {
         pdb_txt.push_str(&format!(
-            "ATOM  {:5}  SG  CYS {}{:4}    {:8.3}{:8.3}{:8.3}  1.00 98.80           S\n",
-            serial, chain_ch, spec.cys_site, sx, sy, sz
+            "ATOM  {:5}  {:<3} {:<3} {}{:4}    {:8.3}{:8.3}{:8.3}  1.00 98.80           {}\n",
+            serial,
+            anchor_atom,
+            anchor_res,
+            chain_ch,
+            spec.cys_site,
+            sx,
+            sy,
+            sz,
+            anchor_atom.chars().next().unwrap_or('S')
         ));
         serial += 1;
         let dist = round4(((sx - fx).powi(2) + (sy - fy).powi(2) + (sz - fz).powi(2)).sqrt());
@@ -3373,14 +3405,20 @@ pub fn build_pdb_structure_from_template(
     let mut fe_serial = 0usize;
     let mut n_serials = Vec::new();
     for ha in &het_atoms {
-        if ha.atom_name == "FE" {
+        let is_metal = ha.atom_name == "FE" || spec.metal_resname.as_deref() == Some(ha.res_name.as_str());
+        if is_metal && fe_serial == 0 {
             fe_serial = serial;
-        } else if matches!(ha.atom_name.as_str(), "NA" | "NB" | "NC" | "ND") {
+        } else if matches!(ha.atom_name.as_str(), "NA" | "NB" | "NC" | "ND" | "O1B" | "O2B" | "O3B") {
             n_serials.push(serial);
         }
+        let h_resseq = if spec.metal_resname.as_deref() == Some(ha.res_name.as_str()) {
+            het_sq + 1
+        } else {
+            het_sq
+        };
         pdb_txt.push_str(&format!(
             "HETATM{:5} {:<4} {:<3} {}{:4}    {:8.3}{:8.3}{:8.3}  1.00 28.40          {:>2}\n",
-            serial, ha.atom_name, spec.het_resname, chain_ch, het_sq, ha.x, ha.y, ha.z, ha.element
+            serial, ha.atom_name, ha.res_name, chain_ch, h_resseq, ha.x, ha.y, ha.z, ha.element
         ));
         serial += 1;
     }
@@ -3889,6 +3927,8 @@ pub struct StudySlotSpec {
     pub species: String,
     #[serde(default)]
     pub synonyms: Vec<String>,
+    #[serde(default)]
+    pub genome_accession: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -3906,6 +3946,10 @@ pub struct DeclarativeLocusDef {
     pub min_taxa: usize,
     #[serde(default = "default_min_aa_70")]
     pub min_aa: usize,
+    #[serde(default)]
+    pub min_aa_identity: Option<f64>,
+    #[serde(default)]
+    pub min_dayhoff6_sim: Option<f64>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativeEntrezBatchQuery {
@@ -4049,6 +4093,8 @@ pub struct DeclarativeStudyConfig {
     #[serde(default = "default_code_11")]
     pub genetic_code_table: u8,
     pub is_prokaryote: bool,
+    #[serde(default)]
+    pub universal_archaea_eukarya: bool,
     pub benchmark_design_path: String,
     pub cache_subdir: String,
     pub seqnet_sqlite_name: String,
@@ -4113,6 +4159,19 @@ fn drv_summary_eukaryote(ccode: &str, taj_d: f64) -> String {
         ),
         _ => format!(
             "Single-species mitochondrial/coding coalescent skyline (Tajima's D = {:+.3})",
+            taj_d
+        ),
+    }
+}
+
+fn drv_summary_universal_ae(ccode: &str, taj_d: f64) -> String {
+    match ccode {
+        "L2" | "L4" | "L5" => format!(
+            "Structural Katoh E-INS-i SSU 16S/18S rRNA slow-clock skyline (Tajima's D = {:+.3})",
+            taj_d
+        ),
+        _ => format!(
+            "Single-species universal Code-1/11 nuclear/archaeal skyline (Tajima's D = {:+.3})",
             taj_d
         ),
     }
@@ -4312,6 +4371,621 @@ fn resolve_slot_mito(
     None
 }
 
+fn url_encode_sm(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 32);
+    for &b in s.as_bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            out.push(b as char);
+        } else if b == b' ' {
+            out.push_str("%20");
+        } else {
+            out.push_str(&format!("%{:02X}", b));
+        }
+    }
+    out
+}
+
+fn supermatrix_entrez_get_retry(url: &str) -> Option<String> {
+    let api_key = std::env::var("NCBI_API_KEY")
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty());
+    let full_url = if let Some(ref k) = api_key {
+        let sep = if url.contains('?') { '&' } else { '?' };
+        format!("{}{}api_key={}", url, sep, url_encode_sm(k))
+    } else {
+        url.to_string()
+    };
+    let rate_ms = if api_key.is_some() { 140 } else { 360 };
+    for attempt in 0..4u64 {
+        let wait_ms = if attempt == 0 {
+            rate_ms
+        } else {
+            900u64 << (attempt - 1)
+        };
+        std::thread::sleep(std::time::Duration::from_millis(wait_ms));
+        if let Ok(resp) = ureq::get(&full_url)
+            .set(
+                "User-Agent",
+                "crvscience-bio-suite-supervisor/0.4.0 (+https://crvscience.com/labs; GPL-3.0)",
+            )
+            .timeout(std::time::Duration::from_secs(45))
+            .call()
+        {
+            if let Ok(txt) = resp.into_string() {
+                if !txt.trim().is_empty() {
+                    return Some(txt);
+                }
+            }
+        }
+    }
+    None
+}
+
+fn extract_bracket_tag(hdr: &str, key: &str) -> String {
+    let pat = format!("[{}=", key);
+    if let Some(pos) = hdr.find(&pat) {
+        let rest = &hdr[pos + pat.len()..];
+        if let Some(end) = rest.find(']') {
+            return rest[..end].trim().to_string();
+        }
+    }
+    String::new()
+}
+
+fn classify_universal_ae_cds_header(
+    gene: &str,
+    prot: &str,
+    title: &str,
+    len_bp: usize,
+) -> Option<&'static str> {
+    let g = gene.trim().to_ascii_lowercase();
+    let d = format!("{} {}", prot, title).to_ascii_lowercase();
+    if d.contains("mitochondri")
+        || d.contains("chloroplast")
+        || d.contains("plastid")
+        || d.contains("apicoplast")
+        || d.contains("kinetoplast")
+    {
+        return None;
+    }
+    if (d.contains("16s ribosomal rna")
+        || d.contains("18s ribosomal rna")
+        || d.contains("16s rrna")
+        || d.contains("18s rrna")
+        || d.contains("small subunit ribosomal rna")
+        || d.contains("small subunit rrna"))
+        && !d.contains("23s")
+        && !d.contains("28s")
+        && !d.contains("26s")
+        && !d.contains("25s")
+        && !d.contains("12s")
+        && !d.contains("its1")
+        && !d.contains("internal transcribed")
+        && !d.contains("protein")
+        && (600..=2500).contains(&len_bp)
+    {
+        return Some("univ_ssu");
+    }
+    if (d.contains("23s ribosomal rna")
+        || d.contains("28s ribosomal rna")
+        || d.contains("26s ribosomal rna")
+        || d.contains("25s ribosomal rna")
+        || d.contains("23s rrna")
+        || d.contains("28s rrna")
+        || d.contains("large subunit ribosomal rna")
+        || d.contains("large subunit rrna"))
+        && !d.contains("16s")
+        && !d.contains("18s")
+        && !d.contains("protein")
+        && (650..=4500).contains(&len_bp)
+    {
+        return Some("univ_lsu");
+    }
+    if (matches!(
+        g.as_str(),
+        "rpob" | "rpob1" | "rpb2" | "polr2b" | "rpo22" | "nrpb2" | "rpii140"
+    ) || d.contains("rpb2")
+        || d.contains("polr2b")
+        || d.contains("nrpb2")
+        || d.contains("rpii140")
+        || d.contains("dna-directed rna polymerase ii subunit rpb2")
+        || d.contains("rna polymerase subunit b")
+        || d.contains("rna polymerase ii second largest")
+        || d.contains("rna polymerase ii subunit b")
+        || (d.contains("dna-directed rna polymerase")
+            && d.contains("subunit beta")
+            && !d.contains("beta'")
+            && !d.contains("beta prime")))
+        && !d.contains("subunit a")
+        && !d.contains("subunit d")
+        && !d.contains("associated")
+        && !d.contains("interacting")
+        && (1200..=5500).contains(&len_bp)
+    {
+        return Some("univ_rpb2");
+    }
+    if (matches!(
+        g.as_str(),
+        "rpoa1" | "rpoa" | "rpb1" | "polr2a" | "rpo21" | "nrpb1" | "rpii215"
+    ) || d.contains("rpb1")
+        || d.contains("polr2a")
+        || d.contains("rpo21")
+        || d.contains("nrpb1")
+        || d.contains("rpii215")
+        || d.contains("dna-directed rna polymerase ii subunit rpb1")
+        || d.contains("rna polymerase subunit a'")
+        || d.contains("rna polymerase ii largest")
+        || d.contains("dna-directed rna polymerase subunit a'"))
+        && g != "rpoa2"
+        && !d.contains("subunit a''")
+        && !d.contains("subunit b")
+        && !d.contains("associated")
+        && !d.contains("interacting")
+        && (1600..=8500).contains(&len_bp)
+    {
+        return Some("univ_rpb1");
+    }
+    if (matches!(
+        g.as_str(),
+        "tuf" | "tef1" | "tef2" | "eef1a" | "eef1a1" | "eef1a2" | "tefa" | "ef1a"
+    ) || d.contains("eef1a")
+        || d.contains("tef1")
+        || d.contains("elongation factor 1-alpha")
+        || d.contains("elongation factor 1 alpha")
+        || d.contains("elongation factor ef-1 subunit alpha")
+        || d.contains("elongation factor ef-1 alpha"))
+        && !d.contains("1-beta")
+        && !d.contains("1-delta")
+        && !d.contains("1-gamma")
+        && !d.contains("release factor")
+        && !d.contains("like")
+        && !d.contains("kinase")
+        && (950..=2800).contains(&len_bp)
+    {
+        return Some("univ_ef1a");
+    }
+    if (matches!(g.as_str(), "fusa" | "fus" | "eef2" | "eft1" | "eft2" | "ef2")
+        || d.contains("eef2")
+        || d.contains("eft2")
+        || d.contains("elongation factor 2")
+        || d.contains("elongation factor ef-2")
+        || d.contains("translation elongation factor 2"))
+        && !d.contains("kinase")
+        && !d.contains("like")
+        && (1800..=4500).contains(&len_bp)
+    {
+        return Some("univ_ef2");
+    }
+    if (matches!(g.as_str(), "atpa" | "vma1" | "atp6v1a" | "ahaa" | "vha-a")
+        || d.contains("atp6v1a")
+        || d.contains("vma1")
+        || ((d.contains("atp synthase")
+            || d.contains("proton atpase")
+            || d.contains("transporting atpase")
+            || d.contains("v/a-type"))
+            && (d.contains("subunit a")
+                || d.contains("catalytic subunit a")
+                || d.contains("alpha chain"))
+            && !d.contains("subunit a0")
+            && !d.contains("v0")
+            && !d.contains("a0")))
+        && !d.contains("subunit b")
+        && !d.contains("subunit c")
+        && !d.contains("subunit d")
+        && !d.contains("subunit e")
+        && !d.contains("subunit h")
+        && !d.contains("f0f1")
+        && !d.contains("f-type")
+        && (1350..=4000).contains(&len_bp)
+    {
+        return Some("univ_vmaA");
+    }
+    if (matches!(
+        g.as_str(),
+        "atpb" | "vma2" | "atp6v1b" | "atp6v1b1" | "atp6v1b2" | "ahab" | "vha-b"
+    ) || d.contains("atp6v1b")
+        || d.contains("vma2")
+        || ((d.contains("atp synthase")
+            || d.contains("proton atpase")
+            || d.contains("transporting atpase")
+            || d.contains("v/a-type"))
+            && (d.contains("subunit b") || d.contains("beta chain"))))
+        && !d.contains("subunit a")
+        && !d.contains("subunit c")
+        && !d.contains("f0f1")
+        && !d.contains("f-type")
+        && (1100..=3400).contains(&len_bp)
+    {
+        return Some("univ_vmaB");
+    }
+    if (matches!(g.as_str(), "rada" | "rad51")
+        || d.contains("rad51")
+        || d.contains("recombinase rada")
+        || d.contains("recombination protein rada")
+        || d.contains("dna repair protein rada")
+        || d.contains("dna repair and recombination protein rada")
+        || d.contains("dna repair protein rad51"))
+        && !d.contains("rad51c")
+        && !d.contains("rad51d")
+        && !d.contains("rad51b")
+        && !d.contains("radb")
+        && !d.contains("like")
+        && !d.contains("associated")
+        && !d.contains("interacting")
+        && (750..=2800).contains(&len_bp)
+    {
+        return Some("univ_rad51");
+    }
+    if (matches!(
+        g.as_str(),
+        "tcp1" | "cct1" | "cct2" | "cct3" | "cct4" | "cct5" | "ccta" | "cctb" | "ths1" | "thsa" | "thsb"
+    ) || d.contains("thermosome")
+        || d.contains("archaeal chaperonin")
+        || d.contains("group ii chaperonin")
+        || d.contains("tcp-1")
+        || d.contains("t-complex protein 1"))
+        && !d.contains("groes")
+        && !d.contains("10 kda")
+        && !d.contains("prefoldin")
+        && !d.contains("groel")
+        && !d.contains("60 kda")
+        && !d.contains("hsp60")
+        && (1200..=3200).contains(&len_bp)
+    {
+        return Some("univ_cct");
+    }
+    if (matches!(
+        g.as_str(),
+        "dnak" | "hsp70" | "ssa1" | "ssa2" | "hspa8" | "hspa1a"
+    ) || d.contains("chaperone protein dnak")
+        || d.contains("molecular chaperone dnak")
+        || (d.contains("heat shock") && d.contains("70")))
+        && !d.contains("dnaj")
+        && !d.contains("grpe")
+        && !d.contains("hspa9")
+        && !d.contains("ssc1")
+        && !d.contains("hspa5")
+        && !d.contains("bip")
+        && !d.contains("interacting")
+        && !d.contains("binding protein")
+        && (1400..=3600).contains(&len_bp)
+    {
+        return Some("univ_hsp70");
+    }
+    None
+}
+
+fn fetch_universal_archaea_eukarya_panel(
+    safe_k: &str,
+    slot: &StudySlotSpec,
+    org_clause: &str,
+    cache_dir: &Path,
+) -> Vec<(String, String, String)> {
+    let cache_path = cache_dir.join(format!("univ_ae_panel_v2_{}.json", safe_k));
+    if let Ok(raw) = fs::read_to_string(&cache_path) {
+        if let Ok(parsed) = serde_json::from_str::<Vec<(String, String, String)>>(&raw) {
+            if !parsed.is_empty() {
+                return parsed;
+            }
+        }
+    }
+
+    fn record_universal_hit(
+        best: &mut HashMap<&'static str, (String, String)>,
+        loc: &'static str,
+        acc: String,
+        seq: String,
+        is_coding: bool,
+    ) {
+        let orf = if is_coding {
+            extract_best_sense_orf_with_table(&seq, 7500, 1, false)
+        } else {
+            seq
+        };
+        if orf.len() < 600 {
+            return;
+        }
+        let replace = best
+            .get(loc)
+            .map(|(_, prev_s)| orf.len() > prev_s.len() && orf.len() <= 6800)
+            .unwrap_or(true);
+        if replace {
+            best.insert(loc, (acc, orf));
+        }
+    }
+
+    let mut best: HashMap<&'static str, (String, String)> = HashMap::new();
+
+    if let Some(ref g_acc) = slot.genome_accession {
+        let cds_cache = cache_dir.join(format!("cds_{}.fasta", g_acc));
+        let cds_txt = if cds_cache.is_file() {
+            fs::read_to_string(&cds_cache).unwrap_or_default()
+        } else {
+            let url = format!(
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&rettype=fasta_cds_na&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
+                url_encode_sm(g_acc)
+            );
+            let txt = supermatrix_entrez_get_retry(&url).unwrap_or_default();
+            if txt.contains('>') {
+                let _ = fs::write(&cds_cache, &txt);
+            }
+            txt
+        };
+        let mut cur_hdr = String::new();
+        let mut cur_seq = String::new();
+        let flush_cds = |best: &mut HashMap<&'static str, (String, String)>, hdr: &str, seq: &str| {
+            if hdr.is_empty() || hdr.contains("[pseudo=true]") {
+                return;
+            }
+            let c = clean_acgt_only(seq);
+            if c.len() < 600 {
+                return;
+            }
+            let gene = extract_bracket_tag(hdr, "gene");
+            let prot = extract_bracket_tag(hdr, "protein");
+            if let Some(loc) = classify_universal_ae_cds_header(&gene, &prot, hdr, c.len()) {
+                let is_coding = !matches!(loc, "univ_ssu" | "univ_lsu");
+                let prot_id = extract_bracket_tag(hdr, "protein_id");
+                let acc = if prot_id.is_empty() {
+                    g_acc.clone()
+                } else {
+                    format!("{}:{}", g_acc, prot_id)
+                };
+                record_universal_hit(best, loc, acc, c, is_coding);
+            }
+        };
+        for line in cds_txt.lines() {
+            if line.starts_with('>') {
+                flush_cds(&mut best, &cur_hdr, &cur_seq);
+                cur_hdr = line.to_string();
+                cur_seq.clear();
+            } else {
+                cur_seq.push_str(line.trim());
+            }
+        }
+        flush_cds(&mut best, &cur_hdr, &cur_seq);
+
+        let ft_cache = cache_dir.join(format!("ft_{}.txt", g_acc));
+        let ft_txt = if ft_cache.is_file() {
+            fs::read_to_string(&ft_cache).unwrap_or_default()
+        } else {
+            let url = format!(
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&rettype=ft&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
+                url_encode_sm(g_acc)
+            );
+            let txt = supermatrix_entrez_get_retry(&url).unwrap_or_default();
+            if txt.contains(">Feature") {
+                let _ = fs::write(&ft_cache, &txt);
+            }
+            txt
+        };
+        let mut pending_rrna: Option<(u64, u64, u8)> = None;
+        let mut rrna_coords: HashMap<&'static str, (u64, u64, u8)> = HashMap::new();
+        for line in ft_txt.lines() {
+            if !line.starts_with('\t') && !line.starts_with('>') {
+                let parts: Vec<&str> = line.split('\t').collect();
+                if parts.len() >= 3 && parts[2].trim() == "rRNA" {
+                    let s1 = parts[0].trim().trim_start_matches(|ch| ch == '<' || ch == '>').parse::<u64>();
+                    let s2 = parts[1].trim().trim_start_matches(|ch| ch == '<' || ch == '>').parse::<u64>();
+                    if let (Ok(a), Ok(b)) = (s1, s2) {
+                        let strand = if a <= b { 1 } else { 2 };
+                        pending_rrna = Some((a.min(b), a.max(b), strand));
+                        continue;
+                    }
+                }
+                pending_rrna = None;
+            } else if let Some((lo, hi, strand)) = pending_rrna {
+                let trimmed = line.trim();
+                if let Some(prod) = trimmed.strip_prefix("product\t") {
+                    let p_low = prod.to_ascii_lowercase();
+                    let span = (hi - lo + 1) as usize;
+                    if (p_low.contains("16s ribosomal") || p_low.contains("16s rrna"))
+                        && (800..=2200).contains(&span)
+                    {
+                        rrna_coords.entry("univ_ssu").or_insert((lo, hi, strand));
+                    } else if (p_low.contains("23s ribosomal") || p_low.contains("23s rrna"))
+                        && (1600..=4000).contains(&span)
+                    {
+                        rrna_coords.entry("univ_lsu").or_insert((lo, hi, strand));
+                    }
+                    pending_rrna = None;
+                }
+            }
+        }
+        for (loc, (lo, hi, strand)) in rrna_coords {
+            let ef_url = format!(
+                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&seq_start={}&seq_stop={}&strand={}&rettype=fasta&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
+                url_encode_sm(g_acc),
+                lo,
+                hi,
+                strand
+            );
+            if let Some(fa) = supermatrix_entrez_get_retry(&ef_url) {
+                let mut body = String::with_capacity(fa.len());
+                for l in fa.lines() {
+                    if !l.starts_with('>') {
+                        body.push_str(l.trim());
+                    }
+                }
+                let c = clean_acgt_only(&body);
+                if c.len() >= 600 {
+                    record_universal_hit(&mut best, loc, g_acc.clone(), c, false);
+                }
+            }
+        }
+    } else {
+        let per_locus_queries: [(&'static str, String, usize, usize, bool); 10] = [
+            (
+                "univ_rpb2",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (RPB2[Gene] OR POLR2B[Gene] OR NRPB2[Gene] OR RpII140[Gene] OR \"RNA polymerase II second\"[Title] OR \"RNA polymerase II subunit B\"[Title] OR \"DNA-directed RNA polymerase II subunit RPB2\"[Title]) AND 1200:5500[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title]",
+                    org_clause
+                ),
+                1200,
+                5500,
+                true,
+            ),
+            (
+                "univ_rpb1",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (RPB1[Gene] OR POLR2A[Gene] OR RPO21[Gene] OR NRPB1[Gene] OR RpII215[Gene] OR \"RNA polymerase II largest\"[Title] OR \"DNA-directed RNA polymerase II subunit RPB1\"[Title]) AND 1600:8500[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title]",
+                    org_clause
+                ),
+                1600,
+                8500,
+                true,
+            ),
+            (
+                "univ_ef1a",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (EEF1A[Gene] OR EEF1A1[Gene] OR TEF1[Gene] OR TEF2[Gene] OR EF1A[Gene] OR \"elongation factor 1-alpha\"[Title] OR \"elongation factor 1 alpha\"[Title]) AND 900:2800[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"1-beta\"[Title] NOT \"1-delta\"[Title] NOT \"1-gamma\"[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                900,
+                2800,
+                true,
+            ),
+            (
+                "univ_ef2",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (EEF2[Gene] OR EFT1[Gene] OR EFT2[Gene] OR EF2[Gene] OR \"elongation factor 2\"[Title]) AND 1600:4500[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT kinase[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                1600,
+                4500,
+                true,
+            ),
+            (
+                "univ_vmaA",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (VMA1[Gene] OR ATP6V1A[Gene] OR VHA-A[Gene] OR \"V-type proton ATPase catalytic subunit A\"[Title] OR \"vacuolar ATP synthase catalytic subunit A\"[Title] OR \"V-type ATPase subunit A\"[Title] OR \"V-type proton ATPase subunit A\"[Title]) AND 1200:4000[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"subunit B\"[Title]",
+                    org_clause
+                ),
+                1200,
+                4000,
+                true,
+            ),
+            (
+                "univ_vmaB",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (VMA2[Gene] OR ATP6V1B[Gene] OR ATP6V1B1[Gene] OR ATP6V1B2[Gene] OR VHA-B[Gene] OR \"V-type proton ATPase subunit B\"[Title] OR \"vacuolar ATP synthase subunit B\"[Title] OR \"V-type ATPase subunit B\"[Title]) AND 1000:3400[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"subunit A\"[Title]",
+                    org_clause
+                ),
+                1000,
+                3400,
+                true,
+            ),
+            (
+                "univ_rad51",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (RAD51[Gene] OR \"DNA repair protein RAD51\"[Title] OR \"recombinase RAD51\"[Title]) AND 700:2800[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT RAD51B[Title] NOT RAD51C[Title] NOT RAD51D[Title] NOT \"like\"[Title] NOT associated[Title]",
+                    org_clause
+                ),
+                700,
+                2800,
+                true,
+            ),
+            (
+                "univ_cct",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (TCP1[Gene] OR CCT1[Gene] OR CCT2[Gene] OR CCT3[Gene] OR CCT4[Gene] OR CCT5[Gene] OR \"T-complex protein 1\"[Title]) AND 1100:3200[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title]",
+                    org_clause
+                ),
+                1100,
+                3200,
+                true,
+            ),
+            (
+                "univ_ssu",
+                format!(
+                    "{} AND (\"18S ribosomal RNA\"[Title] OR \"18S rRNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 900:2400[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT 28S[Title] NOT ITS1[Title]",
+                    org_clause
+                ),
+                900,
+                2400,
+                false,
+            ),
+            (
+                "univ_lsu",
+                format!(
+                    "{} AND (\"28S ribosomal RNA\"[Title] OR \"26S ribosomal RNA\"[Title] OR \"25S ribosomal RNA\"[Title] OR \"28S rRNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 1200:4500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT 18S[Title]",
+                    org_clause
+                ),
+                1200,
+                4500,
+                false,
+            ),
+        ];
+        const PARALOG_BLOCKERS: [&str; 15] = [
+            "mitochondri",
+            "chloroplast",
+            "plastid",
+            "apicoplast",
+            "kinase",
+            "associated",
+            "interacting",
+            "like",
+            "rad51b",
+            "rad51c",
+            "rad51d",
+            "1-beta",
+            "1-delta",
+            "1-gamma",
+            "f0f1",
+        ];
+        const CODING_GENES: [&str; 31] = [
+            "rpb2", "polr2b", "nrpb2", "rpii140", "rpb1", "polr2a", "rpo21", "nrpb1", "rpii215",
+            "eef1a", "eef1a1", "tef1", "tef2", "ef1a", "eef2", "eft1", "eft2", "ef2", "vma1",
+            "atp6v1a", "vha-a", "vma2", "atp6v1b", "vha-b", "rad51", "tcp1", "cct1", "cct2",
+            "cct3", "cct4", "cct5",
+        ];
+        for (target_loc, qterm, min_bp, max_bp, is_coding) in per_locus_queries {
+            if let Ok(items) = discover_entrez_with_retry_shared(
+                &format!("univ2_{}_{}", safe_k, target_loc),
+                &qterm,
+                4,
+                min_bp,
+                max_bp,
+                cache_dir,
+            ) {
+                for (sm, raw_s) in items {
+                    let c = clean_acgt_only(&raw_s);
+                    let title_low = sm.title.to_ascii_lowercase();
+                    let cls_hit =
+                        classify_universal_ae_cds_header("", "", &sm.title, c.len()) == Some(target_loc);
+                    let fallback_hit = is_coding
+                        && c.len() >= min_bp
+                        && c.len() <= max_bp
+                        && !PARALOG_BLOCKERS.iter().any(|b| title_low.contains(b))
+                        && !(target_loc == "univ_vmaA" && title_low.contains("subunit b"))
+                        && !(target_loc == "univ_vmaB" && title_low.contains("subunit a"))
+                        && (!title_low.contains("hypothetical")
+                            || CODING_GENES.iter().any(|g| title_low.contains(g)));
+                    if cls_hit || fallback_hit {
+                        record_universal_hit(&mut best, target_loc, sm.accession, c, is_coding);
+                    }
+                }
+            }
+        }
+    }
+
+    let out: Vec<(String, String, String)> = best
+        .into_iter()
+        .map(|(loc, (acc, seq))| (loc.to_string(), acc, seq))
+        .collect();
+    if let Ok(js) = serde_json::to_string(&out) {
+        let _ = fs::write(&cache_path, js);
+    }
+    eprintln!(
+        "  [Universal AE Panel] {} ({}) -> {}/10 loci",
+        slot.tip_code,
+        slot.species,
+        out.len()
+    );
+    out
+}
+
 /// Executes a full 5-stage multi-compartment study driven strictly by a JSON `DeclarativeStudyConfig`
 /// (`--study-config <path.json>`), eliminating per-study Rust runner files.
 pub fn execute_declarative_study(
@@ -4419,7 +5093,7 @@ pub fn execute_declarative_study(
     let mut raw_full_mitos: Vec<(String, String, String, String)> = Vec::new();
     let mut seen_mito_acc: HashSet<String> = HashSet::new();
 
-    if !cfg.is_prokaryote {
+    if !cfg.is_prokaryote && !cfg.universal_archaea_eukarya {
         let mut reg_mito =
             |acc: String, org: String, title: String, c: String, extra_slot_k: Option<String>| {
                 if let Some(sk) = extra_slot_k {
@@ -4584,6 +5258,31 @@ pub fn execute_declarative_study(
                     }
                 }
             }
+        } else if cfg.universal_archaea_eukarya {
+            let panel = fetch_universal_archaea_eukarya_panel(
+                &safe_k,
+                slot,
+                &org_clause,
+                &val_cache_dir,
+            );
+            for (loc_tag, acc, seq) in panel {
+                by_sp_loc.insert((sp_k.clone(), loc_tag.clone()), (acc.clone(), seq.clone()));
+                for alt_sp in &slot.synonyms {
+                    by_sp_loc.insert(
+                        (norm_species_key(alt_sp), loc_tag.clone()),
+                        (acc.clone(), seq.clone()),
+                    );
+                }
+                if !genus_low.is_empty() {
+                    let rep = by_genus_loc
+                        .get(&(genus_low.clone(), loc_tag.clone()))
+                        .map(|(_, _, old_s)| old_s.len() < seq.len())
+                        .unwrap_or(true);
+                    if rep {
+                        by_genus_loc.insert((genus_low.clone(), loc_tag), (acc, slot.species.clone(), seq));
+                    }
+                }
+            }
         }
     }
 
@@ -4687,7 +5386,7 @@ pub fn execute_declarative_study(
 
     let mut full_mitogenome_records: Vec<FastaRecord> = Vec::with_capacity(raw_full_mitos.len());
     let mut unphased_full_mito_seqs: Vec<String> = Vec::with_capacity(raw_full_mitos.len());
-    if !cfg.is_prokaryote {
+    if !cfg.is_prokaryote && !cfg.universal_archaea_eukarya {
         for (acc, org, title, c) in &raw_full_mitos {
             unphased_full_mito_seqs.push(c.clone());
             let (phased, _) = phase_circular_mitogenome(c, &cox1_anchor);
@@ -4851,7 +5550,7 @@ pub fn execute_declarative_study(
             replacement_for_accession: None,
             cleaned_sequence: clean.clone(),
         });
-        let raw0_seq = if !cfg.is_prokaryote {
+        let raw0_seq = if !cfg.is_prokaryote && !cfg.universal_archaea_eukarya {
             resolve_slot_mito(
                 slot,
                 &mito_by_sp_low,
@@ -4917,6 +5616,7 @@ pub fn execute_declarative_study(
     let t_msa = Instant::now();
     let use_mito_table5 = cfg.genetic_code_table == 5;
     let mut raw_seqnet_cols = 0usize;
+    let mut panel_raw_bp_sum = 0usize;
     let mut msc_partitions: Vec<(String, bool, bool, usize, HashMap<String, String>)> =
         Vec::with_capacity(cfg.locus_defs.len());
     let mut kept_partitions: Vec<(String, bool, bool, usize, HashMap<String, String>)> =
@@ -5084,6 +5784,7 @@ pub fn execute_declarative_study(
         if loc_recs.len() < 8 {
             continue;
         }
+        panel_raw_bp_sum += loc_recs.iter().map(|r| r.sequence.len()).sum::<usize>();
         raw_seqnet_cols += loc_recs.iter().map(|r| r.sequence.len()).max().unwrap_or(0);
         let (aligned_pairs, plen) = if ldef.is_protein_coding {
             let loc_gcode = if !cfg.is_prokaryote && ldef.is_nuclear {
@@ -5098,8 +5799,8 @@ pub fn execute_declarative_study(
                 0.55,
                 ldef.min_aa,
                 0.45,
-                0.18,
-                0.35,
+                ldef.min_aa_identity.unwrap_or(0.18),
+                ldef.min_dayhoff6_sim.unwrap_or(0.35),
             );
             (nt_p, bp)
         } else {
@@ -5288,7 +5989,9 @@ pub fn execute_declarative_study(
     let mut cursor_1b = 1usize;
     for (loc, is_pcg, is_nuc, plen, pmap) in &kept_partitions {
         let end_1b = cursor_1b + *plen - 1;
-        let cls_lbl = if !cfg.is_prokaryote {
+        let cls_lbl = if cfg.universal_archaea_eukarya {
+            if *is_pcg { "Universal CDS" } else { "SSU/LSU rRNA" }
+        } else if !cfg.is_prokaryote {
             if *is_nuc {
                 if *is_pcg { "Nuclear CDS" } else { "Nuclear rDNA" }
             } else if *is_pcg {
@@ -5605,6 +6308,17 @@ pub fn execute_declarative_study(
                 .tool_chain_summary
                 .replace("Circular COX1 Phasing", "Bacterial Table-11 Phasing");
         }
+    } else if cfg.universal_archaea_eukarya {
+        for row in &mut st3.runie_9col_comparison_table {
+            row.tool_chain = row
+                .tool_chain
+                .replace("Table-5 COX1 Phasing", "Universal Archaea-Eukarya Codon Phasing");
+        }
+        for ch in &mut st3.combinatorial_sweep_32_chains {
+            ch.tool_chain_summary = ch
+                .tool_chain_summary
+                .replace("Circular COX1 Phasing", "Universal Code-1/11 Phasing");
+        }
     }
 
     let unrec_map: HashMap<String, Vec<u8>> = all64_unrec_pairs
@@ -5648,7 +6362,6 @@ pub fn execute_declarative_study(
         &run_dir,
         &cfg.figure_theme.supp_s1_fasta_name,
     )?;
-    total_raw_bp_on_disk += fam_raw_bp_sum;
 
     // Stage 5: Chronogram + 12 Single-Species Skylines
     let mut mean_sec_bl = [0.0f64; 7];
@@ -5734,6 +6447,8 @@ pub fn execute_declarative_study(
     });
     let drv_fn: fn(&str, f64) -> String = if cfg.is_prokaryote {
         drv_summary_prokaryote
+    } else if cfg.universal_archaea_eukarya {
+        drv_summary_universal_ae
     } else {
         drv_summary_eukaryote
     };
@@ -5747,6 +6462,9 @@ pub fn execute_declarative_study(
             &run_dir,
             &cfg.supp_s2_cohort_code,
         )?;
+    let skyline_raw_bp_sum: usize = popset_skylines.iter().map(|p| p.raw_bp).sum();
+    total_raw_bp_on_disk =
+        panel_raw_bp_sum.max(total_raw_bp_on_disk) + fam_raw_bp_sum + skyline_raw_bp_sum;
 
     let abba_summary: String = abba_baba_tests
         .iter()
@@ -5785,7 +6503,7 @@ pub fn execute_declarative_study(
         initial_requested_count: n_slots,
         final_cleaned_cohort_count: n_slots,
         zero_beaker_control_count: n_slots,
-        total_raw_bp_cleaned: total_raw_bp_on_disk.saturating_sub(quarantined_raw_bp),
+        total_raw_bp_cleaned: total_raw_bp_on_disk,
         sequences: sequences_manifest,
         ncbi_flagged_anomalies: ncbi_anomalies,
         loop_back_iterations: vec![

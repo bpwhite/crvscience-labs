@@ -2866,7 +2866,8 @@ fn render_bemisia_fig3_quartet_msc(
     };
 
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
-    let q_dp_lbl = if is_bacterial {
+    let is_universal_ae = theme.supp_s3_source.contains("Universal");
+    let q_dp_lbl = if is_bacterial || is_universal_ae {
         format!(
             "Bitwise DP: {} quartets in {:.2} ms",
             study.msc_regime1_ry3.total_quartets_evaluated,
@@ -3628,21 +3629,24 @@ fn render_bemisia_fig5_selection_and_sweep(
                 ));
             }
 
-            // Buried 3D HEM macrocycle bonds + Fe³⁺ + Cys Sγ inside the 3D fold
+            let is_non_heme = !pdb.het_atoms.is_empty() && !pdb.het_atoms.iter().any(|h| h.atom_name == "FE");
+            // Buried 3D ligand + metal cofactor + catalytic residue inside the 3D fold
             let rot_hets: Vec<(f64, f64, f64)> = pdb
                 .het_atoms
                 .iter()
                 .map(|h| rot_fold(h.x, h.y, h.z))
                 .collect();
             for hi in 0..pdb.het_atoms.len() {
-                if pdb.het_atoms[hi].atom_name == "FE" {
+                if pdb.het_atoms[hi].atom_name == "FE" || pdb.het_atoms[hi].atom_name == "MG" {
                     let pf = rot_hets[hi];
+                    let m_col = if pdb.het_atoms[hi].atom_name == "MG" { "#10b981" } else { "#dc2626" };
                     z_prims.push((
                         pf.2 + 0.5,
                         format!(
-                            r##"<circle cx="{:.1}" cy="{:.1}" r="4.6" fill="#dc2626" stroke="#ffffff" stroke-width="1.2"/>"##,
+                            r##"<circle cx="{:.1}" cy="{:.1}" r="4.6" fill="{}" stroke="#ffffff" stroke-width="1.2"/>"##,
                             f_cx + pf.0 * f_scale,
-                            f_cy + pf.1 * f_scale
+                            f_cy + pf.1 * f_scale,
+                            m_col
                         ),
                     ));
                     if let Some((sgx, sgy, sgz, _, _)) = pdb.proximal_cys_sg {
@@ -3663,24 +3667,27 @@ fn render_bemisia_fig5_selection_and_sweep(
                     continue;
                 }
                 for hj in (hi + 1)..pdb.het_atoms.len() {
-                    if pdb.het_atoms[hj].atom_name == "FE" {
+                    if pdb.het_atoms[hj].atom_name == "FE" || pdb.het_atoms[hj].atom_name == "MG" {
                         continue;
                     }
                     let dx = pdb.het_atoms[hi].x - pdb.het_atoms[hj].x;
                     let dy = pdb.het_atoms[hi].y - pdb.het_atoms[hj].y;
                     let dz = pdb.het_atoms[hi].z - pdb.het_atoms[hj].z;
                     let d = (dx * dx + dy * dy + dz * dz).sqrt();
-                    if (1.15..=1.68).contains(&d) {
+                    let bond_max = if is_non_heme { 1.78 } else { 1.68 };
+                    let bond_col = if is_non_heme { "#0284c7" } else { "#b91c1c" };
+                    if (1.15..=bond_max).contains(&d) {
                         let p1 = rot_hets[hi];
                         let p2 = rot_hets[hj];
                         z_prims.push((
                             0.5 * (p1.2 + p2.2),
                             format!(
-                                r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#b91c1c" stroke-width="1.8"/>"##,
+                                r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="{}" stroke-width="1.8"/>"##,
                                 f_cx + p1.0 * f_scale,
                                 f_cy + p1.1 * f_scale,
                                 f_cx + p2.0 * f_scale,
-                                f_cy + p2.1 * f_scale
+                                f_cy + p2.1 * f_scale,
+                                bond_col
                             ),
                         ));
                     }
@@ -3694,24 +3701,219 @@ fn render_bemisia_fig5_selection_and_sweep(
         }
 
         let is_bacterial = theme.supp_s3_source.contains("Bacterial");
+        let is_universal_ae = theme.supp_s3_source.contains("Universal");
+        let is_non_heme = !pdb.het_atoms.is_empty() && !pdb.het_atoms.iter().any(|h| h.atom_name == "FE");
         // Domain legend callouts in Upper Viewport corners
-        svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● SRS1 B'-Loop (BEB ω₂)</text>"##);
-        svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● F/G Substrate Lid</text>"##);
-        if is_bacterial {
-            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGHETTS)</text>"##);
-            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (FGNGQRACIG)</text>"##);
+        if is_universal_ae || is_non_heme {
+            svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● P-Loop / Switch I (Thr24 Mg²⁺)</text>"##);
+            svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● C-Term / Switch Core</text>"##);
+            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● Switch II (DTAGQE GTPase Motif)</text>"##);
+            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● G4/G5 Base Pocket (NKVD)</text>"##);
         } else {
-            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGFETSS)</text>"##);
-            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (PFGDGPRNCIG)</text>"##);
+            svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● SRS1 B'-Loop (BEB ω₂)</text>"##);
+            svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● F/G Substrate Lid</text>"##);
+            if is_bacterial {
+                svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGHETTS)</text>"##);
+                svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (FGNGQRACIG)</text>"##);
+            } else {
+                svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● I-Helix O₂ Groove (AGFETSS)</text>"##);
+                svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Cys-Loop (PFGDGPRNCIG)</text>"##);
+            }
         }
 
-        // --- Lower Sub-Viewport (`y = 814..1062`): Zoomed Active-Site `Fe³⁺`–Protoporphyrin IX + `Cys Sγ` ---
+        // --- Lower Sub-Viewport (`y = 814..1062`): Zoomed Active-Site Cofactor + Anchor Bond ---
         svg.push_str(r##"<rect x="1106" y="814" width="460" height="248" rx="6" fill="#fffbeb" fill-opacity="0.45" stroke="#cbd5e1" stroke-width="1.1"/>"##);
-        if is_bacterial {
-            svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 999, 43 Atoms) &amp; Cys400–Sγ</text>"##);
+        if is_non_heme {
+            svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site GDP (28 Atoms) + Mg²⁺ A 221 &amp; Thr24–Oγ1 Bond</text>"##);
+            let find_het = |nm: &str| -> Option<(f64, f64, f64)> {
+                pdb.het_atoms
+                    .iter()
+                    .find(|h| h.atom_name == nm)
+                    .map(|h| (h.x, h.y, h.z))
+            };
+            let n_h = pdb.het_atoms.len().max(1) as f64;
+            let c_het = (
+                pdb.het_atoms.iter().map(|h| h.x).sum::<f64>() / n_h,
+                pdb.het_atoms.iter().map(|h| h.y).sum::<f64>() / n_h,
+                pdb.het_atoms.iter().map(|h| h.z).sum::<f64>() / n_h,
+            );
+            let norm3 = |v: (f64, f64, f64)| -> (f64, f64, f64) {
+                let l = (v.0 * v.0 + v.1 * v.1 + v.2 * v.2).sqrt().max(1e-6);
+                (v.0 / l, v.1 / l, v.2 / l)
+            };
+            let dot3 = |a: (f64, f64, f64), b: (f64, f64, f64)| -> f64 {
+                a.0 * b.0 + a.1 * b.1 + a.2 * b.2
+            };
+            let p_ref = find_het("PB").or_else(|| find_het("PA")).unwrap_or(c_het);
+            let b_ref = find_het("N9")
+                .or_else(|| find_het("C4"))
+                .unwrap_or((c_het.0 + 3.0, c_het.1, c_het.2));
+            let r_ref = find_het("O6")
+                .or_else(|| find_het("N7"))
+                .unwrap_or((c_het.0, c_het.1 + 3.0, c_het.2));
+            let e1 = norm3((b_ref.0 - p_ref.0, b_ref.1 - p_ref.1, b_ref.2 - p_ref.2));
+            let p_tmp = (r_ref.0 - p_ref.0, r_ref.1 - p_ref.1, r_ref.2 - p_ref.2);
+            let p_dot = dot3(p_tmp, e1);
+            let p2 = norm3((p_tmp.0 - p_dot * e1.0, p_tmp.1 - p_dot * e1.1, p_tmp.2 - p_dot * e1.2));
+
+            let uv_raw: Vec<(f64, f64)> = pdb
+                .het_atoms
+                .iter()
+                .map(|h| {
+                    let r = (h.x - c_het.0, h.y - c_het.1, h.z - c_het.2);
+                    (dot3(r, e1), dot3(r, p2))
+                })
+                .collect();
+            let max_u = uv_raw.iter().map(|p| p.0.abs()).fold(2.0_f64, f64::max);
+            let max_v = uv_raw.iter().map(|p| p.1.abs()).fold(2.0_f64, f64::max);
+            let h_scale = (145.0 / max_u).min(56.0 / max_v).clamp(10.0, 26.0);
+            let h_cx = 1332.0_f64;
+            let h_cy = 948.0_f64;
+            let proj_lig = |px: f64, py: f64, pz: f64| -> (f64, f64) {
+                let r = (px - c_het.0, py - c_het.1, pz - c_het.2);
+                (h_cx + dot3(r, e1) * h_scale, h_cy - dot3(r, p2) * h_scale)
+            };
+            let het_xy: Vec<(f64, f64)> = pdb
+                .het_atoms
+                .iter()
+                .map(|h| proj_lig(h.x, h.y, h.z))
+                .collect();
+
+            svg.push_str(&format!(
+                r##"<rect x="{:.1}" y="844" width="320" height="20" rx="10" fill="#e0f2fe" fill-opacity="0.82" stroke="#0284c7" stroke-width="1.1" stroke-dasharray="4,2.5"/>"##,
+                h_cx - 160.0
+            ));
+            svg.push_str(&format!(
+                r##"<text x="{:.1}" y="857" text-anchor="middle" font-size="8.0" font-weight="800" fill="#0369a1">P-Loop Walker A (GDGGTGKT) &amp; Switch II (DTAGQE)</text>"##,
+                h_cx
+            ));
+
+            // 1. Ligand covalent bonds (C-C, C-N, C-O, P-O)
+            for i in 0..pdb.het_atoms.len() {
+                if pdb.het_atoms[i].atom_name == "MG" {
+                    continue;
+                }
+                for j in (i + 1)..pdb.het_atoms.len() {
+                    if pdb.het_atoms[j].atom_name == "MG" {
+                        continue;
+                    }
+                    let dx = pdb.het_atoms[i].x - pdb.het_atoms[j].x;
+                    let dy = pdb.het_atoms[i].y - pdb.het_atoms[j].y;
+                    let dz = pdb.het_atoms[i].z - pdb.het_atoms[j].z;
+                    let d = (dx * dx + dy * dy + dz * dz).sqrt();
+                    if (1.15..=1.78).contains(&d) {
+                        svg.push_str(&format!(
+                            r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#334155" stroke-width="2.2" stroke-linecap="round"/>"##,
+                            het_xy[i].0, het_xy[i].1, het_xy[j].0, het_xy[j].1
+                        ));
+                    }
+                }
+            }
+
+            // 2. Mg2+ octahedral coordination bonds to GDP beta/alpha-phosphate oxygens & Thr24 Ogamma1
+            if let Some((mg_idx, mg_atom)) = pdb
+                .het_atoms
+                .iter()
+                .enumerate()
+                .find(|(_, h)| h.atom_name == "MG")
+            {
+                let mg_xy = het_xy[mg_idx];
+                svg.push_str(&format!(
+                    r##"<line x1="{:.1}" y1="864" x2="{:.1}" y2="{:.1}" stroke="#0284c7" stroke-width="1.4" stroke-dasharray="2.5,2.5"/>"##,
+                    h_cx, mg_xy.0, mg_xy.1 - 7.5
+                ));
+                for (oi, ha) in pdb.het_atoms.iter().enumerate() {
+                    if oi == mg_idx || ha.element != "O" {
+                        continue;
+                    }
+                    let dx = mg_atom.x - ha.x;
+                    let dy = mg_atom.y - ha.y;
+                    let dz = mg_atom.z - ha.z;
+                    let d = (dx * dx + dy * dy + dz * dz).sqrt();
+                    if d <= 2.65 {
+                        svg.push_str(&format!(
+                            r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#10b981" stroke-width="2.0" stroke-dasharray="3,2"/>"##,
+                            mg_xy.0, mg_xy.1, het_xy[oi].0, het_xy[oi].1
+                        ));
+                    }
+                }
+                if let Some((sgx, sgy, sgz, cys_num, mg_dist)) = pdb.proximal_cys_sg {
+                    let og_raw = proj_lig(sgx, sgy, sgz);
+                    let ox = og_raw.0.clamp(1136.0, 1290.0);
+                    let oy = og_raw.1.max(mg_xy.1 + 26.0).min(1036.0);
+                    svg.push_str(&format!(
+                        r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#d97706" stroke-width="3.2"/>"##,
+                        mg_xy.0, mg_xy.1, ox, oy
+                    ));
+                    svg.push_str(&format!(
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="6.0" fill="#eab308" stroke="#713f12" stroke-width="1.2"/>"##,
+                        ox, oy
+                    ));
+                    svg.push_str(&format!(
+                        r##"<text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.4" font-weight="900" fill="#422006">Oγ</text>"##,
+                        ox, oy + 2.2
+                    ));
+                    let bx = (ox + 12.0).min(1344.0);
+                    svg.push_str(&format!(
+                        r##"<rect x="{:.1}" y="{:.1}" width="198" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
+                        bx, oy - 10.0
+                    ));
+                    svg.push_str(&format!(
+                        r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#92400e">Thr24 (ORF {}) Oγ1–Mg²⁺ = {:.2} Å</text>"##,
+                        bx + 6.0,
+                        oy + 3.0,
+                        cys_num,
+                        mg_dist
+                    ));
+                }
+            }
+
+            // 3. Atom spheres (`MG`, `P`, `N`, `O`, `C`)
+            for (idx, h) in pdb.het_atoms.iter().enumerate() {
+                let (ax, ay) = het_xy[idx];
+                if h.atom_name == "MG" {
+                    continue;
+                } else if h.element == "P" || h.atom_name.starts_with('P') {
+                    svg.push_str(&format!(
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="5.4" fill="#f97316" stroke="#7c2d12" stroke-width="1.0"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.2" font-weight="900" fill="#ffffff">P</text>"##,
+                        ax, ay, ax, ay + 2.1
+                    ));
+                } else if h.element == "N" || h.atom_name.starts_with('N') {
+                    svg.push_str(&format!(
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="4.1" fill="#2563eb" stroke="#ffffff" stroke-width="0.9"/>"##,
+                        ax, ay
+                    ));
+                } else if h.element == "O" || h.atom_name.starts_with('O') {
+                    svg.push_str(&format!(
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="4.0" fill="#dc2626" stroke="#ffffff" stroke-width="0.9"/>"##,
+                        ax, ay
+                    ));
+                } else {
+                    svg.push_str(&format!(
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="2.7" fill="#475569"/>"##,
+                        ax, ay
+                    ));
+                }
+            }
+            if let Some((mg_idx, _)) = pdb
+                .het_atoms
+                .iter()
+                .enumerate()
+                .find(|(_, h)| h.atom_name == "MG")
+            {
+                let (mx, my) = het_xy[mg_idx];
+                svg.push_str(&format!(
+                    r##"<circle cx="{:.1}" cy="{:.1}" r="7.2" fill="#10b981" stroke="#064e3b" stroke-width="1.3"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.6" font-weight="900" fill="#ffffff">Mg</text>"##,
+                    mx, my, mx, my + 2.2
+                ));
+            }
+            svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Mg²⁺  ● α/β-PO₄ P  ● Guanine N  ● Phosphate/Ribose O⁻  ● Thr24 Oγ1</text>"##);
         } else {
-            svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 508, 43 Atoms) &amp; Cys–Sγ Bond</text>"##);
-        }
+            if is_bacterial {
+                svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 999, 43 Atoms) &amp; Cys400–Sγ</text>"##);
+            } else {
+                svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 508, 43 Atoms) &amp; Cys–Sγ Bond</text>"##);
+            }
 
         if !pdb.het_atoms.is_empty() {
             let find_het = |nm: &str| -> Option<(f64, f64, f64)> {
@@ -3902,8 +4104,18 @@ fn render_bemisia_fig5_selection_and_sweep(
             ));
         svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Fe³⁺  ● Pyrrole N (NA–ND)  ● Propionate O⁻  ● Thiolate Sγ</text>"##);
         }
+        }
 
-        let tpl_footer = if is_bacterial {
+        let tpl_footer = if is_non_heme {
+            format!(
+                "Template {} | {} Cα + {} GDP/MG | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                pdb.template_pdb_code.split(" (").next().unwrap_or("1BYU_A"),
+                pdb.atoms.len(),
+                pdb.het_atoms.len(),
+                pdb.kabsch_rmsd_angstrom,
+                pdb.tm_score
+            )
+        } else if is_bacterial {
             format!(
                 "Template 1BU7_A (1.65 Å) | {} Cα + {} HEM | Kabsch RMSD = {:.3} Å | TM = {:.4}",
                 pdb.atoms.len(),
@@ -3925,10 +4137,21 @@ fn render_bemisia_fig5_selection_and_sweep(
         let fe_sg_val = pdb
             .proximal_cys_sg
             .map(|p| p.4)
-            .unwrap_or(if is_bacterial { 2.38 } else { 2.35 });
+            .unwrap_or(if is_non_heme { 2.08 } else if is_bacterial { 2.38 } else { 2.35 });
+        let bond_footer = if is_non_heme {
+            format!(
+                "Active-Site Pocket Volume = {:.1} Å³ | Mg²⁺–Oγ1 = {:.2} Å | Affinity = {:.2} kcal/mol",
+                pdb.pocket_volume_a3, fe_sg_val, pdb.docking_affinity_kcal_mol
+            )
+        } else {
+            format!(
+                "Active-Site Pocket Volume = {:.1} Å³ | Fe–Sγ = {:.2} Å | Affinity = {:.2} kcal/mol",
+                pdb.pocket_volume_a3, fe_sg_val, pdb.docking_affinity_kcal_mol
+            )
+        };
         svg.push_str(&format!(
-            r##"<text x="1336" y="1096" text-anchor="middle" font-size="8.6" fill="#475569">Active-Site Pocket Volume = {:.1} Å³ | Fe–Sγ = {:.2} Å | Affinity = {:.2} kcal/mol</text>"##,
-            pdb.pocket_volume_a3, fe_sg_val, pdb.docking_affinity_kcal_mol
+            r##"<text x="1336" y="1096" text-anchor="middle" font-size="8.6" fill="#475569">{}</text>"##,
+            xml_esc(&bond_footer)
         ));
     }
 
@@ -4098,6 +4321,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     );
 
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
+    let is_universal_ae = theme.supp_s3_source.contains("Universal");
     let a_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
         (
             "A1. Entrez + Blind Audit",
@@ -4105,6 +4329,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
                 format!("• {} >=80% OTUs / 64 Quartet", n_phy)
             } else if is_bacterial {
                 "• 64 Taxa + 48 Bact CDS".to_string()
+            } else if is_universal_ae {
+                "• 64 Archaea/Euk + 4 Fam".to_string()
             } else {
                 "• 64 Mito + 48 Nuc CDS".to_string()
             },
@@ -4117,9 +4343,25 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "A2. Gotoh + Katoh MSA",
-            if is_bacterial { "• Code-11 Strand Phasing".to_string() } else { "• Phased COX1 Origin".to_string() },
-            if is_bacterial { format!("• rpoB/16S: {} cols", study.mito_aligned_cols) } else { format!("• Mito: {} cols", study.mito_aligned_cols) },
-            if is_bacterial { format!("• Supermatrix: {} cols", study.nuclear_aligned_cols) } else { format!("• Nuclear: {} cols", study.nuclear_aligned_cols) },
+            if is_bacterial {
+                "• Code-11 Strand Phasing".to_string()
+            } else if is_universal_ae {
+                "• Code-1/11 ORF Phasing".to_string()
+            } else {
+                "• Phased COX1 Origin".to_string()
+            },
+            if is_bacterial {
+                format!("• rpoB/16S: {} cols", study.mito_aligned_cols)
+            } else if is_universal_ae {
+                format!("• SSU/LSU rRNA: {} cols", study.mito_aligned_cols)
+            } else {
+                format!("• Mito: {} cols", study.mito_aligned_cols)
+            },
+            if is_bacterial || is_universal_ae {
+                format!("• Coding Core: {} cols", study.nuclear_aligned_cols)
+            } else {
+                format!("• Nuclear: {} cols", study.nuclear_aligned_cols)
+            },
             format!("• L = {} cols ({:.2} s)", study.supermatrix_aligned_cols, msa_s),
             "#f8fafc",
             "#64748b",
@@ -4218,6 +4460,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     let n_chrono_int = n_phy.saturating_sub(1);
     let fig6_tpl_desc = if is_bacterial {
         "61-State Codon Selection &amp; 1BU7 Structural Threading: Identifies selection regimes on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 1.65 Å crystal template 1BU7_A."
+    } else if is_universal_ae {
+        "61-State Codon Selection &amp; 1BYU Structural Threading: Identifies selection regimes on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.15 Å Ran-GDP crystal template 1BYU_A."
     } else {
         "61-State Codon Selection &amp; 1TQN Structural Threading: Identifies diversifying selection on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.05 Å crystal template 1TQN_A."
     };
@@ -4285,8 +4529,16 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "B2. Katoh E-INS-i + Gotoh",
-            format!("• R1-R6/L1/L4: COX1 MSA"),
-            format!("• L2/L5: mafft-native ITS"),
+            if is_universal_ae {
+                "• R1-R6/L1/L4: EF1A/RPB2 MSA".to_string()
+            } else {
+                "• R1-R6/L1/L4: COX1 MSA".to_string()
+            },
+            if is_universal_ae {
+                "• L2/L4/L5: mafft-native rRNA".to_string()
+            } else {
+                "• L2/L5: mafft-native ITS".to_string()
+            },
             format!("• Local Affine + 2-Tree"),
             format!("• L3/L6: Coding Sweep MSA"),
             "#f8fafc",
@@ -4387,6 +4639,12 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
             "Axis A Chromosomal Housekeeping Skylines (Cohorts R1–R6, N = 216): Reconstructs single-species gyrB, rpoB, recA &amp; groEL coalescent histories across Bacillota and Actinomycetota.",
             format!("Axis B Multi-Locus Contrast (Cohorts L1–L6, N = 216): Contrasts fast housekeeping rpoB/recA evolution against deeply buffered Katoh E-INS-i {}.", xml_esc(&theme.fig6_its_label)),
             format!("End-to-End Multi-Compartment Execution: {} active verified bacterial NCBI records completed in {:.2} s total wall-clock time.", study.total_records_on_disk, tot_s),
+        )
+    } else if is_universal_ae {
+        (
+            "Axis A Single-Species Nuclear/Archaeal Skylines (Cohorts R1–R6, N = 216): Reconstructs intraspecific EF1A, RPB2, RAD51 &amp; HSP70 coalescent histories across model eukaryotes and archaea.",
+            format!("Axis B Multi-Locus Compartment Contrast (Cohorts L1–L6, N = 216): Contrasts coding EF1A/RPB2 (4Ne) against slowly evolving Katoh E-INS-i {}.", xml_esc(&theme.fig6_its_label)),
+            format!("End-to-End Multi-Compartment Execution: {} active verified Archaea &amp; Eukaryota NCBI records completed in {:.2} s total wall-clock time.", study.total_records_on_disk, tot_s),
         )
     } else {
         (
@@ -4805,8 +5063,9 @@ fn generate_bemisia_supplemental_alignview_snapshots(
     };
 
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
+    let is_universal_ae = theme.supp_s3_source.contains("Universal");
 
-    // --- Supplemental Figure S1: FAM-04 CYP450 Heme-Thiolate Loop (Table 1, Dual DNA+AA) ---
+    // --- Supplemental Figure S1: FAM-04 Primary Structural Target (CYP450 or Ran GTPase, Dual DNA+AA) ---
     let s1_fasta = aln_dir.join(&theme.supp_s1_fasta_name);
     if s1_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
@@ -4826,6 +5085,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         .to_string();
         let s1_motifs: &[&str] = if is_bacterial {
             &["GQRAC", "GNGQR", "QRACI", "ACIGQ", "FGNGQ", "GPRLC", "FGDGP"]
+        } else if is_universal_ae {
+            &["GDGGT", "DGGTG", "GTGKT", "DTAGQ", "TAGQE", "NKVD", "FNVWD"]
         } else {
             &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC", "GPRIC", "GPRAC", "FGAGP", "FGEGP", "FSAGP", "FGGGP"]
         };
@@ -4838,10 +5099,12 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
-                feature_id: "CYP450-HEME".to_string(),
+                feature_id: if is_universal_ae { "RAN-PLOOP".to_string() } else { "CYP450-HEME".to_string() },
                 feature_type: "Catalytic_Motif".to_string(),
                 label: if is_bacterial {
                     "Bacterial P450 Heme-Thiolate Cys-Loop (FGNGQRACIG)".to_string()
+                } else if is_universal_ae {
+                    "Ran GTPase Walker A P-Loop (GDGGTGKT) & Switch II (DTAGQE)".to_string()
                 } else {
                     "Heme-Thiolate Cys-Loop (PFGDGPRNCIG)".to_string()
                 },
@@ -4852,6 +5115,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                 color_rgb: (245, 158, 11),
                 description: if is_bacterial {
                     "Proximal Cys400 axial thiolate coordinating catalytic Fe3+ (1BU7 2.38 A)".to_string()
+                } else if is_universal_ae {
+                    "Conserved Mg2+-GDP/GTP nucleotide switch gating nuclear import/export (1BYU 2.08 A)".to_string()
                 } else {
                     "Proximal Cys axial thiolate coordinating catalytic Fe3+ (2.35 A)".to_string()
                 },
@@ -4867,17 +5132,24 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.selected_col_range_1based = Some((s1, e1));
         state.hover_row_idx = Some(0);
         state.hover_col_1based = Some(hcol);
-        state.status_message = format!(
-            "runie-align-view | {} Heme-Thiolate Signature Window ({}..{} bp, {})",
-            theme.supp_s1_title, s1, e1, if is_bacterial { "Bacterial Code 11" } else { "Standard Code 1" }
-        );
+        state.status_message = if is_universal_ae {
+            format!(
+                "runie-align-view | {} P-Loop & Switch II Window ({}..{} bp, Standard Code 1)",
+                theme.supp_s1_title, s1, e1
+            )
+        } else {
+            format!(
+                "runie-align-view | {} Heme-Thiolate Signature Window ({}..{} bp, {})",
+                theme.supp_s1_title, s1, e1, if is_bacterial { "Bacterial Code 11" } else { "Standard Code 1" }
+            )
+        };
         let svg_out = fig_dir.join(format!("{}.svg", theme.supp_s1_stem));
         let png_out = fig_dir.join(format!("{}.png", theme.supp_s1_stem));
         state.capture_current_viewport_snapshots(1560, Some(&svg_out), Some(&png_out))?;
         mirror_pair(&svg_out, &png_out, &theme.supp_s1_stem)?;
     }
 
-    // --- Supplemental Figure S2: ITS1-5.8S rDNA Stem / Indel Boundary (mafft-native Katoh E-INS-i) ---
+    // --- Supplemental Figure S2: ITS1-5.8S / 16S / 18S rDNA Stem / Indel Boundary (mafft-native Katoh E-INS-i) ---
     let s2_fasta = aln_dir.join("supp_s2_its1_5_8s_einsi.fasta");
     if s2_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
@@ -4941,10 +5213,18 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
-                feature_id: if is_bacterial { "16S-rRNA".to_string() } else { "ITS1-5.8S".to_string() },
+                feature_id: if is_bacterial {
+                    "16S-rRNA".to_string()
+                } else if is_universal_ae {
+                    "18S-rRNA".to_string()
+                } else {
+                    "ITS1-5.8S".to_string()
+                },
                 feature_type: "Conserved_Block".to_string(),
                 label: if is_bacterial {
                     "Bacterial 16S rRNA Variable/Stem Junction".to_string()
+                } else if is_universal_ae {
+                    "Eukaryotic 18S rRNA Stem & Expansion Segment Boundary".to_string()
                 } else {
                     "ITS1 Spacer Indel / 5.8S rRNA Stem Junction".to_string()
                 },
@@ -4955,6 +5235,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                 color_rgb: (56, 189, 248),
                 description: if is_bacterial {
                     "Katoh E-INS-i preserves 16S rRNA stem homology across variable loop indels".to_string()
+                } else if is_universal_ae {
+                    "Katoh E-INS-i preserves 18S rRNA stem homology across eukaryotic expansion loops".to_string()
                 } else {
                     "Katoh E-INS-i preserves 5.8S stem homology across flanking ITS1 indels".to_string()
                 },
@@ -4975,6 +5257,11 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                 "runie-align-view | mafft-native Katoh E-INS-i Bacterial 16S rRNA Stem Junction ({}..{} bp)",
                 s1, e1
             )
+        } else if is_universal_ae {
+            format!(
+                "runie-align-view | mafft-native Katoh E-INS-i Eukaryotic 18S rRNA Stem Junction ({}..{} bp)",
+                s1, e1
+            )
         } else {
             format!(
                 "runie-align-view | mafft-native Katoh E-INS-i Nuclear ITS1-5.8S Junction ({}..{} bp)",
@@ -4987,10 +5274,10 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         mirror_pair(&svg_out, &png_out, &theme.supp_s2_stem)?;
     }
 
-    // --- Supplemental Figure S3: Phased Coding Locus (Mito Table 5 or Bacterial Code 11) ---
+    // --- Supplemental Figure S3: Phased Coding Locus (Mito Table 5, Bacterial Code 11, or Universal Code 1/11) ---
     let s3_fasta = aln_dir.join("supp_s3_cox1_64taxa.fasta");
     if s3_fasta.is_file() {
-        let gcode = if is_bacterial {
+        let gcode = if is_bacterial || is_universal_ae {
             GeneticCodeTable::Standard1
         } else {
             GeneticCodeTable::InvertebrateMito5
@@ -5006,12 +5293,16 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         ws.source_path = theme.supp_s3_source.to_string();
         ws.alignment_method = if is_bacterial {
             "Codon-Locked Housekeeping MSA (Bacterial Genetic Code 11: TAA/TAG/TGA Stops)".to_string()
+        } else if is_universal_ae {
+            "Codon-Locked Archaea-Eukarya MSA (Universal Code 1/11: TAA/TAG/TGA Stops)".to_string()
         } else {
             "COX1-Phased Codon MSA (Invertebrate Mitochondrial Code Table 5: TGA=W, AGA=S)".to_string()
         };
 
         let s3_motifs: &[&str] = if is_bacterial {
             &["QLSQF", "TQLSQ", "GERVL", "EGDSA", "VEGDS", "PLRGK"]
+        } else if is_universal_ae {
+            &["GHVDS", "HVDSG", "DSGKS", "DAPGH", "DCPGH", "KIGYN", "VPTKP"]
         } else {
             &["FPRMN", "APDMA", "GFGNW", "GHPEV", "WLLPP"]
         };
@@ -5024,10 +5315,18 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
-                feature_id: if is_bacterial { "RPOB-CORE".to_string() } else { "COX1-CORE".to_string() },
+                feature_id: if is_bacterial {
+                    "RPOB-CORE".to_string()
+                } else if is_universal_ae {
+                    "EF1A-GTP".to_string()
+                } else {
+                    "COX1-CORE".to_string()
+                },
                 feature_type: "Catalytic_Motif".to_string(),
                 label: if is_bacterial {
                     "Bacterial rpoB/gyrB Catalytic Core & 3rd-Pos RY3 Transitions".to_string()
+                } else if is_universal_ae {
+                    "Asgard-Eukaryote EF1A/tuf Translational GTPase Core (GHVDSGKST)".to_string()
                 } else {
                     "COX1 Heme-Cu Core & 3rd-Pos RY3 Transitions".to_string()
                 },
@@ -5038,6 +5337,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                 color_rgb: (16, 185, 129),
                 description: if is_bacterial {
                     "Zero internal stops under Bacterial Code 11 across low-GC Bacillota & high-GC Actinomycetota".to_string()
+                } else if is_universal_ae {
+                    "Zero internal stops under Code 1/11 uniting Asgardarchaeota & crown Eukarya".to_string()
                 } else {
                     "Zero internal stops under Invertebrate Mito Table 5; heavy 3rd-pos AT transitions".to_string()
                 },
@@ -5046,7 +5347,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         let focus_row = ws
             .sequences
             .iter()
-            .position(|s| s.id.starts_with("G_T"))
+            .position(|s| s.id.starts_with("C_T") || s.id.starts_with("G_T"))
             .unwrap_or(0);
         let mut state = AlignmentViewerState::new(ws);
         state.genetic_code = gcode;
@@ -5061,6 +5362,11 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.status_message = if is_bacterial {
             format!(
                 "runie-align-view | Phased Bacterial Core ({}..{} bp, Bacterial Code 11 — 0 Internal Stops)",
+                s1, e1
+            )
+        } else if is_universal_ae {
+            format!(
+                "runie-align-view | Archaea-Eukarya EF1A/tuf Core ({}..{} bp, Code 1/11 — 0 Internal Stops)",
                 s1, e1
             )
         } else {

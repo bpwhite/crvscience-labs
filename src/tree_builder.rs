@@ -966,8 +966,8 @@ pub(crate) fn compress_alignment_and_estimate_rates(seqs: &[String]) -> Compress
         for j in ((i + 1)..n_taxa).step_by(sample_step) {
             let sj = seqs[j].as_bytes();
             for col in 0..n_sites {
-                let a = encode_nt_mask(si[col]);
-                let b = encode_nt_mask(sj[col]);
+                let a = encode_nt_mask(si.get(col).copied().unwrap_or(b'-'));
+                let b = encode_nt_mask(sj.get(col).copied().unwrap_or(b'-'));
                 if a == b || a == 0b1111 || b == 0b1111 {
                     continue;
                 }
@@ -1318,12 +1318,12 @@ fn compute_model_pairwise_distances_weighted(
             let mut valid_2 = 0.0f64;
             let mut diff_2 = 0.0f64;
             for col in 0..cols {
-                let wf = col_weights.map(|cw| cw[col] as f64).unwrap_or(1.0);
+                let wf = col_weights.and_then(|cw| cw.get(col)).copied().unwrap_or(1) as f64;
                 if wf <= 0.0 {
                     continue;
                 }
-                let a = encode_nt_mask(si[col]);
-                let b = encode_nt_mask(sj[col]);
+                let a = encode_nt_mask(si.get(col).copied().unwrap_or(b'-'));
+                let b = encode_nt_mask(sj.get(col).copied().unwrap_or(b'-'));
                 if a == 0b1111 || b == 0b1111 {
                     continue;
                 }
@@ -2142,12 +2142,12 @@ pub(crate) fn build_weighted_bionj_pool(
             let mut aa_valid = 0.0f64;
 
             for col in 0..seq_len {
-                let wf = col_weights.map(|cw| cw[col] as f64).unwrap_or(1.0);
+                let wf = col_weights.and_then(|cw| cw.get(col)).copied().unwrap_or(1) as f64;
                 if wf <= 0.0 {
                     continue;
                 }
-                let a = encode_nt_mask(si[col]);
-                let b = encode_nt_mask(sj[col]);
+                let a = encode_nt_mask(si.get(col).copied().unwrap_or(b'-'));
+                let b = encode_nt_mask(sj.get(col).copied().unwrap_or(b'-'));
                 if a == 0b1111 || b == 0b1111 {
                     continue;
                 }
@@ -2169,9 +2169,16 @@ pub(crate) fn build_weighted_bionj_pool(
                 }
             }
             if need_aa {
-                for codon_start in (0..(seq_len.saturating_sub(2))).step_by(3) {
+                let aa_len = seq_len.min(si.len()).min(sj.len());
+                for codon_start in (0..aa_len.saturating_sub(2)).step_by(3) {
                     let wf_c = col_weights
-                        .map(|cw| (cw[codon_start] as f64 + cw[codon_start + 1] as f64 + cw[codon_start + 2] as f64) / 3.0)
+                        .and_then(|cw| {
+                            if cw.len() > codon_start + 2 {
+                                Some((cw[codon_start] as f64 + cw[codon_start + 1] as f64 + cw[codon_start + 2] as f64) / 3.0)
+                            } else {
+                                None
+                            }
+                        })
                         .unwrap_or(1.0);
                     if wf_c <= 0.0 {
                         continue;

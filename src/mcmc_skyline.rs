@@ -2444,7 +2444,7 @@ pub(crate) fn compute_popgen_summary_stats(seqs: &[Vec<u8>]) -> (f64, f64, f64) 
         for j in (i + 1)..n {
             let mut diffs = 0usize;
             let mut valid = 0usize;
-            for c in 0..len {
+            for c in 0..len.min(seqs[i].len()).min(seqs[j].len()) {
                 let b1 = seqs[i][c];
                 let b2 = seqs[j][c];
                 if (b1 == b'A' || b1 == b'C' || b1 == b'G' || b1 == b'T')

@@ -2051,6 +2051,11 @@ pub fn run_autonomous_supervisor(
                 &run_dir,
                 Some(labs_fig_dir.as_path()),
             )?;
+            let manifest_path = run_dir.join("run-manifest.json");
+            if let Ok(m_pre_json) = serde_json::to_string_pretty(&manifest) {
+                let tmp_m = manifest_path.with_extension("json.tmp");
+                let _ = fs::write(&tmp_m, &m_pre_json).and_then(|_| fs::rename(&tmp_m, &manifest_path));
+            }
             crate::supervisor_manuscript::export_declarative_manuscript_and_staged_bundle(
                 &cfg,
                 &report,
@@ -2064,7 +2069,18 @@ pub fn run_autonomous_supervisor(
         let manifest_path = run_dir.join("run-manifest.json");
         let manifest_json =
             serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
-        fs::write(&manifest_path, manifest_json).map_err(|e| e.to_string())?;
+        let tmp_manifest = manifest_path.with_extension("json.tmp");
+        if fs::write(&tmp_manifest, &manifest_json).is_ok() {
+            if fs::rename(&tmp_manifest, &manifest_path).is_err() {
+                let _ = fs::remove_file(&manifest_path);
+                if fs::rename(&tmp_manifest, &manifest_path).is_err() {
+                    let _ = fs::remove_file(&tmp_manifest);
+                    fs::write(&manifest_path, &manifest_json).map_err(|e| e.to_string())?;
+                }
+            }
+        } else {
+            fs::write(&manifest_path, &manifest_json).map_err(|e| e.to_string())?;
+        }
         eprintln!(
             "[bio-suite-supervisor] Declarative Run '{}' completed in {} ms -> {}",
             manifest.run_id,

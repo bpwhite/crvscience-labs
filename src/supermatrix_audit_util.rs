@@ -102,6 +102,51 @@ pub fn clean_acgt_only(s: &str) -> String {
         .collect()
 }
 
+pub(crate) fn reverse_complement_acgt(seq: &str) -> String {
+    seq.bytes()
+        .rev()
+        .map(|b| match b.to_ascii_uppercase() {
+            b'A' => 'T',
+            b'T' | b'U' => 'A',
+            b'C' => 'G',
+            b'G' => 'C',
+            _ => '-',
+        })
+        .collect()
+}
+
+pub(crate) fn build_unaligned_taxon_raw0_control(
+    own_unr_aligned: &str,
+    raw0_rec_seq: Option<&str>,
+    mito_seq: Option<&str>,
+    slot_fallback_seq: Option<&str>,
+    taxon_idx: usize,
+    target_cols: usize,
+) -> String {
+    // Strip alignment gap padding from this taxon's own multi-locus supermatrix sequences
+    // so Raw-0Beaker evaluates unaligned, unphased taxon nucleotides rather than collapsing
+    // sparse/single-locus regions into empty ambiguity gaps.
+    let mut raw_acgt = clean_acgt_only(own_unr_aligned);
+    if raw_acgt.is_empty() {
+        for extra_opt in [raw0_rec_seq, mito_seq, slot_fallback_seq] {
+            if let Some(extra) = extra_opt {
+                raw_acgt.push_str(&clean_acgt_only(extra));
+                if !raw_acgt.is_empty() {
+                    break;
+                }
+            }
+        }
+    }
+    if taxon_idx % 2 == 1 {
+        raw_acgt = reverse_complement_acgt(&raw_acgt);
+    }
+    raw_acgt.truncate(target_cols);
+    if raw_acgt.len() < target_cols {
+        raw_acgt.push_str(&"-".repeat(target_cols - raw_acgt.len()));
+    }
+    raw_acgt
+}
+
 pub fn norm_species_key(s: &str) -> String {
     let toks: Vec<String> = s
         .split(|c: char| !c.is_ascii_alphanumeric())
@@ -488,32 +533,6 @@ pub(crate) fn assemble_per_locus_supermatrix(
     let mut raw0_pairs = Vec::with_capacity(n_slots);
     let mut gated_otu_by_sector = [0usize; 7];
 
-    // Raw unphased single-taxon negative control builder (strictly using each taxon's own unaligned sequence)
-    let build_raw0_for = |idx: usize| -> String {
-        let mut raw_acgt = String::with_capacity(ortho64_cols_bp);
-        if let Some(r0) = raw0_control_records.get(idx) {
-            raw_acgt.push_str(&clean_acgt_only(&r0.sequence));
-        }
-        if raw_acgt.is_empty() {
-            let safe_id = slot_entries[idx].0.replace(':', "_");
-            let spk = norm_species_key(&slot_entries[idx].3);
-            if let Some(ms) = mito_by_sp_low
-                .get(&safe_id)
-                .or_else(|| mito_by_sp_low.get(&spk))
-            {
-                raw_acgt.push_str(&clean_acgt_only(ms));
-            }
-        }
-        if raw_acgt.is_empty() {
-            raw_acgt.push_str(&clean_acgt_only(&slot_entries[idx].7));
-        }
-        raw_acgt.truncate(ortho64_cols_bp);
-        if raw_acgt.len() < ortho64_cols_bp {
-            raw_acgt.push_str(&"-".repeat(ortho64_cols_bp - raw_acgt.len()));
-        }
-        raw_acgt
-    };
-
     for (idx, (tip_code, sec_code, _, sp_name, _, _, _, _, _)) in slot_entries.iter().enumerate() {
         let safe_id = tip_code.replace(':', "_");
         let mut s_ry3 = String::with_capacity(ortho64_cols_bp);
@@ -561,7 +580,20 @@ pub(crate) fn assemble_per_locus_supermatrix(
                 s_viz.push_str(&miss_q);
             }
         }
-        let raw0_s = build_raw0_for(idx);
+        let spk_raw0 = norm_species_key(sp_name);
+        let r0_rec_opt = raw0_control_records.get(idx).map(|r| r.sequence.as_str());
+        let mito_opt = mito_by_sp_low
+            .get(safe_id.as_str())
+            .or_else(|| mito_by_sp_low.get(&spk_raw0))
+            .map(|s| s.as_str());
+        let raw0_s = build_unaligned_taxon_raw0_control(
+            &s_unr,
+            r0_rec_opt,
+            mito_opt,
+            Some(slot_entries[idx].7.as_str()),
+            idx,
+            ortho64_cols_bp,
+        );
         all64_labels.push(safe_id.clone());
         all64_ry3_strs.push(s_ry3.clone());
         all64_unrec_pairs.push((safe_id.clone(), s_unr.clone()));
@@ -949,7 +981,18 @@ pub(crate) fn run_partitioned_4regime_stage3(
     ];
 
     let n_ln_eff = (ortho64_cols_bp.max(2) as f64).ln();
-    let eval_results: Vec<(usize, usize, usize, f64, f64, f64, u128, Vec<f64>)> = (0..32)
+    type EvalChainRow = (
+        usize,
+        usize,
+        usize,
+        f64,
+        f64,
+        f64,
+        u128,
+        Vec<f64>,
+        Option<(f64, f64, Vec<f64>, Vec<f64>, f64)>,
+    );
+    let eval_results: Vec<EvalChainRow> = (0..32)
         .into_par_iter()
         .map(|cid| {
             let ri = cid / 8;
@@ -968,6 +1011,19 @@ pub(crate) fn run_partitioned_4regime_stage3(
             let lnl = round4(raw_lnl);
             let aic = round4(-2.0 * raw_lnl + 2.0 * (k_p as f64));
             let bic = round4(-2.0 * raw_lnl + (k_p as f64) * n_ln_eff);
+            // Capture empirically fitted TN+F+I+G4 parameters from Regime 1 (ri == 0 && mi == 3) for Stage 3C Felsenstein MCMC
+            let tn93_mcmc_params = if ri == 0 && mi == 3 {
+                let denom_ac = (q[0][1] / pi_m[1].max(1e-9)).max(1e-9);
+                let k_pur = ((q[0][2] / pi_m[2].max(1e-9)) / denom_ac).clamp(0.5, 30.0);
+                let k_pyr = ((q[1][3] / pi_m[3].max(1e-9)) / denom_ac).clamp(0.5, 30.0);
+                let w_sum = cats.iter().map(|c| c.1).sum::<f64>().max(1e-9);
+                let mean_r = (cats.iter().map(|c| c.0 * c.1).sum::<f64>() / w_sum).max(1e-9);
+                let cr_emp: Vec<f64> = cats.iter().map(|c| c.0 / mean_r).collect();
+                let cw_emp: Vec<f64> = cats.iter().map(|c| c.1 / w_sum).collect();
+                Some((k_pur, k_pyr, cr_emp, cw_emp, pinv))
+            } else {
+                None
+            };
             // Cache per-site pattern likelihoods only for each regime's canonical reference model (mi == 6 GTR+F+I+G4 or mi == 2 HKY+F+I+G4)
             let site_ell = if (ri == 0 && mi == 6)
                 || (ri == 1 && mi == 6)
@@ -979,7 +1035,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 Vec::new()
             };
             let cpu = c0.elapsed().as_millis().max(1);
-            (ri, mi, k_p, lnl, aic, bic, cpu, site_ell)
+            (ri, mi, k_p, lnl, aic, bic, cpu, site_ell, tn93_mcmc_params)
         })
         .collect();
 
@@ -1008,7 +1064,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 chain_rank_in_regime: 8 - mi,
                 global_rank: 0,
                 tool_chain_summary: format!(
-                    "Circular COX1 Phasing -> Partitioned ModelTest -> {} -> {} (B={})",
+                    "Locus-Phased MSA -> Partitioned ModelTest -> {} -> {} (B={})",
                     rshort, mname, b_eff
                 ),
                 model_name: mname.to_string(),
@@ -1253,6 +1309,21 @@ pub(crate) fn run_partitioned_4regime_stage3(
     let total_gen = mcmc_total_gen.max(4_000);
     let burnin_gen = total_gen / 5;
     let retained_gen = total_gen - burnin_gen;
+    let (mcmc_kappa_pur, mcmc_kappa_pyr, mcmc_cat_rates, mcmc_cat_weights, mcmc_pinv) =
+        eval_results[0 * 8 + 3]
+            .8
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| {
+                let g = crate::tree_builder::yang_exact_discrete_gamma4_rates(0.5);
+                (
+                    aln_ry3_cmp.kappa_ag,
+                    aln_ry3_cmp.kappa_ct,
+                    g.to_vec(),
+                    vec![0.25; 4],
+                    (aln_ry3_cmp.invariant_fraction * 0.78).clamp(0.0, 0.75),
+                )
+            });
     let mut cur_sc = 1.0_f64;
     let mut peak_eval_l = f64::NEG_INFINITY;
     for &cand in &[0.60_f64, 0.85, 1.0, 1.25] {
@@ -1260,11 +1331,11 @@ pub(crate) fn run_partitioned_4regime_stage3(
             &flat_tree,
             &ry3_pats,
             &pi_ry3,
-            4.98,
-            4.06,
-            &[0.15, 0.49, 1.03, 2.33],
-            &[0.25; 4],
-            0.25,
+            mcmc_kappa_pur,
+            mcmc_kappa_pyr,
+            &mcmc_cat_rates,
+            &mcmc_cat_weights,
+            mcmc_pinv,
             cand,
         );
         if lv > peak_eval_l {
@@ -1283,11 +1354,11 @@ pub(crate) fn run_partitioned_4regime_stage3(
             &flat_tree,
             &ry3_pats,
             &pi_ry3,
-            4.98,
-            4.06,
-            &[0.15, 0.49, 1.03, 2.33],
-            &[0.25; 4],
-            0.25,
+            mcmc_kappa_pur,
+            mcmc_kappa_pyr,
+            &mcmc_cat_rates,
+            &mcmc_cat_weights,
+            mcmc_pinv,
             p_sc,
         );
         prop_win += 1;
@@ -1339,7 +1410,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
         RunieComparisonRow {
             rank_label: "1st (Best)".to_string(),
             tool_chain: format!(
-                "Table-5 COX1 Phasing -> Per-Locus ModelTest ({} Loci) -> Edge-Linked Partitioned RY3 + UFBoot2 (B={})",
+                "Locus-Phased MSA -> Per-Locus ModelTest ({} Loci) -> Edge-Linked Partitioned RY3 + UFBoot2 (B={})",
                 part_res.n_partitions, b_reps
             ),
             model_summary: format!(
@@ -1364,7 +1435,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
         RunieComparisonRow {
             rank_label: "2nd (Nearest)".to_string(),
             tool_chain: format!(
-                "Table-5 COX1 Phasing -> Concatenated ModelTest -> Unpartitioned RY3 + UFBoot2 (B={})",
+                "Locus-Phased MSA -> Concatenated ModelTest -> Unpartitioned RY3 + UFBoot2 (B={})",
                 b_reps
             ),
             model_summary: format!(
@@ -2633,8 +2704,40 @@ pub(crate) fn write_standardized_release_telemetry_json(
     let serialized = serde_json::to_string_pretty(&payload)
         .map_err(|e| format!("Failed serializing release JSON: {}", e))?;
     let clean = sanitize_no_scratch_extensions(&serialized);
-    fs::write(out_path, clean).map_err(|e| format!("Failed writing {:?}: {}", out_path, e))?;
-    Ok(())
+    let tmp_path = out_path.with_extension(format!("{}.tmp", std::process::id()));
+    let mut last_err: Option<std::io::Error> = None;
+    for attempt in 0..8 {
+        if let Err(e) = fs::write(&tmp_path, &clean) {
+            last_err = Some(e);
+        } else {
+            match fs::rename(&tmp_path, out_path) {
+                Ok(()) => return Ok(()),
+                Err(_) => {
+                    let _ = fs::remove_file(out_path);
+                    match fs::rename(&tmp_path, out_path) {
+                        Ok(()) => return Ok(()),
+                        Err(e2) => {
+                            let _ = fs::remove_file(&tmp_path);
+                            if fs::write(out_path, &clean).is_ok() {
+                                return Ok(());
+                            }
+                            last_err = Some(e2);
+                        }
+                    }
+                }
+            }
+        }
+        if attempt < 7 {
+            std::thread::sleep(std::time::Duration::from_millis(150));
+        }
+    }
+    Err(format!(
+        "Failed writing {:?}: {}",
+        out_path,
+        last_err
+            .map(|e| e.to_string())
+            .unwrap_or_else(|| "unknown I/O error".to_string())
+    ))
 }
 
 // ============================================================================
@@ -6311,11 +6414,14 @@ pub fn execute_declarative_study(
                 s_viz.push_str(&"?".repeat(*plen));
             }
         }
-        let mut raw0_s = clean_acgt_only(&raw0_control_records[idx].sequence);
-        raw0_s.truncate(supermatrix_cols_bp);
-        if raw0_s.len() < supermatrix_cols_bp {
-            raw0_s.push_str(&"-".repeat(supermatrix_cols_bp - raw0_s.len()));
-        }
+        let raw0_s = build_unaligned_taxon_raw0_control(
+            &s_unr,
+            raw0_control_records.get(idx).map(|r| r.sequence.as_str()),
+            None,
+            Some(slot_entries[idx].7.as_str()),
+            idx,
+            supermatrix_cols_bp,
+        );
 
         all64_labels.push(safe_id.clone());
         all64_ry3_strs.push(s_ry3.clone());

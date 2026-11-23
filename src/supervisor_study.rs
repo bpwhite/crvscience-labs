@@ -2107,8 +2107,10 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     } else {
         let max_w = core_seqs.iter().map(|x| x.len()).max().unwrap_or(60).max(60);
         for s in &mut core_seqs {
-            if s.is_empty() {
-                *s = "-".repeat(max_w);
+            if s.len() < max_w {
+                s.push_str(&"-".repeat(max_w - s.len()));
+            } else if s.len() > max_w {
+                s.truncate(max_w);
             }
         }
     }
@@ -2118,7 +2120,14 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     let clean_raw_active: Vec<String> = active_indices.iter().map(|&i| clean_raw[i].clone()).collect();
     let n_active = lbls_active.len().max(1);
 
-    let core_cols = core_seqs.first().map(|s| s.len()).unwrap_or(60).max(60);
+    let core_cols = core_seqs.iter().map(|s| s.len()).max().unwrap_or(60).max(60);
+    for s in &mut core_seqs {
+        if s.len() < core_cols {
+            s.push_str(&"-".repeat(core_cols - s.len()));
+        } else if s.len() > core_cols {
+            s.truncate(core_cols);
+        }
+    }
 
     // 2. Build Regime 2 (single-pass progressive FFT-NS-i across all sites),
     //    Regime 3 (untrimmed gotoh-msa), and Regime 4 (real unaligned raw sequences truncated/gap-padded to core_cols)
@@ -2164,10 +2173,18 @@ pub(crate) fn evaluate_population_cohort_4regimes(
     let (_, aln_gotoh_raw, _) = align_sequences_with_mode(&nt_recs_active, AlignerMode::Native);
     let aln_gotoh_map: HashMap<String, String> =
         aln_gotoh_raw.into_iter().map(|a| (a.id, a.aligned_seq)).collect();
-    let g_len = aln_gotoh_map.values().next().map(|s| s.len()).unwrap_or(core_cols).max(1);
+    let g_len = aln_gotoh_map.values().map(|s| s.len()).max().unwrap_or(core_cols).max(1);
     let r3_36: Vec<String> = lbls_active
         .iter()
-        .map(|id| aln_gotoh_map.get(id).cloned().unwrap_or_else(|| "-".repeat(g_len)))
+        .map(|id| {
+            let mut s = aln_gotoh_map.get(id).cloned().unwrap_or_else(|| "-".repeat(g_len));
+            if s.len() < g_len {
+                s.push_str(&"-".repeat(g_len - s.len()));
+            } else if s.len() > g_len {
+                s.truncate(g_len);
+            }
+            s
+        })
         .collect();
     let r4_36: Vec<String> = clean_raw_active
         .iter()

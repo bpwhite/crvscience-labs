@@ -995,12 +995,15 @@ pub fn run_empirical_bayesian_skyline_mcmc(
         let h_lo = if start_idx == 0 {
             0.0
         } else {
-            coal_heights[start_idx - 1]
+            coal_heights.get(start_idx - 1).copied().unwrap_or(h_root)
         };
         let h_hi = if g + 1 == m_epochs {
             h_root
         } else {
-            coal_heights[end_idx.saturating_sub(1).min(n_ev - 1)]
+            coal_heights
+                .get(end_idx.saturating_sub(1).min(n_ev - 1))
+                .copied()
+                .unwrap_or(h_root)
         };
         bin_bounds_rev.push((h_lo, h_hi.max(h_lo + 1e-6)));
     }

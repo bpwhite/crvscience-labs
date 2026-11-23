@@ -778,6 +778,13 @@ pub(crate) fn run_partitioned_4regime_stage3(
         compress_alignment_patterns(&tip_labels, &to_byte_map(&bundle.raw0_pairs));
 
     let t_ml = Instant::now();
+    eprintln!(
+        "[bio-suite-supervisor] Stage 3/5: Partitioned ModelTest ({} loci) + B={} UFBoot2 on {} gated OTUs x {} bp...",
+        bundle.part_inputs.len(),
+        b_reps,
+        n_phy,
+        ortho64_cols_bp
+    );
     let part_res: PartitionedSupermatrixMlResult = infer_partitioned_supermatrix_ml_with_bootstrap(
         &ry3_strings,
         &tip_labels,
@@ -820,6 +827,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
         &part_res.partitioned_metrics.newick_tree,
     );
     let stage_ml_ufboot_ms = t_ml.elapsed().as_millis().max(1);
+    eprintln!("  [Stage 3A] ML/UFBoot2 complete in {} ms", stage_ml_ufboot_ms);
 
     let gated_tip_fam: HashMap<String, String> = tip_labels
         .iter()
@@ -1316,6 +1324,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
         let _ = fs::write(run_dir.join("trees/clade_recovery_summary.json"), s);
     }
     let stage_msc_ms = t_msc.elapsed().as_millis().max(1);
+    eprintln!("  [Stage 3B] Quartet MSC complete in {} ms", stage_msc_ms);
 
     // 25,000-gen MH supermatrix posterior check for ESS & R-hat on Partitioned RY3 tree
     let t_sm_mcmc = Instant::now();
@@ -1389,6 +1398,10 @@ pub(crate) fn run_partitioned_4regime_stage3(
     let regime1_ry3_marginal_ln_l = round4(regime1_ry3_post_mean_ln_l - 0.5 * sm_var.clamp(0.80, 5.50));
     let (supermatrix_ess, supermatrix_rhat) = compute_ess_and_rhat(&sm_post);
     let stage_sm_mcmc_ms = t_sm_mcmc.elapsed().as_millis().max(1);
+    eprintln!(
+        "  [Stage 3C] 25,000-gen Supermatrix MCMC complete in {} ms",
+        stage_sm_mcmc_ms
+    );
     let emp_tip_bls = extract_terminal_branch_map(&part_res.partitioned_metrics.newick_tree);
 
     let runie_9col_comparison_table = vec![
@@ -5871,6 +5884,11 @@ pub fn execute_declarative_study(
 
     // Stage 2: Per-Locus Alignments -> Partitioned Supermatrix Bundle
     let t_msa = Instant::now();
+    eprintln!(
+        "[bio-suite-supervisor] Stage 2/5: Aligning {} loci across {} taxa...",
+        cfg.locus_defs.len(),
+        n_slots
+    );
     let use_mito_table5 = cfg.genetic_code_table == 5;
     let mut raw_seqnet_cols = 0usize;
     let mut panel_raw_bp_sum = 0usize;
@@ -6069,6 +6087,12 @@ pub fn execute_declarative_study(
             let (r_p, bp, _) = align_and_trim_rrna_core(&loc_recs, part_min_occ);
             (r_p, bp)
         };
+        eprintln!(
+            "  [Stage 2] {:16} -> {} taxa x {} bp",
+            ldef.display_name,
+            aligned_pairs.len(),
+            plen
+        );
         if plen >= 120 && aligned_pairs.len() >= 8 {
             let pmap: HashMap<String, String> = aligned_pairs.iter().cloned().collect();
             msc_partitions.push((
@@ -6607,6 +6631,11 @@ pub fn execute_declarative_study(
         })
         .collect();
 
+    eprintln!(
+        "[bio-suite-supervisor] Stage 4/5: Functional Families ({}) + PDB {} Threading...",
+        cfg.functional_families.len(),
+        cfg.pdb_template.pdb_id
+    );
     let (
         functional_families,
         gui_gene_families,
@@ -6626,6 +6655,10 @@ pub fn execute_declarative_study(
     )?;
 
     // Stage 5: Chronogram + 12 Single-Species Skylines
+    eprintln!(
+        "[bio-suite-supervisor] Stage 5/5: Chronogram + {} Single-Species Skylines...",
+        cfg.skyline_cohorts.len()
+    );
     let mut mean_sec_bl = [0.0f64; 7];
     let mut sec_cnt = [0usize; 7];
     for sr in &sequences_manifest {

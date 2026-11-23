@@ -2119,6 +2119,8 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
     for (fname, exp_loci, exp_pdb, exp_gcode) in [
         ("gram_positive_preprint31.json", 10usize, "1BU7", 11u8),
         ("us_ag_pests_preprint30.json", 16usize, "1TQN", 5u8),
+        ("china_australia_pests_preprint29.json", 16usize, "1TQN", 5u8),
+        ("acanthochitonidae_preprint28.json", 17usize, "1TQN", 5u8),
         ("nematoda_preprint27.json", 16usize, "1TQN", 5u8),
         ("isoptera_preprint26.json", 16usize, "1TQN", 5u8),
         ("nudibranch_preprint25.json", 16usize, "1TQN", 5u8),

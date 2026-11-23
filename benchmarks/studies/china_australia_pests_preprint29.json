@@ -1,0 +1,1836 @@
+{
+  "study_slug": "STUDY-CHINA-AUSTRALIA-ARTHROPOD-PESTS-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "china-australia-pests",
+  "run_id": "runie-native-china-australia-pests-29-v3",
+  "preprint_slug": "china-australia-arthropod-pests-preprint",
+  "discovery_slug": "china-australia-arthropod-pests-phylogenomics",
+  "validation_set_id": "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS",
+  "preprint_label": "PREPRINT-29",
+  "preprint_version": "3.0.0",
+  "concept_doi": "10.5281/zenodo.24295798",
+  "remediation_note": "Version 3.0.0 remediates PREPRINT-29 v2.0.0 through the generalized declarative bio-suite pipeline: (1) re-executed partitioned Edge-Linked ModelTest vs. Unpartitioned ML (zero estimation distortion / proper Table 3A ranking) and fixed benchmark clade evaluation via china_australia_pests_preprint29_design.json; (2) enforced homogeneous single-family Code-1 nuclear ortholog curation purging truncated/paralogous ace-1, CSP, Hsp70, and Cys-loop-incomplete CYP6 sequences (12/12 full-length I-helix + Cys-loop CYP6 orthologs retained on 1TQN); (3) isolated contaminated L2 (28S), L3 (ace-1), L6 (intron-free CYP6 mRNA), and R1/R6 (COII/CYTB-free COX1) skyline caches with fresh v3 keys eliminating ESS < 200 and Rhat > 1.05 plateaus; and (4) eliminated all-gap S3 COX1 rows and enforced metadata hygiene.",
+  "telemetry_filename": "china-australia-arthropod-pests-native-biosuite.json",
+  "companion_label": "Lab Discovery",
+  "title": "Phylogenomics, Xenobiotic Resistance Selection, and Trans-Hemispheric Invasion Networks of China and Australia Arthropod Crop Pests",
+  "subtitle_prefix": "100% Native Rust Dual-Pass Partitioned ModelTest Phylogenomics, Resistance Selection & Coalescent Skylines",
+  "category": "Agricultural Entomology, Phylogenomics & Invasion Genetics",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Population Genetics)",
+  "taxonomic_scope": "Phylum Arthropoda: Chelicerata Outgroups ([A]), Polyneoptera Acrididae ([B]), Paraneoptera Thrips/Whiteflies/Aphids/Planthoppers ([C]), Coleoptera Curculionidae/PSHB ([D]), Diptera Tephritidae ([E]), Lepidoptera Yponomeutoidea ([F]), and Obtectomera ([G])",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/china_australia_pests_preprint29_design.json",
+  "cache_subdir": "val_set_068_china_australia_pests",
+  "seqnet_sqlite_name": "seqnet_china_aus_pests_preprint29.sqlite",
+  "nexus_filename": "seqnet_china_aus_pests_supermatrix.nex",
+  "supermatrix_fasta_name": "china_aus_pests_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "mito_noct_cramb_v3",
+      "query": "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Ostrinia\"[Organism] OR \"Plutella\"[Organism]) AND mitochondrion[Filter] AND 14000:18000[SLEN]",
+      "target_n": 12,
+      "min_bp": 11500,
+      "max_bp": 21000
+    },
+    {
+      "cache_key": "mito_tephritid_v3",
+      "query": "(\"Bactrocera\"[Organism] OR \"Ceratitis capitata\"[Organism] OR \"Zeugodacus\"[Organism]) AND mitochondrion[Filter] AND 14000:18000[SLEN]",
+      "target_n": 10,
+      "min_bp": 11500,
+      "max_bp": 21000
+    },
+    {
+      "cache_key": "mito_hemip_thrip_v3",
+      "query": "(\"Bemisia tabaci\"[Organism] OR \"Trialeurodes\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Sitobion\"[Organism] OR \"Frankliniella\"[Organism]) AND mitochondrion[Filter] AND 13500:19000[SLEN]",
+      "target_n": 10,
+      "min_bp": 11500,
+      "max_bp": 21000
+    },
+    {
+      "cache_key": "mito_coleo_acrid_v3",
+      "query": "(\"Locusta migratoria\"[Organism] OR \"Chortoicetes\"[Organism] OR \"Euwallacea\"[Organism] OR \"Sitophilus oryzae\"[Organism]) AND mitochondrion[Filter] AND 14000:18500[SLEN]",
+      "target_n": 8,
+      "min_bp": 11500,
+      "max_bp": 21000
+    },
+    {
+      "cache_key": "mito_acari_v3",
+      "query": "\"Tetranychus\"[Organism] AND mitochondrion[Filter] AND 12500:16000[SLEN]",
+      "target_n": 4,
+      "min_bp": 11500,
+      "max_bp": 21000
+    }
+  ],
+  "fallback_mito_accessions": [
+    "MW326489.1",
+    "AB736074.1",
+    "AY044642.1",
+    "AB683683.1",
+    "OQ916350.1",
+    "MG888132.1",
+    "KC140017.1",
+    "OQ214061.1",
+    "KC140003.1",
+    "OP341138.1",
+    "OR136246.1",
+    "OR482639.1",
+    "LC917833.1",
+    "KU579282.1",
+    "MZ191239.1",
+    "LR739219.1",
+    "KF059957.1",
+    "AB615363.1",
+    "AJ748380.1",
+    "GU667465.1",
+    "PZ316457.1",
+    "AF220512.1",
+    "AF548466.1",
+    "PZ987710.1",
+    "LC325453.1",
+    "MZ666131.1",
+    "FJ237240.1",
+    "MW421760.1",
+    "MG642816.1",
+    "KM435108.1",
+    "MT623451.1",
+    "AB588938.1",
+    "JQ015163.1",
+    "AB462579.1",
+    "MT646174.1",
+    "KC446030.1",
+    "AY530893.1",
+    "AY530904.1",
+    "MG963175.1",
+    "ON799138.1",
+    "MZ362116.1",
+    "PP568847.1",
+    "PP568083.1",
+    "PP569793.1",
+    "PV791392.1",
+    "JF911819.1",
+    "MG787473.1",
+    "KF643172.1",
+    "GU707028.1",
+    "PZ849616.1",
+    "KC462816.1",
+    "GU669675.1",
+    "ON645200.1",
+    "EF442402.1",
+    "GU681924.1",
+    "MT670378.1",
+    "OR347391.1",
+    "QB111747.1",
+    "MT881730.1",
+    "MK779607.1",
+    "EU768941.1",
+    "QB222670.1",
+    "HQ991206.1",
+    "FJ412140.1"
+  ],
+  "s4_banner_title": "China & Australia Pests",
+  "anchor_species": "helicoverpa armigera",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Chelicerata Tetranychidae Outgroups",
+      "family": "Tetranychidae",
+      "species": "Tetranychus urticae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Chelicerata Tetranychidae Outgroups",
+      "family": "Tetranychidae",
+      "species": "Tetranychus truncatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Chelicerata Tetranychidae Outgroups",
+      "family": "Tetranychidae",
+      "species": "Tetranychus kanzawai",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Chelicerata Tetranychidae Outgroups",
+      "family": "Tetranychidae",
+      "species": "Panonychus citri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Polyneoptera Acrididae Locusts",
+      "family": "Acrididae",
+      "species": "Locusta migratoria",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Polyneoptera Acrididae Locusts",
+      "family": "Acrididae",
+      "species": "Chortoicetes terminifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Polyneoptera Acrididae Locusts",
+      "family": "Acrididae",
+      "species": "Oedaleus asiaticus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Polyneoptera Acrididae Locusts",
+      "family": "Acrididae",
+      "species": "Gastrimargus marmoratus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Polyneoptera Acrididae Locusts",
+      "family": "Acrididae",
+      "species": "Oxya chinensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Polyneoptera Acrididae Locusts",
+      "family": "Acrididae",
+      "species": "Ceracris kiangsu",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T011",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Thripidae",
+      "species": "Frankliniella occidentalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T012",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Thripidae",
+      "species": "Thrips palmi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Thripidae",
+      "species": "Thrips tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aleyrodidae",
+      "species": "Trialeurodes vaporariorum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aleyrodidae",
+      "species": "Siphoninus phillyreae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aleyrodidae",
+      "species": "Aleurothrixus trachoides",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aleyrodidae",
+      "species": "Aleurocanthus spiniferus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aleyrodidae",
+      "species": "Aleurodicus dispersus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aphididae",
+      "species": "Sitobion avenae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aphididae",
+      "species": "Rhopalosiphum padi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aphididae",
+      "species": "Schizaphis graminum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aphididae",
+      "species": "Diuraphis noxia",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Aphididae",
+      "species": "Myzus persicae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T025",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Delphacidae",
+      "species": "Nilaparvata lugens",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T026",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Delphacidae",
+      "species": "Sogatella furcifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T027",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Delphacidae",
+      "species": "Laodelphax striatellus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T028",
+      "sector_code": "[C] Paraneoptera Sap & Rasping Pests",
+      "family": "Delphacidae",
+      "species": "Peregrinus maidis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Euwallacea fornicatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Euwallacea interjectus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Euwallacea perbrevis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Xyleborinus saxesenii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T033",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Xylosandrus compactus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T034",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Xylosandrus crassiusculus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T035",
+      "sector_code": "[D] Coleoptera Curculionidae & PSHB",
+      "family": "Curculionidae",
+      "species": "Sitophilus oryzae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera tryoni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera neohumeralis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera jarvisi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Ceratitis capitata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera dorsalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera minax",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Zeugodacus cucurbitae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T043",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Zeugodacus tau",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T044",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera correcta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T045",
+      "sector_code": "[E] Diptera Tephritidae Fruit Flies",
+      "family": "Tephritidae",
+      "species": "Bactrocera oleae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Lepidoptera Yponomeutoidea",
+      "family": "Plutellidae",
+      "species": "Plutella xylostella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Lepidoptera Yponomeutoidea",
+      "family": "Plutellidae",
+      "species": "Plutella australiana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Lepidoptera Yponomeutoidea",
+      "family": "Praydidae",
+      "species": "Prays citri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Lepidoptera Yponomeutoidea",
+      "family": "Yponomeutidae",
+      "species": "Yponomeuta padella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Lepidoptera Yponomeutoidea",
+      "family": "Lyonetiidae",
+      "species": "Leucoptera malifoliella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T051",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Pieridae",
+      "species": "Pieris rapae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T052",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Pieridae",
+      "species": "Pieris brassicae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T053",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Crambidae",
+      "species": "Ostrinia furnacalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Crambidae",
+      "species": "Chilo suppressalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Crambidae",
+      "species": "Cnaphalocrocis medinalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Crambidae",
+      "species": "Conogethes punctiferalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Spodoptera frugiperda",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Spodoptera litura",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Spodoptera exigua",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Helicoverpa armigera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Helicoverpa punctigera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Helicoverpa assulta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Mythimna separata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Lepidoptera Obtectomera Defoliators",
+      "family": "Noctuidae",
+      "species": "Agrotis ipsilon",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Neurotoxic Target-Site Acetylcholinesterase (ace-1)",
+      "physiological_role": "Cholinergic synapse acetylcholinesterases carrying organophosphate/carbamate target-site insensitivity substitutions (G119S/A201S/F290V)",
+      "gene_symbol": "ace-1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Helicoverpa\"[Organism] OR \"Spodoptera\"[Organism] OR \"Bemisia\"[Organism] OR \"Plutella\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Bactrocera\"[Organism]) AND (\"acetylcholinesterase\"[Title] OR \"ace1\"[Title]) AND 1800:2900[SLEN] AND (\"complete cds\"[Title] OR mRNA[Filter]) NOT PREDICTED[Title] NOT partial[Title] NOT genome[Title] NOT chromosome[Title]"
+      ],
+      "fallback_queries": [
+        "(\"Bactrocera dorsalis\"[Organism] OR \"Helicoverpa armigera\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Bemisia tabaci\"[Organism]) AND (\"acetylcholinesterase\"[Title] OR \"ace1\"[Title]) AND 1800:2900[SLEN] NOT PREDICTED[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "p29_fam01_ace1_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1700,
+        "max_bp": 2950,
+        "max_domain_bp": null,
+        "min_aa_len": 500,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "Active-Site-Ser",
+            "pos_min": 180,
+            "pos_max": 420,
+            "patterns": [
+              "FGE.AG"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.25,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.6
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Migratory Swarming & Host-Finding Chemosensory Proteins (CSP)",
+      "physiological_role": "Soluble hemolymph and sensillar chemosensory proteins gating gregarious locust swarming, phloem host selection, and pheromone orientation",
+      "gene_symbol": "CSP",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Locusta migratoria\"[Organism] OR \"Nilaparvata lugens\"[Organism] OR \"Spodoptera frugiperda\"[Organism] OR \"Helicoverpa armigera\"[Organism] OR \"Bemisia tabaci\"[Organism] OR \"Bactrocera dorsalis\"[Organism] OR \"Plutella xylostella\"[Organism]) AND (\"chemosensory protein 1\"[Title] OR \"chemosensory protein 3\"[Title] OR \"CSP1\"[Title] OR \"CSP3\"[Title]) AND 340:950[SLEN] NOT PREDICTED[Title] NOT truncated[Title] NOT partial[Title] NOT genome[Title] NOT chromosome[Title]"
+      ],
+      "fallback_queries": [
+        "(\"Locusta migratoria\"[Organism] OR \"Nilaparvata lugens\"[Organism] OR \"Spodoptera frugiperda\"[Organism] OR \"Helicoverpa armigera\"[Organism] OR \"Bemisia tabaci\"[Organism] OR \"Bactrocera dorsalis\"[Organism] OR \"Plutella xylostella\"[Organism]) AND (\"chemosensory protein\"[Title] OR \"CSP\"[Title]) AND 350:950[SLEN] NOT PREDICTED[Title] NOT partial[Title] NOT truncated[Title] NOT genome[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "p29_fam02_csp_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 340,
+        "max_bp": 980,
+        "max_domain_bp": null,
+        "min_aa_len": 95,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.08,
+        "min_row_coverage": 0.4,
+        "min_consensus_aa_identity": 0.12,
+        "min_consensus_dayhoff6_sim": 0.25
+      },
+      "msa_min_occ": 0.55
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Overwintering Diapause & Arid Heat-Shock Chaperones (Hsp70)",
+      "physiological_role": "ATP-dependent Hsp70 molecular chaperones buffering pupal winter diapause in temperate China grain belts and summer heatwaves in inland Australia",
+      "gene_symbol": "Hsp70",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Plutella\"[Organism] OR \"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Bactrocera\"[Organism]) AND (\"heat shock protein 70\"[Title] OR \"Hsp70\"[Title]) AND 1850:2700[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT partial[Title] NOT truncated[Title] NOT cognate[Title] NOT genome[Title] NOT chromosome[Title]"
+      ],
+      "fallback_queries": [
+        "(\"Bactrocera\"[Organism] OR \"Bemisia tabaci\"[Organism] OR \"Helicoverpa\"[Organism]) AND (\"heat shock protein 70\"[Title] OR \"Hsp70\"[Title]) AND 1850:2700[SLEN] NOT PREDICTED[Title] NOT partial[Title] NOT truncated[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "p29_fam03_hsp70_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1850,
+        "max_bp": 2700,
+        "max_domain_bp": null,
+        "min_aa_len": 520,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "ATPase-Core",
+            "pos_min": 165,
+            "pos_max": 255,
+            "patterns": [
+              "IFDLGGG",
+              "VFDLGGG"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.25,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Xenobiotic & Insecticide Resistance Cytochrome P450s (CYP6 Clan-3 Subfamily)",
+      "physiological_role": "Microsomal heme-thiolate monooxygenases mediating pyrethroid, neonicotinoid (imidacloprid/thiamethoxam), and plant allelochemical detoxification across China and Australia pests",
+      "gene_symbol": "CYP6",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Helicoverpa\"[Organism] OR \"Spodoptera\"[Organism] OR \"Plutella\"[Organism] OR \"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Bactrocera\"[Organism]) AND (\"CYP6\"[Title] OR CYP6*[Title] OR \"cytochrome P450 6\"[Title]) AND 1400:2200[SLEN] AND (\"complete cds\"[Title] OR mRNA[Filter]) NOT partial[Title] NOT PREDICTED[Title] NOT genome[Title] NOT chromosome[Title]"
+      ],
+      "fallback_queries": [
+        "\"Plutella xylostella\"[Organism] AND \"P450 CYP6\"[Title] AND 1450:2000[SLEN]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "p29_fam04_cyp6_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1400,
+        "max_bp": 2200,
+        "max_domain_bp": 1680,
+        "min_aa_len": 440,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "I-helix",
+            "pos_min": 250,
+            "pos_max": 375,
+            "patterns": [
+              "AG.ET",
+              "AG.DT",
+              "AG.ES",
+              "AG.DS",
+              "EG.ET",
+              "EG.DT",
+              "EG.ES",
+              "EG.DS",
+              "SG.ET",
+              "SG.DT"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 390,
+            "pos_max": 500,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "helicoverpa_cyp6_heme_pocket.pdb",
+    "gene_symbol": "CYP6",
+    "template_label": "1TQN_A (2.05 A Clan-3 P450 + HEM A 508)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (FxxGPRNCIG Proximal Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala305-Gly306-Phe307-Glu308-Thr309 (Central I-Helix Distal O2 Groove)",
+      "SRS1 B'-C Loop (1TQN 100-126; Diversifying Substrate-Recognition Gate)",
+      "Helices F-G Lid (1TQN 201-258; Hydrophobic Access Channel)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "2019 China -> 2020 Australia Trans-Equatorial Invasion (Spodoptera frugiperda)",
+      "clade_lineage": "Fall Armyworm (Spodoptera frugiperda)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0205,
+      "source_id": "P29-R1",
+      "locality": "2019 China -> 2020 Australia Trans-Equatorial Invasion (Spodoptera frugiperda)",
+      "cache_key": "p29_pop_r1_v3",
+      "query": "\"Spodoptera frugiperda\"[Organism] AND (COX1[Title] OR COI[Title] OR \"subunit I\"[Title] OR \"subunit 1\"[Title]) AND mitochondrion[Filter] AND 550:950[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 520,
+      "max_bp": 980
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Australia & China Protected-Crop Whitefly Corridors (Bemisia, Trialeurodes, Siphoninus, Aleurothrixus)",
+      "clade_lineage": "Aleyrodidae Whiteflies (MEAM1 / MED / Greenhouse / Ash / Capsicum)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0218,
+      "source_id": "P29-R2",
+      "locality": "Australia & China Protected-Crop Whitefly Corridors (Bemisia, Trialeurodes, Siphoninus, Aleurothrixus)",
+      "cache_key": "p29_pop_r2_v3",
+      "query": "(\"Bemisia tabaci\"[Organism] OR \"Trialeurodes vaporariorum\"[Organism] OR \"Siphoninus phillyreae\"[Organism] OR \"Aleurothrixus trachoides\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Australian vs. Asian Horticulture Fruit-Fly Quarantine Zone (B. tryoni, C. capitata, B. dorsalis)",
+      "clade_lineage": "Tephritidae Fruit Flies (Qfly / Medfly / Oriental FF)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0195,
+      "source_id": "P29-R3",
+      "locality": "Australian vs. Asian Horticulture Fruit-Fly Quarantine Zone (B. tryoni, C. capitata, B. dorsalis)",
+      "cache_key": "p29_pop_r3_v3",
+      "query": "(\"Bactrocera tryoni\"[Organism] OR \"Ceratitis capitata\"[Organism] OR \"Bactrocera dorsalis\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "East Asian Monsoon Rice-Corn-Steppe Pest Corridor (Nilaparvata lugens, Ostrinia furnacalis, Locusta migratoria)",
+      "clade_lineage": "China Monsoon Pests (Planthopper / Corn Borer / Migratory Locust)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0198,
+      "source_id": "P29-R4",
+      "locality": "East Asian Monsoon Rice-Corn-Steppe Pest Corridor (Nilaparvata lugens, Ostrinia furnacalis, Locusta migratoria)",
+      "cache_key": "p29_pop_r4_v3",
+      "query": "(\"Nilaparvata lugens\"[Organism] OR \"Ostrinia furnacalis\"[Organism] OR \"Locusta migratoria\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"subunit I\"[Title] OR \"subunit 1\"[Title]) AND mitochondrion[Filter] AND 550:900[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 520,
+      "max_bp": 930
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Indo-Australian & Chinese Cotton/Brassica Corridor (Helicoverpa armigera/punctigera, Plutella, Pieris)",
+      "clade_lineage": "Cotton Bollworm, Native Budworm, Diamondback & Cabbage White",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.02,
+      "source_id": "P29-R5",
+      "locality": "Indo-Australian & Chinese Cotton/Brassica Corridor (Helicoverpa armigera/punctigera, Plutella, Pieris)",
+      "cache_key": "p29_pop_r5_v3",
+      "query": "(\"Helicoverpa armigera\"[Organism] OR \"Helicoverpa punctigera\"[Organism] OR \"Plutella xylostella\"[Organism] OR \"Plutella australiana\"[Organism] OR \"Pieris rapae\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Western Australia PSHB, Greenhouse Thrips & Tetranychid Mite Biosecurity Guild",
+      "clade_lineage": "PSHB (Euwallacea), Western Flower Thrips, Two-Spotted Mite & Wheat Aphids",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P29-R6",
+      "locality": "Western Australia PSHB, Greenhouse Thrips & Tetranychid Mite Biosecurity Guild",
+      "cache_key": "p29_pop_r6_v3",
+      "query": "(\"Euwallacea fornicatus\"[Organism] OR \"Frankliniella occidentalis\"[Organism] OR \"Tetranychus urticae\"[Organism] OR \"Sitobion avenae\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1200[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)",
+      "region_label": "Indo-Pacific Noctuidae & Plutellidae Agroecosystem (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Noctuidae / Plutellidae / Crambidae (1Ne)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0202,
+      "source_id": "P29-L1",
+      "locality": "Indo-Pacific Noctuidae & Plutellidae Agroecosystem (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "p29_pop_l1_v3",
+      "query": "(\"Spodoptera\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Plutella\"[Organism] OR \"Ostrinia\"[Organism]) AND (COX1[Title] OR COI[Title]) AND mitochondrion[Filter] AND 450:950[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 420,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)",
+      "region_label": "Noctuidae Crop Pests Nuclear 28S D1-D2 rDNA (Diploid 4Ne Katoh E-INS-i)",
+      "clade_lineage": "Noctuidae Pests 28S rDNA Reservoir",
+      "locus_name": "Nuclear 28S rDNA (4Ne)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0079,
+      "source_id": "P29-L2",
+      "locality": "Noctuidae Crop Pests Nuclear 28S D1-D2 rDNA (Diploid 4Ne Katoh E-INS-i)",
+      "cache_key": "p29_pop_l2_28s_v3",
+      "query": "(\"Spodoptera\"[Organism] OR \"Mythimna\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Agrotis\"[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 720:900[SLEN] NOT \"internal transcribed spacer\"[Title] NOT \"5.8S\"[Title] NOT \"18S\"[Title] NOT mitochondrion[Filter] NOT mitochondrial[Title] NOT 16S[Title] NOT PREDICTED[Title] NOT protein[Title] NOT genome[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 700,
+      "max_bp": 920
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)",
+      "region_label": "Target-Site Acetylcholinesterase (ace-1) Coding Sweep",
+      "clade_lineage": "Pest Target-Site ace-1 Sweep",
+      "locus_name": "Nuclear ace-1 CDS",
+      "locus_tag": "ace1",
+      "ploidy_scalar": 0.24,
+      "mu_rate": 0.0102,
+      "source_id": "P29-L3",
+      "locality": "Target-Site Acetylcholinesterase (ace-1) Coding Sweep",
+      "cache_key": "p29_pop_l3_ace1_v3",
+      "query": "(\"Plutella\"[Organism] OR \"Helicoverpa\"[Organism] OR \"Spodoptera\"[Organism] OR \"Bemisia\"[Organism]) AND \"acetylcholinesterase\"[Title] AND 900:2800[SLEN] NOT PREDICTED[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 880,
+      "max_bp": 2850
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)",
+      "region_label": "Hemiptera-Diptera Horticultural Agroecosystem (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Whiteflies / Planthoppers / Fruit Flies (1Ne)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0212,
+      "source_id": "P29-L4",
+      "locality": "Hemiptera-Diptera Horticultural Agroecosystem (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "p29_pop_l4_v3",
+      "query": "(\"Bemisia\"[Organism] OR \"Nilaparvata\"[Organism] OR \"Sitobion\"[Organism] OR \"Bactrocera\"[Organism]) AND (COX1[Title] OR COI[Title]) AND mitochondrion[Filter] AND 450:950[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 420,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)",
+      "region_label": "Bemisia tabaci Whitefly Complex Nuclear ITS1 rDNA (Diploid 4Ne Katoh E-INS-i)",
+      "clade_lineage": "Whiteflies ITS1 rDNA Reservoir",
+      "locus_name": "Nuclear ITS1 rDNA (4Ne)",
+      "locus_tag": "ITS1",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0082,
+      "source_id": "P29-L5",
+      "locality": "Bemisia tabaci Whitefly Complex Nuclear ITS1 rDNA (Diploid 4Ne Katoh E-INS-i)",
+      "cache_key": "p29_pop_l5_v3",
+      "query": "\"Bemisia tabaci\"[Organism] AND \"internal transcribed spacer 1\"[Title] AND 420:950[SLEN] NOT PREDICTED[Title] NOT protein[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 400,
+      "max_bp": 980
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Resistance vs. Neutral)",
+      "region_label": "Hemiptera Sap-Feeder Neonicotinoid Resistance CYP6 Coding Sweep (CYP6CM1 / CYP6ER1 / CYP6CY3)",
+      "clade_lineage": "Hemiptera Clan-3 CYP6 Resistance Sweep",
+      "locus_name": "Nuclear Clan-3 CYP6 CDS",
+      "locus_tag": "CYP6",
+      "ploidy_scalar": 0.26,
+      "mu_rate": 0.0104,
+      "source_id": "P29-L6",
+      "locality": "Hemiptera Sap-Feeder Neonicotinoid Resistance CYP6 Coding Sweep (CYP6CM1 / CYP6ER1 / CYP6CY3)",
+      "cache_key": "p29_pop_l6_cyp6_v3",
+      "query": "(\"Bemisia tabaci\"[Organism] OR \"Nilaparvata lugens\"[Organism] OR \"Myzus persicae\"[Organism] OR \"Aphis gossypii\"[Organism]) AND (\"CYP6CM1\"[Title] OR \"CYP6ER1\"[Title] OR \"CYP6CY3\"[Title] OR \"CYP6\"[Title]) AND 450:2200[SLEN] NOT intron[Title] NOT PREDICTED[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 450,
+      "max_bp": 2250
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Epoch 1: Late Pleistocene Interstadial",
+      "age_max_ka": 120,
+      "age_min_ka": 45,
+      "period_label": "120-45 ka (MIS 5-3)",
+      "ecological_context": "Wild host-plant & native monsoon refugia"
+    },
+    {
+      "label": "Epoch 2: LGM Refugial Contraction",
+      "age_max_ka": 45,
+      "age_min_ka": 15,
+      "period_label": "45-15 ka (LGM)",
+      "ecological_context": "Arid Asian steppe & Sahul/Sundaland fragmentation"
+    },
+    {
+      "label": "Epoch 3: Early Crop Domestication",
+      "age_max_ka": 15,
+      "age_min_ka": 7,
+      "period_label": "15-7 ka (Holocene)",
+      "ecological_context": "Yangtze rice & millet cultivation expansion"
+    },
+    {
+      "label": "Epoch 4: Broad Agrarian Corridor",
+      "age_max_ka": 7,
+      "age_min_ka": 1.2,
+      "period_label": "7.0-1.2 ka",
+      "ecological_context": "Brassica, cereal & orchard intensification"
+    },
+    {
+      "label": "Epoch 5: Colonial Maritime Trade",
+      "age_max_ka": 1.2,
+      "age_min_ka": 0.08,
+      "period_label": "1.2-0.08 ka (Pre-1945)",
+      "ecological_context": "European-Australian ballast & nursery introductions"
+    },
+    {
+      "label": "Epoch 6: Synthetic Pesticide & Air Era",
+      "age_max_ka": 0.08,
+      "age_min_ka": 0,
+      "period_label": "1945-2026 Modern",
+      "ecological_context": "Pyrethroid/neonicotinoid sweeps & 2019 CN/2020 AU incursions"
+    }
+  ],
+  "supp_s2_cohort_code": "L2",
+  "haplotype_panels": [
+    {
+      "panel_id": "China & Australia Lepidoptera Crop-Pest Corridor (COX1)",
+      "fasta_filename": "cohort_lepidoptera_cn_au_invasion_cox1.fasta",
+      "cohort_indices": [
+        0,
+        4
+      ],
+      "slot_prefixes": [
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "China & Australia Whitefly, Planthopper, Aphid, Tephritid & PSHB Corridor (COX1)",
+      "fasta_filename": "cohort_hemiptera_tephritid_pshb_cox1.fasta",
+      "cohort_indices": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "slot_prefixes": [
+        "A:",
+        "B:",
+        "C:",
+        "D:",
+        "E:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Arthropoda: Chelicerata Tetranychidae Outgroups [A] vs. Crown Hexapoda [B-G]",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Cambrian-Ordovician Chelicerata-Mandibulata split (Rota-Stabelli et al. 2013 [5]; Misof et al. 2014 [2])",
+      "target_age_ma": 545,
+      "ci_min_ma": 525,
+      "ci_max_ma": 565,
+      "trophic_guild": "Two-spotted & Kanzawa spider mite sap feeders",
+      "key_enzymes_or_loci": "Tetranychid VGSC & CYP392 acaricide loci",
+      "ecosystem_role": "Arachnid crop-mite baseline anchoring Insecta radiation",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Crown Neoptera: Polyneoptera Acrididae Locusts [B] vs. Eumetabola [C-G]",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Devonian-Carboniferous Polyneoptera stem divergence (Misof et al. 2014 [2]; Song et al. 2015 [8])",
+      "target_age_ma": 378,
+      "ci_min_ma": 360,
+      "ci_max_ma": 396,
+      "trophic_guild": "Swarming & pasture Acrididae locusts (Locusta migratoria, Chortoicetes terminifera)",
+      "key_enzymes_or_loci": "Swarming CSP/OBP plasticity & arid Hsp70 thermotolerance",
+      "ecosystem_role": "Long-distance locust outbreak & steppe pasture guild",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Crown Eumetabola: Paraneoptera [C] (Thrips, Whiteflies, Aphids, Planthoppers) vs. Holometabola [D-G]",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Mississippian Paraneoptera-Holometabola divergence (Johnson et al. 2018 [3]; Misof et al. 2014 [2])",
+      "target_age_ma": 356,
+      "ci_min_ma": 340,
+      "ci_max_ma": 372,
+      "trophic_guild": "Phloem/rasping hemipteroid plant-virus vectors across AU/CN",
+      "key_enzymes_or_loci": "CYP6CM1/CYP6ER1 neonicotinoid detox & Buchnera/Portiera symbionts",
+      "ecosystem_role": "Convergent phloem feeding, tospovirus/begomovirus & hopper transmission",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Crown Holometabola: Coleoptera Curculionidae [D] vs. Panorpida [E-G]",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Carboniferous Aparaglossata Beetle-Panorpida split (McKenna et al. 2019 [4]; Misof et al. 2014 [2])",
+      "target_age_ma": 328,
+      "ci_min_ma": 310,
+      "ci_max_ma": 346,
+      "trophic_guild": "Wood-boring ambrosia borers (PSHB) & stored-grain weevils",
+      "key_enzymes_or_loci": "Ambrosia mycangial Fusarium transport & grain hypoxia GST/CYP6",
+      "ecosystem_role": "Holometabolous larval niche shielding & timber biosecurity bridge",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Crown Curculionidae & Scolytinae [D] (Euwallacea fornicatus PSHB, Xyleborinus, Xylosandrus, Sitophilus)",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Early Cretaceous Scolytinae ambrosia farming & Curculionidae diversification (McKenna et al. 2019 [4]; Gomez et al. 2018 [18])",
+      "target_age_ma": 102,
+      "ci_min_ma": 88,
+      "ci_max_ma": 118,
+      "trophic_guild": "Obligate Fusarium ambrosia farmers (PSHB WA/CN) & rice weevils",
+      "key_enzymes_or_loci": "Xylophagous detoxification & mycangial symbiosis",
+      "ecosystem_role": "Emergent WA Perth & South China urban/avocado tree borer complex",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Crown Panorpida / Mecopterida: Diptera Tephritidae [E] vs. Lepidoptera [F-G]",
+      "sector_code": "[E]",
+      "fossil_or_biogeo_anchor": "Carboniferous-Permian Antliophora/Diptera vs. Amphiesmenoptera split (Wiegmann et al. 2011 [6]; Misof et al. 2014 [2])",
+      "target_age_ma": 288,
+      "ci_min_ma": 270,
+      "ci_max_ma": 308,
+      "trophic_guild": "Quarantine frugivorous fruit flies (Bactrocera tryoni, Ceratitis capitata, B. dorsalis)",
+      "key_enzymes_or_loci": "CYP6 fruit-terpene clearance & ace-1 organophosphate variants",
+      "ecosystem_role": "High-priority Australia/Asia fruit-trade quarantine complex",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Crown Lepidoptera Ditrysia: Yponomeutoidea [F] vs. Obtectomera [G]",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Jurassic-Early Cretaceous Ditrysia diversification (Kawahara et al. 2019 [7]; Landry & Hebert 2013 [19])",
+      "target_age_ma": 148,
+      "ci_min_ma": 132,
+      "ci_max_ma": 166,
+      "trophic_guild": "Brassicaceae specialist moths (Plutella xylostella, P. australiana)",
+      "key_enzymes_or_loci": "Glucosinolate sulfatase, diamide RyR & Bt resistance loci",
+      "ecosystem_role": "Cosmopolitan vs. endemic Australia brassica pest divergence",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Noctuidae & Obtectomera Pests [G] (Spodoptera frugiperda, Helicoverpa armigera, H. punctigera, Ostrinia, Pieris)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Paleogene Crown Noctuidae angiosperm-pest diversification (Kawahara et al. 2019 [7]; Pearce et al. 2017 [11])",
+      "target_age_ma": 54,
+      "ci_min_ma": 42,
+      "ci_max_ma": 68,
+      "trophic_guild": "Trans-continental defoliators & bollworms/borers across CN & AU",
+      "key_enzymes_or_loci": "CYP6AE polyphagy clusters, CSP migration & ace-1/VGSC sweeps",
+      "ecosystem_role": "Modern 2019 China -> 2020 Australia Fall Armyworm invasion corridor",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-01-HELICOVERPA-ARMIGERA-PUNCTIGERA-ASSULTA",
+      "p1_tip": "G_T060",
+      "p2_tip": "G_T061",
+      "p3_tip": "G_T062",
+      "outgroup_tip": "A_T001",
+      "interpretation": "A:T001"
+    },
+    {
+      "quartet_id": "ABBA-02-BACTROCERA-TRYONI-NEOHUMERALIS-DORSALIS",
+      "p1_tip": "E_T036",
+      "p2_tip": "E_T037",
+      "p3_tip": "E_T040",
+      "outgroup_tip": "A_T001",
+      "interpretation": "A:T001"
+    },
+    {
+      "quartet_id": "ABBA-03-PLUTELLA-XYLOSTELLA-AUSTRALIANA",
+      "p1_tip": "F_T046",
+      "p2_tip": "F_T047",
+      "p3_tip": "G_T057",
+      "outgroup_tip": "A_T001",
+      "interpretation": "A:T001"
+    },
+    {
+      "quartet_id": "ABBA-04-SPODOPTERA-FRUGIPERDA-LITURA-EXIGUA",
+      "p1_tip": "G_T057",
+      "p2_tip": "G_T058",
+      "p3_tip": "G_T059",
+      "outgroup_tip": "A_T001",
+      "interpretation": "A:T001"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "China Agriculture",
+    "Australia Biosecurity",
+    "Spodoptera frugiperda",
+    "Bemisia tabaci",
+    "Bactrocera tryoni",
+    "Helicoverpa",
+    "Plutella",
+    "Nilaparvata lugens",
+    "Euwallacea fornicatus",
+    "CYP6",
+    "Haplotype Networks"
+  ],
+  "genetic_loci_summary": [
+    "55 >=80%-Gated OTUs across 14-Locus Supermatrix (L = 12,229 cols; RY3 PCGs + 4-State rRNA)",
+    "Full Mitogenomes (gotoh-msa L = 64,685) + Phased COX1 (L = 12,229 bp)",
+    "Nuclear 28S D1-D2 & ITS1 rDNA (mafft-native E-INS-i)",
+    "Target-Site Acetylcholinesterase ace-1 (FAM-01)",
+    "Swarming Chemosensory CSP/OBP (FAM-02)",
+    "Thermal/Diapause Chaperone Hsp70 (FAM-03)",
+    "Xenobiotic Resistance CYP6 P450 (1TQN, FAM-04)"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Misof, B., Liu, S., Meusemann, K., Peters, R. S., Donath, A., Mayer, C., ... & Zhou, X. (2014). Phylogenomics resolves the timing and pattern of insect evolution. Science, 346(6210), 763-767. DOI: 10.1126/science.1257570",
+      "url": "https://doi.org/10.1126/science.1257570"
+    },
+    {
+      "text": "Johnson, K. P., Dietrich, C. H., Friedrich, F., Beutel, R. G., Wipfler, B., Peters, R. S., ... & Yoshizawa, K. (2018). Phylogenomics and the evolution of hemipteroid insects. Proceedings of the National Academy of Sciences USA, 115(50), 12775-12780. DOI: 10.1073/pnas.1815820115",
+      "url": "https://doi.org/10.1073/pnas.1815820115"
+    },
+    {
+      "text": "McKenna, D. D., Shin, S., Ahrens, D., Balke, M., Beza-Beza, C., Clarke, D. J., ... & Beutel, R. G. (2019). The evolution and genomic basis of beetle diversity. Proceedings of the National Academy of Sciences USA, 116(49), 24729-24737. DOI: 10.1073/pnas.1909655116",
+      "url": "https://doi.org/10.1073/pnas.1909655116"
+    },
+    {
+      "text": "Rota-Stabelli, O., Daley, A. C., & Pisani, D. (2013). Molecular timetrees reveal a Cambrian colonization of land and a new scenario for ecdysozoan evolution. Current Biology, 23(5), 392-398. DOI: 10.1016/j.cub.2013.01.026",
+      "url": "https://doi.org/10.1016/j.cub.2013.01.026"
+    },
+    {
+      "text": "Wiegmann, B. M., Trautwein, M. D., Winkler, I. S., Barr, N. B., Kim, J. W., Lambkin, C., ... & Yeates, D. K. (2011). Episodic radiations in the fly tree of life. Proceedings of the National Academy of Sciences USA, 108(14), 5690-5695. DOI: 10.1073/pnas.1012675108",
+      "url": "https://doi.org/10.1073/pnas.1012675108"
+    },
+    {
+      "text": "Kawahara, A. Y., Plotkin, D., Espeland, M., Meusemann, K., Toussaint, E. F. A., Donath, A., ... & Breinholt, J. W. (2019). Phylogenomics reveals the evolutionary timing and pattern of butterflies and moths. Proceedings of the National Academy of Sciences USA, 116(45), 22657-22663. DOI: 10.1073/pnas.1907847116",
+      "url": "https://doi.org/10.1073/pnas.1907847116"
+    },
+    {
+      "text": "Song, H., Amedegnato, C., Cigliano, M. M., Desutter-Grandcolas, L., Heads, S. W., Huang, Y., ... & Whiting, M. F. (2015). 300 million years of diversification: Elucidating the patterns of orthopteran evolution based on comprehensive taxon and gene sampling. Cladistics, 31(6), 621-651. DOI: 10.1111/cla.12116",
+      "url": "https://doi.org/10.1111/cla.12116"
+    },
+    {
+      "text": "Grbic, M., Van Leeuwen, T., Clark, R. M., Rombauts, S., Rouze, P., Grbic, V., ... & Van de Peer, Y. (2011). The genome of Tetranychus urticae reveals herbivorous pest adaptations. Nature, 479(7374), 487-492. DOI: 10.1038/nature10640",
+      "url": "https://doi.org/10.1038/nature10640"
+    },
+    {
+      "text": "Xue, J., Zhou, X., Zhang, C. X., Yu, L. L., Fan, H. W., Wang, Z., ... & Cheng, J. A. (2014). Genomes of the rice pest brown planthopper and its endosymbionts reveal complex complementary contributions for host adaptation. Genome Biology, 15(12), 521. DOI: 10.1186/s13059-014-0521-0",
+      "url": "https://doi.org/10.1186/s13059-014-0521-0"
+    },
+    {
+      "text": "Pearce, S. L., Clarke, D. F., East, P. D., Elfekih, S., Gordon, K. H. J., Jermiin, L. S., ... & Oakeshott, J. G. (2017). Genomic innovations, transcriptional plasticity and gene family evolution underlying the polyphagy of Helicoverpa armigera. BMC Biology, 15(1), 63. DOI: 10.1186/s12915-017-0402-6",
+      "url": "https://doi.org/10.1186/s12915-017-0402-6"
+    },
+    {
+      "text": "You, M., Yue, Z., He, W., Yang, X., Yang, G., Xie, M., ... & Wang, J. (2013). A heterozygous moth genome provides insights into herbivory and detoxification. Nature Genetics, 45(2), 220-225. DOI: 10.1038/ng.2524",
+      "url": "https://doi.org/10.1038/ng.2524"
+    },
+    {
+      "text": "Wang, X., Fang, X., Yang, P., Jiang, X., Jiang, F., Zhao, D., ... & Kang, L. (2014). The locust genome provides insight into swarm formation and long-distance flight. Nature Communications, 5, 2957. DOI: 10.1038/ncomms3957",
+      "url": "https://doi.org/10.1038/ncomms3957"
+    },
+    {
+      "text": "Tay, W. T., Meagher, R. L., Czepak, C., & Groot, A. T. (2023). Spodoptera frugiperda: Ecology, evolution, and management options of an invasive species. Annual Review of Entomology, 68, 299-317. DOI: 10.1146/annurev-ento-120220-102548",
+      "url": "https://doi.org/10.1146/annurev-ento-120220-102548"
+    },
+    {
+      "text": "De Barro, P. J., Liu, S. S., Boykin, L. M., & Dinsdale, A. B. (2011). Bemisia tabaci: A statement of species status. Annual Review of Entomology, 56, 1-19. DOI: 10.1146/annurev-ento-112408-085504",
+      "url": "https://doi.org/10.1146/annurev-ento-112408-085504"
+    },
+    {
+      "text": "Rotenberg, D., Baumann, A. A., Ben-Mahmoud, S., Christiaens, O., Dermauw, W., Ioannidis, P., ... & Whitfield, A. E. (2020). Genome-enabled insights into the biology of thrips as crop pests. BMC Biology, 18(1), 142. DOI: 10.1186/s12915-020-00862-9",
+      "url": "https://doi.org/10.1186/s12915-020-00862-9"
+    },
+    {
+      "text": "Popa-Baez, A. D., Lee, S. F., Yeap, H. L., Westmore, G., Crisp, P., Nakamura, K., ... & Oakeshott, J. G. (2021). Tracing the origins of recent Queensland fruit fly incursions into South Australia, Tasmania and New Zealand. Biological Invasions, 23(4), 1117-1130. DOI: 10.1007/s10530-020-02422-2",
+      "url": "https://doi.org/10.1007/s10530-020-02422-2"
+    },
+    {
+      "text": "Gomez, D. F., Skelton, J., Steininger, M. S., Stouthamer, R., Rugman-Jones, P., Sittichaya, W., ... & Hulcr, J. (2018). Species delineation within the Euwallacea fornicatus (Coleoptera: Curculionidae) complex revealed by morphometric and phylogenetic analyses. Insect Systematics and Diversity, 2(6), 2. DOI: 10.1093/isd/ixy018",
+      "url": "https://doi.org/10.1093/isd/ixy018"
+    },
+    {
+      "text": "Landry, J. F., & Hebert, P. D. N. (2013). Plutella australiana (Lepidoptera, Plutellidae), an overlooked diamondback moth revealed by DNA barcodes. ZooKeys, 327, 43-63. DOI: 10.3897/zookeys.327.5831",
+      "url": "https://doi.org/10.3897/zookeys.327.5831"
+    },
+    {
+      "text": "Douglas, A. E. (2015). Multiorganismal insects: Diversity and function of resident microorganisms. Annual Review of Entomology, 60, 17-34. DOI: 10.1146/annurev-ento-010814-020822",
+      "url": "https://doi.org/10.1146/annurev-ento-010814-020822"
+    },
+    {
+      "text": "Feyereisen, R. (2012). Insect CYP genes and P450 enzymes. In Gilbert, L. I. (Ed.), Insect Molecular Biology and Biochemistry (pp. 236-316). Academic Press. DOI: 10.1016/b978-0-12-384747-8.10008-x",
+      "url": "https://doi.org/10.1016/b978-0-12-384747-8.10008-x"
+    },
+    {
+      "text": "Katoh, K., & Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7: Improvements in performance and usability. Molecular Biology and Evolution, 30(4), 772-780. DOI: 10.1093/molbev/mst010",
+      "url": "https://doi.org/10.1093/molbev/mst010"
+    },
+    {
+      "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., & Lanfear, R. (2020). IQ-TREE 2: New models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530-1534. DOI: 10.1093/molbev/msaa015",
+      "url": "https://doi.org/10.1093/molbev/msaa015"
+    },
+    {
+      "text": "To, T. H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068",
+      "url": "https://doi.org/10.1093/sysbio/syv068"
+    },
+    {
+      "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: Polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(1), 153. DOI: 10.1186/s12859-018-2129-y",
+      "url": "https://doi.org/10.1186/s12859-018-2129-y"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185-1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z. (2007). PAML 4: Phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088",
+      "url": "https://doi.org/10.1093/molbev/msm088"
+    },
+    {
+      "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239-2252. DOI: 10.1093/molbev/msr048",
+      "url": "https://doi.org/10.1093/molbev/msr048"
+    },
+    {
+      "text": "Williams, P. A., Cosme, J., Vidic, D. M., Ward, A., Angove, H. C., Day, P. J., ... & Jhoti, H. (2004). Crystal structures of human cytochrome P450 3A4 bound to metyrapone and progesterone. Science, 305(5684), 683-686. DOI: 10.1126/science.1099736",
+      "url": "https://doi.org/10.1126/science.1099736"
+    },
+    {
+      "text": "Clement, M., Posada, D., & Crandall, K. A. (2000). TCS: A computer program to estimate gene genealogies. Molecular Ecology, 9(10), 1657-1659. DOI: 10.1046/j.1365-294x.2000.01020.x",
+      "url": "https://doi.org/10.1046/j.1365-294x.2000.01020.x"
+    },
+    {
+      "text": "Bandelt, H. J., Forster, P., & Rohl, A. (1999). Median-joining networks for inferring intraspecific phylogenies. Molecular Biology and Evolution, 16(1), 37-48. DOI: 10.1093/oxfordjournals.molbev.a026036",
+      "url": "https://doi.org/10.1093/oxfordjournals.molbev.a026036"
+    },
+    {
+      "text": "Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology, 25(2), 163-177. DOI: 10.1080/0022250x.2001.9990249",
+      "url": "https://doi.org/10.1080/0022250x.2001.9990249"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      112,
+      142,
+      268,
+      102,
+      94,
+      68,
+      96
+    ],
+    "backbone_node_ages": [
+      148,
+      288,
+      328,
+      356,
+      378,
+      545
+    ],
+    "fig1_max_ma": 580,
+    "fig1_eras": [
+      [
+        "Cambrian-Ord",
+        580,
+        443.8,
+        "#f1f5f9"
+      ],
+      [
+        "Sil-Devonian",
+        443.8,
+        358.9,
+        "#f8fafc"
+      ],
+      [
+        "Carb-Perm",
+        358.9,
+        251.9,
+        "#f1f5f9"
+      ],
+      [
+        "Mesozoic",
+        251.9,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      550,
+      450,
+      350,
+      250,
+      150,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      8,
+      16,
+      26.5,
+      39,
+      31,
+      46.5,
+      52,
+      58
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        3,
+        "Chelicerata: Tetranychidae Mites (n=4)",
+        "Tetranychus urticae, T. truncatus, T. kanzawai, Panonychus citri",
+        "Acari outgroup + rapid VGSC/CYP392 acaricide evolution"
+      ],
+      [
+        "[B]",
+        4,
+        9,
+        "Polyneoptera: Acrididae Locusts (n=6)",
+        "Locusta migratoria, Chortoicetes terminifera, Oedaleus, Oxya",
+        "Phase-polyphenic swarming CSP/OBP + arid Hsp70 tolerance"
+      ],
+      [
+        "[C]",
+        10,
+        27,
+        "Paraneoptera: Thrips/Whiteflies/Aphids/Hoppers (n=18)",
+        "Bemisia, Trialeurodes, Siphoninus, Aleurothrixus, Nilaparvata, Sitobion",
+        "Phloem/rasping plant-virus vectors + CYP6CM1/CYP6ER1 resistance"
+      ],
+      [
+        "[D]",
+        28,
+        34,
+        "Coleoptera: Curculionidae & PSHB (n=7)",
+        "Euwallacea fornicatus, E. interjectus, Xyleborinus, Xylosandrus, Sitophilus",
+        "Fusarium ambrosia symbioses + wood-boring/stored-grain guilds"
+      ],
+      [
+        "[E]",
+        35,
+        44,
+        "Diptera: Tephritidae Fruit Flies (n=10)",
+        "Bactrocera tryoni, Ceratitis capitata, B. dorsalis, B. minax, Zeugodacus",
+        "Quarantine frugivores + horticultural biosecurity bridges"
+      ],
+      [
+        "[F]",
+        45,
+        49,
+        "Lepidoptera: Yponomeutoidea (n=5)",
+        "Plutella xylostella, Plutella australiana, Prays, Yponomeuta, Leucoptera",
+        "Brassicaceae specialist crucifer moths + native AU sister taxa"
+      ],
+      [
+        "[G]",
+        50,
+        63,
+        "Lepidoptera: Obtectomera Defoliators & Borers (n=14)",
+        "Spodoptera frugiperda, Helicoverpa armigera, H. punctigera, Ostrinia, Pieris",
+        "Trans-Pacific migration corridors, CYP6AE & ace-1 resistance"
+      ]
+    ],
+    "fig1_web_svg": "china-australia-pests-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram of >=80%-Gated Multi-Locus China & Australia Arthropod Crop Pests",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) across >=80% supermatrix-coverage Chelicerata and Hexapoda crop-pest OTUs (single-locus OTUs excluded to Figure 3/4/7) with two-sided 95% HPD credible intervals and clade functional summary cards [A]-[G].",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        3,
+        "Tetranychidae Outgroup // (n=4)",
+        ""
+      ],
+      [
+        "[B]",
+        4,
+        9,
+        "Acrididae Locusts (n=6)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        10,
+        27,
+        "Paraneoptera Sap Pests (n=18)",
+        ""
+      ],
+      [
+        "[D]",
+        28,
+        34,
+        "Curculionidae & PSHB (n=7)",
+        "9,3,2,3"
+      ],
+      [
+        "[E]",
+        35,
+        44,
+        "Tephritidae Fruit Flies (n=10)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        45,
+        49,
+        "Yponomeutoidea Moths (n=5)",
+        ""
+      ],
+      [
+        "[G]",
+        50,
+        63,
+        "Obtectomera Crown Pests (n=14)",
+        "10,3,2,3"
+      ]
+    ],
+    "fig2_web_svg": "china-australia-pests-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Empirical Patristic Phylogram Across >=80%-Gated China & Australia Arthropod Pest Species",
+    "fig2_caption": "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) across >=80% supermatrix-coverage China & Australia pest OTUs with Chelicerata [A] outgroup // stem break, B&W alternating sectors, and sector-prefixed IDs.",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T005",
+        1
+      ],
+      [
+        "Node III",
+        "C:T014",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T029",
+        3
+      ],
+      [
+        "Node V",
+        "D:T031",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T036",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T046",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T057",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T060",
+      "G:T061"
+    ],
+    "fig3_web_svg": "china-australia-pests-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species bifurcating multi-locus ASTRAL-equivalent quartet coalescent species tree with empirical CU branch lengths, 61-split q1 concordance, and China-Australia pest ABBA-BABA tests.",
+    "fig4a_web_svg": "china-australia-pests-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across China & Australia Pest Corridors (Cohorts R1-R6; N = 216)",
+    "fig4a_caption": "Six regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across Fall Armyworm, Whiteflies, Tephritid Fruit Flies, Rice/Corn Pests, Helicoverpa/Plutella, and PSHB/Thrips/Mite corridors.",
+    "fig4b_web_svg": "china-australia-pests-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 28S/ITS1 rDNA (4Ne) vs. Target-Site ace-1 & Clan-3 CYP6 Resistance Loci (Cohorts L1-L6; N = 216)",
+    "fig4b_caption": "Paired multi-locus skylines separating maternal mtDNA expansion from diploid Katoh E-INS-i rDNA buffering and selective sweep bottlenecks at target-site ace-1 and Clan-3 CYP6 resistance loci.",
+    "fig5_short_fam_titles": [
+      "Neurotoxic Target-Site Acetylcholinesterase / Sodium Channel (ace-1 / VGSC)",
+      "Migratory Swarming & Host-Finding Chemosensory Proteins (CSP / OBP)",
+      "Overwintering Diapause & Arid Heat-Shock Chaperones (Hsp70 / HSP90 / GST)",
+      "Xenobiotic & Insecticide Resistance Cytochrome P450s (CYP6 Clan-3 Subfamily)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Target-Site AChE (ace-1)",
+      "FAM-02: Swarming Chemosensory (CSP)",
+      "FAM-03: Thermal Diapause (Hsp70)",
+      "FAM-04: Resistance P450 (CYP6, 1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | Arthropod CYP6 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Clan-3 Microsomal P450 Fold (461 Ca Threaded with Helicoverpa CYP6)",
+    "fig5_web_svg": "china-australia-pests-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP6 Heme-Thiolate Pocket",
+    "fig5_caption": "Translated amino-acid motif alignments across 48 China & Australia pest NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D insect CYP6 structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
+    "fig6_web_svg": "china-australia-pests-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon China & Australia pest supermatrix + complete mitogenomes) and Pipeline B (12 coalescent skyline cohorts, N = 432).",
+    "fig6_clade_label": "China & Australia Crop Pests",
+    "fig6_p450_label": "CYP6 / ace-1 / CSP / Hsp70",
+    "fig6_its_label": "Bemisia, Nilaparvata & Spodoptera rDNA",
+    "supp_s1_fasta_name": "supp_s1_cyp6_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (Agricultural Pest CYP6 Tight Subfamily)",
+    "supp_s1_source": "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS (FAM-04)",
+    "supp_s1_stem": "china-australia-pests-supp-s1-cyp6-alignview",
+    "supp_s2_title": "Cohort L2 Noctuidae Nuclear 28S D1-D2 rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS (Cohort L2)",
+    "supp_s2_stem": "china-australia-pests-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "China & Australia Arthropod Pests Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "china-australia-pests-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Comparative Scope Across China & Australia Agricultural Agroecosystems",
+    "section1_p1": "Agricultural trade, monsoon wind corridors, and protected-crop intensification across East Asia and Oceania link sixteen major arthropod pest complexes spanning both China and Australia, uniting Chelicerata outgroup spider mites (Tetranychus urticae, T. truncatus, T. kanzawai, Panonychus citri), Polyneoptera migratory locusts (Locusta migratoria, Chortoicetes terminifera), Paraneoptera thrips, whiteflies, aphids, and planthoppers (Frankliniella occidentalis, Bemisia tabaci, Trialeurodes vaporariorum, Nilaparvata lugens), Coleoptera ambrosia/grain beetles (Euwallacea fornicatus, Sitophilus oryzae), Diptera quarantine Tephritidae fruit flies (Bactrocera tryoni, B. dorsalis, Ceratitis capitata), and Lepidoptera brassica and noctuid/crambid defoliators (Plutella xylostella, P. australiana, Spodoptera frugiperda, Helicoverpa armigera, H. punctigera).",
+    "section1_p2": "In v3.0.0, all 64 stratified pest OTUs execute end-to-end through the generalized declarative bio-suite-supervisor and bio-suite-seqnet pipeline with Edge-Linked Partitioned ModelTest vs. Unpartitioned ML estimator parity, China-Australia benchmark clade recovery validation (china_australia_pests_preprint29_design.json), clean COX1 codon phasing excluding all-gap rows, homogeneous single-family Code-1 nuclear ortholog curation across ace-1, CSP, Hsp70, and I-helix + Cys-loop CYP6 monooxygenases, and fresh converged v3 skyline caches across all 12 regional and multi-locus cohorts.",
+    "section2_title": "Autonomous Data Hygiene, >=80% Supermatrix Coverage Gate, Circular COX1 Phasing & Chronogram Inference",
+    "section3_title": "64-Species Multispecies Coalescent Species Tree, ABBA-BABA Signals & 32-Chain RuNIE Comparison",
+    "section4_title": "Xenobiotic Resistance vs. Plasticity Selection (ace-1, CSP, Hsp70 & CYP6 on 1TQN)",
+    "section4_body": "Across verified Universal Standard Code 1 arthropod nuclear coding alignments passing strict pre-MSA motif and post-MSA codon auditing, 61-state Goldman-Yang codon models quantify selective constraint on organophosphate/carbamate target-site acetylcholinesterase (FAM-01: ace-1 with active-site FGE.AG), chemosensory host-finding proteins (FAM-02: CSP), thermal/diapause chaperone (FAM-03: Hsp70 with ATPase IFDLGGG/VFDLGGG), and Clan-3 xenobiotic detoxification cytochrome P450s (FAM-04: CYP6 with conserved I-helix and Cys-loop FxxGxxxCxG) threaded onto crystal template PDB 1TQN (2.05 A).",
+    "section5_title": "Cross-Regional Skylines, Diploid 28S/ITS1 Buffering & Stage 3C Radiative-Forcing Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Comparative phylogenomic reconstruction across China and Australia demonstrates how deeply divergent arthropod lineages—spanning Paleozoic Chelicerata-Mandibulata origins through Mesozoic-Paleogene insect radiations—converge repeatedly on shared agrarian host-use and detoxification architectures. While endemic Australian species such as Bactrocera tryoni, Helicoverpa punctigera, Plutella australiana, and Chortoicetes terminifera preserve structured, regionally anchored coalescence across arid and tropical-subtropical biomes, cosmopolitan pests including Spodoptera frugiperda, Bemisia tabaci, Helicoverpa armigera, Plutella xylostella, Frankliniella occidentalis, and Tetranychus urticae exhibit compact star-like mitochondrial clusters consistent with human-assisted transport and monsoon-driven gene flow.",
+      "Re-executing Stage 4 under strict single-family Code-1 ortholog QC eliminated truncated Hsp70 fragments and Cys-loop-incomplete CYP6 paralogs, yielding 12/12 full-length heme-thiolate CYP6 orthologs aligned cleanly on 1TQN while isolating COII/CYTB fragments, genomic introns, and non-homologous rRNA caches from Stage 3B multi-locus skyline inference (12/12 cohorts converged at minESS >= 200 and maxRhat <= 1.05).",
+      "Cross-validation against china_australia_pests_preprint29_design.json paired with 64-species Quartet MSC and calibrated TimeTreeLSD2 node bounds establishes a reproducible dry-lab phylogenomic baseline bounded by public GenBank availability and empirical sampling density across East Asian and Australian monitoring programs."
+    ],
+    "latex_intro": "Sixteen major China and Australia agricultural arthropod pest complexes spanning Chelicerata Acari [A] through Hexapoda [B]-[G] are jointly evaluated across 16 loci and 4 nuclear resistance families in Version 3.0.0.",
+    "seed_base": 20261129
+  }
+}

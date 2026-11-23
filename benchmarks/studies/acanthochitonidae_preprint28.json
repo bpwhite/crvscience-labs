@@ -1,0 +1,1804 @@
+{
+  "study_slug": "STUDY-ACANTHOCHITONIDAE-POLYPLACOPHORA-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "acanthochitonidae",
+  "run_id": "runie-native-acanthochitonidae-28-v3",
+  "preprint_slug": "acanthochitonidae-phylogenomics-preprint",
+  "discovery_slug": "acanthochitonidae-phylogenomics",
+  "validation_set_id": "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS",
+  "preprint_label": "PREPRINT-28",
+  "preprint_version": "3.0.0",
+  "concept_doi": "10.5281/zenodo.24263607",
+  "remediation_note": "Version 3.0.0 remediates PREPRINT-28 v2.0.0 through the generalized declarative bio-suite pipeline: (1) replaced truncated Stage 4 FAM-04 CYP3A records (previously 1/12 I-helix, 0/12 Cys-loop) with 14 verified full-length Mollusca/Polyplacophora CYP3A mRNAs retaining 12/12 conserved I-helix and FxxGxxxCxG Cys-loop heme-thiolate motifs threaded onto PDB 1TQN, and ordered soma/heavy Ferritins ahead of oocyte Ferritins in FAM-01; (2) isolated Cohort L6 to single-compartment Chitonida 16S rRNA (acantho_pop_l6_16s_v3) purging cached Liolophura CYP3A contamination and converged all 12 skylines at minESS >= 200 and maxRhat <= 1.05; (3) disambiguated F:T044 (Acanthochitona sp. Adriatic) and G:T060 (Acanthochitona sp. IWP); and (4) activated acanthochitonidae_preprint28_design.json clade recovery evaluation plus metadata hygiene.",
+  "telemetry_filename": "acanthochitonidae-native-biosuite.json",
+  "companion_label": "Lab Discovery",
+  "title": "Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora",
+  "subtitle_prefix": "100% Native Rust Dual-Pass Partitioned ModelTest Phylogenomics, Biomineralization Selection & Coalescent Skylines",
+  "category": "Marine Phylogenomics, Biomineralization & Haplotype Networks",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Population Genetics)",
+  "taxonomic_scope": "Class Polyplacophora: Order Lepidopleurida Outgroups ([A]), Suborder Chitonina ([B]), Basal Acanthochitonina Mopalioidea ([C]), Family Cryptoplacidae ([D]), Basal Acanthochitonidae & Choriplax ([E]), Atlanto-Mediterranean & Pan-American Acanthochitona + Americhiton ([F]), and Crown Indo-West/NW Pacific Acanthochitona ([G])",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/acanthochitonidae_preprint28_design.json",
+  "cache_subdir": "val_set_067_acanthochitonidae",
+  "seqnet_sqlite_name": "seqnet_acanthochitonidae_preprint28.sqlite",
+  "nexus_filename": "seqnet_acanthochitonidae_supermatrix.nex",
+  "supermatrix_fasta_name": "acanthochitonidae_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [],
+  "fallback_mito_accessions": [
+    "NC_047422.1",
+    "OZ556486.1",
+    "NC_047421.1",
+    "NC_047423.1",
+    "NC_047425.1",
+    "OZ187401.1",
+    "OZ368495.1",
+    "NC_068064.1",
+    "NC_082877.1",
+    "NC_072326.1",
+    "PX427677.1",
+    "NC_024174.1",
+    "OP994082.1",
+    "NC_046935.1",
+    "KY824658.1",
+    "NC_001636.1",
+    "NC_026850.1",
+    "NC_068065.1",
+    "NC_085812.1",
+    "MN864050.1",
+    "NC_026848.1",
+    "OZ020566.1",
+    "NC_026849.1",
+    "NC_047424.1",
+    "MN864051.1",
+    "LC214418.1",
+    "MZ488618.1",
+    "KJ574096.1",
+    "MZ473316.1",
+    "KF184983.1",
+    "KC887252.1",
+    "KC887249.1",
+    "PV664593.1",
+    "KC887248.1",
+    "KC887253.1",
+    "MH445299.1",
+    "PQ278134.1",
+    "KF184984.1",
+    "KC887244.1",
+    "OZ256708.1",
+    "MG680030.1",
+    "PP748480.1",
+    "PP748470.1",
+    "OR145410.1",
+    "KP202685.1",
+    "NC_047426.1",
+    "PX000320.1",
+    "MK016367.1",
+    "KF184978.1",
+    "MK016370.1",
+    "KF184981.1",
+    "KF184982.1",
+    "KC669564.1",
+    "KF184979.1",
+    "PQ301028.1",
+    "NC_087903.1",
+    "PQ301026.1",
+    "PQ301027.1",
+    "NC_082305.1",
+    "OR757114.1",
+    "MG680053.1",
+    "MG680040.1",
+    "MG680049.1",
+    "MG680050.1"
+  ],
+  "s4_banner_title": "Polyplacophora Chitons",
+  "anchor_species": "acanthochitona fascicularis",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP8",
+      "display_name": "ATP8",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 110,
+      "max_bp": 450,
+      "min_taxa": 8,
+      "min_aa": 35
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Order Lepidopleurida Outgroups",
+      "family": "Order Lepidopleurida: Leptochitonidae",
+      "species": "Leptochiton nexus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Order Lepidopleurida Outgroups",
+      "family": "Order Lepidopleurida: Leptochitonidae",
+      "species": "Lepidopleurus cajetanus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Order Lepidopleurida Outgroups",
+      "family": "Order Lepidopleurida: Nierstraszellidae",
+      "species": "Nierstraszella lineata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Order Lepidopleurida Outgroups",
+      "family": "Order Lepidopleurida: Hanleyidae",
+      "species": "Hanleyella oldroydi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Chiton albolineatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Chiton olivaceus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Acanthopleura gemmata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Acanthopleura loochooana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Acanthopleura vaillantii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Liolophura japonica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T011",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Onithochiton hirasei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T012",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chitonidae",
+      "species": "Sypharochiton pelliserpentis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T013",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Schizochitonidae",
+      "species": "Schizochiton incisus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T014",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Ischnochitonidae",
+      "species": "Lepidozona coreanica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T015",
+      "sector_code": "[B] Suborder Chitonina Outgroups",
+      "family": "Suborder Chitonina: Chaetopleuridae",
+      "species": "Chaetopleura apiculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Katharina tunicata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae (Valve Burial #1)",
+      "species": "Cryptochiton stelleri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Mopalia retifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Plaxiphora tricolor",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Plaxiphora albida",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Cyanoplax caverna",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Lepidochitona cinerea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Mopaliidae",
+      "species": "Nuttallina californica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Tonicellidae",
+      "species": "Dendrochiton gothicus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T025",
+      "sector_code": "[C] Basal Acanthochitonina Mopalioidea",
+      "family": "Mopalioidea: Tonicellidae",
+      "species": "Tonicina zschaui",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Family Cryptoplacidae",
+      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "species": "Cryptoplax japonica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Family Cryptoplacidae",
+      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "species": "Cryptoplax propior",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Family Cryptoplacidae",
+      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "species": "Cryptoplax iredalei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Family Cryptoplacidae",
+      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "species": "Cryptoplax dupuisi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Family Cryptoplacidae",
+      "family": "Cryptoplacoidea: Cryptoplacidae",
+      "species": "Choneplax lata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T031",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Craspedochiton laqueatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T032",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Craspedochiton tesselatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Craspedochiton sp.",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Leptoplax coarctata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Leptoplax curvisetosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Leptoplax doederleini",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae",
+      "species": "Notoplax odysseyi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Acanthochitonidae (Valve Burial #2)",
+      "species": "Cryptoconchus floridanus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Basal Acanthochitonidae & Choriplax",
+      "family": "Cryptoplacoidea: Choriplacidae",
+      "species": "Choriplax grayi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T040",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: NE Atlantic/Med",
+      "species": "Acanthochitona fascicularis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T041",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: NE Atlantic/Med",
+      "species": "Acanthochitona crinita",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T042",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: NE Atlantic/Med",
+      "species": "Acanthochitona discrepans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: NE Atlantic",
+      "species": "Acanthochitona pilosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: Adriatic Med",
+      "species": "Acanthochitona sp. Adriatic",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: South Africa",
+      "species": "Acanthochitona garnoti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: NE Pacific",
+      "species": "Acanthochitona avicula",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: Gulf of California",
+      "species": "Acanthochitona exquisita",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: Tropical E Pacific",
+      "species": "Acanthochitona ferreirai",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: Caribbean",
+      "species": "Acanthochitona hemphilli",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: Pan-American",
+      "species": "Acanthochitona hirudiniformis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: W Atlantic",
+      "species": "Acanthochitona lineata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: W Atlantic",
+      "species": "Acanthochitona pygmaea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: Caribbean/E Pacific",
+      "species": "Acanthochitona rhodea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T054",
+      "sector_code": "[F] Atlanto-Med & Pan-American Acanthochitona",
+      "family": "Acanthochitonidae: W Atlantic/Caribbean",
+      "species": "Americhiton balesae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: NW Pacific",
+      "species": "Acanthochitona rubrolineata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: NW Pacific",
+      "species": "Acanthochitona defilippii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: NW Pacific/JTMD",
+      "species": "Acanthochitona achates",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: NW Pacific",
+      "species": "Acanthochitona circellata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: Indian Ocean",
+      "species": "Acanthochitona mahensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: Indo-West Pacific",
+      "species": "Acanthochitona sp. IWP",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: Indo-West Pacific",
+      "species": "Acanthochitona viridis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: Japan",
+      "species": "Acanthochitona sp. A DJE-2018",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: British Columbia",
+      "species": "Acanthochitona sp. B DJE-2018",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Indo-West & NW Pacific Acanthochitona",
+      "family": "Acanthochitonidae: Okinawa",
+      "species": "Acanthochitona sp. C DJE-2018",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Radula Magnetite Biomineralization & Iron-Core Ferritins (Fe3O4 Soma/Heavy-Subunit Axis)",
+      "physiological_role": "Rapid iron oxidation, nucleation, and mineralization in ultrahard magnetite-capped lateral radular teeth",
+      "gene_symbol": "Ferritin",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_064743856.1",
+        "AB006447.1",
+        "XM_064744870.1",
+        "XM_064739203.1",
+        "PQ360981.1",
+        "XM_064747528.1",
+        "XM_064738620.1",
+        "XM_046513087.2",
+        "XM_046507816.2",
+        "MH006611.1",
+        "MH006612.1",
+        "XM_046693207.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "acantho_fam01_ferritin_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 450,
+        "max_bp": 1400,
+        "max_domain_bp": null,
+        "min_aa_len": 150,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "Liolophura",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.6
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Dorsal Valve & 18-Tuft Spicule Aragonite Alpha-Carbonic Anhydrases (Strictly alpha-CA Orthologs)",
+      "physiological_role": "Bicarbonate hydration and CaCO3 aragonite biomineralization across girdle needle spicules and articulated shell valves",
+      "gene_symbol": "alpha-CA",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_064758013.1",
+        "XM_064757042.1",
+        "XM_064756514.1",
+        "XM_064756330.1",
+        "XM_064756183.1",
+        "XM_064754417.1",
+        "XM_064747090.1",
+        "XM_064747089.1",
+        "XM_064747088.1",
+        "XM_064739735.1",
+        "XM_064739734.1",
+        "XM_064742809.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "acantho_fam02_alpha_ca_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 480,
+        "max_bp": 3600,
+        "max_domain_bp": null,
+        "min_aa_len": 160,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "Liolophura",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.15,
+        "min_row_coverage": 0.35,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.55
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Intertidal Desiccation & Shell-Eye Esthete Chaperones (HSPA12A/12B Tight Subfamily)",
+      "physiological_role": "Proteostasis under extreme low-tide thermal exposure, dorsal valve burial remodeling, and esthete-pore sensory signaling",
+      "gene_symbol": "HSPA12",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_064752420.1",
+        "XM_064752419.1",
+        "XM_064747560.1",
+        "XM_064747045.1",
+        "XM_064746967.1",
+        "XM_064746937.1",
+        "XM_064745367.1",
+        "XM_064745088.1",
+        "XM_064745087.1",
+        "XM_064745086.1",
+        "XM_064745085.1",
+        "XM_064745084.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "acantho_fam03_hspa12_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1400,
+        "max_bp": 4200,
+        "max_domain_bp": null,
+        "min_aa_len": 450,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "Liolophura",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.25,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.6
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Benthic Sponge & Algal Allelochemical Detoxification Cytochrome P450s (CYP3A Tight Subfamily)",
+      "physiological_role": "Microsomal monooxygenase clearance of terpene, bromophenol, and sponge secondary metabolites on benthic substrates",
+      "gene_symbol": "CYP3A",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_064759624.1",
+        "XM_064759623.1",
+        "XM_064759473.1",
+        "XM_064757045.1",
+        "XM_064756778.1",
+        "XM_064756331.1",
+        "XM_064756303.1",
+        "XM_064755999.1",
+        "XM_064755996.1",
+        "XM_064755480.1",
+        "XM_071257633.1",
+        "XM_078462616.1",
+        "XM_076216724.1",
+        "XM_071274795.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "acantho_fam04_cyp3a_v3",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1350,
+        "max_bp": 3200,
+        "max_domain_bp": 1700,
+        "min_aa_len": 420,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "Liolophura",
+        "blocked_organisms": [],
+        "required_motifs": [
+          {
+            "name": "I-helix",
+            "pos_min": 250,
+            "pos_max": 370,
+            "patterns": [
+              "AG.ET",
+              "AG.DT",
+              "AG.ES",
+              "AG.DS",
+              "EG.ET",
+              "EG.DT",
+              "SG.ET",
+              "SG.DT",
+              "SA.DT"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 390,
+            "pos_max": 490,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
+        ],
+        "min_anchor_aa_kmer_sim": 0.2,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "acanthochitona_cyp3a_heme_pocket.pdb",
+    "gene_symbol": "CYP3A",
+    "template_label": "1TQN_A (2.05 A Microsomal CYP3A4 + HEM A 508)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (FxxGPRNCIG Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala305-Gly306-Phe307-Glu308-Thr309 (Central I-Helix Distal O2 Groove)",
+      "SRS1 B'-C Loop (1TQN 100-126; Benthic Allelochemical Entry Gate)",
+      "Helices F-G Lid (1TQN 201-258; Sponge Terpene Channel)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "NW Pacific & 2011 JTMD Tsunami Rafting (A. achates / A. defilippii / A. circellata)",
+      "clade_lineage": "Acanthochitona achates & NW Pacific Allies",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.019,
+      "source_id": "P28-R1",
+      "locality": "NW Pacific & 2011 JTMD Tsunami Rafting (A. achates / A. defilippii / A. circellata)",
+      "cache_key": "acantho_pop_r1_v3",
+      "query": "(\"Acanthochitona achates\"[Organism] OR \"Acanthochitona defilippii\"[Organism] OR \"Acanthochitona circellata\"[Organism] OR \"Acanthochitona viridis\"[Organism] OR \"Acanthochitona sp. A DJE-2018\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Yellow Sea, Bohai & Japan Marginal Seas (Acanthochitona rubrolineata)",
+      "clade_lineage": "Acanthochitona rubrolineata",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.019,
+      "source_id": "P28-R2",
+      "locality": "Yellow Sea, Bohai & Japan Marginal Seas (Acanthochitona rubrolineata)",
+      "cache_key": "acantho_pop_r2_v3",
+      "query": "\"Acanthochitona rubrolineata\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "NE Atlantic & Mediterranean Intertidal Corridor (A. fascicularis / A. crinita / A. discrepans)",
+      "clade_lineage": "European & Mediterranean Acanthochitona",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0192,
+      "source_id": "P28-R3",
+      "locality": "NE Atlantic & Mediterranean Intertidal Corridor (A. fascicularis / A. crinita / A. discrepans)",
+      "cache_key": "acantho_pop_r3_v3",
+      "query": "(\"Acanthochitona fascicularis\"[Organism] OR \"Acanthochitona crinita\"[Organism] OR \"Acanthochitona discrepans\"[Organism] OR \"Acanthochitona pilosa\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Pan-American & Caribbean Reefs (A. avicula, A. rhodea, A. pygmaea, Americhiton)",
+      "clade_lineage": "Pan-American Acanthochitona & Americhiton",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0192,
+      "source_id": "P28-R4",
+      "locality": "Pan-American & Caribbean Reefs (A. avicula, A. rhodea, A. pygmaea, Americhiton)",
+      "cache_key": "acantho_pop_r4_v3",
+      "query": "(\"Acanthochitona avicula\"[Organism] OR \"Acanthochitona exquisita\"[Organism] OR \"Acanthochitona ferreirai\"[Organism] OR \"Acanthochitona hirudiniformis\"[Organism] OR \"Acanthochitona pygmaea\"[Organism] OR \"Acanthochitona rhodea\"[Organism] OR \"Acanthochitona hemphilli\"[Organism] OR \"Acanthochitona lineata\"[Organism] OR \"Acanthochitona garnoti\"[Organism] OR \"Americhiton\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Indo-West Pacific Coral-Crevice Cryptoplacidae & Basal Tufted Acanthochitonidae",
+      "clade_lineage": "Cryptoplacidae, Craspedochiton, Leptoplax & Notoplax",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0194,
+      "source_id": "P28-R5",
+      "locality": "Indo-West Pacific Coral-Crevice Cryptoplacidae & Basal Tufted Acanthochitonidae",
+      "cache_key": "acantho_pop_r5_v3",
+      "query": "(\"Cryptoplacidae\"[Organism] OR \"Craspedochiton\"[Organism] OR \"Leptoplax\"[Organism] OR \"Notoplax\"[Organism] OR \"Cryptoconchus\"[Organism] OR \"Choriplax\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "North Pacific & Circumboreal Rocky Shores (Katharina, Cryptochiton, Mopalia, Lepidochitona)",
+      "clade_lineage": "Mopalioidea (Katharina, Cryptochiton, Mopalia)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.019,
+      "source_id": "P28-R6",
+      "locality": "North Pacific & Circumboreal Rocky Shores (Katharina, Cryptochiton, Mopalia, Lepidochitona)",
+      "cache_key": "acantho_pop_r6_v3",
+      "query": "(\"Mopalia\"[Organism] OR \"Katharina tunicata\"[Organism] OR \"Cryptochiton stelleri\"[Organism] OR \"Lepidochitona\"[Organism] OR \"Nuttallina\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:1000[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1050
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)",
+      "region_label": "Acanthochitona Marginals & Pacific Shores (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Acanthochitona spp.",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.019,
+      "source_id": "P28-L1",
+      "locality": "Acanthochitona Marginals & Pacific Shores (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "acantho_pop_l1_v3",
+      "query": "\"Acanthochitona\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:950[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)",
+      "region_label": "Polyplacophora Nuclear 18S rRNA (Diploid 4Ne Katoh E-INS-i Core)",
+      "clade_lineage": "Polyplacophora Nuclear 18S Deme",
+      "locus_name": "Nuclear 18S rRNA (4Ne)",
+      "locus_tag": "SSU_18S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0078,
+      "source_id": "P28-L2",
+      "locality": "Polyplacophora Nuclear 18S rRNA (Diploid 4Ne Katoh E-INS-i Core)",
+      "cache_key": "acantho_pop_l2_v3",
+      "query": "\"Polyplacophora\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 1500:1950[SLEN] NOT mitochondrion[Filter] NOT mitochondrial[Title] NOT protein[Title] NOT PREDICTED[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 1450,
+      "max_bp": 2000
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)",
+      "region_label": "Polyplacophora Nuclear Histone H3 Purifying/Sweep CDS",
+      "clade_lineage": "Polyplacophora Histone H3 Deme",
+      "locus_name": "Nuclear Histone H3 CDS",
+      "locus_tag": "H3",
+      "ploidy_scalar": 0.35,
+      "mu_rate": 0.0095,
+      "source_id": "P28-L3",
+      "locality": "Polyplacophora Nuclear Histone H3 Purifying/Sweep CDS",
+      "cache_key": "acantho_pop_l3_v3",
+      "query": "\"Polyplacophora\"[Organism] AND \"histone H3\"[Title] AND 280:420[SLEN] NOT PREDICTED[Title] NOT genome[Title] NOT mitochondrion[Filter]",
+      "fallback_query": "",
+      "min_bp": 270,
+      "max_bp": 430
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)",
+      "region_label": "Chitonidae Rocky Intertidal Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Family Chitonidae",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0192,
+      "source_id": "P28-L4",
+      "locality": "Chitonidae Rocky Intertidal Deme (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "acantho_pop_l4_v3",
+      "query": "\"Chitonidae\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND mitochondrion[Filter] AND 400:950[SLEN] NOT COX2[Title] NOT COII[Title] NOT \"subunit II\"[Title] NOT \"subunit 2\"[Title] NOT \"cytochrome b\"[Title] NOT CYTB[Title] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)",
+      "region_label": "Polyplacophora Nuclear 28S rRNA (Diploid 4Ne Katoh E-INS-i)",
+      "clade_lineage": "Order Chitonida 28S rRNA",
+      "locus_name": "Nuclear 28S rRNA (4Ne)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0079,
+      "source_id": "P28-L5",
+      "locality": "Polyplacophora Nuclear 28S rRNA (Diploid 4Ne Katoh E-INS-i)",
+      "cache_key": "acantho_pop_l5_v3",
+      "query": "\"Polyplacophora\"[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 750:1600[SLEN] NOT mitochondrion[Filter] NOT mitochondrial[Title] NOT 16S[Title] NOT protein[Title] NOT PREDICTED[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 720,
+      "max_bp": 1650
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Acanthochitona & Chitonida)",
+      "region_label": "Chitonida Mitochondrial 16S rRNA Conserved Stem Loop (1Ne)",
+      "clade_lineage": "Order Chitonida 16S rRNA",
+      "locus_name": "mtDNA 16S rRNA (1Ne)",
+      "locus_tag": "rrnL_16S",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.011,
+      "source_id": "P28-L6",
+      "locality": "Chitonida Mitochondrial 16S rRNA Conserved Stem Loop (1Ne)",
+      "cache_key": "acantho_pop_l6_16s_v3",
+      "query": "\"Chitonida\"[Organism] AND (\"16S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND mitochondrion[Filter] AND 430:620[SLEN] NOT UNVERIFIED[Title]",
+      "fallback_query": "",
+      "min_bp": 410,
+      "max_bp": 640
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Epoch 1: Pre-LGM Interstadial",
+      "age_max_ka": 130,
+      "age_min_ka": 48,
+      "period_label": "130-48 ka (MIS 5-3)",
+      "ecological_context": "Interglacial coastal shelf persistence"
+    },
+    {
+      "label": "Epoch 2: LGM Contraction",
+      "age_max_ka": 48,
+      "age_min_ka": 18,
+      "period_label": "48-18 ka (MIS 2-3)",
+      "ecological_context": "Sea-level lowstand & glacial shoreline bottleneck"
+    },
+    {
+      "label": "Epoch 3: Late Glacial Rise",
+      "age_max_ka": 18,
+      "age_min_ka": 8.2,
+      "period_label": "18-8.2 ka (Deglaciation)",
+      "ecological_context": "Post-glacial shelf transgression & Kuroshio shift"
+    },
+    {
+      "label": "Epoch 4: Mid-Holocene Thermal Opt.",
+      "age_max_ka": 8.2,
+      "age_min_ka": 1.5,
+      "period_label": "8.2-1.5 ka",
+      "ecological_context": "Warm intertidal reef/rocky-shore demographic expansion"
+    },
+    {
+      "label": "Epoch 5: Pre-Industrial Littoral",
+      "age_max_ka": 1.5,
+      "age_min_ka": 0.15,
+      "period_label": "1.5-0.15 ka",
+      "ecological_context": "Stable coastal deme connectivity & local dispersal"
+    },
+    {
+      "label": "Epoch 6: Modern Maritime/Tsunami",
+      "age_max_ka": 0.15,
+      "age_min_ka": 0,
+      "period_label": "0.15-0 ka",
+      "ecological_context": "Modern shipping/debris rafting vs. coding constraint"
+    }
+  ],
+  "supp_s2_cohort_code": "L2",
+  "haplotype_panels": [
+    {
+      "panel_id": "NW Pacific Acanthochitona & 2011 JTMD Rafted A. achates (COX1)",
+      "fasta_filename": "cohort_nwpacific_acanthochitona_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1
+      ],
+      "slot_prefixes": [
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "Global Cryptoplacoidea & Acanthochitonidae Biogeographic Network (COX1)",
+      "fasta_filename": "cohort_global_cryptoplacoidea_cox1.fasta",
+      "cohort_indices": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "slot_prefixes": [
+        "D:",
+        "E:",
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Polyplacophora: Order Lepidopleurida Outgroups [A] vs. Crown Order Chitonida [B-G]",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Mid-Paleozoic Lepidopleurida-Chitonida split (Late Devonian-Mississippian Polyplacophora; Irisarri et al. 2020 [2]; Vendrasco et al. 2004 [6])",
+      "target_age_ma": 388,
+      "ci_min_ma": 358,
+      "ci_max_ma": 418,
+      "trophic_guild": "Bathyal & Detritivorous Leptochitonidae / Nierstraszellidae / Hanleyidae Outgroups",
+      "key_enzymes_or_loci": "Basal Ferritin (FAM-01) & Primitive Esthete-Pore Aragonite Valve Mineralization",
+      "ecosystem_role": "Deep-water plesiomorphic chiton root anchoring crown Chitonida diversification",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Crown Order Chitonida: Suborder Chitonina [B] vs. Suborder Acanthochitonina [C-G]",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Carboniferous-Permian Chitonida insertion-plate radiation (Puchalski et al. 2008 [7]; Irisarri et al. 2020 [2])",
+      "target_age_ma": 306,
+      "ci_min_ma": 278,
+      "ci_max_ma": 334,
+      "trophic_guild": "Intertidal Grazing Chitonidae, Schizochitonidae, Ischnochitonidae & Chaetopleuridae",
+      "key_enzymes_or_loci": "Magnetite Radula Ferritin (FAM-01), Ocellate Shell-Eye Aragonite Lenses (FAM-02) & CYP3A (FAM-04)",
+      "ecosystem_role": "Origin of image-forming shell-eye ocelli in Chitonidae and derived Acanthochitonina mitochondrial gene order",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Crown Suborder Acanthochitonina: Superfamily Mopalioidea [C] vs. Superfamily Cryptoplacoidea [F-G]",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Triassic-Early Jurassic Mopalioidea-Cryptoplacoidea split (Irisarri et al. 2014 [3], 2020 [2]; Okusu et al. 2003 [5])",
+      "target_age_ma": 228.4,
+      "ci_min_ma": 204,
+      "ci_max_ma": 254,
+      "trophic_guild": "Rocky-Intertidal Mopaliidae, Tonicellidae & Giant Gumboot Chiton Cryptochiton stelleri",
+      "key_enzymes_or_loci": "18-Tuft Spicule alpha-CA2 (FAM-02), HSPA12A/B Thermal Tolerance (FAM-03) & Ferritin Core",
+      "ecosystem_role": "Independent valve-burial (#1 Cryptochiton stelleri) vs. Cryptoplacoidea 18-tuft girdle spicule apomorphy",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "SecA",
+      "clade_name": "Crown Order Lepidopleurida Outgroup Mitogenome Clade [A] (Leptochiton, Lepidopleurus, Nierstraszella, Hanleyella)",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Triassic-Early Jurassic bathyal Lepidopleurida radiation across continental-slope substrates (n = 4 mitogenomes)",
+      "target_age_ma": 212,
+      "ci_min_ma": 186,
+      "ci_max_ma": 240,
+      "trophic_guild": "Bathyal & Continental-Slope Lepidopleurida Complete Mitogenome Clade",
+      "key_enzymes_or_loci": "Basal Radular Ferritin & Conserved Ancestral Mitochondrial Gene Order",
+      "ecosystem_role": "Anchors basal Polyplacophora substitution polarity and outgroup divergence rate",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "SecB",
+      "clade_name": "Crown Suborder Chitonina Complete-Mitogenome Clade [B] (Chitonidae, Schizochitonidae, Ischnochitonidae, Chaetopleuridae)",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Jurassic-Cretaceous Chitonina radiation with Chitonidae aragonite ocellate lenses (n = 11 mitogenomes)",
+      "target_age_ma": 178,
+      "ci_min_ma": 154,
+      "ci_max_ma": 204,
+      "trophic_guild": "Intertidal Grazing Chitonidae, Schizochitonidae & Chaetopleuridae",
+      "key_enzymes_or_loci": "Magnetite Radula Ferritin (FAM-01), Ocellate Lenses (FAM-02) & CYP3A Detox (FAM-04)",
+      "ecosystem_role": "Multi-family Chitonina crown spanning Pacific, Atlantic, and Caribbean rocky shores",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "SecC",
+      "clade_name": "Crown Superfamily Mopalioidea Complete-Mitogenome Clade [C] (Mopaliidae, Tonicellidae, Cryptochiton)",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Early-Mid Cretaceous Mopalioidea radiation including independent dorsal valve burial #1 in Cryptochiton stelleri (n = 10 mitogenomes)",
+      "target_age_ma": 138,
+      "ci_min_ma": 116,
+      "ci_max_ma": 162,
+      "trophic_guild": "Cold-Temperate & Intertidal Mopalioidea Grazers & Cryptochiton stelleri",
+      "key_enzymes_or_loci": "HSPA12 Thermal Tolerance Axis (FAM-03) & Magnetite Radula Ferritin (FAM-01)",
+      "ecosystem_role": "Resolves Mopaliidae + Tonicellidae diversification and giant Cryptochiton stelleri shell internalization",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Crown Acanthochitona: Atlantic/Western-Atlantic [F] vs. Indo-West & NW Pacific [G]",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Paleogene Tethyan-Atlantic closure separating Pan-American/European [F] from Indo-NW Pacific [G] Acanthochitona",
+      "target_age_ma": 52.4,
+      "ci_min_ma": 41,
+      "ci_max_ma": 65,
+      "trophic_guild": "Cosmopolitan 18-Tuft Intertidal & Shallow-Subtidal Bristle Chitons (Acanthochitona)",
+      "key_enzymes_or_loci": "High-Turnover Magnetite Cusp Ferritin & Esthete Pore alpha-CA Matrix",
+      "ecosystem_role": "Core benthic coralline-algae and sponge grazers across Atlantic, Mediterranean, and Pacific shores",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Indo-West & NW Pacific Acanthochitona [G] (A. rubrolineata, A. defilippii, A. achates JTMD, A. circellata, A. mahensis)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Neogene Miocene Kuroshio & Marginal-Sea Vicariance (Kim & Hwang 2026 [10]; Kim et al. 2024 [11]; Ni et al. 2020 [12])",
+      "target_age_ma": 18.6,
+      "ci_min_ma": 12.2,
+      "ci_max_ma": 26.4,
+      "trophic_guild": "NW Pacific Intertidal Boulder Chitons & 2011 JTMD Trans-Pacific Rafting Acanthochitona achates",
+      "key_enzymes_or_loci": "Kuroshio/Yellow Sea COX1 Haplotype Complexes, HSPA12 Thermal Tolerance & CYP3A Detox",
+      "ecosystem_role": "Marginal-sea refugial speciation and documented Anthropocene trans-oceanic tsunami debris rafting",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-01-NWPAC-ACANTHOCHITONA-COMPLEX",
+      "p1_tip": "G_T055",
+      "p2_tip": "G_T057",
+      "p3_tip": "G_T056",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Incomplete lineage sorting & secondary marginal-sea contact across NW Pacific Acanthochitona"
+    },
+    {
+      "quartet_id": "ABBA-02-ATLANTO-MED-ACANTHOCHITONA",
+      "p1_tip": "F_T040",
+      "p2_tip": "F_T041",
+      "p3_tip": "F_T042",
+      "outgroup_tip": "A_T001",
+      "interpretation": "NE Atlantic & Mediterranean post-glacial allele sharing among A. fascicularis, A. crinita & A. discrepans"
+    },
+    {
+      "quartet_id": "ABBA-03-CONVERGENT-VALVE-BURIAL-LINEAGES",
+      "p1_tip": "E_T038",
+      "p2_tip": "E_T037",
+      "p3_tip": "C_T017",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Test for convergent evolution vs. introgression between Cryptoconchus floridanus (Cryptoplacoidea) and Cryptochiton stelleri (Mopalioidea)"
+    },
+    {
+      "quartet_id": "ABBA-04-CRYPTOPLACOIDEA-BASAL-SPLIT",
+      "p1_tip": "D_T026",
+      "p2_tip": "E_T031",
+      "p3_tip": "E_T039",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Deep ancestral polymorphism across Cryptoplax, Craspedochiton & enigmatic Choriplax grayi"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Acanthochitonidae",
+    "Polyplacophora",
+    "Chitons",
+    "Cryptoplacoidea",
+    "Haplotype Networks",
+    "TCS",
+    "JTMD",
+    "Magnetite",
+    "Biomineralization"
+  ],
+  "genetic_loci_summary": [
+    "33 >=80%-Gated Multi-Locus Mitogenomes across 14 Table-5 Loci (L = 13,143 bp; full gotoh-msa L = 41,449)",
+    "64-Species Phased COX1 + Multi-Locus Quartet MSC / Skylines / TCS Networks",
+    "Nuclear 18S & 28S rRNA (mafft-native E-INS-i)",
+    "Radula Magnetite Ferritin (FAM-01)",
+    "Aragonite Spicule alpha-CA Only (FAM-02)",
+    "HSPA12A/12B Esthete/Stress Chaperone (FAM-03)",
+    "CYP3A Benthic Detoxification (1TQN, FAM-04)"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Irisarri, I., Uribe, J. E., Eernisse, D. J., & Zardoya, R. (2020). A mitogenomic phylogeny of chitons (Mollusca: Polyplacophora). BMC Evolutionary Biology, 20(1), 22. DOI: 10.1186/s12862-019-1573-2",
+      "url": "https://doi.org/10.1186/s12862-019-1573-2"
+    },
+    {
+      "text": "Irisarri, I., Eernisse, D. J., & Zardoya, R. (2014). Molecular phylogeny of Acanthochitonina (Mollusca: Polyplacophora: Chitonida): three new mitochondrial genomes, rearranged gene orders and systematics. Journal of Natural History, 48(45–48), 2825–2853. DOI: 10.1080/00222933.2014.963721",
+      "url": "https://doi.org/10.1080/00222933.2014.963721"
+    },
+    {
+      "text": "Sigwart, J. D., Stoeger, I., Knebelsberger, T., & Schwabe, E. (2013). Chiton phylogeny (Mollusca : Polyplacophora) and the placement of the enigmatic species Choriplax grayi (H. Adams & Angas). Invertebrate Systematics, 27(6), 603–621. DOI: 10.1071/is13013",
+      "url": "https://doi.org/10.1071/is13013"
+    },
+    {
+      "text": "Okusu, A., Schwabe, E., Eernisse, D. J., & Giribet, G. (2003). Towards a phylogeny of chitons (Mollusca, Polyplacophora) based on combined analysis of five molecular loci. Organisms Diversity & Evolution, 3(4), 281–302. DOI: 10.1078/1439-6092-00085",
+      "url": "https://doi.org/10.1078/1439-6092-00085"
+    },
+    {
+      "text": "Vendrasco, M. J., Wood, T. E., & Runnegar, B. N. (2004). Articulated Palaeozoic fossil with 17 plates greatly expands disparity of early chitons. Nature, 429(6989), 288–291. DOI: 10.1038/nature02548",
+      "url": "https://doi.org/10.1038/nature02548"
+    },
+    {
+      "text": "Puchalski, S. S., Eernisse, D. J., & Johnson, C. C. (2008). The effect of sampling bias on the fossil record of chitons (Mollusca, Polyplacophora). American Malacological Bulletin, 25(1), 87–95. DOI: 10.4003/0740-2783-25.1.87",
+      "url": "https://doi.org/10.4003/0740-2783-25.1.87"
+    },
+    {
+      "text": "Sirenko, B. (2006). New outlook on the system of chitons (Mollusca: Polyplacophora). Venus, 65(1–2), 27–49. DOI: 10.18941/venus.65.1-2_27",
+      "url": "https://doi.org/10.18941/venus.65.1-2_27"
+    },
+    {
+      "text": "Sirenko, B. I., & Saito, H. (2017). New species of chitons of the superfamily Cryptoplacoidea (Mollusca: Polyplacophora) from Vietnamese waters. Zootaxa, 4299(4), 451–506. DOI: 10.11646/zootaxa.4299.4.1",
+      "url": "https://doi.org/10.11646/zootaxa.4299.4.1"
+    },
+    {
+      "text": "Kim, H. K., & Hwang, U. W. (2026). Comparative mitogenomic analyses of four Acanthochitona species reveal high variation in gene rearrangements within the family Acanthochitonidae. Marine Life Science & Technology, 8(3), 553–566. DOI: 10.1007/s42995-026-00362-9",
+      "url": "https://doi.org/10.1007/s42995-026-00362-9"
+    },
+    {
+      "text": "Kim, K., Choi, E. H., Lee, Y., Baek, S. Y., Baek, J., Park, B., Shin, J., Cho, G., & Hwang, U. W. (2024). The complete mitochondrial genome of Acanthochitona defilippii (Tapparone Canefri, 1874) (Polyplacophora: Acanthochitonidae). Mitochondrial DNA Part B, 9(8), 967–971. DOI: 10.1080/23802359.2024.2386403",
+      "url": "https://doi.org/10.1080/23802359.2024.2386403"
+    },
+    {
+      "text": "Ni, G., Li, X., Li, X., Shen, H., Sun, S., Yang, M., & Li, Q. (2020). Phylogeographical comparisons of two closely related intertidal chiton species (Acanthochitona) along the northwestern Pacific coast. PeerJ, 8, e8794. DOI: 10.7717/peerj.8794",
+      "url": "https://doi.org/10.7717/peerj.8794"
+    },
+    {
+      "text": "Choi, Y.-M., Ryu, T., Jeon, H., Kang, B. C., Kim, J.-E., & Lee, W. (2024). Whole-genome assembly and annotation of the chiton Liolophura sinensis (Correction). Gigabyte, 2024/2025, 1–12. DOI: 10.46471/gigabyte.159",
+      "url": "https://doi.org/10.46471/gigabyte.159"
+    },
+    {
+      "text": "Speiser, D. I., Eernisse, D. J., & Johnsen, S. (2011). A chiton uses aragonite lenses to form images. Current Biology, 21(8), 665–670. DOI: 10.1016/j.cub.2011.03.033",
+      "url": "https://doi.org/10.1016/j.cub.2011.03.033"
+    },
+    {
+      "text": "Saunders, M., Kong, C., Shaw, J. A., Macey, D. J., & Clode, P. L. (2009). Characterization of biominerals in the radula teeth of the chiton, Acanthopleura hirtosa. Journal of Structural Biology, 167(1), 55–61. DOI: 10.1016/j.jsb.2009.03.003",
+      "url": "https://doi.org/10.1016/j.jsb.2009.03.003"
+    },
+    {
+      "text": "Wealthall, R. J., Brooker, L. R., Macey, D. J., & Benning, L. G. (2005). Fine structure of mineralization in the teeth of the chiton Acanthopleura echinata. Journal of Morphology, 265(2), 165–175. DOI: 10.1002/jmor.10348",
+      "url": "https://doi.org/10.1002/jmor.10348"
+    },
+    {
+      "text": "Clement, M., Posada, D., & Crandall, K. A. (2000). TCS: a computer program to estimate gene genealogies. Molecular Ecology, 9(10), 1657–1659. DOI: 10.1046/j.1365-294x.2000.01020.x",
+      "url": "https://doi.org/10.1046/j.1365-294x.2000.01020.x"
+    },
+    {
+      "text": "Bandelt, H. J., Forster, P., & Röhl, A. (1999). Median-joining networks for inferring intraspecific phylogenies. Molecular Biology and Evolution, 16(1), 37–48. DOI: 10.1093/oxfordjournals.molbev.a026036",
+      "url": "https://doi.org/10.1093/oxfordjournals.molbev.a026036"
+    },
+    {
+      "text": "Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology, 25(2), 163–177. DOI: 10.1080/0022250x.2001.9990249",
+      "url": "https://doi.org/10.1080/0022250x.2001.9990249"
+    },
+    {
+      "text": "Katoh, K., & Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7: improvements in performance and usability. Molecular Biology and Evolution, 30(4), 772–780. DOI: 10.1093/molbev/mst010",
+      "url": "https://doi.org/10.1093/molbev/mst010"
+    },
+    {
+      "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., Schrempf, D., Woodhams, M. D., von Haeseler, A., & Lanfear, R. (2020). IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530–1534. DOI: 10.1093/molbev/msaa015",
+      "url": "https://doi.org/10.1093/molbev/msaa015"
+    },
+    {
+      "text": "To, T.-H., Jung, M., Lycett, S., & Gascuel, O. (2015). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82–97. DOI: 10.1093/sysbio/syv068",
+      "url": "https://doi.org/10.1093/sysbio/syv068"
+    },
+    {
+      "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(S6), 153. DOI: 10.1186/s12859-018-2129-y",
+      "url": "https://doi.org/10.1186/s12859-018-2129-y"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z. (2007). PAML 4: phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586–1591. DOI: 10.1093/molbev/msm088",
+      "url": "https://doi.org/10.1093/molbev/msm088"
+    },
+    {
+      "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239–2252. DOI: 10.1093/molbev/msr048",
+      "url": "https://doi.org/10.1093/molbev/msr048"
+    },
+    {
+      "text": "Williams, P. A., Cosme, J., Vinkovic, D. M., Ward, A., Angove, H. C., Daye, P. J., Vonrhein, C., Tickle, I. J., & Jhoti, H. (2004). Crystal structures of human cytochrome P450 3A4 bound to metyrapone and progesterone. Science, 305(5684), 683–686. DOI: 10.1126/science.1099736",
+      "url": "https://doi.org/10.1126/science.1099736"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      212,
+      178,
+      138,
+      114.2,
+      62.4,
+      31.8,
+      18.6
+    ],
+    "backbone_node_ages": [
+      52.4,
+      91.2,
+      162.8,
+      228.4,
+      306,
+      388
+    ],
+    "fig1_max_ma": 450,
+    "fig1_eras": [
+      [
+        "Devonian-Carb",
+        450,
+        298.9,
+        "#f1f5f9"
+      ],
+      [
+        "Permian-Trias",
+        298.9,
+        201.4,
+        "#f8fafc"
+      ],
+      [
+        "Jurassic-Cret",
+        201.4,
+        66,
+        "#f1f5f9"
+      ],
+      [
+        "Paleogene",
+        66,
+        23,
+        "#f8fafc"
+      ],
+      [
+        "Neogene-Quat",
+        23,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      450,
+      350,
+      250,
+      150,
+      100,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      9,
+      19.5,
+      31,
+      41.5,
+      27.5,
+      48,
+      53.5,
+      59
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        3,
+        "Order Lepidopleurida Outgroups (n=4)",
+        "Leptochiton nexus, Lepidopleurus, Nierstraszella, Hanleyella",
+        "Bathyal detritivores & plesiomorphic aragonite valve root"
+      ],
+      [
+        "[B]",
+        4,
+        14,
+        "Suborder Chitonina Outgroups (n=11)",
+        "Chiton, Acanthopleura, Liolophura, Lepidozona, Chaetopleura",
+        "Image-forming shell-eye ocelli & magnetite radula grazing"
+      ],
+      [
+        "[C]",
+        15,
+        24,
+        "Mopalioidea & Cryptochiton (n=10)",
+        "Katharina, Cryptochiton stelleri, Mopalia, Plaxiphora, Tonicina",
+        "Kelp/rocky-shore grazers + valve burial #1 (Cryptochiton)"
+      ],
+      [
+        "[D]",
+        25,
+        29,
+        "Family Cryptoplacidae (n=5)",
+        "Cryptoplax japonica, C. propior, C. iredalei, C. dupuisi, Choneplax",
+        "Vermiform coral-rubble chitons with reduced dorsal plates"
+      ],
+      [
+        "[E]",
+        30,
+        38,
+        "Basal Acanthochitonidae & Choriplax (n=9)",
+        "Cryptoconchus floridanus, Craspedochiton, Leptoplax, Choriplax",
+        "18-tuft spicules, sponge CYP3A detox & valve burial #2"
+      ],
+      [
+        "[F]",
+        39,
+        53,
+        "Atlantic & Pan-American Acanthochitona (n=15)",
+        "Acanthochitona fascicularis, A. crinita, A. pygmaea, Americhiton",
+        "Atlanto-Mediterranean, South African & Caribbean radiation"
+      ],
+      [
+        "[G]",
+        54,
+        63,
+        "Indo-West & NW Pacific Crown (n=10)",
+        "Acanthochitona rubrolineata, A. achates, A. defilippii, A. circellata",
+        "Kuroshio marginal-sea diversification & 2011 JTMD rafting"
+      ]
+    ],
+    "fig1_web_svg": "acanthochitonidae-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram Across >=80%-Gated Multi-Locus Polyplacophora Taxa (Nodes I-VIII)",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) over >=80% supermatrix-coverage multi-locus Polyplacophora OTUs (single-locus COX1 barcodes excluded to Figure 3/4/7) with two-sided 95% HPD credible intervals and clade functional summary cards.",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        3,
+        "Lepidopleurida Outgroups (n=4)",
+        ""
+      ],
+      [
+        "[B]",
+        4,
+        14,
+        "Suborder Chitonina (n=11)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        15,
+        24,
+        "Mopalioidea & Cryptochiton (n=10)",
+        ""
+      ],
+      [
+        "[D]",
+        25,
+        29,
+        "Family Cryptoplacidae (n=5)",
+        "9,3,2,3"
+      ],
+      [
+        "[E]",
+        30,
+        38,
+        "Basal Acanthochitonidae (n=9)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        39,
+        53,
+        "Atlantic & Pan-Am Crown (n=15)",
+        ""
+      ],
+      [
+        "[G]",
+        54,
+        63,
+        "Indo-West & NW Pacific Crown (n=10)",
+        "10,3,2,3"
+      ]
+    ],
+    "fig2_web_svg": "acanthochitonidae-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Empirical Patristic Phylogram Across >=80%-Gated Multi-Locus Polyplacophora OTUs",
+    "fig2_caption": "Dominant circular patristic phylogram (2*R_ARC = 87.7% height) over >=80% supermatrix-coverage multi-locus Polyplacophora OTUs with unified root-to-tip backbone from R_INNER = 48, B&W alternating sectors, and sector-prefixed IDs.",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T003",
+        0
+      ],
+      [
+        "Node II",
+        "B:T010",
+        1
+      ],
+      [
+        "Node III",
+        "C:T017",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T028",
+        3
+      ],
+      [
+        "Node V",
+        "D:T026",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T038",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T046",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T057",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T057",
+      "G:T055"
+    ],
+    "fig3_web_svg": "acanthochitonidae-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and NW Pacific ABBA-BABA introgression tests.",
+    "fig4a_web_svg": "acanthochitonidae-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across Acanthochitonidae & Polyplacophora (Cohorts R1-R6; N = 216)",
+    "fig4a_caption": "Six regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across NW Pacific Acanthochitona + JTMD rafters, A. rubrolineata, Atlantic/Med A. crinita/fascicularis, Pan-American A. avicula/hirudiniformis, Chitonina, and Mopalioidea.",
+    "fig4b_web_svg": "acanthochitonidae-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Ribosomal 18S/28S rDNA (4Ne) vs. Histone H3 & mtDNA 16S Loci (Cohorts L1-L6; N = 216)",
+    "fig4b_caption": "Paired multi-locus skylines across Acanthochitonina, Cryptoplacoidea, and Chitonina separating maternal mtDNA COX1 and 16S rRNA from diploid Katoh E-INS-i 18S/28S rDNA and conserved Histone H3 coding constraints.",
+    "fig5_short_fam_titles": [
+      "Radula Magnetite Biomineralization Ferritins (Fe3O4 Core / Ferroxidase Di-Iron)",
+      "Spicule & Dorsal Valve alpha-Carbonic Anhydrases Only (Zn2+ His Triad / Aragonite)",
+      "Intertidal Thermal Shock & Esthete Pore Chaperones (HSPA12A / HSPA12B)",
+      "Benthic Sponge & Macroalgal Allelochemical Detox Cytochrome P450s (CYP3A Subfamily)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Radula Magnetite Ferritins",
+      "FAM-02: Spicule/Valve alpha-CA Only",
+      "FAM-03: HSPA12A/12B Intertidal Stress",
+      "FAM-04: Benthic Detox CYP3A (1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | Polyplacophora CYP3A Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Microsomal P450 Fold (461 Ca Threaded with Acanthochitona / Chiton CYP3A)",
+    "fig5_web_svg": "acanthochitonidae-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Nuclear Coding Motif Alignments, 61-State Codon Selection, 32-Chain RuNIE Sweep & Crystallographic CYP3A Heme-Thiolate Pocket",
+    "fig5_caption": "Translated amino-acid motif alignments across 48 Polyplacophora NCBI single-subfamily orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D chiton CYP3A structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
+    "fig6_web_svg": "acanthochitonidae-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Polyplacophora supermatrix + 31 full mitogenomes) and Pipeline B (12 coalescent skyline cohorts, N = 432).",
+    "fig6_clade_label": "Class Polyplacophora (Acanthochitonidae)",
+    "fig6_p450_label": "CYP3A / Magnetite Ferritin / alpha-CA",
+    "fig6_its_label": "Acanthochitona & Cryptoplacoidea 18S/28S/ITS1 rDNA",
+    "supp_s1_fasta_name": "supp_s1_cyp3a_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (Polyplacophora CYP3A Tight Subfamily)",
+    "supp_s1_source": "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS (FAM-04)",
+    "supp_s1_stem": "acanthochitonidae-supp-s1-cyp3a-alignview",
+    "supp_s2_title": "Cohort L2 Polyplacophora Nuclear 18S rRNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS (Cohort L2)",
+    "supp_s2_stem": "acanthochitonidae-supp-s2-its1-einsi-alignview",
+    "supp_s3_title": "Class Polyplacophora & Acanthochitonidae Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "acanthochitonidae-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Convergent Valve Burial, 18-Tuft Spicule Armor & Trans-Oceanic Rafting Across Acanthochitonidae and Polyplacophora",
+    "section1_p1": "Polyplacophoran mollusks (chitons) pair eight articulated aragonite shell valves with a muscular spicule-armored girdle, magnetite-capped radular teeth capable of scraping coralline rock, and innervated sensory esthetes including image-forming shell eyes in Chitonidae. Within Suborder Acanthochitonina, dorsal valve reduction and full epithelial valve burial evolved independently in Giant Gumboot Chiton Cryptochiton stelleri (Mopalioidea) and in Australasian/New Zealand Cryptoconchus lineages (Cryptoplacoidea).",
+    "section1_p2": "In v3.0.0, all 64 Polyplacophora OTUs ([A]-[G]) with disambiguated Adriatic (F:T044) and Indo-West Pacific (G:T060) Acanthochitona slots execute through the generalized declarative bio-suite-supervisor pipeline with Edge-Linked Partitioned ModelTest vs. Unpartitioned ML estimator parity, acanthochitonidae_preprint28_design.json clade recovery validation, single-compartment Chitonida 16S rRNA in Cohort L6 (acantho_pop_l6_16s_v3), and full-length CYP3A orthologs preserving 12/12 I-helix and Cys-loop heme-thiolate geometry on PDB 1TQN.",
+    "section2_title": "Autonomous Hygiene, >=80% Supermatrix Coverage Gate, Mitogenome Phasing & Chronology",
+    "section3_title": "64-Species Quartet Multispecies Coalescent Tree, ABBA-BABA & 32-Chain RuNIE Audit",
+    "section4_title": "61-State Codon Selection on Magnetite Radula Ferritins, Aragonite Spicule alpha-CA, HSPA12 & 1TQN CYP3A",
+    "section4_body": "Across 48 verified Universal Standard Code 1 nuclear coding orthologs, Goldman-Yang 61-state codon models resolve ferroxidase constraint across soma/heavy-anchored magnetite radular Ferritins (FAM-01), dorsal valve and 18-tuft spicule alpha-carbonic anhydrases (FAM-02), intertidal desiccation chaperones (FAM-03: HSPA12A/12B), and full-length benthic allelochemical detoxification CYP3A monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A) with 12/12 I-helix and proximal Cys442 FxxGxxxCxG heme-thiolate coordination.",
+    "section5_title": "Cross-Regional vs. Multi-Locus Skylines (18S/28S/H3/16S) & Stage 3C JTMD Haplotype Networks",
+    "discussion_title": "Conclusions & Data-Hygiene Synthesis",
+    "discussion_paragraphs": [
+      "Re-executing Class Polyplacophora and Family Acanthochitonidae through the generalized declarative bio-suite pipeline cleanly separates ancient Lepidopleurida-Chitonida-Acanthochitonina divergences from Neogene-Quaternary marginal-sea connectivity and Anthropocene trans-Pacific dispersal.",
+      "Replacing legacy truncated CYP3A transcripts with 14 verified full-length Mollusca/Polyplacophora CYP3A mRNAs restored 12/12 I-helix and Cys-loop motif fidelity on 1TQN, while isolating Cohort L6 to pure Chitonida 16S rRNA resolved all 12 coalescent skylines cleanly at minESS >= 200 and maxRhat <= 1.05.",
+      "Paired evaluation against acanthochitonidae_preprint28_design.json, 64-species Quartet MSC, ABBA-BABA introgression tests, and Stage 3C TCS/MSN haplotype graphs provides a reproducible baseline across benthic molluscan biomineralization and coastal biogeography."
+    ],
+    "latex_intro": "Sixty-four Polyplacophora taxa spanning Lepidopleurida outgroups [A], Chitonina [B], Mopalioidea [C], Cryptoplacidae [D], basal Acanthochitonidae [E], Atlanto-American Acanthochitona [F], and NW/Indo-West Pacific Acanthochitona [G] are evaluated across 17 loci and 4 biomineralization/detoxification families in Version 3.0.0.",
+    "seed_base": 20261128
+  }
+}

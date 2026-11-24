@@ -16,8 +16,8 @@ Because we are building a self-contained Rust toolkit from the ground up, this l
 | :--- | :--- |
 | **Total Tool Vocabulary in `RuNIE` Markov State Space** | **38 Native Rust Operators** (`37` Live External Reserve-Validated & Multi-Stage Chained Operators + `bio-suite-supervisor`) |
 | **Tools Synthesized or Modified Due to `RuNIE`** | **37 Major Tool & Pipeline Interventions** (`RN-2026-001` through `RN-2026-037`) |
-| **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **39 End-to-End 4–9 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-068`, `29` Empirically Verified Preprints & `18` Canonical Studies) |
-| **Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-29`)** | **29 Verified Monographs** (`#108`–`#110`, `#113`–`#114`, `#117`–`#134`, `#136`–`#138`, `#140`, `#142`, `#144`) with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors |
+| **Multi-Stage Pipelines (`DAGs`) Integrated & Validated** | **39 End-to-End 4–9 Stage Pipelines** across **Tiers 1, 2 & 3** (`VAL-SET-001` through `VAL-SET-071`, `32` Empirically Verified Preprints & `18` Canonical Studies) |
+| **Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-32`)** | **32 Verified Monographs** (`#108`–`#110`, `#113`–`#114`, `#117`–`#134`, `#136`–`#138`, `#140`, `#142`, `#144`, `#145`, `#146`, `#147`) with single-column arXiv PDFs, LaTeX/BibTeX bundles, and Master Concept Zenodo DOIs + Figshare mirrors |
 | **Negative Control / Uncalibrated Trajectories Rejected (`0🧪`)** | **55 Logged `0🧪` Rejects** in `runs/zero-star-calibration-dump.json` (`SWEEP-01` through `SWEEP-35`, plus `MSA-CAL-04-ZERO-STAR`) |
 | **Runtime Architecture** | Pure-Rust `candle-core` + `candle-nn` CPU Tensors + `rayon` Parallel Tempering (`GA-MCMC`) + 5-Tab Win32 `bio-suite-supervisor` GUI + Native SVG & 3D PDB Graphical Report Suite |
 

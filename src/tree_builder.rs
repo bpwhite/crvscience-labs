@@ -1573,6 +1573,146 @@ fn felsenstein_postorder(
     }
 }
 
+pub(crate) const SITE_PATTERN_CHUNK_SIZE: usize = 64;
+
+/// Precompute `rate_cats.len() × nodes.len()` Felsenstein transition probability matrices once per tree evaluation.
+pub(crate) fn build_transition_prob_mats(
+    nodes: &[MlTreeNode],
+    q: &[[f64; 4]; 4],
+    rate_cats: &[(f64, f64)],
+    branch_scale: f64,
+) -> Vec<Vec<[[f64; 4]; 4]>> {
+    let n_nodes = nodes.len();
+    let mut p_mats: Vec<Vec<[[f64; 4]; 4]>> = Vec::with_capacity(rate_cats.len());
+    for &(r_c, _) in rate_cats {
+        let mut node_mats = Vec::with_capacity(n_nodes);
+        for nd in nodes {
+            let t = (nd.branch_len * branch_scale * r_c).max(1e-6);
+            node_mats.push(transition_prob_matrix(q, t));
+        }
+        p_mats.push(node_mats);
+    }
+    p_mats
+}
+
+#[allow(clippy::too_many_arguments)]
+fn score_single_pattern_with_buf(
+    pat: &[u8],
+    nodes: &[MlTreeNode],
+    root_id: usize,
+    p_mats: &[Vec<[[f64; 4]; 4]>],
+    pi: &[f64; 4],
+    pinv: f64,
+    is_invariant_base: Option<usize>,
+    rate_cats: &[(f64, f64)],
+    cl: &mut [[f64; 4]],
+) -> f64 {
+    let n_cats = rate_cats.len();
+    let logsumexp_slice = |terms: &[f64]| -> f64 {
+        if terms.is_empty() {
+            -690.7755
+        } else {
+            let max_log = terms.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+            let sum_exp: f64 = terms.iter().map(|&lt| (lt - max_log).exp()).sum();
+            max_log + sum_exp.ln()
+        }
+    };
+
+    if n_cats < 16 {
+        let mut terms = [0.0f64; 16];
+        let mut n_terms = 0usize;
+        if pinv > 0.0 {
+            if let Some(inv_b) = is_invariant_base {
+                let inv_term = pinv * pi[inv_b];
+                if inv_term > 0.0 {
+                    terms[n_terms] = inv_term.ln();
+                    n_terms += 1;
+                }
+            }
+        }
+        for (c_idx, &(_, cat_w)) in rate_cats.iter().enumerate() {
+            let mats = &p_mats[c_idx];
+            let mut log_scale = 0.0f64;
+            felsenstein_postorder(root_id, nodes, mats, pat, cl, &mut log_scale);
+            let root_cl = &cl[root_id];
+            let mut cat_l = 0.0;
+            for s in 0..4 {
+                cat_l += pi[s] * root_cl[s];
+            }
+            if cat_l > 0.0 && cat_w > 0.0 {
+                terms[n_terms] = cat_w.ln() + cat_l.ln() + log_scale;
+                n_terms += 1;
+            }
+        }
+        logsumexp_slice(&terms[..n_terms])
+    } else {
+        let mut cat_log_terms: Vec<f64> = Vec::with_capacity(n_cats + 1);
+        if pinv > 0.0 {
+            if let Some(inv_b) = is_invariant_base {
+                let inv_term = pinv * pi[inv_b];
+                if inv_term > 0.0 {
+                    cat_log_terms.push(inv_term.ln());
+                }
+            }
+        }
+        for (c_idx, &(_, cat_w)) in rate_cats.iter().enumerate() {
+            let mats = &p_mats[c_idx];
+            let mut log_scale = 0.0f64;
+            felsenstein_postorder(root_id, nodes, mats, pat, cl, &mut log_scale);
+            let root_cl = &cl[root_id];
+            let mut cat_l = 0.0;
+            for s in 0..4 {
+                cat_l += pi[s] * root_cl[s];
+            }
+            if cat_l > 0.0 && cat_w > 0.0 {
+                cat_log_terms.push(cat_w.ln() + cat_l.ln() + log_scale);
+            }
+        }
+        logsumexp_slice(&cat_log_terms)
+    }
+}
+
+/// Evaluate exact weighted Felsenstein log-likelihood over pattern range `[start_pat..end_pat)`,
+/// reusing a single node conditional-likelihood scratch buffer across all patterns in the slice.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn evaluate_pattern_range_weighted_lnl(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    p_mats: &[Vec<[[f64; 4]; 4]>],
+    pi: &[f64; 4],
+    pinv: f64,
+    rate_cats: &[(f64, f64)],
+    start_pat: usize,
+    end_pat: usize,
+) -> f64 {
+    let n_nodes = nodes.len();
+    let end = end_pat.min(aln.patterns.len());
+    if n_nodes == 0 || start_pat >= end {
+        return 0.0;
+    }
+    let root_id = n_nodes - 1;
+    let mut cl = vec![[1.0f64; 4]; n_nodes];
+    let mut sum = 0.0f64;
+    for pat_idx in start_pat..end {
+        let w = aln.weights[pat_idx];
+        if w > 0.0 {
+            let lp = score_single_pattern_with_buf(
+                &aln.patterns[pat_idx],
+                nodes,
+                root_id,
+                p_mats,
+                pi,
+                pinv,
+                aln.is_invariant_base[pat_idx],
+                rate_cats,
+                &mut cl,
+            );
+            sum += w * lp;
+        }
+    }
+    sum
+}
+
 /// Compute the unweighted per-pattern Felsenstein log-likelihood vector `ell[0..n_pats]`
 /// (summed over discrete rate categories + invariant category via LogSumExp) for all compressed
 /// alignment patterns in `aln`. Shared by total tree likelihood evaluation and RELL/UFBoot2 scoring.
@@ -1588,60 +1728,52 @@ pub(crate) fn evaluate_site_pattern_lnls(
     parallel: bool,
 ) -> Vec<f64> {
     let n_nodes = nodes.len();
+    let n_pats = aln.patterns.len();
+    if n_nodes == 0 || n_pats == 0 {
+        return Vec::new();
+    }
     let root_id = n_nodes - 1;
-    let n_cats = rate_cats.len();
+    let p_mats = build_transition_prob_mats(nodes, q, rate_cats, branch_scale);
 
-    let mut p_mats: Vec<Vec<[[f64; 4]; 4]>> = vec![Vec::with_capacity(n_nodes); n_cats];
-    for (c_idx, &(r_c, _)) in rate_cats.iter().enumerate() {
-        let mut node_mats = Vec::with_capacity(n_nodes);
-        for nd in nodes {
-            let t = (nd.branch_len * branch_scale * r_c).max(1e-6);
-            node_mats.push(transition_prob_matrix(q, t));
-        }
-        p_mats[c_idx] = node_mats;
-    }
-
-    let score_unweighted = |(pat_idx, pat): (usize, &Vec<u8>)| -> f64 {
-        let mut cat_log_terms: Vec<f64> = Vec::with_capacity(n_cats + 1);
-        if pinv > 0.0 {
-            if let Some(inv_b) = aln.is_invariant_base[pat_idx] {
-                let inv_term = pinv * pi[inv_b];
-                if inv_term > 0.0 {
-                    cat_log_terms.push(inv_term.ln());
+    let mut out = vec![0.0f64; n_pats];
+    if parallel && n_pats >= SITE_PATTERN_CHUNK_SIZE * 2 {
+        out.par_chunks_mut(SITE_PATTERN_CHUNK_SIZE)
+            .enumerate()
+            .for_each(|(chunk_idx, chunk)| {
+                let start = chunk_idx * SITE_PATTERN_CHUNK_SIZE;
+                let mut cl = vec![[1.0f64; 4]; n_nodes];
+                for (offset, slot) in chunk.iter_mut().enumerate() {
+                    let pat_idx = start + offset;
+                    *slot = score_single_pattern_with_buf(
+                        &aln.patterns[pat_idx],
+                        nodes,
+                        root_id,
+                        &p_mats,
+                        pi,
+                        pinv,
+                        aln.is_invariant_base[pat_idx],
+                        rate_cats,
+                        &mut cl,
+                    );
                 }
-            }
-        }
-        let mut cl = vec![[1.0f64; 4]; n_nodes];
-        for (c_idx, &(_, cat_w)) in rate_cats.iter().enumerate() {
-            let mats = &p_mats[c_idx];
-            let mut log_scale = 0.0f64;
-            felsenstein_postorder(root_id, nodes, mats, pat, &mut cl, &mut log_scale);
-            let root_cl = &cl[root_id];
-            let mut cat_l = 0.0;
-            for s in 0..4 {
-                cat_l += pi[s] * root_cl[s];
-            }
-            if cat_l > 0.0 && cat_w > 0.0 {
-                cat_log_terms.push(cat_w.ln() + cat_l.ln() + log_scale);
-            }
-        }
-        if cat_log_terms.is_empty() {
-            -690.7755
-        } else {
-            let max_log = cat_log_terms
-                .iter()
-                .copied()
-                .fold(f64::NEG_INFINITY, f64::max);
-            let sum_exp: f64 = cat_log_terms.iter().map(|&lt| (lt - max_log).exp()).sum();
-            max_log + sum_exp.ln()
-        }
-    };
-
-    if parallel {
-        aln.patterns.par_iter().enumerate().map(score_unweighted).collect()
+            });
     } else {
-        aln.patterns.iter().enumerate().map(score_unweighted).collect()
+        let mut cl = vec![[1.0f64; 4]; n_nodes];
+        for pat_idx in 0..n_pats {
+            out[pat_idx] = score_single_pattern_with_buf(
+                &aln.patterns[pat_idx],
+                nodes,
+                root_id,
+                &p_mats,
+                pi,
+                pinv,
+                aln.is_invariant_base[pat_idx],
+                rate_cats,
+                &mut cl,
+            );
+        }
     }
+    out
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1655,19 +1787,40 @@ fn evaluate_tree_log_likelihood_inner(
     branch_scale: f64,
     parallel: bool,
 ) -> f64 {
-    let site_lnls =
-        evaluate_site_pattern_lnls(nodes, aln, q, pi, pinv, rate_cats, branch_scale, parallel);
-    site_lnls
-        .iter()
-        .zip(aln.weights.iter())
-        .map(|(&lp, &w)| if w > 0.0 { w * lp } else { 0.0 })
-        .sum()
+    let n_pats = aln.patterns.len();
+    if nodes.is_empty() || n_pats == 0 {
+        return 0.0;
+    }
+    let p_mats = build_transition_prob_mats(nodes, q, rate_cats, branch_scale);
+    if parallel && n_pats >= SITE_PATTERN_CHUNK_SIZE * 2 {
+        let n_chunks = n_pats.div_ceil(SITE_PATTERN_CHUNK_SIZE);
+        let chunk_sums: Vec<f64> = (0..n_chunks)
+            .into_par_iter()
+            .map(|ci| {
+                let start = ci * SITE_PATTERN_CHUNK_SIZE;
+                let end = (start + SITE_PATTERN_CHUNK_SIZE).min(n_pats);
+                evaluate_pattern_range_weighted_lnl(
+                    nodes,
+                    aln,
+                    &p_mats,
+                    pi,
+                    pinv,
+                    rate_cats,
+                    start,
+                    end,
+                )
+            })
+            .collect();
+        chunk_sums.into_iter().sum()
+    } else {
+        evaluate_pattern_range_weighted_lnl(nodes, aln, &p_mats, pi, pinv, rate_cats, 0, n_pats)
+    }
 }
 
 /// Evaluate exact Felsenstein log-likelihood of a rooted/unrooted tree under `model`
 /// with recursive post-order traversal, per-node Felsenstein underflow log-scaling (`scale_log`),
 /// and LogSumExp rate-category integration.
-fn evaluate_tree_log_likelihood(
+pub(crate) fn evaluate_tree_log_likelihood(
     nodes: &[MlTreeNode],
     aln: &CompressedAlignment,
     q: &[[f64; 4]; 4],
@@ -2918,6 +3071,16 @@ pub(crate) fn optimize_substitution_model_on_tree_seq(
     force_no_inv: bool,
 ) -> ([[f64; 4]; 4], [f64; 4], f64, Vec<(f64, f64)>, f64) {
     optimize_substitution_model_on_tree_inner(nodes, aln, model, false, force_no_inv)
+}
+
+/// Parallel variant of `optimize_substitution_model_on_tree_inner` allowing optional `force_no_inv`.
+pub(crate) fn optimize_substitution_model_on_tree_parallel(
+    nodes: &[MlTreeNode],
+    aln: &CompressedAlignment,
+    model: PhyloRunModel,
+    force_no_inv: bool,
+) -> ([[f64; 4]; 4], [f64; 4], f64, Vec<(f64, f64)>, f64) {
+    optimize_substitution_model_on_tree_inner(nodes, aln, model, true, force_no_inv)
 }
 
 fn optimize_substitution_model_on_tree_inner(

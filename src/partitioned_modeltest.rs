@@ -9,14 +9,15 @@ use crate::complexity::round4;
 use crate::prng_util::{splitmix64, DeterministicLcg64};
 use crate::tree_builder::{
     apply_stochastic_nni_perturbation, build_rate_cats_from_params,
-    build_rate_matrix_q_for_run_model, build_weighted_bionj_pool,
+    build_rate_matrix_q_for_run_model, build_transition_prob_mats, build_weighted_bionj_pool,
     canonical_split_concordance_and_rf, compact_weighted_alignment,
-    compress_alignment_and_estimate_rates, detect_binary_ry_columns, evaluate_site_pattern_lnls,
-    evaluate_tree_log_likelihood_seq, extract_canonical_splits_from_ml_nodes,
-    finalize_tree_metrics, format_ml_newick, infer_native_ml_tree_with_bootstrap,
-    map_columns_to_patterns, optimize_substitution_model_on_tree_seq,
-    run_inside_outside_pulley_pass, solve_native_ml_tree_with_fit, CompressedAlignment,
-    MlBootstrapReport, MlTreeNode, PhyloRunModel, SingleTreeRunMetrics,
+    compress_alignment_and_estimate_rates, detect_binary_ry_columns,
+    evaluate_pattern_range_weighted_lnl, evaluate_site_pattern_lnls, evaluate_tree_log_likelihood,
+    extract_canonical_splits_from_ml_nodes, finalize_tree_metrics, format_ml_newick,
+    infer_native_ml_tree_with_bootstrap, map_columns_to_patterns,
+    optimize_substitution_model_on_tree_parallel, run_inside_outside_pulley_pass,
+    solve_native_ml_tree_with_fit, CompressedAlignment, MlBootstrapReport, MlTreeNode,
+    PhyloRunModel, SingleTreeRunMetrics, SITE_PATTERN_CHUNK_SIZE,
 };
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -186,10 +187,52 @@ where
 }
 
 fn eval_partitioned_lnl(nodes: &[MlTreeNode], parts: &[FittedPartition]) -> f64 {
-    parts
+    if nodes.is_empty() || parts.is_empty() {
+        return 0.0;
+    }
+    let p_mats_by_part: Vec<Vec<Vec<[[f64; 4]; 4]>>> = parts
+        .par_iter()
+        .map(|p| build_transition_prob_mats(nodes, &p.q, &p.rate_cats, p.rate_r))
+        .collect();
+    let total_chunks_est: usize = parts
+        .iter()
+        .map(|p| p.aln.patterns.len().div_ceil(SITE_PATTERN_CHUNK_SIZE))
+        .sum();
+    let mut chunks: Vec<(usize, usize, usize)> = Vec::with_capacity(total_chunks_est);
+    for (pi, p) in parts.iter().enumerate() {
+        let n_pats = p.aln.patterns.len();
+        let mut start = 0usize;
+        while start < n_pats {
+            let end = (start + SITE_PATTERN_CHUNK_SIZE).min(n_pats);
+            chunks.push((pi, start, end));
+            start = end;
+        }
+    }
+    let chunk_sums: Vec<f64> = chunks
+        .par_iter()
+        .map(|&(pi, start, end)| {
+            let p = &parts[pi];
+            evaluate_pattern_range_weighted_lnl(
+                nodes,
+                &p.aln,
+                &p_mats_by_part[pi],
+                &p.pi,
+                p.pinv,
+                &p.rate_cats,
+                start,
+                end,
+            )
+        })
+        .collect();
+    chunk_sums.into_iter().sum()
+}
+
+#[cfg(test)]
+fn eval_partitioned_lnl_coarse_reference(nodes: &[MlTreeNode], parts: &[FittedPartition]) -> f64 {
+    let per_part: Vec<f64> = parts
         .par_iter()
         .map(|p| {
-            evaluate_tree_log_likelihood_seq(
+            crate::tree_builder::evaluate_tree_log_likelihood_seq(
                 nodes,
                 &p.aln,
                 &p.q,
@@ -199,7 +242,8 @@ fn eval_partitioned_lnl(nodes: &[MlTreeNode], parts: &[FittedPartition]) -> f64 
                 p.rate_r,
             )
         })
-        .sum()
+        .collect();
+    per_part.into_iter().sum()
 }
 
 fn summarize_rate_cats_and_kappa(
@@ -541,7 +585,7 @@ fn optimize_partitioned_topology_and_branches(
         .par_iter()
         .map(|p| {
             golden_optimize_1d(0.06, 5.5, &[0.10, 0.25, 0.50, 0.75, 1.0, 1.35, 1.9, 2.8, 4.2], 14, |r| {
-                evaluate_tree_log_likelihood_seq(&nodes_ro, &p.aln, &p.q, &p.pi, p.pinv, &p.rate_cats, r)
+                evaluate_tree_log_likelihood(&nodes_ro, &p.aln, &p.q, &p.pi, p.pinv, &p.rate_cats, r)
             })
         })
         .collect();
@@ -601,24 +645,31 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
     let mut best_unpart_code = "GTR+F+I+G4".to_string();
     let mut best_unpart_rm = PhyloRunModel::GtrInvGamma4Full;
     let mut best_unpart_bic = f64::INFINITY;
-    for &(code, k_m, rm, no_inv) in &CANDIDATE_MODELS {
-        let (q, pi, pinv, cats, _lnl) = optimize_substitution_model_on_tree_seq(
-            &guide_fast.nodes,
-            &full_aln,
-            rm,
-            no_inv,
-        );
-        let exact_l = evaluate_tree_log_likelihood_seq(&guide_fast.nodes, &full_aln, &q, &pi, pinv, &cats, 1.0);
-        let k_tot = branch_k + k_m;
-        let bic = -2.0 * exact_l + (k_tot as f64) * ln_sites;
-        if bic < best_unpart_bic {
-            best_unpart_bic = bic;
-            best_unpart_code = code.to_string();
-            best_unpart_rm = if code == "GTR+F+G4" {
+    let unpart_candidates: Vec<(&str, PhyloRunModel, f64)> = CANDIDATE_MODELS
+        .par_iter()
+        .map(|&(code, k_m, rm, no_inv)| {
+            let (q, pi, pinv, cats, _lnl) = optimize_substitution_model_on_tree_parallel(
+                &guide_fast.nodes,
+                &full_aln,
+                rm,
+                no_inv,
+            );
+            let exact_l = evaluate_tree_log_likelihood(&guide_fast.nodes, &full_aln, &q, &pi, pinv, &cats, 1.0);
+            let k_tot = branch_k + k_m;
+            let bic = -2.0 * exact_l + (k_tot as f64) * ln_sites;
+            let resolved_rm = if code == "GTR+F+G4" {
                 PhyloRunModel::GtrInvGamma4Full
             } else {
                 rm
             };
+            (code, resolved_rm, bic)
+        })
+        .collect();
+    for (code, resolved_rm, bic) in unpart_candidates {
+        if bic < best_unpart_bic {
+            best_unpart_bic = bic;
+            best_unpart_code = code.to_string();
+            best_unpart_rm = resolved_rm;
         }
     }
 
@@ -672,68 +723,70 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
                 pinv: f64,
                 cats: Vec<(f64, f64)>,
             }
-            let mut evals: Vec<EvalModel> = Vec::with_capacity(CANDIDATE_MODELS.len());
             let ln_lp = (len_bp as f64).ln();
             let rate_grid = [0.14_f64, 0.30, 0.55, 0.80, 1.0, 1.35, 1.9, 2.8, 4.1];
 
-            for &(mcode, k_sub, rm, force_no_inv) in &CANDIDATE_MODELS {
-                let (q0, pi0) = build_rate_matrix_q_for_run_model(rm, &aln_p);
-                let rate_rm0 = if force_no_inv && matches!(rm, PhyloRunModel::GtrInvGamma4Full) {
-                    PhyloRunModel::K80Gamma4
-                } else {
-                    rm
-                };
-                let (pinv0, cats0) = build_rate_cats_from_params(
-                    rate_rm0,
-                    0.50,
-                    if force_no_inv { 0.0 } else { 0.24 },
-                    0.68,
-                    0.08,
-                );
-                let (r0, _) = golden_optimize_1d(0.08, 4.50, &rate_grid, 10, |r| {
-                    evaluate_tree_log_likelihood_seq(&guide_nodes, &aln_p, &q0, &pi0, pinv0, &cats0, r)
-                });
-                let mut scaled_nodes = guide_nodes.clone();
-                let g_root = scaled_nodes.len().saturating_sub(1);
-                for (ni, nd) in scaled_nodes.iter_mut().enumerate() {
-                    if ni != g_root {
-                        nd.branch_len = (nd.branch_len * r0).clamp(1e-5, 4.0);
+            let mut evals: Vec<EvalModel> = CANDIDATE_MODELS
+                .par_iter()
+                .map(|&(mcode, k_sub, rm, force_no_inv)| {
+                    let (q0, pi0) = build_rate_matrix_q_for_run_model(rm, &aln_p);
+                    let rate_rm0 = if force_no_inv && matches!(rm, PhyloRunModel::GtrInvGamma4Full) {
+                        PhyloRunModel::K80Gamma4
+                    } else {
+                        rm
+                    };
+                    let (pinv0, cats0) = build_rate_cats_from_params(
+                        rate_rm0,
+                        0.50,
+                        if force_no_inv { 0.0 } else { 0.24 },
+                        0.68,
+                        0.08,
+                    );
+                    let (r0, _) = golden_optimize_1d(0.08, 4.50, &rate_grid, 10, |r| {
+                        evaluate_tree_log_likelihood(&guide_nodes, &aln_p, &q0, &pi0, pinv0, &cats0, r)
+                    });
+                    let mut scaled_nodes = guide_nodes.clone();
+                    let g_root = scaled_nodes.len().saturating_sub(1);
+                    for (ni, nd) in scaled_nodes.iter_mut().enumerate() {
+                        if ni != g_root {
+                            nd.branch_len = (nd.branch_len * r0).clamp(1e-5, 4.0);
+                        }
                     }
-                }
-                let (q_opt, pi_opt, pinv_opt, cats_opt, _) =
-                    optimize_substitution_model_on_tree_seq(&scaled_nodes, &aln_p, rm, force_no_inv);
-                let (r_opt, lnl_opt) = golden_optimize_1d(0.08, 4.50, &rate_grid, 14, |r| {
-                    evaluate_tree_log_likelihood_seq(
-                        &guide_nodes,
-                        &aln_p,
-                        &q_opt,
-                        &pi_opt,
-                        pinv_opt,
-                        &cats_opt,
-                        r,
-                    )
-                });
-                let k_eff = (k_sub + 1) as f64;
-                let aic = round4(-2.0 * lnl_opt + 2.0 * k_eff);
-                let bic = round4(-2.0 * lnl_opt + k_eff * ln_lp);
-                evals.push(EvalModel {
-                    score: LocusCandidateModelScore {
-                        model_code: mcode.to_string(),
-                        k_subst_params: k_sub,
-                        rate_multiplier: round4(r_opt),
-                        ln_l: round4(lnl_opt),
-                        aic,
-                        bic,
-                        delta_bic: 0.0,
-                    },
-                    rm,
-                    no_inv: force_no_inv,
-                    q: q_opt,
-                    pi: pi_opt,
-                    pinv: pinv_opt,
-                    cats: cats_opt,
-                });
-            }
+                    let (q_opt, pi_opt, pinv_opt, cats_opt, _) =
+                        optimize_substitution_model_on_tree_parallel(&scaled_nodes, &aln_p, rm, force_no_inv);
+                    let (r_opt, lnl_opt) = golden_optimize_1d(0.08, 4.50, &rate_grid, 14, |r| {
+                        evaluate_tree_log_likelihood(
+                            &guide_nodes,
+                            &aln_p,
+                            &q_opt,
+                            &pi_opt,
+                            pinv_opt,
+                            &cats_opt,
+                            r,
+                        )
+                    });
+                    let k_eff = (k_sub + 1) as f64;
+                    let aic = round4(-2.0 * lnl_opt + 2.0 * k_eff);
+                    let bic = round4(-2.0 * lnl_opt + k_eff * ln_lp);
+                    EvalModel {
+                        score: LocusCandidateModelScore {
+                            model_code: mcode.to_string(),
+                            k_subst_params: k_sub,
+                            rate_multiplier: round4(r_opt),
+                            ln_l: round4(lnl_opt),
+                            aic,
+                            bic,
+                            delta_bic: 0.0,
+                        },
+                        rm,
+                        no_inv: force_no_inv,
+                        q: q_opt,
+                        pi: pi_opt,
+                        pinv: pinv_opt,
+                        cats: cats_opt,
+                    }
+                })
+                .collect();
 
             evals.sort_by(|a, b| {
                 a.score
@@ -936,6 +989,7 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
         }
     }
 
+    let inner_par = unique_trees.len() < rayon::current_num_threads();
     let bank: Vec<PartBootCand> = unique_trees
         .into_par_iter()
         .map(|(mut nodes, splits)| {
@@ -953,21 +1007,23 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
                 &mut ev_b,
                 &mut acc_b,
             );
-            let ell_by_part: Vec<Vec<f64>> = fitted_parts
-                .iter()
-                .map(|p| {
-                    evaluate_site_pattern_lnls(
-                        &nodes,
-                        &p.aln,
-                        &p.q,
-                        &p.pi,
-                        p.pinv,
-                        &p.rate_cats,
-                        p.rate_r,
-                        false,
-                    )
-                })
-                .collect();
+            let score_part = |p: &FittedPartition| {
+                evaluate_site_pattern_lnls(
+                    &nodes,
+                    &p.aln,
+                    &p.q,
+                    &p.pi,
+                    p.pinv,
+                    &p.rate_cats,
+                    p.rate_r,
+                    inner_par,
+                )
+            };
+            let ell_by_part: Vec<Vec<f64>> = if inner_par {
+                fitted_parts.par_iter().map(score_part).collect()
+            } else {
+                fitted_parts.iter().map(score_part).collect()
+            };
             let exact_lnl: f64 = ell_by_part
                 .iter()
                 .zip(fitted_parts.iter())
@@ -1372,5 +1428,273 @@ mod tests {
             res.unpartitioned_bic
         );
         assert!(res.partitioned_bootstrap.estimator_self_consistent);
+    }
+
+    #[test]
+    fn test_internal_partition_parallel_matches_sequential_and_speeds_up_skewed_loci() {
+        use crate::tree_builder::{
+            evaluate_tree_log_likelihood_seq, optimize_substitution_model_on_tree_seq,
+        };
+
+        let n_taxa = 24usize;
+        let lengths = [1800usize, 240, 240, 240, 240, 240];
+        let total_sites: usize = lengths.iter().sum();
+        assert_eq!(total_sites, 3000);
+
+        let mut rng = DeterministicLcg64::new(0x2026_1124_u64);
+        let root_seq: Vec<u8> = (0..total_sites)
+            .map(|_| [b'A', b'C', b'G', b'T'][rng.gen_range_usize(4)])
+            .collect();
+
+        let mutate_sites = |src: &[u8], n_muts: usize, r: &mut DeterministicLcg64| -> Vec<u8> {
+            let mut out = src.to_vec();
+            for _ in 0..n_muts {
+                let pos = r.gen_range_usize(out.len());
+                out[pos] = [b'A', b'C', b'G', b'T'][r.gen_range_usize(4)];
+            }
+            out
+        };
+
+        let mut labels = Vec::with_capacity(n_taxa);
+        let mut full_seqs = Vec::with_capacity(n_taxa);
+        for c_i in 0..6 {
+            let clade_seq = mutate_sites(&root_seq, 450, &mut rng);
+            for t_j in 0..4 {
+                labels.push(format!("Tax_{}_{}", c_i + 1, t_j + 1));
+                let tip = mutate_sites(&clade_seq, 320, &mut rng);
+                full_seqs.push(String::from_utf8(tip).expect("ASCII DNA"));
+            }
+        }
+
+        let full_aln = compress_alignment_and_estimate_rates(&full_seqs);
+        let guide = solve_native_ml_tree_with_fit(
+            &full_seqs,
+            &labels,
+            &full_aln,
+            PhyloRunModel::GtrInvGamma4Fast,
+        );
+
+        let mut parts: Vec<FittedPartition> = Vec::with_capacity(lengths.len());
+        let mut cur_start = 1usize;
+        for (pi_idx, &len_bp) in lengths.iter().enumerate() {
+            let s0 = cur_start - 1;
+            let e0 = s0 + len_bp;
+            let seqs_p: Vec<String> = full_seqs
+                .iter()
+                .map(|row| row[s0..e0].to_string())
+                .collect();
+            let aln_p = compress_alignment_and_estimate_rates(&seqs_p);
+            let col_to_pat = map_columns_to_patterns(&seqs_p, &aln_p);
+            let rm = if pi_idx % 2 == 0 {
+                PhyloRunModel::GtrInvGamma4Full
+            } else {
+                PhyloRunModel::HkyInvGamma4
+            };
+            let mcode = if pi_idx % 2 == 0 {
+                "GTR+F+I+G4"
+            } else {
+                "HKY+F+I+G4"
+            };
+            let (q, pi, pinv, rate_cats, lnl) =
+                optimize_substitution_model_on_tree_seq(&guide.nodes, &aln_p, rm, false);
+            let rate_r = 0.8 + 0.1 * (pi_idx as f64);
+            let summary = PerLocusModelTestSummary {
+                locus_name: format!("LOC_{}", pi_idx + 1),
+                locus_class: "Universal CDS".to_string(),
+                alphabet_mode: "4-State Nucleotide".to_string(),
+                start_col_1based: cur_start,
+                end_col_1based: e0,
+                length_bp: len_bp,
+                taxa_with_data: n_taxa,
+                distinct_patterns: aln_p.patterns.len(),
+                invariant_fraction: round4(aln_p.invariant_fraction),
+                gc_or_purine_pct: 50.0,
+                rcfv_locus: 0.05,
+                winning_model_code: mcode.to_string(),
+                runner_up_model_code: "K80+G4".to_string(),
+                delta_bic_vs_runner_up: 10.0,
+                proportional_rate_r: rate_r,
+                kappa_ti_tv: 2.0,
+                pinv: round4(pinv),
+                gamma_or_freerate_summary: "I+G4".to_string(),
+                locus_ln_l: round4(lnl),
+                locus_aic: round4(-2.0 * lnl + 20.0),
+                locus_bic: round4(-2.0 * lnl + 10.0 * (len_bp as f64).ln()),
+                duration_ms: 0.0,
+                all_models: Vec::new(),
+            };
+            parts.push(FittedPartition {
+                input: PartitionLocusInput {
+                    locus_name: summary.locus_name.clone(),
+                    locus_class: summary.locus_class.clone(),
+                    protein_coding: false,
+                    is_nuclear: true,
+                    start_col_1based: cur_start,
+                    end_col_1based: e0,
+                },
+                _seqs: seqs_p,
+                aln: aln_p,
+                col_to_pat,
+                _winning_code: mcode.to_string(),
+                winning_k_subst: if pi_idx % 2 == 0 { 10 } else { 6 },
+                _winning_rm: rm,
+                _winning_force_no_inv: false,
+                q,
+                pi,
+                pinv,
+                rate_cats,
+                rate_r,
+                locus_ln_l: lnl,
+                summary,
+            });
+            cur_start = e0 + 1;
+        }
+
+        // 1. Verify exact numerical parity and bit-for-bit determinism
+        let lnl_flat_a = eval_partitioned_lnl(&guide.nodes, &parts);
+        let lnl_flat_b = eval_partitioned_lnl(&guide.nodes, &parts);
+        assert_eq!(
+            lnl_flat_a.to_bits(),
+            lnl_flat_b.to_bits(),
+            "Flattened chunked partitioned likelihood must be bit-for-bit deterministic"
+        );
+        let lnl_coarse = eval_partitioned_lnl_coarse_reference(&guide.nodes, &parts);
+        let lnl_seq: f64 = parts
+            .iter()
+            .map(|p| {
+                evaluate_tree_log_likelihood_seq(
+                    &guide.nodes,
+                    &p.aln,
+                    &p.q,
+                    &p.pi,
+                    p.pinv,
+                    &p.rate_cats,
+                    p.rate_r,
+                )
+            })
+            .sum();
+        assert!(
+            (lnl_flat_a - lnl_seq).abs() < 1e-8,
+            "Flat chunked lnL ({}) diverged from sequential ({})",
+            lnl_flat_a,
+            lnl_seq
+        );
+        assert!(
+            (lnl_coarse - lnl_seq).abs() < 1e-8,
+            "Coarse parallel lnL ({}) diverged from sequential ({})",
+            lnl_coarse,
+            lnl_seq
+        );
+
+        // 2. Verify pattern-level and single-partition parallel parity on Partition 0 (1,800 bp)
+        let p0 = &parts[0];
+        let ell_par = evaluate_site_pattern_lnls(
+            &guide.nodes,
+            &p0.aln,
+            &p0.q,
+            &p0.pi,
+            p0.pinv,
+            &p0.rate_cats,
+            p0.rate_r,
+            true,
+        );
+        let ell_seq = evaluate_site_pattern_lnls(
+            &guide.nodes,
+            &p0.aln,
+            &p0.q,
+            &p0.pi,
+            p0.pinv,
+            &p0.rate_cats,
+            p0.rate_r,
+            false,
+        );
+        assert_eq!(ell_par.len(), ell_seq.len());
+        for (i, (&a, &b)) in ell_par.iter().zip(ell_seq.iter()).enumerate() {
+            assert!(
+                (a - b).abs() < 1e-12,
+                "Site pattern {} mismatch: parallel={} vs sequential={}",
+                i,
+                a,
+                b
+            );
+        }
+        let p0_par_lnl = evaluate_tree_log_likelihood(
+            &guide.nodes,
+            &p0.aln,
+            &p0.q,
+            &p0.pi,
+            p0.pinv,
+            &p0.rate_cats,
+            p0.rate_r,
+        );
+        let p0_seq_lnl = evaluate_tree_log_likelihood_seq(
+            &guide.nodes,
+            &p0.aln,
+            &p0.q,
+            &p0.pi,
+            p0.pinv,
+            &p0.rate_cats,
+            p0.rate_r,
+        );
+        assert!(
+            (p0_par_lnl - p0_seq_lnl).abs() < 1e-8,
+            "Single-partition chunked lnL ({}) diverged from sequential ({})",
+            p0_par_lnl,
+            p0_seq_lnl
+        );
+
+        // 3. Benchmark 30 iterations across skewed 1,800 + 5x240 bp partitions
+        // Warm up Rayon worker pool once before timing
+        let _ = eval_partitioned_lnl(&guide.nodes, &parts);
+
+        let iters = 30usize;
+        let t_seq0 = Instant::now();
+        let mut acc_seq = 0.0f64;
+        for _ in 0..iters {
+            let s: f64 = parts
+                .iter()
+                .map(|p| {
+                    evaluate_tree_log_likelihood_seq(
+                        &guide.nodes,
+                        &p.aln,
+                        &p.q,
+                        &p.pi,
+                        p.pinv,
+                        &p.rate_cats,
+                        p.rate_r,
+                    )
+                })
+                .sum();
+            acc_seq += std::hint::black_box(s);
+        }
+        let seq_ms = t_seq0.elapsed().as_secs_f64() * 1000.0;
+
+        let t_coarse0 = Instant::now();
+        let mut acc_coarse = 0.0f64;
+        for _ in 0..iters {
+            acc_coarse += std::hint::black_box(eval_partitioned_lnl_coarse_reference(&guide.nodes, &parts));
+        }
+        let coarse_ms = t_coarse0.elapsed().as_secs_f64() * 1000.0;
+
+        let t_flat0 = Instant::now();
+        let mut acc_flat = 0.0f64;
+        for _ in 0..iters {
+            acc_flat += std::hint::black_box(eval_partitioned_lnl(&guide.nodes, &parts));
+        }
+        let flat_ms = t_flat0.elapsed().as_secs_f64() * 1000.0;
+
+        assert!(acc_seq.is_finite() && acc_coarse.is_finite() && acc_flat.is_finite());
+        eprintln!(
+            "[partitioned_modeltest bench | 24 taxa | skewed 6 partitions (1800 + 5x240 bp) | {} patterns on L0 | {} threads | {} iters] seq={:.2} ms, coarse_par={:.2} ms ({:.2}x vs seq), flat_chunk_par={:.2} ms ({:.2}x vs seq, {:.2}x vs coarse)",
+            parts[0].aln.patterns.len(),
+            rayon::current_num_threads(),
+            iters,
+            seq_ms,
+            coarse_ms,
+            seq_ms / coarse_ms.max(1e-6),
+            flat_ms,
+            seq_ms / flat_ms.max(1e-6),
+            coarse_ms / flat_ms.max(1e-6),
+        );
     }
 }

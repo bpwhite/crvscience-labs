@@ -1591,6 +1591,9 @@ pub fn execute_gram_positive_supervisor_study(
         unrec4_pairs,
         raw0_pairs,
         n_phy,
+        coverage_gate_ratio: crate::supervisor_study::MIN_SUPERMATRIX_OTU_COVERAGE_RATIO,
+        coverage_gate_min_loci: crate::supervisor_study::MIN_SUPERMATRIX_OTU_LOCI,
+        dynamic_coverage_gate: false,
         gated_otu_by_sector,
         aligned_fasta_rel_path: aligned_fasta_rel_path.clone(),
     };

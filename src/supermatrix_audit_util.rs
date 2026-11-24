@@ -54,7 +54,7 @@ use crate::phylo::{
 use crate::seqnet_runie::{validate_tree, CladeBenchmark};
 use crate::super_blast::super_blast_pair;
 use crate::supermatrix_viz::{
-    render_supermatrix_positional_coverage_svg, CircularPhasingComparison,
+    render_supermatrix_positional_coverage_svg_with_gate, CircularPhasingComparison,
     SupermatrixPartitionSpan, SupermatrixTaxonRow,
 };
 use crate::supervisor::{
@@ -80,11 +80,14 @@ use crate::supervisor_study::{
     evaluate_population_cohort_4regimes, export_trimmed_supp_s2_rdna_fasta,
     extract_homologous_mito_locus_from_genome, extract_longest_sense_orf, gc_percent,
     parse_locality_and_host, passes_supermatrix_phylogram_coverage_gate,
-    phase_circular_mitogenome, recode_codon12, recode_ry3, revcomp_dna,
+    passes_supermatrix_phylogram_coverage_gate_with_thresholds,
+    phase_circular_mitogenome, recode_codon12, recode_ry3,
+    resolve_dynamic_supermatrix_coverage_gate, revcomp_dna,
     sanitize_coding_dna_preserve_frame, sha256_hex12, translate_mito_table5_orf_min,
     DetailedFunctionalFamily, DetailedPopsetSkyline,
     DiscoveredEntrezSummary, MultiCompartmentIsolateMeta, MultiCompartmentNuclearRecord,
-    MultiCompartmentStudyReport,
+    MultiCompartmentStudyReport, MIN_SUPERMATRIX_OTU_COVERAGE_RATIO,
+    MIN_SUPERMATRIX_OTU_LOCI,
 };
 use crate::tree_builder::{
     compress_alignment_and_estimate_rates, evaluate_site_pattern_lnls,
@@ -187,6 +190,9 @@ pub(crate) struct PerLocusSupermatrixBundle {
     pub unrec4_pairs: Vec<(String, String)>,
     pub raw0_pairs: Vec<(String, String)>,
     pub n_phy: usize,
+    pub coverage_gate_ratio: f64,
+    pub coverage_gate_min_loci: usize,
+    pub dynamic_coverage_gate: bool,
     pub gated_otu_by_sector: [usize; 7],
     pub aligned_fasta_rel_path: String,
 }
@@ -680,6 +686,9 @@ pub(crate) fn assemble_per_locus_supermatrix(
         unrec4_pairs,
         raw0_pairs,
         n_phy,
+        coverage_gate_ratio: MIN_SUPERMATRIX_OTU_COVERAGE_RATIO,
+        coverage_gate_min_loci: MIN_SUPERMATRIX_OTU_LOCI,
+        dynamic_coverage_gate: false,
         gated_otu_by_sector,
         aligned_fasta_rel_path,
     })
@@ -844,8 +853,9 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 })
         })
         .collect();
+    let gate_pct = (bundle.coverage_gate_ratio * 100.0).round();
     let val_ml = validate_tree(
-        &format!("Partitioned ML RY3 ({} >=80% Gated Taxa)", n_phy),
+        &format!("Partitioned ML RY3 ({} >={:.0}% Gated Taxa)", n_phy, gate_pct),
         &part_res.partitioned_metrics.newick_tree,
         &gated_tip_fam,
         bench,
@@ -1141,16 +1151,20 @@ pub(crate) fn run_partitioned_4regime_stage3(
         ),
         unfiltered_all_otu_ufboot_pct: Some(round4(bundle.unfiltered_all64_ufboot_pct)),
     };
-    let cov_svg = render_supermatrix_positional_coverage_svg(
+    let gate_pct_s4 = (bundle.coverage_gate_ratio * 100.0).round();
+    let cov_svg = render_supermatrix_positional_coverage_svg_with_gate(
         &format!(
-            "{} ({} >=80% Gated; {} Single/Sparse to Fig 3/4/7)",
+            "{} ({} >={:.0}% Gated; {} Single/Sparse to Fig 3/4/7)",
             s4_banner_title,
             n_phy,
+            gate_pct_s4,
             bundle.all64_labels.len().saturating_sub(n_phy),
         ),
         &bundle.partition_spans,
         &bundle.viz_rows,
         &phasing_cmp,
+        bundle.coverage_gate_ratio,
+        bundle.coverage_gate_min_loci,
     );
     let supp_s4_name = format!("{}-supp-s4-supermatrix-coverage.svg", fig_prefix);
     let _ = fs::write(run_dir.join("figures").join(&supp_s4_name), &cov_svg);
@@ -1160,6 +1174,9 @@ pub(crate) fn run_partitioned_4regime_stage3(
         "supermatrix_cols": ortho64_cols_bp,
         "phylogram_gated_otus_n": n_phy,
         "popgen_excluded_otus_n": bundle.all64_labels.len().saturating_sub(n_phy),
+        "coverage_gate_pct": gate_pct_s4,
+        "coverage_gate_min_loci": bundle.coverage_gate_min_loci,
+        "dynamic_coverage_gate": bundle.dynamic_coverage_gate,
         "gated_otus_by_sector": bundle.gated_otu_by_sector,
         "raw_seqnet_cols": bundle.raw_seqnet_cols,
         "unphased_mitogenome_gotoh_cols": bundle.unphased_gotoh_cols_l,
@@ -2267,12 +2284,50 @@ pub(crate) fn render_supp_fig_s4_card_html(
     single_boot: f64,
     unfiltered_boot: f64,
 ) -> String {
+    render_supp_fig_s4_card_html_with_gate(
+        svg_inline,
+        svg_url_path,
+        study_label,
+        n_phy,
+        n_pop,
+        unphased_cols,
+        phased_cols,
+        n_part_loci,
+        sup_l,
+        gated_boot,
+        unpart_boot,
+        single_boot,
+        unfiltered_boot,
+        80.0,
+        2,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_supp_fig_s4_card_html_with_gate(
+    svg_inline: &str,
+    svg_url_path: &str,
+    study_label: &str,
+    n_phy: usize,
+    n_pop: usize,
+    unphased_cols: usize,
+    phased_cols: usize,
+    n_part_loci: usize,
+    sup_l: usize,
+    gated_boot: f64,
+    unpart_boot: f64,
+    single_boot: f64,
+    unfiltered_boot: f64,
+    gate_pct: f64,
+    gate_min_loci: usize,
+) -> String {
     format!(
         r#"<figure class="labs-copy-box labs-figure-card labs-figure-card--print-full" id="supp-fig-s4" data-copy-mode="figure">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S4. Supermatrix Partitioned ModelTest Ribbon, Positional Occupancy Map (&gt;=80% Gate) &amp; Circular COX1 Phasing ({} Gated vs. {} Sparse/Coalescent-Only OTUs)</span><button type="button" class="labs-copy-btn" data-copy-target="supp-fig-s4">&#x1F4CB; Copy Figure Info</button></div>
+  <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S4. Supermatrix Partitioned ModelTest Ribbon, Positional Occupancy Map (&gt;={:.0}% Gate) &amp; Circular COX1 Phasing ({} Gated vs. {} Sparse/Coalescent-Only OTUs)</span><button type="button" class="labs-copy-btn" data-copy-target="supp-fig-s4">&#x1F4CB; Copy Figure Info</button></div>
   <div class="labs-inline-svg-figure" data-svg-source="{}" style="width: 100%; overflow-x: auto;">{}</div>
-  <figcaption><strong>Supplemental Figure S4.</strong> Three-panel diagnostic graphic of the {} multi-locus supermatrix: <strong>(A)</strong> per-locus winning BIC ModelTest model and edge-linked proportional rate multiplier (<em>r</em><sub>p</sub>) over stacked nucleotide occupancy across {} partitions (<em>L</em> = {} cols); <strong>(B)</strong> column-aligned 64-taxon heatmap across sectors <code>[A]</code>–<code>[G]</code> marking the mandatory <strong>80% Gate</strong> (&gt;=80.0% supermatrix sites and &gt;=2 loci) retaining <strong>{} multi-locus OTUs</strong> in concatenated trees while routing <strong>{} sparse/single-locus OTUs</strong> strictly to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks; and <strong>(C)</strong> unphased vs. Table-5 COX1-rotated occupancy (collapsing full-mitogenome Gotoh length from {} to {} cols) alongside partitioned ({:.1}% UFBoot2) vs. unpartitioned ({:.1}%), unfiltered 64-OTU ({:.1}%), and single-gene COX1 ({:.1}%) support.</figcaption>
+  <figcaption><strong>Supplemental Figure S4.</strong> Three-panel diagnostic graphic of the {} multi-locus supermatrix: <strong>(A)</strong> per-locus winning BIC ModelTest model and edge-linked proportional rate multiplier (<em>r</em><sub>p</sub>) over stacked nucleotide occupancy across {} partitions (<em>L</em> = {} cols); <strong>(B)</strong> column-aligned 64-taxon heatmap across sectors <code>[A]</code>–<code>[G]</code> marking the mandatory <strong>{:.0}% Gate</strong> (&gt;={:.0}% supermatrix sites and &gt;={} loci) retaining <strong>{} multi-locus OTUs</strong> in concatenated trees while routing <strong>{} sparse/single-locus OTUs</strong> strictly to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks; and <strong>(C)</strong> unphased vs. Table-5 COX1-rotated occupancy (collapsing full-mitogenome Gotoh length from {} to {} cols) alongside partitioned ({:.1}% UFBoot2) vs. unpartitioned ({:.1}%), unfiltered 64-OTU ({:.1}%), and single-gene COX1 ({:.1}%) support.</figcaption>
 </figure>"#,
+        gate_pct,
         n_phy,
         n_pop,
         html_esc(svg_url_path),
@@ -2280,6 +2335,9 @@ pub(crate) fn render_supp_fig_s4_card_html(
         html_esc(study_label),
         n_part_loci,
         fmt_commas_usize(sup_l),
+        gate_pct,
+        gate_pct,
+        gate_min_loci,
         n_phy,
         n_pop,
         fmt_commas_usize(unphased_cols),
@@ -4177,6 +4235,12 @@ pub struct DeclarativeStudyConfig {
     pub s4_banner_title: String,
     pub anchor_species: String,
     pub anchor_locus: String,
+    #[serde(default)]
+    pub dynamic_coverage_gate: bool,
+    #[serde(default)]
+    pub coverage_gate_floor_ratio: Option<f64>,
+    #[serde(default)]
+    pub coverage_gate_min_otus_per_sector: Option<usize>,
     pub locus_defs: Vec<DeclarativeLocusDef>,
     pub species_slots: Vec<StudySlotSpec>,
     pub functional_families: Vec<DeclarativeFunctionalFamilySpec>,
@@ -4717,11 +4781,151 @@ fn classify_universal_ae_cds_header(
         && !d.contains("bip")
         && !d.contains("interacting")
         && !d.contains("binding protein")
-        && (1400..=3600).contains(&len_bp)
+    && (1400..=3600).contains(&len_bp)
     {
         return Some("univ_hsp70");
     }
+    if (matches!(g.as_str(), "infb" | "eif5b" | "fun12")
+        || d.contains("initiation factor 5b")
+        || d.contains("initiation factor eif-5b")
+        || d == "translation initiation factor if-2"
+        || d.contains("translation initiation factor if-2"))
+        && !d.contains("subunit")
+        && !d.contains("alpha")
+        && !d.contains("beta")
+        && !d.contains("gamma")
+        && !d.contains("kinase")
+        && !d.contains("like")
+        && (900..=4500).contains(&len_bp)
+    {
+        return Some("univ_eif5b");
+    }
+    if (matches!(g.as_str(), "secy" | "sec61" | "sec61a" | "sec61a1" | "sec61a2")
+        || d.contains("preprotein translocase subunit secy")
+        || d.contains("protein transport protein sec61")
+        || d.contains("sec61alpha")
+        || d.contains("sec61 subunit alpha")
+        || d.contains("sec61 alpha"))
+        && !d.contains("beta")
+        && !d.contains("gamma")
+        && !d.contains("like")
+        && (700..=2800).contains(&len_bp)
+    {
+        return Some("univ_sec61a");
+    }
+    if (matches!(g.as_str(), "rplb" | "rpl2" | "rpl2a" | "rpl2b" | "rpl2p" | "ul2")
+        || d.contains("50s ribosomal protein l2")
+        || d.contains("60s ribosomal protein l2")
+        || d.contains("large ribosomal subunit protein ul2")
+        || (d.contains("ribosomal protein l2")
+            && !d.contains("l20")
+            && !d.contains("l21")
+            && !d.contains("l22")
+            && !d.contains("l23")
+            && !d.contains("l24")
+            && !d.contains("l25")
+            && !d.contains("l26")
+            && !d.contains("l27")
+            && !d.contains("l28")
+            && !d.contains("l29"))
+        || ((matches!(g.as_str(), "rpl8" | "rpl8a" | "rpl8b") || d.contains("60s ribosomal protein l8"))
+            && d.contains("ul2")))
+        && !d.contains("mitoribosom")
+        && !d.contains("mrpl")
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("plastid")
+        && !d.contains("like")
+        && (480..=1600).contains(&len_bp)
+    {
+        return Some("univ_rpl2");
+    }
+    if (matches!(g.as_str(), "rplc" | "rpl3" | "rpl3p" | "tcm1" | "ul3")
+        || d.contains("50s ribosomal protein l3")
+        || d.contains("60s ribosomal protein l3")
+        || d.contains("large ribosomal subunit protein ul3")
+        || (d.contains("ribosomal protein l3")
+            && !d.contains("l30")
+            && !d.contains("l31")
+            && !d.contains("l32")
+            && !d.contains("l33")
+            && !d.contains("l34")
+            && !d.contains("l35")
+            && !d.contains("l36")
+            && !d.contains("l37")
+            && !d.contains("l38")
+            && !d.contains("l39")))
+        && !d.contains("mitoribosom")
+        && !d.contains("mrpl")
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("plastid")
+        && !d.contains("like")
+        && (600..=2000).contains(&len_bp)
+    {
+        return Some("univ_rpl3");
+    }
+    if (matches!(g.as_str(), "rpsc" | "rps3" | "rps3p" | "us3")
+        || d.contains("30s ribosomal protein s3")
+        || d.contains("40s ribosomal protein s3")
+        || d.contains("small ribosomal subunit protein us3")
+        || (d.contains("ribosomal protein s3")
+            && !d.contains("s30")
+            && !d.contains("s31")
+            && !d.contains("s3a")
+            && !d.contains("s3e")))
+        && !d.contains("mitoribosom")
+        && !d.contains("mrps")
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("plastid")
+        && !d.contains("like")
+        && (480..=1600).contains(&len_bp)
+    {
+        return Some("univ_rps3");
+    }
+    if (matches!(g.as_str(), "fen" | "fen1" | "rad27") || d.contains("flap endonuclease"))
+        && !d.contains("gen1")
+        && !d.contains("like")
+        && !d.contains("mitochondri")
+        && !d.contains("associated")
+        && (600..=2200).contains(&len_bp)
+    {
+        return Some("univ_fen1");
+    }
+    if (matches!(g.as_str(), "pcn" | "pcna" | "pol30" | "pcna1" | "pcna2")
+        || d.contains("proliferating cell nuclear antigen")
+        || d.contains("dna polymerase sliding clamp"))
+        && !d.contains("like")
+        && !d.contains("associated")
+        && !d.contains("clamp loader")
+        && !d.contains("rfc")
+        && (480..=1600).contains(&len_bp)
+    {
+        return Some("univ_pcna");
+    }
+    if (matches!(g.as_str(), "thrs" | "tars" | "tars1" | "ths1")
+        || d.contains("threonine--trna ligase")
+        || d.contains("threonyl-trna synthetase"))
+        && !d.contains("editing")
+        && !d.contains("tars2")
+        && !d.contains("tarsl")
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("plastid")
+        && !d.contains("like")
+        && (900..=3400).contains(&len_bp)
+    {
+        return Some("univ_thrrs");
+    }
     None
+}
+
+fn universal_ae_min_bp(loc: &str) -> usize {
+    match loc {
+        "univ_rpl2" | "univ_rps3" | "univ_pcna" => 480,
+        _ => 600,
+    }
 }
 
 fn fetch_universal_archaea_eukarya_panel(
@@ -4730,7 +4934,7 @@ fn fetch_universal_archaea_eukarya_panel(
     org_clause: &str,
     cache_dir: &Path,
 ) -> Vec<(String, String, String)> {
-    let cache_path = cache_dir.join(format!("univ_ae_panel_v4_{}.json", safe_k));
+    let cache_path = cache_dir.join(format!("univ_ae_panel_v5_{}.json", safe_k));
     if let Ok(raw) = fs::read_to_string(&cache_path) {
         if let Ok(parsed) = serde_json::from_str::<Vec<(String, String, String)>>(&raw) {
             if !parsed.is_empty() {
@@ -4738,22 +4942,25 @@ fn fetch_universal_archaea_eukarya_panel(
             }
         }
     }
+    let v4_cache_path = cache_dir.join(format!("univ_ae_panel_v4_{}.json", safe_k));
     let v3_cache_path = cache_dir.join(format!("univ_ae_panel_v3_{}.json", safe_k));
-    let mut preseeded_v3: Option<Vec<(String, String, String)>> = None;
-    if let Ok(raw) = fs::read_to_string(&v3_cache_path) {
+    let mut preseeded_prev: Option<Vec<(String, String, String)>> = None;
+    let mut had_v4 = false;
+    if let Ok(raw) = fs::read_to_string(&v4_cache_path) {
         if let Ok(parsed) = serde_json::from_str::<Vec<(String, String, String)>>(&raw) {
             if !parsed.is_empty() {
-                preseeded_v3 = Some(parsed);
+                preseeded_prev = Some(parsed);
+                had_v4 = true;
             }
         }
     }
-    let had_v3 = preseeded_v3.is_some();
-    if slot.genome_accession.is_some() {
-        if let Some(cached) = preseeded_v3 {
-            if let Ok(js) = serde_json::to_string(&cached) {
-                let _ = fs::write(&cache_path, js);
+    if preseeded_prev.is_none() {
+        if let Ok(raw) = fs::read_to_string(&v3_cache_path) {
+            if let Ok(parsed) = serde_json::from_str::<Vec<(String, String, String)>>(&raw) {
+                if !parsed.is_empty() {
+                    preseeded_prev = Some(parsed);
+                }
             }
-            return cached;
         }
     }
 
@@ -4769,7 +4976,7 @@ fn fetch_universal_archaea_eukarya_panel(
         } else {
             seq
         };
-        if orf.len() < 600 {
+        if orf.len() < universal_ae_min_bp(loc) {
             return;
         }
         let replace = best
@@ -4782,26 +4989,32 @@ fn fetch_universal_archaea_eukarya_panel(
     }
 
     let mut best: HashMap<&'static str, (String, String)> = HashMap::new();
-    if slot.genome_accession.is_none() {
-        if let Some(prev_entries) = preseeded_v3 {
-            for (loc, acc, seq) in prev_entries {
-                let static_loc: Option<&'static str> = match loc.as_str() {
-                    "univ_rpb2" => Some("univ_rpb2"),
-                    "univ_rpb1" => Some("univ_rpb1"),
-                    "univ_ef1a" => Some("univ_ef1a"),
-                    "univ_ef2" => Some("univ_ef2"),
-                    "univ_vmaA" => Some("univ_vmaA"),
-                    "univ_vmaB" => Some("univ_vmaB"),
-                    "univ_rad51" => Some("univ_rad51"),
-                    "univ_cct" => Some("univ_cct"),
-                    "univ_ssu" => Some("univ_ssu"),
-                    "univ_lsu" => Some("univ_lsu"),
-                    _ => None,
-                };
-                if let Some(k) = static_loc {
-                    if seq.len() >= 600 {
-                        best.entry(k).or_insert((acc, seq));
-                    }
+    if let Some(prev_entries) = preseeded_prev {
+        for (loc, acc, seq) in prev_entries {
+            let static_loc: Option<&'static str> = match loc.as_str() {
+                "univ_rpb2" => Some("univ_rpb2"),
+                "univ_rpb1" => Some("univ_rpb1"),
+                "univ_ef1a" => Some("univ_ef1a"),
+                "univ_ef2" => Some("univ_ef2"),
+                "univ_vmaA" => Some("univ_vmaA"),
+                "univ_vmaB" => Some("univ_vmaB"),
+                "univ_rad51" => Some("univ_rad51"),
+                "univ_cct" => Some("univ_cct"),
+                "univ_eif5b" => Some("univ_eif5b"),
+                "univ_sec61a" => Some("univ_sec61a"),
+                "univ_rpl2" => Some("univ_rpl2"),
+                "univ_rpl3" => Some("univ_rpl3"),
+                "univ_rps3" => Some("univ_rps3"),
+                "univ_fen1" => Some("univ_fen1"),
+                "univ_pcna" => Some("univ_pcna"),
+                "univ_thrrs" => Some("univ_thrrs"),
+                "univ_ssu" => Some("univ_ssu"),
+                "univ_lsu" => Some("univ_lsu"),
+                _ => None,
+            };
+            if let Some(k) = static_loc {
+                if seq.len() >= universal_ae_min_bp(k) {
+                    best.entry(k).or_insert((acc, seq));
                 }
             }
         }
@@ -4829,12 +5042,15 @@ fn fetch_universal_archaea_eukarya_panel(
                 return;
             }
             let c = clean_acgt_only(seq);
-            if c.len() < 600 {
+            if c.len() < 480 {
                 return;
             }
             let gene = extract_bracket_tag(hdr, "gene");
             let prot = extract_bracket_tag(hdr, "protein");
             if let Some(loc) = classify_universal_ae_cds_header(&gene, &prot, hdr, c.len()) {
+                if c.len() < universal_ae_min_bp(loc) {
+                    return;
+                }
                 let is_coding = !matches!(loc, "univ_ssu" | "univ_lsu");
                 let prot_id = extract_bracket_tag(hdr, "protein_id");
                 let acc = if prot_id.is_empty() {
@@ -4856,76 +5072,113 @@ fn fetch_universal_archaea_eukarya_panel(
         }
         flush_cds(&mut best, &cur_hdr, &cur_seq);
 
-        let ft_cache = cache_dir.join(format!("ft_{}.txt", g_acc));
-        let ft_txt = if ft_cache.is_file() {
-            fs::read_to_string(&ft_cache).unwrap_or_default()
-        } else {
-            let url = format!(
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&rettype=ft&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
-                url_encode_sm(g_acc)
-            );
-            let txt = supermatrix_entrez_get_retry(&url).unwrap_or_default();
-            if txt.contains(">Feature") {
-                let _ = fs::write(&ft_cache, &txt);
-            }
-            txt
-        };
-        let mut pending_rrna: Option<(u64, u64, u8)> = None;
-        let mut rrna_coords: HashMap<&'static str, (u64, u64, u8)> = HashMap::new();
-        for line in ft_txt.lines() {
-            if !line.starts_with('\t') && !line.starts_with('>') {
-                let parts: Vec<&str> = line.split('\t').collect();
-                if parts.len() >= 3 && parts[2].trim() == "rRNA" {
-                    let s1 = parts[0].trim().trim_start_matches(|ch| ch == '<' || ch == '>').parse::<u64>();
-                    let s2 = parts[1].trim().trim_start_matches(|ch| ch == '<' || ch == '>').parse::<u64>();
-                    if let (Ok(a), Ok(b)) = (s1, s2) {
-                        let strand = if a <= b { 1 } else { 2 };
-                        pending_rrna = Some((a.min(b), a.max(b), strand));
-                        continue;
-                    }
+        if !best.contains_key("univ_ssu") || !best.contains_key("univ_lsu") {
+            let ft_cache = cache_dir.join(format!("ft_{}.txt", g_acc));
+            let ft_txt = if ft_cache.is_file() {
+                fs::read_to_string(&ft_cache).unwrap_or_default()
+            } else {
+                let url = format!(
+                    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&rettype=ft&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
+                    url_encode_sm(g_acc)
+                );
+                let txt = supermatrix_entrez_get_retry(&url).unwrap_or_default();
+                if txt.contains(">Feature") {
+                    let _ = fs::write(&ft_cache, &txt);
                 }
-                pending_rrna = None;
-            } else if let Some((lo, hi, strand)) = pending_rrna {
-                let trimmed = line.trim();
-                if let Some(prod) = trimmed.strip_prefix("product\t") {
-                    let p_low = prod.to_ascii_lowercase();
-                    let span = (hi - lo + 1) as usize;
-                    if (p_low.contains("16s ribosomal") || p_low.contains("16s rrna"))
-                        && (800..=2200).contains(&span)
-                    {
-                        rrna_coords.entry("univ_ssu").or_insert((lo, hi, strand));
-                    } else if (p_low.contains("23s ribosomal") || p_low.contains("23s rrna"))
-                        && (1600..=4000).contains(&span)
-                    {
-                        rrna_coords.entry("univ_lsu").or_insert((lo, hi, strand));
+                txt
+            };
+            let mut pending_rrna: Option<(u64, u64, u8)> = None;
+            let mut rrna_coords: HashMap<&'static str, (u64, u64, u8)> = HashMap::new();
+            for line in ft_txt.lines() {
+                if !line.starts_with('\t') && !line.starts_with('>') {
+                    let parts: Vec<&str> = line.split('\t').collect();
+                    if parts.len() >= 3 && parts[2].trim() == "rRNA" {
+                        let s1 = parts[0].trim().trim_start_matches(|ch| ch == '<' || ch == '>').parse::<u64>();
+                        let s2 = parts[1].trim().trim_start_matches(|ch| ch == '<' || ch == '>').parse::<u64>();
+                        if let (Ok(a), Ok(b)) = (s1, s2) {
+                            let strand = if a <= b { 1 } else { 2 };
+                            pending_rrna = Some((a.min(b), a.max(b), strand));
+                            continue;
+                        }
                     }
                     pending_rrna = None;
-                }
-            }
-        }
-        for (loc, (lo, hi, strand)) in rrna_coords {
-            let ef_url = format!(
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&seq_start={}&seq_stop={}&strand={}&rettype=fasta&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
-                url_encode_sm(g_acc),
-                lo,
-                hi,
-                strand
-            );
-            if let Some(fa) = supermatrix_entrez_get_retry(&ef_url) {
-                let mut body = String::with_capacity(fa.len());
-                for l in fa.lines() {
-                    if !l.starts_with('>') {
-                        body.push_str(l.trim());
+                } else if let Some((lo, hi, strand)) = pending_rrna {
+                    let trimmed = line.trim();
+                    if let Some(prod) = trimmed.strip_prefix("product\t") {
+                        let p_low = prod.to_ascii_lowercase();
+                        let span = (hi - lo + 1) as usize;
+                        if (p_low.contains("16s ribosomal") || p_low.contains("16s rrna"))
+                            && (800..=2200).contains(&span)
+                        {
+                            rrna_coords.entry("univ_ssu").or_insert((lo, hi, strand));
+                        } else if (p_low.contains("23s ribosomal") || p_low.contains("23s rrna"))
+                            && (1600..=4000).contains(&span)
+                        {
+                            rrna_coords.entry("univ_lsu").or_insert((lo, hi, strand));
+                        }
+                        pending_rrna = None;
                     }
                 }
-                let c = clean_acgt_only(&body);
-                if c.len() >= 600 {
-                    record_universal_hit(&mut best, loc, g_acc.clone(), c, false);
+            }
+            for (loc, (lo, hi, strand)) in rrna_coords {
+                if best.contains_key(loc) {
+                    continue;
+                }
+                let ef_url = format!(
+                    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id={}&seq_start={}&seq_stop={}&strand={}&rettype=fasta&retmode=text&tool=bio-suite-supervisor&email=labs@crvscience.com",
+                    url_encode_sm(g_acc),
+                    lo,
+                    hi,
+                    strand
+                );
+                if let Some(fa) = supermatrix_entrez_get_retry(&ef_url) {
+                    let mut body = String::with_capacity(fa.len());
+                    for l in fa.lines() {
+                        if !l.starts_with('>') {
+                            body.push_str(l.trim());
+                        }
+                    }
+                    let c = clean_acgt_only(&body);
+                    if c.len() >= 600 {
+                        record_universal_hit(&mut best, loc, g_acc.clone(), c, false);
+                    }
                 }
             }
         }
     } else {
-        let per_locus_queries: [(&'static str, String, usize, usize, bool); 10] = [
+        let is_fungal_slot = matches!(
+            slot.family.as_str(),
+            "Saccharomycetaceae"
+                | "Schizosaccharomycetaceae"
+                | "Sordariaceae"
+                | "Aspergillaceae"
+                | "Ustilaginaceae"
+                | "Psathyrellaceae"
+                | "Hypocreaceae"
+        );
+        let rpl2_mrna_q = if is_fungal_slot {
+            format!(
+                "{} AND biomol_mrna[PROP] AND (RPL2[Gene] OR RPL2A[Gene] OR RPL2B[Gene] OR \"60S ribosomal protein L2\"[Title] OR \"large ribosomal subunit protein uL2\"[Title]) AND 480:1400[SLEN] NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT L20[Title] NOT L21[Title] NOT L22[Title] NOT L23[Title] NOT L24[Title] NOT L27[Title] NOT \"like\"[Title]",
+                org_clause
+            )
+        } else {
+            format!(
+                "{} AND biomol_mrna[PROP] AND (RPL8[Gene] OR RPL2[Gene] OR RPL2A[Gene] OR RPL2B[Gene] OR \"60S ribosomal protein L8\"[Title] OR \"60S ribosomal protein L2\"[Title] OR \"large ribosomal subunit protein uL2\"[Title]) AND 480:1400[SLEN] NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT L20[Title] NOT L21[Title] NOT L22[Title] NOT L23[Title] NOT L24[Title] NOT L27[Title] NOT \"like\"[Title]",
+                org_clause
+            )
+        };
+        let rpl2_prot_q = if is_fungal_slot {
+            format!(
+                "{} AND (RPL2[Gene] OR RPL2A[Gene] OR RPL2B[Gene] OR \"60S ribosomal protein L2\"[All Fields] OR \"large ribosomal subunit protein uL2\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
+                org_clause
+            )
+        } else {
+            format!(
+                "{} AND (RPL8[Gene] OR RPL2[Gene] OR \"60S ribosomal protein L8\"[All Fields] OR \"60S ribosomal protein L2\"[All Fields] OR \"large ribosomal subunit protein uL2\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
+                org_clause
+            )
+        };
+        let per_locus_queries: [(&'static str, String, usize, usize, bool); 18] = [
             (
                 "univ_rpb2",
                 format!(
@@ -5007,6 +5260,77 @@ fn fetch_universal_archaea_eukarya_panel(
                 true,
             ),
             (
+                "univ_eif5b",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (EIF5B[Gene] OR FUN12[Gene] OR \"translation initiation factor 5B\"[Title] OR \"eukaryotic translation initiation factor 5B\"[Title]) AND 900:4500[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"subunit\"[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                900,
+                4500,
+                true,
+            ),
+            (
+                "univ_sec61a",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (SEC61A1[Gene] OR SEC61[Gene] OR \"protein transport protein Sec61\"[Title] OR \"Sec61 subunit alpha\"[Title] OR \"Sec61 alpha\"[Title]) AND 700:2600[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT beta[Title] NOT gamma[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                700,
+                2600,
+                true,
+            ),
+            ("univ_rpl2", rpl2_mrna_q, 480, 1400, true),
+            (
+                "univ_rpl3",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (RPL3[Gene] OR RPL3A[Gene] OR TCM1[Gene] OR \"60S ribosomal protein L3\"[Title] OR \"large ribosomal subunit protein uL3\"[Title]) AND 600:1800[SLEN] NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT L30[Title] NOT L31[Title] NOT L32[Title] NOT L34[Title] NOT L35[Title] NOT L36[Title] NOT L37[Title] NOT L38[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                600,
+                1800,
+                true,
+            ),
+            (
+                "univ_rps3",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (RPS3[Gene] OR RPS3A[Gene] OR \"40S ribosomal protein S3\"[Title] OR \"small ribosomal subunit protein uS3\"[Title]) AND 480:1500[SLEN] NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPS*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT S3A[Title] NOT S3a[Title] NOT S30[Title] NOT S31[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                480,
+                1500,
+                true,
+            ),
+            (
+                "univ_fen1",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (FEN1[Gene] OR RAD27[Gene] OR \"flap endonuclease 1\"[Title] OR \"flap endonuclease-1\"[Title]) AND 600:2000[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT GEN1[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                600,
+                2000,
+                true,
+            ),
+            (
+                "univ_pcna",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (PCNA[Gene] OR POL30[Gene] OR \"proliferating cell nuclear antigen\"[Title]) AND 480:1500[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT \"clamp loader\"[Title] NOT \"like\"[Title] NOT associated[Title]",
+                    org_clause
+                ),
+                480,
+                1500,
+                true,
+            ),
+            (
+                "univ_thrrs",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (TARS[Gene] OR TARS1[Gene] OR THS1[Gene] OR \"threonine--tRNA ligase\"[Title] OR \"threonyl-tRNA synthetase\"[Title]) AND 800:3200[SLEN] NOT mitochondri*[Title] NOT TARS2[Title] NOT chloroplast[Title] NOT plastid[Title] NOT editing[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                800,
+                3200,
+                true,
+            ),
+            (
                 "univ_ssu",
                 format!(
                     "{} AND (\"18S ribosomal RNA\"[Title] OR \"18S rRNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 900:2400[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT 28S[Title] NOT ITS1[Title]",
@@ -5027,8 +5351,11 @@ fn fetch_universal_archaea_eukarya_panel(
                 false,
             ),
         ];
-        const PARALOG_BLOCKERS: [&str; 15] = [
+        const PARALOG_BLOCKERS: [&str; 20] = [
             "mitochondri",
+            "mitoribosom",
+            "mrpl",
+            "mrps",
             "chloroplast",
             "plastid",
             "apicoplast",
@@ -5043,49 +5370,73 @@ fn fetch_universal_archaea_eukarya_panel(
             "1-delta",
             "1-gamma",
             "f0f1",
+            "tars2",
+            "editing",
         ];
-        const CODING_GENES: [&str; 31] = [
+        const CODING_GENES: [&str; 53] = [
             "rpb2", "polr2b", "nrpb2", "rpii140", "rpb1", "polr2a", "rpo21", "nrpb1", "rpii215",
             "eef1a", "eef1a1", "tef1", "tef2", "ef1a", "eef2", "eft1", "eft2", "ef2", "vma1",
             "atp6v1a", "vha-a", "vma2", "atp6v1b", "vha-b", "rad51", "tcp1", "cct1", "cct2",
-            "cct3", "cct4", "cct5",
+            "cct3", "cct4", "cct5", "eif5b", "fun12", "infb", "sec61", "secy", "rpl2", "rpl2a",
+            "rpl2b", "rpl8", "rpl3", "tcm1", "rps3", "fen1", "rad27", "pcna", "pol30", "tars",
+            "tars1", "ths1", "thrs", "ribosomal protein", "flap endonuclease",
         ];
-        if !had_v3 && best.len() < 10 {
-            for (target_loc, qterm, min_bp, max_bp, is_coding) in per_locus_queries {
-                if best.contains_key(target_loc) {
-                    continue;
-                }
-                if let Ok(items) = discover_entrez_with_retry_shared(
-                    &format!("univ2_{}_{}", safe_k, target_loc),
-                    &qterm,
-                    4,
-                    min_bp,
-                    max_bp,
-                    cache_dir,
-                ) {
-                    for (sm, raw_s) in items {
-                        let c = clean_acgt_only(&raw_s);
-                        let title_low = sm.title.to_ascii_lowercase();
-                        let cls_hit =
-                            classify_universal_ae_cds_header("", "", &sm.title, c.len())
-                                == Some(target_loc);
-                        let fallback_hit = is_coding
-                            && c.len() >= min_bp
-                            && c.len() <= max_bp
-                            && !PARALOG_BLOCKERS.iter().any(|b| title_low.contains(b))
-                            && !(target_loc == "univ_vmaA" && title_low.contains("subunit b"))
-                            && !(target_loc == "univ_vmaB" && title_low.contains("subunit a"))
-                            && (!title_low.contains("hypothetical")
-                                || CODING_GENES.iter().any(|g| title_low.contains(g)));
-                        if cls_hit || fallback_hit {
-                            record_universal_hit(&mut best, target_loc, sm.accession, c, is_coding);
-                        }
+        let is_new_ae_locus = |loc: &str| -> bool {
+            matches!(
+                loc,
+                "univ_eif5b"
+                    | "univ_sec61a"
+                    | "univ_rpl2"
+                    | "univ_rpl3"
+                    | "univ_rps3"
+                    | "univ_fen1"
+                    | "univ_pcna"
+                    | "univ_thrrs"
+            )
+        };
+
+        for (target_loc, qterm, min_bp, max_bp, is_coding) in per_locus_queries {
+            if best.contains_key(target_loc) || (had_v4 && !is_new_ae_locus(target_loc)) {
+                continue;
+            }
+            if let Ok(items) = discover_entrez_with_retry_shared(
+                &format!("univ2_{}_{}", safe_k, target_loc),
+                &qterm,
+                4,
+                min_bp,
+                max_bp,
+                cache_dir,
+            ) {
+                for (sm, raw_s) in items {
+                    let c = clean_acgt_only(&raw_s);
+                    let title_low = sm.title.to_ascii_lowercase();
+                    let cls_hit =
+                        classify_universal_ae_cds_header("", "", &sm.title, c.len())
+                            == Some(target_loc);
+                    let rpl2_ok = target_loc != "univ_rpl2"
+                        || (is_fungal_slot
+                            && (title_low.contains("protein l2") || title_low.contains("ul2")))
+                        || (!is_fungal_slot
+                            && (title_low.contains("protein l8")
+                                || title_low.contains("protein l2")
+                                || title_low.contains("ul2")));
+                    let fallback_hit = is_coding
+                        && c.len() >= min_bp
+                        && c.len() <= max_bp
+                        && rpl2_ok
+                        && !PARALOG_BLOCKERS.iter().any(|b| title_low.contains(b))
+                        && !(target_loc == "univ_vmaA" && title_low.contains("subunit b"))
+                        && !(target_loc == "univ_vmaB" && title_low.contains("subunit a"))
+                        && (!title_low.contains("hypothetical")
+                            || CODING_GENES.iter().any(|g| title_low.contains(g)));
+                    if cls_hit || fallback_hit {
+                        record_universal_hit(&mut best, target_loc, sm.accession, c, is_coding);
                     }
                 }
             }
         }
 
-        let protein_backfill_queries: [(&'static str, String, usize, usize); 8] = [
+        let protein_backfill_queries: [(&'static str, String, usize, usize); 16] = [
             (
                 "univ_rpb2",
                 format!(
@@ -5158,13 +5509,74 @@ fn fetch_universal_archaea_eukarya_panel(
                 1100,
                 3200,
             ),
+            (
+                "univ_eif5b",
+                format!(
+                    "{} AND (EIF5B[Gene] OR FUN12[Gene] OR \"translation initiation factor 5B\"[All Fields] OR \"eukaryotic translation initiation factor 5B\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"subunit\"[Title] NOT \"like\"[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                900,
+                4500,
+            ),
+            (
+                "univ_sec61a",
+                format!(
+                    "{} AND (SEC61A1[Gene] OR SEC61[Gene] OR \"protein transport protein Sec61\"[All Fields] OR \"Sec61 subunit alpha\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT beta[Title] NOT gamma[Title] NOT \"like\"[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                700,
+                2600,
+            ),
+            ("univ_rpl2", rpl2_prot_q, 480, 1400),
+            (
+                "univ_rpl3",
+                format!(
+                    "{} AND (RPL3[Gene] OR RPL3A[Gene] OR TCM1[Gene] OR \"60S ribosomal protein L3\"[All Fields] OR \"large ribosomal subunit protein uL3\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                600,
+                1800,
+            ),
+            (
+                "univ_rps3",
+                format!(
+                    "{} AND (RPS3[Gene] OR \"40S ribosomal protein S3\"[All Fields] OR \"small ribosomal subunit protein uS3\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPS*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT S3A[Title] NOT S3a[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                480,
+                1500,
+            ),
+            (
+                "univ_fen1",
+                format!(
+                    "{} AND (FEN1[Gene] OR RAD27[Gene] OR \"flap endonuclease 1\"[All Fields] OR \"flap endonuclease-1\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT chloroplast[Title] NOT GEN1[Title] NOT \"like\"[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                600,
+                2000,
+            ),
+            (
+                "univ_pcna",
+                format!(
+                    "{} AND (PCNA[Gene] OR POL30[Gene] OR \"proliferating cell nuclear antigen\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT chloroplast[Title] NOT \"clamp loader\"[Title] NOT \"like\"[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                480,
+                1500,
+            ),
+            (
+                "univ_thrrs",
+                format!(
+                    "{} AND (TARS[Gene] OR TARS1[Gene] OR THS1[Gene] OR \"threonine--tRNA ligase\"[All Fields] OR \"threonyl-tRNA synthetase\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT TARS2[Title] NOT chloroplast[Title] NOT plastid[Title] NOT editing[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                800,
+                3200,
+            ),
         ];
 
         for (target_loc, qterm, min_bp, max_bp) in protein_backfill_queries {
-            if best.contains_key(target_loc) {
-                continue;
-            }
-            if had_v3 && !matches!(target_loc, "univ_rpb2" | "univ_vmaA" | "univ_vmaB") {
+            if best.contains_key(target_loc) || (had_v4 && !is_new_ae_locus(target_loc)) {
                 continue;
             }
             let es_url = format!(
@@ -5211,6 +5623,7 @@ fn fetch_universal_archaea_eukarya_panel(
                 if PARALOG_BLOCKERS.iter().any(|b| hdr_low.contains(b))
                     || (target_loc == "univ_vmaA" && hdr_low.contains("subunit b"))
                     || (target_loc == "univ_vmaB" && hdr_low.contains("subunit a"))
+                    || (target_loc == "univ_rpl2" && is_fungal_slot && hdr_low.contains("l8"))
                 {
                     return;
                 }
@@ -5258,7 +5671,7 @@ fn fetch_universal_archaea_eukarya_panel(
                 4500,
             ),
         ];
-        if !had_v3 && best.len() < 10 {
+        if !had_v4 {
             for (target_loc, qterm, min_bp, max_bp) in wide_rrna_queries {
                 if best.contains_key(target_loc) {
                     continue;
@@ -5303,7 +5716,7 @@ fn fetch_universal_archaea_eukarya_panel(
         let _ = fs::write(&cache_path, js);
     }
     eprintln!(
-        "  [Universal AE Panel] {} ({}) -> {}/10 loci",
+        "  [Universal AE Panel] {} ({}) -> {}/18 loci",
         slot.tip_code,
         slot.species,
         out.len()
@@ -6373,6 +6786,18 @@ pub fn execute_declarative_study(
     let mut unrec4_pairs = Vec::with_capacity(n_slots);
     let mut raw0_pairs = Vec::with_capacity(n_slots);
     let mut gated_otu_by_sector = [0usize; 7];
+    struct PreparedTaxonMatrixRow {
+        idx: usize,
+        sec_idx: usize,
+        safe_id: String,
+        s_ry3: String,
+        s_c12: String,
+        s_unr: String,
+        raw0_s: String,
+        valid_bases: usize,
+        loci_present: usize,
+    }
+    let mut prepared_rows: Vec<PreparedTaxonMatrixRow> = Vec::with_capacity(n_slots);
 
     for (idx, (tip_code, sec_code, _, sp_name, _, _, _, _, _)) in slot_entries.iter().enumerate() {
         let safe_id = tip_code.replace(':', "_");
@@ -6432,31 +6857,68 @@ pub fn execute_declarative_study(
             species_label: sp_name.clone(),
             aligned_row: s_viz,
         });
-        let passes = passes_supermatrix_phylogram_coverage_gate(
+        let sr = match sec_code.as_bytes().get(1).copied().unwrap_or(b'A') {
+            b'A' => 0,
+            b'B' => 1,
+            b'C' => 2,
+            b'D' => 3,
+            b'E' => 4,
+            b'F' => 5,
+            _ => 6,
+        };
+        prepared_rows.push(PreparedTaxonMatrixRow {
+            idx,
+            sec_idx: sr,
+            safe_id,
+            s_ry3,
+            s_c12,
+            s_unr,
+            raw0_s,
             valid_bases,
-            supermatrix_cols_bp,
             loci_present,
+        });
+    }
+
+    let taxon_stats_for_gate: Vec<(usize, usize, usize)> = prepared_rows
+        .iter()
+        .map(|r| (r.sec_idx, r.valid_bases, r.loci_present))
+        .collect();
+    let dyn_gate = resolve_dynamic_supermatrix_coverage_gate(
+        &taxon_stats_for_gate,
+        supermatrix_cols_bp,
+        kept_partitions.len(),
+        cfg.dynamic_coverage_gate,
+        MIN_SUPERMATRIX_OTU_COVERAGE_RATIO,
+        cfg.coverage_gate_floor_ratio.unwrap_or(0.55),
+        cfg.coverage_gate_min_otus_per_sector.unwrap_or(4),
+    );
+    for row in prepared_rows {
+        let passes = passes_supermatrix_phylogram_coverage_gate_with_thresholds(
+            row.valid_bases,
+            supermatrix_cols_bp,
+            row.loci_present,
+            dyn_gate.min_coverage_ratio,
+            dyn_gate.min_loci,
         );
         if passes {
-            let sr = match sec_code.as_bytes().get(1).copied().unwrap_or(b'A') {
-                b'A' => 0,
-                b'B' => 1,
-                b'C' => 2,
-                b'D' => 3,
-                b'E' => 4,
-                b'F' => 5,
-                _ => 6,
-            };
-            gated_otu_by_sector[sr] += 1;
-            ry3_pairs.push((safe_id.clone(), s_ry3));
-            codon12_pairs.push((safe_id.clone(), s_c12));
-            unrec4_pairs.push((safe_id.clone(), s_unr));
-            raw0_pairs.push((safe_id.clone(), raw0_s));
+            gated_otu_by_sector[row.sec_idx] += 1;
+            ry3_pairs.push((row.safe_id.clone(), row.s_ry3));
+            codon12_pairs.push((row.safe_id.clone(), row.s_c12));
+            unrec4_pairs.push((row.safe_id.clone(), row.s_unr));
+            raw0_pairs.push((row.safe_id.clone(), row.raw0_s));
         }
-        if let Some(m) = sequences_manifest.get_mut(idx) {
+        if let Some(m) = sequences_manifest.get_mut(row.idx) {
             m.included_in_cleaned_cohort = passes;
         }
     }
+    eprintln!(
+        "[bio-suite-supervisor] Coverage gate resolved: >={:.0}% bases & >={} loci (dynamic={}) -> {} gated OTUs across sectors {:?}",
+        dyn_gate.min_coverage_ratio * 100.0,
+        dyn_gate.min_loci,
+        dyn_gate.is_dynamic_relaxed,
+        ry3_pairs.len(),
+        gated_otu_by_sector
+    );
     let n_phy = ry3_pairs.len();
     let unfiltered_all64_ufboot_pct = infer_native_ml_tree_with_bootstrap(
         &all64_ry3_strs,
@@ -6520,6 +6982,9 @@ pub fn execute_declarative_study(
         unrec4_pairs,
         raw0_pairs,
         n_phy,
+        coverage_gate_ratio: dyn_gate.min_coverage_ratio,
+        coverage_gate_min_loci: dyn_gate.min_loci,
+        dynamic_coverage_gate: cfg.dynamic_coverage_gate,
         gated_otu_by_sector,
         aligned_fasta_rel_path: aligned_fasta_rel_path.clone(),
     };
@@ -6743,8 +7208,8 @@ pub fn execute_declarative_study(
         model_design: ModelDesignMode::BioSuiteNativeOnly,
         model_design_label: ModelDesignMode::BioSuiteNativeOnly.label().to_string(),
         input_source_summary: format!(
-            "Declarative Study '{}' ({}: {} Verified NCBI Records, {} Quarantined, {} Loci Partitioned, {} >=80%-Gated OTUs)",
-            cfg.study_slug, cfg.validation_set_id, total_records_on_disk, iter1_quarantined, st3.part_res.n_partitions, bundle.n_phy
+            "Declarative Study '{}' ({}: {} Verified NCBI Records, {} Quarantined, {} Loci Partitioned, {} >={:.0}%-Gated OTUs)",
+            cfg.study_slug, cfg.validation_set_id, total_records_on_disk, iter1_quarantined, st3.part_res.n_partitions, bundle.n_phy, (bundle.coverage_gate_ratio * 100.0).round()
         ),
         rayon_worker_threads: rayon::current_num_threads(),
         escalation_status: SupervisorEscalationStatus::AutonomousResolved,
@@ -6795,12 +7260,13 @@ pub fn execute_declarative_study(
                 replacement_sequences_requested: 0,
                 replacement_sequences_verified: n_slots,
                 summary_note: format!(
-                    "Partitioned ModelTest ({} loci, delta_lnL = {:+.2}) + UFBoot2 Identity Gate ({:.1}%, RF = {}) passed; {} >=80% OTUs retained.",
+                    "Partitioned ModelTest ({} loci, delta_lnL = {:+.2}) + UFBoot2 Identity Gate ({:.1}%, RF = {}) passed; {} >={:.0}% OTUs retained.",
                     st3.part_res.n_partitions,
                     st3.part_res.delta_ln_l_partitioned_minus_unpartitioned,
                     st3.part_res.partitioned_bootstrap.identity_replicate_concordance_pct,
                     st3.part_res.partitioned_bootstrap.identity_replicate_rf_distance,
-                    bundle.n_phy
+                    bundle.n_phy,
+                    (bundle.coverage_gate_ratio * 100.0).round()
                 ),
             },
         ],

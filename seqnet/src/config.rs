@@ -210,6 +210,14 @@ pub fn build_named_locus_panel(names: &[String], invert_mito: bool) -> Vec<Locus
         ("univ_rad51", true, 300, 1400, &["radA", "RAD51", "DMC1", "DNA repair protein RAD51", "DNA repair and recombination protein RadA"]),
         ("univ_cct", true, 350, 2000, &["TCP1", "CCT1", "CCT2", "cpn60", "thermosome", "T-complex protein 1", "chaperonin"]),
         ("univ_hsp70", true, 350, 2300, &["dnaK", "HSP70", "SSA1", "HSPA8", "molecular chaperone DnaK", "heat shock protein 70"]),
+        ("univ_eif5b", true, 500, 4200, &["infB", "EIF5B", "FUN12", "translation initiation factor 5B", "translation initiation factor IF-2"]),
+        ("univ_sec61a", true, 500, 2600, &["secY", "SEC61A1", "SEC61", "protein transport protein Sec61 subunit alpha", "preprotein translocase subunit SecY"]),
+        ("univ_rpl2", true, 450, 1400, &["rplB", "RPL2", "RPL8", "uL2", "50S ribosomal protein L2", "60S ribosomal protein L2", "large ribosomal subunit protein uL2"]),
+        ("univ_rpl3", true, 500, 1800, &["rplC", "RPL3", "uL3", "50S ribosomal protein L3", "60S ribosomal protein L3", "large ribosomal subunit protein uL3"]),
+        ("univ_rps3", true, 450, 1500, &["rpsC", "RPS3", "uS3", "30S ribosomal protein S3", "40S ribosomal protein S3", "small ribosomal subunit protein uS3"]),
+        ("univ_fen1", true, 500, 2000, &["fen", "FEN1", "RAD27", "flap endonuclease 1", "flap endonuclease-1"]),
+        ("univ_pcna", true, 450, 1500, &["pcn", "pcna", "PCNA", "POL30", "proliferating cell nuclear antigen", "DNA polymerase sliding clamp"]),
+        ("univ_thrrs", true, 650, 3200, &["thrS", "TARS", "TARS1", "THS1", "threonine--tRNA ligase", "threonyl-tRNA synthetase"]),
         ("univ_ssu", false, 600, 2200, &["16S ribosomal RNA", "18S ribosomal RNA", "16S rRNA", "18S rRNA", "small subunit ribosomal RNA"]),
         ("univ_lsu", false, 650, 3800, &["23S ribosomal RNA", "28S ribosomal RNA", "26S ribosomal RNA", "25S ribosomal RNA", "large subunit ribosomal RNA"]),
     ];
@@ -403,15 +411,17 @@ mod tests {
 
         let univ_names: Vec<String> = [
             "univ_rpb2", "univ_rpb1", "univ_ef1a", "univ_ef2", "univ_vmaA", "univ_vmaB",
-            "univ_rad51", "univ_cct", "univ_hsp70", "univ_ssu", "univ_lsu",
+            "univ_rad51", "univ_cct", "univ_hsp70", "univ_eif5b", "univ_sec61a", "univ_rpl2",
+            "univ_rpl3", "univ_rps3", "univ_fen1", "univ_pcna", "univ_thrrs", "univ_ssu",
+            "univ_lsu",
         ]
         .iter()
         .map(|s| (*s).to_string())
         .collect();
         let univ = build_named_locus_panel(&univ_names, true);
-        assert_eq!(univ.len(), 11);
+        assert_eq!(univ.len(), 19);
         assert!(univ.iter().all(|l| l.genetic_code_table == 1));
-        assert!(univ.iter().take(9).all(|l| l.protein_coding));
-        assert!(univ.iter().skip(9).all(|l| !l.protein_coding));
+        assert!(univ.iter().take(17).all(|l| l.protein_coding));
+        assert!(univ.iter().skip(17).all(|l| !l.protein_coding));
     }
 }

@@ -62,9 +62,108 @@ pub fn passes_supermatrix_phylogram_coverage_gate(
     total_cols: usize,
     loci_present: usize,
 ) -> bool {
+    passes_supermatrix_phylogram_coverage_gate_with_thresholds(
+        valid_bases,
+        total_cols,
+        loci_present,
+        MIN_SUPERMATRIX_OTU_COVERAGE_RATIO,
+        MIN_SUPERMATRIX_OTU_LOCI,
+    )
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct DynamicCoverageGateResult {
+    pub min_coverage_ratio: f64,
+    pub min_loci: usize,
+    pub is_dynamic_relaxed: bool,
+}
+
+/// Returns `true` iff an OTU meets custom supermatrix base occupancy (`min_ratio`) and
+/// distinct locus count (`min_loci`) thresholds.
+pub fn passes_supermatrix_phylogram_coverage_gate_with_thresholds(
+    valid_bases: usize,
+    total_cols: usize,
+    loci_present: usize,
+    min_ratio: f64,
+    min_loci: usize,
+) -> bool {
     total_cols > 0
-        && (valid_bases as f64) / (total_cols as f64) >= MIN_SUPERMATRIX_OTU_COVERAGE_RATIO - 1e-9
-        && loci_present >= MIN_SUPERMATRIX_OTU_LOCI
+        && (valid_bases as f64) / (total_cols as f64) >= min_ratio - 1e-9
+        && loci_present >= min_loci
+}
+
+/// Resolves the highest uniform sector-balanced coverage threshold within `[floor_ratio, base_ratio]`
+/// when `dynamic_enabled` is true; otherwise returns `(base_ratio, MIN_SUPERMATRIX_OTU_LOCI)`.
+/// Each entry in `taxon_stats` is `(sector_idx_0_to_6, valid_bases, loci_present)`.
+pub fn resolve_dynamic_supermatrix_coverage_gate(
+    taxon_stats: &[(usize, usize, usize)],
+    total_cols: usize,
+    n_kept_loci: usize,
+    dynamic_enabled: bool,
+    base_ratio: f64,
+    floor_ratio: f64,
+    min_sector_otus: usize,
+) -> DynamicCoverageGateResult {
+    if !dynamic_enabled || total_cols == 0 {
+        return DynamicCoverageGateResult {
+            min_coverage_ratio: base_ratio,
+            min_loci: MIN_SUPERMATRIX_OTU_LOCI,
+            is_dynamic_relaxed: false,
+        };
+    }
+
+    let eff_floor = floor_ratio.clamp(0.10, base_ratio);
+    let min_loci = ((n_kept_loci as f64) * 0.40)
+        .ceil()
+        .max(MIN_SUPERMATRIX_OTU_LOCI as f64) as usize;
+
+    let mut avail_at_floor = [0usize; 7];
+    for &(sec, vb, lp) in taxon_stats {
+        if sec < 7
+            && passes_supermatrix_phylogram_coverage_gate_with_thresholds(
+                vb, total_cols, lp, eff_floor, min_loci,
+            )
+        {
+            avail_at_floor[sec] += 1;
+        }
+    }
+    let mut req_by_sector = [0usize; 7];
+    for s in 0..7 {
+        req_by_sector[s] = min_sector_otus.min(avail_at_floor[s]);
+    }
+
+    let mut candidates: Vec<f64> = vec![base_ratio];
+    for &c in &[0.80_f64, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50] {
+        if c < base_ratio - 1e-9 && c > eff_floor + 1e-9 {
+            candidates.push(c);
+        }
+    }
+    candidates.push(eff_floor);
+
+    let mut chosen = eff_floor;
+    for cand in candidates {
+        let mut counts = [0usize; 7];
+        for &(sec, vb, lp) in taxon_stats {
+            if sec < 7
+                && passes_supermatrix_phylogram_coverage_gate_with_thresholds(
+                    vb, total_cols, lp, cand, min_loci,
+                )
+            {
+                counts[sec] += 1;
+            }
+        }
+        let all_met = (0..7).all(|s| counts[s] >= req_by_sector[s]);
+        if all_met {
+            chosen = cand;
+            break;
+        }
+    }
+
+    DynamicCoverageGateResult {
+        min_coverage_ratio: chosen,
+        min_loci,
+        is_dynamic_relaxed: chosen < base_ratio - 1e-9,
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

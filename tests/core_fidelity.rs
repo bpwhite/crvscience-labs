@@ -2117,7 +2117,7 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
 
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     for (fname, exp_loci, exp_pdb, exp_gcode) in [
-        ("eukaryotic_nucleus_preprint32.json", 10usize, "1BYU", 1u8),
+        ("eukaryotic_nucleus_preprint32.json", 18usize, "1BYU", 1u8),
         ("gram_positive_preprint31.json", 10usize, "1BU7", 11u8),
         ("us_ag_pests_preprint30.json", 16usize, "1TQN", 5u8),
         ("china_australia_pests_preprint29.json", 16usize, "1TQN", 5u8),
@@ -2552,6 +2552,199 @@ mod empirical_anti_shortcut_tests {
         let z_ab = compute_kh_paired_sites_z(&ell_a, &wts, &ell_b, &wts);
         let z_ba = compute_kh_paired_sites_z(&ell_b, &wts, &ell_a, &wts);
         assert!((z_ab + z_ba).abs() < 1e-6 && z_ab > 2.0, "KH Z must be antisymmetric and significant (got {} / {})", z_ab, z_ba);
+    }
+
+    #[test]
+    fn test_dynamic_coverage_gate_relaxes_evenly_by_sector() {
+        use bio_suite::supervisor_study::{
+            passes_supermatrix_phylogram_coverage_gate_with_thresholds,
+            resolve_dynamic_supermatrix_coverage_gate,
+        };
+
+        let total_cols = 10_000usize;
+        let n_loci = 18usize;
+
+        // 1. All 7 sectors already have >= 4 OTUs at >= 80% -> retains 0.80 strict gate
+        let mut full_stats = Vec::new();
+        for sec in 0..7 {
+            for _ in 0..5 {
+                full_stats.push((sec, 8_500usize, 15usize));
+            }
+        }
+        let res_full = resolve_dynamic_supermatrix_coverage_gate(
+            &full_stats, total_cols, n_loci, true, 0.80, 0.55, 4,
+        );
+        assert!((res_full.min_coverage_ratio - 0.80).abs() < 1e-9);
+        assert_eq!(res_full.min_loci, 8);
+        assert!(!res_full.is_dynamic_relaxed);
+
+        // 2. Sectors [D] (3) and [G] (6) only reach >= 4 OTUs around 62% -> steps down cleanly to 0.60
+        let mut sparse_stats = Vec::new();
+        for sec in 0..7 {
+            if sec == 3 || sec == 6 {
+                sparse_stats.push((sec, 8_400, 14));
+                for _ in 0..3 {
+                    sparse_stats.push((sec, 6_200, 11));
+                }
+                sparse_stats.push((sec, 4_500, 8));
+            } else {
+                for _ in 0..5 {
+                    sparse_stats.push((sec, 8_600, 16));
+                }
+            }
+        }
+        let res_relaxed = resolve_dynamic_supermatrix_coverage_gate(
+            &sparse_stats, total_cols, n_loci, true, 0.80, 0.55, 4,
+        );
+        assert!(
+            (res_relaxed.min_coverage_ratio - 0.60).abs() < 1e-9,
+            "Expected relaxed 0.60 ratio to cover >=4 OTUs in [D] & [G], got {}",
+            res_relaxed.min_coverage_ratio
+        );
+        assert!(res_relaxed.is_dynamic_relaxed);
+        assert_eq!(res_relaxed.min_loci, 8);
+        let retained_d = sparse_stats
+            .iter()
+            .filter(|&&(sec, vb, lp)| {
+                sec == 3
+                    && passes_supermatrix_phylogram_coverage_gate_with_thresholds(
+                        vb,
+                        total_cols,
+                        lp,
+                        res_relaxed.min_coverage_ratio,
+                        res_relaxed.min_loci,
+                    )
+            })
+            .count();
+        assert_eq!(retained_d, 4);
+
+        // 3. Respects floor_ratio when a sector is universally sparse below 0.55
+        let mut ultra_sparse = sparse_stats.clone();
+        for item in &mut ultra_sparse {
+            if item.0 == 3 && item.1 == 6_200 {
+                item.1 = 5_600;
+            }
+        }
+        let res_floor = resolve_dynamic_supermatrix_coverage_gate(
+            &ultra_sparse, total_cols, n_loci, true, 0.80, 0.55, 4,
+        );
+        assert!(
+            (res_floor.min_coverage_ratio - 0.55).abs() < 1e-9,
+            "Expected clamp to floor 0.55, got {}",
+            res_floor.min_coverage_ratio
+        );
+    }
+
+    #[test]
+    fn test_lsd2_preserves_strict_parent_child_monotonicity_under_tight_upper_bounds() {
+        use bio_suite::empirical_inference_util::solve_empirical_lsd2_core;
+        use bio_suite::timetree_calibration::TimeTreeNodeSpec;
+
+        // Node 0 (Root) -> {Node 1 (Parent capped at 2690 Ma), Node 3 (Tip)}
+        // Node 1 -> {Node 2 (unconstrained internal child with very long descendant branches), Node 4 (Tip)}
+        // Node 2 -> {Node 5 (Tip), Node 6 (Tip)}
+        let nodes = vec![
+            TimeTreeNodeSpec {
+                node_id: 0,
+                parent_id: None,
+                label: "Root".to_string(),
+                is_tip: false,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.0,
+                tip_age_ma: None,
+                cal_min_ma: Some(3000.0),
+                cal_max_ma: Some(3800.0),
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 1,
+                parent_id: Some(0),
+                label: "ParentTightMax".to_string(),
+                is_tip: false,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.05,
+                tip_age_ma: None,
+                cal_min_ma: Some(2200.0),
+                cal_max_ma: Some(2690.0),
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 2,
+                parent_id: Some(1),
+                label: "LongBranchChild".to_string(),
+                is_tip: false,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.01,
+                tip_age_ma: None,
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 3,
+                parent_id: Some(0),
+                label: "OutTip".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.40,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 4,
+                parent_id: Some(1),
+                label: "SisterTip".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.30,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 5,
+                parent_id: Some(2),
+                label: "LongTipA".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.55,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 6,
+                parent_id: Some(2),
+                label: "LongTipB".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.55,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+        ];
+
+        let (solved_t, _cis, rate, _q) = solve_empirical_lsd2_core(&nodes, 5000, 42);
+        assert!(rate > 0.0 && rate.is_finite());
+        assert!(solved_t[1] <= 2690.0 + 1e-6, "Node 1 must respect cal_max 2690: {}", solved_t[1]);
+        for node in &nodes {
+            if let Some(pid) = node.parent_id {
+                assert!(
+                    solved_t[pid] > solved_t[node.node_id],
+                    "Strict parent > child monotonicity violated: node {} ({}) vs child {} ({})",
+                    pid,
+                    solved_t[pid],
+                    node.node_id,
+                    solved_t[node.node_id]
+                );
+            }
+        }
     }
 }
 

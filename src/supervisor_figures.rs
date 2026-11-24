@@ -1990,24 +1990,49 @@ fn rewrite_n_count(label: &str, count: usize) -> String {
     label.to_string()
 }
 
+fn load_coverage_gate_pct(run_dir: &Path) -> f64 {
+    let p = run_dir.join("trees/supermatrix_coverage_summary.json");
+    if let Ok(raw) = fs::read_to_string(p) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&raw) {
+            if let Some(pct) = v.get("coverage_gate_pct").and_then(|x| x.as_f64()) {
+                if pct.is_finite() && pct > 0.0 {
+                    return pct.round();
+                }
+            }
+        }
+    }
+    80.0
+}
+
 fn resolve_dynamic_title_and_caption(
     raw_title: &str,
     raw_caption: &str,
     n_phy: usize,
+    gate_pct: f64,
 ) -> (String, String) {
-    if n_phy == 64 {
+    let gate_tag = format!(">={:.0}%", gate_pct);
+    if n_phy == 64 && (gate_pct - 80.0).abs() < 0.5 {
         (raw_title.to_string(), raw_caption.to_string())
     } else {
         let title = if raw_title.contains("Across >=") {
-            raw_title.replacen("Across >=80%-Gated", &format!("Across {} >=80%-Gated", n_phy), 1)
+            raw_title.replacen(
+                "Across >=80%-Gated",
+                &format!("Across {} {}-Gated", n_phy, gate_tag),
+                1,
+            )
         } else if raw_title.contains("Across 64 ") {
-            raw_title.replacen("Across 64 ", &format!("Across {} >=80%-Gated ", n_phy), 1)
+            raw_title.replacen(
+                "Across 64 ",
+                &format!("Across {} {}-Gated ", n_phy, gate_tag),
+                1,
+            )
         } else {
             format!("{} (N_phy = {})", raw_title, n_phy)
         };
         let caption = raw_caption
-            .replacen("over >=80%", &format!("over {} >=80%", n_phy), 1)
-            .replacen("across >=80%", &format!("across {} >=80%", n_phy), 1)
+            .replacen("over >=80%", &format!("over {} {}", n_phy, gate_tag), 1)
+            .replacen("across >=80%", &format!("across {} {}", n_phy, gate_tag), 1)
+            .replacen("dynamically coverage-gated", &format!("{} {}-gated", n_phy, gate_tag), 1)
             .replacen("64-taxon ", &format!("{}-taxon ", n_phy), 1);
         (title, caption)
     }
@@ -2142,8 +2167,9 @@ fn render_bemisia_fig1_chronogram(
     svg.push_str(r##"<text x="404" y="1222" text-anchor="middle" font-size="11.5" font-weight="800" fill="#0f172a">Divergence Time (Ma BP; Native TimeTreeLSD2 Relaxed Clock + Two-Sided 95% HPD Credible Intervals)</text>"##);
 
     let leaf_count = count_tree_leaves(root).max(1);
+    let gate_pct = load_coverage_gate_pct(run_dir);
     let (fig1_title_dyn, fig1_cap_dyn) =
-        resolve_dynamic_title_and_caption(&theme.fig1_title, &theme.fig1_caption, leaf_count);
+        resolve_dynamic_title_and_caption(&theme.fig1_title, &theme.fig1_caption, leaf_count, gate_pct);
     let y_top = 56.0_f64;
     let y_step = (1096.2_f64 / (leaf_count.saturating_sub(1).max(1) as f64)).clamp(17.4, 33.5);
     let y_of = |slot: f64| -> f64 { y_top + slot * y_step };
@@ -2557,8 +2583,9 @@ fn render_bemisia_fig2_circular_phylogram(
     svg.push('\n');
 
     let leaf_count = count_tree_leaves(root).max(1);
+    let gate_pct = load_coverage_gate_pct(run_dir);
     let (fig2_title_dyn, fig2_cap_dyn) =
-        resolve_dynamic_title_and_caption(&theme.fig2_title, &theme.fig2_caption, leaf_count);
+        resolve_dynamic_title_and_caption(&theme.fig2_title, &theme.fig2_caption, leaf_count, gate_pct);
     let mut fb = SoftwareFrameBuffer::new(w, h);
     fb.clear((255, 255, 255));
     fb.fill_rect(16, 10, (w - 32) as i32, 26, (15, 23, 42));
@@ -5090,13 +5117,14 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     // =========================================================================
     // PANEL A: PIPELINE A ARCHITECTURE (SUPERMATRIX, QUARTET MSC & CODON BEB)
     // =========================================================================
+    let gate_pct = load_coverage_gate_pct(run_dir);
     svg.push_str(&format!(
         r##"  <rect x="16" y="14" width="888" height="232" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="1.6"/>
   <rect x="16" y="14" width="888" height="26" rx="8" fill="#ecfdf5"/>
   <line x1="16" y1="40" x2="904" y2="40" stroke="#a7f3d0" stroke-width="1.2"/>
-  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A: {}-TAXON (>=80%), {}-LOCUS SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
+  <text x="28" y="31" font-size="9.6" font-weight="800" fill="#065f46">PANEL A — PIPELINE A: {}-TAXON (&gt;={:.0}%), {}-LOCUS SUPERMATRIX CHRONOGRAM, QUARTET MSC &amp; CODON SELECTION (L = {} COLS • ln L = {:.2})</text>
 "##,
-        n_phy, msc_loci, study.supermatrix_aligned_cols, r0_lnl
+        n_phy, gate_pct, msc_loci, study.supermatrix_aligned_cols, r0_lnl
     ));
     fb.stroke_rect(16, 14, 888, 232, (16, 185, 129));
     fb.fill_rect(17, 15, 886, 25, (236, 253, 245));
@@ -5118,7 +5146,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         (
             "A1. Entrez + Blind Audit",
             if n_phy < 64 {
-                format!("• {} >=80% OTUs / {} Taxa", n_phy, manifest.sequences.len().min(64))
+                format!("• {} >={:.0}% OTUs / {} Taxa", n_phy, gate_pct, manifest.sequences.len().min(64))
             } else if is_bacterial {
                 format!("• {} Taxa + 48 Bact CDS", n_phy)
             } else if is_universal_ae {

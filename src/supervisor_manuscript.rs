@@ -1759,7 +1759,7 @@ pub fn export_declarative_manuscript_and_staged_bundle(
         normalize_manuscript_prose, render_canonical_table_3a_html,
         render_canonical_table_3b_html, render_canonical_table_3c_html,
         render_canonical_table_3d_html, render_canonical_table_3d_tex,
-        render_stage3c_haplotype_section_html, render_supp_fig_s4_card_html,
+        render_stage3c_haplotype_section_html, render_supp_fig_s4_card_html_with_gate,
         write_standardized_release_telemetry_json,
     };
     use crate::supervisor::GeneratedFigureArtifact;
@@ -1817,6 +1817,10 @@ pub fn export_declarative_manuscript_and_staged_bundle(
     let n_part_loci = cov_sum["loci_retained"]
         .as_u64()
         .unwrap_or(report.msc_regime1_ry3.gene_tree_count as u64) as usize;
+    let gate_pct = cov_sum["coverage_gate_pct"].as_f64().unwrap_or(80.0).round();
+    let gate_min_loci = cov_sum["coverage_gate_min_loci"].as_u64().unwrap_or(2) as usize;
+    let is_dynamic_gate = cov_sum["dynamic_coverage_gate"].as_bool().unwrap_or(false);
+    let gate_mode_label = if is_dynamic_gate { "Dynamic" } else { "Mandatory" };
     let unphased_gl = cov_sum["unphased_mitogenome_gotoh_cols"]
         .as_u64()
         .unwrap_or(manifest.native_gotoh_aligned_cols_l as u64) as usize;
@@ -1857,13 +1861,17 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             figure_number: 10,
             figure_id: "supp-s4".to_string(),
             data_mapping_kind: "SupermatrixPositionalCoverage".to_string(),
-            title: format!("Supplemental Figure S4. {} Supermatrix Coverage & >=80% Gate", cfg.study_slug),
+            title: format!(
+                "Supplemental Figure S4. {} Supermatrix Coverage & >={:.0}% Gate",
+                cfg.study_slug, gate_pct
+            ),
             caption_summary: format!(
-                "{} loci x {} cols across {} species ({} >=80% gated; {} sparse)",
+                "{} loci x {} cols across {} species ({} >={:.0}% gated; {} sparse)",
                 n_part_loci,
                 fmt_commas_usize(report.supermatrix_aligned_cols),
                 n_total_slots,
                 n_phy,
+                gate_pct,
                 n_pop
             ),
             svg_rel_path: format!("figures/{}", svgs4_name),
@@ -1983,7 +1991,7 @@ pub fn export_declarative_manuscript_and_staged_bundle(
     let crown_age = report.calibrated_nodes.last().map(|n| n.age_ma).unwrap_or(0.0);
 
     let abstract_text = format!(
-        "{} ({}, Code {}) synthesizes {} active verified NCBI records ({} raw bp, {} quarantined outliers) in {:.2} s via Native Rust bio-suite-supervisor. Per-locus BIC ModelTest across {} partitions (L = {} aligned columns) with RY3 recoding reduces compositional bias (RCFV) by {:.1}% to {:.4} (Partitioned ln L = {}, Delta ln L = {:+.2} nats over unpartitioned ML), retaining {} >=80%-gated OTUs at {:.1}% UFBoot2 support (vs. {:.1}% unpartitioned, {:.1}% unfiltered, {:.1}% single-locus) and dating root Node I to {:.1} Ma through crown Node VIII at {:.1} Ma. All {} taxa route through {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}), 61-state codon models across {} functional CDS orthologs threaded onto crystallographic PDB {}, and {} coupled 25,000-generation Bayesian coalescent skylines.",
+        "{} ({}, Code {}) synthesizes {} active verified NCBI records ({} raw bp, {} quarantined outliers) in {:.2} s via Native Rust bio-suite-supervisor. Per-locus BIC ModelTest across {} partitions (L = {} aligned columns) with RY3 recoding reduces compositional bias (RCFV) by {:.1}% to {:.4} (Partitioned ln L = {}, Delta ln L = {:+.2} nats over unpartitioned ML), retaining {} >={:.0}%-gated OTUs (>={} loci) at {:.1}% UFBoot2 support (vs. {:.1}% unpartitioned, {:.1}% unfiltered, {:.1}% single-locus) and dating root Node I to {:.1} Ma through crown Node VIII at {:.1} Ma. All {} taxa route through {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}), 61-state codon models across {} functional CDS orthologs threaded onto crystallographic PDB {}, and {} coupled 25,000-generation Bayesian coalescent skylines.",
         cfg.title,
         cfg.taxonomic_scope,
         cfg.genetic_code_table,
@@ -1998,6 +2006,8 @@ pub fn export_declarative_manuscript_and_staged_bundle(
         fmt_lnl(part_lnl),
         delta_part_lnl,
         n_phy,
+        gate_pct,
+        gate_min_loci,
         sup_boot,
         unpart_boot,
         unfilt_boot,
@@ -2014,9 +2024,10 @@ pub fn export_declarative_manuscript_and_staged_bundle(
         report.popset_skylines.len(),
     );
     let summary_short = format!(
-        "100% Native Rust Genetic Code {} partitioned ModelTest phylogenomics ({} >=80%-gated OTUs across {} loci at {:.1}% UFBoot2, Delta ln L = {:+.2}; {}-taxon Quartet MSC, {} threading, and {} single-species skylines) across {} verified NCBI records in {:.2} s.",
+        "100% Native Rust Genetic Code {} partitioned ModelTest phylogenomics ({} >={:.0}%-gated OTUs across {} loci at {:.1}% UFBoot2, Delta ln L = {:+.2}; {}-taxon Quartet MSC, {} threading, and {} single-species skylines) across {} verified NCBI records in {:.2} s.",
         cfg.genetic_code_table,
         n_phy,
+        gate_pct,
         n_part_loci,
         sup_boot,
         delta_part_lnl,
@@ -2032,8 +2043,8 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             n_part_loci, delta_part_lnl, fmt_lnl(part_lnl), rcfv_drop_pct, report.rcfv_ry3, sup_boot
         ),
         format!(
-            "Mandatory >=80% / >=2-loci supermatrix gate retains {} multi-locus OTUs in concatenated phylograms while routing all {} species to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks.",
-            n_phy, n_total_slots
+            "{} >={:.0}% / >={}-loci supermatrix gate retains {} multi-locus OTUs in concatenated phylograms while routing all {} species to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks.",
+            gate_mode_label, gate_pct, gate_min_loci, n_phy, n_total_slots
         ),
         format!(
             "{}-taxon {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}) and TimeTreeLSD2 date Node I at {:.1} Ma to Node VIII at {:.1} Ma.",
@@ -2162,7 +2173,7 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             ));
         }
         let table3a = render_canonical_table_3a_html(
-            &format!("{} ({}-OTU >=80%-Gated Supermatrix)", cfg.study_slug, n_phy),
+            &format!("{} ({}-OTU >={:.0}%-Gated Supermatrix)", cfg.study_slug, n_phy, gate_pct),
             &manifest.runie_9col_comparison_table,
             "RuNIE Bootstrap (B = 500)",
             "Primary Engine: partitioned_modeltest + bio-suite-supervisor (Edge-Linked Proportional Partitioned ML + UFBoot2)",
@@ -2302,7 +2313,7 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             sky_pre.push('\n');
         }
 
-        let s4_card = render_supp_fig_s4_card_html(
+        let s4_card = render_supp_fig_s4_card_html_with_gate(
             &s4_svg,
             &format!("/labs/figures/{}", svgs4_name),
             &cfg.study_slug,
@@ -2316,6 +2327,8 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             unpart_boot,
             single_boot,
             unfilt_boot,
+            gate_pct,
+            gate_min_loci,
         );
 
         let mut supp_s1_rows = String::new();
@@ -2441,7 +2454,7 @@ r#"<section class="labs-study-section">
 
 <section class="labs-study-section">
   <h2>2. {s2_title}</h2>
-  <p>Partitioned per-locus BIC <code>ModelTest</code> across {n_part_loci} loci (<em>L</em> = {sup_l} aligned columns; {pars_ry3} parsimony-informative sites) reduces RCFV by {rcfv_drop:.1}% to <strong>{rcfv_ry3:.4}</strong> (Partitioned ln L = <strong>{lnl_part}</strong>, Delta ln L = {delta_part_lnl:+.2} nats, Delta BIC = {delta_part_bic:+.1}; {n_phy} &gt;=80%-gated OTUs at {sup_boot:.1}% UFBoot2 vs. {unpart_boot:.1}% unpartitioned, {unfilt_boot:.1}% unfiltered, and {s_boot:.1}% single-gene; Root Node I = {root_age:.1} Ma to Crown Node VIII = {crown_age:.1} Ma).</p>
+  <p>Partitioned per-locus BIC <code>ModelTest</code> across {n_part_loci} loci (<em>L</em> = {sup_l} aligned columns; {pars_ry3} parsimony-informative sites) reduces RCFV by {rcfv_drop:.1}% to <strong>{rcfv_ry3:.4}</strong> (Partitioned ln L = <strong>{lnl_part}</strong>, Delta ln L = {delta_part_lnl:+.2} nats, Delta BIC = {delta_part_bic:+.1}; {n_phy} &gt;={gate_pct:.0}%-gated OTUs [&gt;={gate_min_loci} loci] at {sup_boot:.1}% UFBoot2 vs. {unpart_boot:.1}% unpartitioned, {unfilt_boot:.1}% unfiltered, and {s_boot:.1}% single-gene; Root Node I = {root_age:.1} Ma to Crown Node VIII = {crown_age:.1} Ma).</p>
   <figure id="fig-1" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 1. {f1t}</span></div><div class="labs-inline-svg-figure">{f1}</div><figcaption>{f1c}</figcaption></figure>
   <figure id="fig-2" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 2. {f2t}</span></div><div class="labs-inline-svg-figure">{f2}</div><figcaption>{f2c}</figcaption></figure>
 </section>
@@ -2500,6 +2513,8 @@ r#"<section class="labs-study-section">
             s1_p2 = html_esc(&mp.section1_p2),
             s2_title = html_esc(&mp.section2_title),
             n_part_loci = n_part_loci,
+            gate_pct = gate_pct,
+            gate_min_loci = gate_min_loci,
             sup_l = fmt_commas_usize(report.supermatrix_aligned_cols),
             pars_ry3 = fmt_commas_usize(report.parsimony_informative_ry3),
             rcfv_drop = rcfv_drop_pct,
@@ -2798,7 +2813,7 @@ r#"<!DOCTYPE html>
 {abs_tex}
 \\end{{abstract}}
 \\section{{Introduction}}
-{intro_tex} Across {tot_r} active verified NCBI sequence records ({tot_bp} raw bp) and {quar_cnt} quarantined anomalies in {tot_s:.2} s of 100\\% Native Rust execution, per-locus BIC \\texttt{{ModelTest}} across {n_part} loci ($L = {sup_l}$ cols) over {n_phy} $\\ge 80\\%$-gated OTUs improves fit by $\\Delta \\ln L = {delta_lnl:+.2}$ nats ($\\ln L = {lnl_part}$, UFBoot2 = {sup_boot:.1}\\% vs. {unpart_boot:.1}\\% unpartitioned), while {msc_loci}-locus Quartet MSC across all {n_tot} species recovers $Q = {q_norm:.4}$ (LPP = {q_lpp:.4}) \\cite{{ref1}}.
+{intro_tex} Across {tot_r} active verified NCBI sequence records ({tot_bp} raw bp) and {quar_cnt} quarantined anomalies in {tot_s:.2} s of 100\\% Native Rust execution, per-locus BIC \\texttt{{ModelTest}} across {n_part} loci ($L = {sup_l}$ cols) over {n_phy} $\\ge {gate_pct:.0}\\%$-gated OTUs improves fit by $\\Delta \\ln L = {delta_lnl:+.2}$ nats ($\\ln L = {lnl_part}$, UFBoot2 = {sup_boot:.1}\\% vs. {unpart_boot:.1}\\% unpartitioned), while {msc_loci}-locus Quartet MSC across all {n_tot} species recovers $Q = {q_norm:.4}$ (LPP = {q_lpp:.4}) \\cite{{ref1}}.
 {table3d_tex}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.82\\textwidth]{{figures/{f1_pdf}}}\\caption{{{f1_cap}}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f2_pdf}}}\\caption{{{f2_cap}}}\\end{{figure}}
@@ -2827,6 +2842,7 @@ r#"<!DOCTYPE html>
         n_part = n_part_loci,
         sup_l = tex_esc(&fmt_commas_usize(report.supermatrix_aligned_cols)),
         n_phy = n_phy,
+        gate_pct = gate_pct,
         n_tot = n_total_slots,
         delta_lnl = delta_part_lnl,
         lnl_part = tex_esc(&fmt_lnl(part_lnl)),

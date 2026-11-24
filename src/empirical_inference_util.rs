@@ -329,9 +329,48 @@ pub fn solve_empirical_lsd2_core(
         }
     }
 
+    // Propagate ancestor upper bounds down and descendant lower bounds up so
+    // constrained node intervals are strictly monotonic (`eff_min[parent] > eff_max[child]` never occurs).
+    let max_cal_age = nodes
+        .iter()
+        .filter_map(|n| n.cal_max_ma.or(n.cal_min_ma))
+        .fold(0.0_f64, f64::max);
+    let min_gap = if max_cal_age > 100.0 { 1.0 } else { 0.01 };
+    let mut eff_min: Vec<Option<f64>> = nodes
+        .iter()
+        .map(|n| if n.is_tip { Some(n.tip_age_ma.unwrap_or(0.0)) } else { n.cal_min_ma })
+        .collect();
+    let mut eff_max: Vec<Option<f64>> = nodes
+        .iter()
+        .map(|n| if n.is_tip { Some(n.tip_age_ma.unwrap_or(0.0)) } else { n.cal_max_ma })
+        .collect();
+    for u in 0..n_nodes {
+        if let Some(pmax) = eff_max[u] {
+            for &c in &children_of[u] {
+                if !nodes[c].is_tip {
+                    let cap = (pmax - min_gap).max(0.0);
+                    eff_max[c] = Some(eff_max[c].map_or(cap, |cm| cm.min(cap)));
+                }
+            }
+        }
+    }
+    for u in (0..n_nodes).rev() {
+        for &c in &children_of[u] {
+            if let Some(cmin) = eff_min[c] {
+                let floor = cmin + min_gap;
+                eff_min[u] = Some(eff_min[u].map_or(floor, |pm| pm.max(floor)));
+            }
+        }
+        if let (Some(lo), Some(hi)) = (eff_min[u], eff_max[u]) {
+            if lo > hi {
+                eff_max[u] = Some(lo);
+            }
+        }
+    }
+
     let solve_for_branches = |branches: &[f64]| -> (Vec<f64>, f64, f64) {
         let mut t = vec![0.0_f64; n_nodes];
-        // Bottom-up depth initialization inside feasible bounds
+        // Bottom-up depth initialization inside strictly monotonic feasible bounds
         for u in (0..n_nodes).rev() {
             if nodes[u].is_tip {
                 t[u] = nodes[u].tip_age_ma.unwrap_or(0.0);
@@ -340,16 +379,16 @@ pub fn solve_empirical_lsd2_core(
                     .iter()
                     .map(|&c| t[c] + (branches[c] / 0.0005).max(1.0))
                     .fold(1.0_f64, f64::max);
-                let mut init_t = match (nodes[u].cal_min_ma, nodes[u].cal_max_ma) {
+                let mut init_t = match (eff_min[u], eff_max[u]) {
                     (Some(lo), Some(hi)) => 0.5 * (lo + hi),
                     (Some(lo), None) => lo.max(max_ch),
                     (None, Some(hi)) => max_ch.min(hi),
                     (None, None) => max_ch,
                 };
-                if let Some(lo) = nodes[u].cal_min_ma {
+                if let Some(lo) = eff_min[u] {
                     init_t = init_t.max(lo);
                 }
-                if let Some(hi) = nodes[u].cal_max_ma {
+                if let Some(hi) = eff_max[u] {
                     init_t = init_t.min(hi);
                 }
                 t[u] = init_t.max(max_ch * 0.1);
@@ -390,25 +429,28 @@ pub fn solve_empirical_lsd2_core(
                     w_sum += w;
                     target_sum += w * (t[cid] + branches[cid] / r);
                 }
-                let mut t_new = if w_sum > 1e-12 {
+                let t_prop = if w_sum > 1e-12 {
                     target_sum / w_sum
                 } else {
                     t[u]
                 };
                 let min_from_children = children_of[u]
                     .iter()
-                    .map(|&c| t[c] + 1e-4)
+                    .map(|&c| t[c] + 1e-3)
                     .fold(0.0_f64, f64::max);
-                t_new = t_new.max(min_from_children);
-                if let Some(pid) = nodes[u].parent_id {
-                    t_new = t_new.min((t[pid] - 1e-4).max(min_from_children));
-                }
-                if let Some(lo) = nodes[u].cal_min_ma {
-                    t_new = t_new.max(lo);
-                }
-                if let Some(hi) = nodes[u].cal_max_ma {
-                    t_new = t_new.min(hi);
-                }
+                let max_from_parent = nodes[u]
+                    .parent_id
+                    .map(|pid| t[pid] - 1e-3)
+                    .unwrap_or(f64::INFINITY);
+                let lo_feas = min_from_children.max(eff_min[u].unwrap_or(0.0));
+                let hi_feas = max_from_parent.min(eff_max[u].unwrap_or(f64::INFINITY));
+                let t_new = if lo_feas <= hi_feas {
+                    t_prop.clamp(lo_feas, hi_feas)
+                } else {
+                    let m_lo = min_from_children;
+                    let m_hi = max_from_parent.max(m_lo);
+                    t_prop.clamp(m_lo, m_hi)
+                };
                 max_step_delta = max_step_delta.max((t_new - t[u]).abs());
                 t[u] = t_new;
             }
@@ -626,38 +668,46 @@ pub fn solve_empirical_lsd2_from_ml_tree(
             mapped_ml_mrca[ni] = None;
             continue;
         }
-        // Lowest (deepest = highest node_id in pre-order among ancestors containing all target_tips)
+        // Lowest (deepest = highest node_id in pre-order among ancestors containing all target_tips);
+        // require exact monophyly (zero intruder sectors) before attaching calibration priors.
         let mrca = tree_nodes
             .iter()
             .filter(|n| !n.is_tip && target_tips.is_subset(&node_desc_tips[n.node_id]))
             .max_by_key(|n| (usize::MAX - node_desc_tips[n.node_id].len(), n.node_id))
             .map(|n| n.node_id);
-        mapped_ml_mrca[ni] = mrca;
-        if let Some(mid) = mrca {
-            let mut ok_strat = true;
-            // Verify parent constraints do not contradict child min > parent max
-            let mut cur_p = tree_nodes[mid].parent_id;
-            while let Some(pid) = cur_p {
-                if let Some(&(_, pmax)) = node_cal_bounds.get(&pid) {
-                    if cp.ci_min_ma > pmax {
-                        ok_strat = false;
-                        break;
-                    }
-                }
-                cur_p = tree_nodes[pid].parent_id;
-            }
-            if ok_strat {
-                node_cal_bounds
-                    .entry(mid)
-                    .and_modify(|(lo, hi)| {
-                        let n_lo = lo.max(cp.ci_min_ma);
-                        let n_hi = hi.min(cp.ci_max_ma);
-                        if n_lo <= n_hi {
-                            *lo = n_lo;
-                            *hi = n_hi;
+        let is_monophyletic = mrca.is_some_and(|mid| {
+            node_desc_tips[mid]
+                .iter()
+                .all(|t| t.chars().next().is_some_and(|ch| allowed.contains(&ch)))
+        });
+        mapped_ml_mrca[ni] = if is_monophyletic { mrca } else { None };
+        if is_monophyletic {
+            if let Some(mid) = mrca {
+                let mut ok_strat = true;
+                // Verify parent constraints do not contradict child min > parent max
+                let mut cur_p = tree_nodes[mid].parent_id;
+                while let Some(pid) = cur_p {
+                    if let Some(&(_, pmax)) = node_cal_bounds.get(&pid) {
+                        if cp.ci_min_ma > pmax {
+                            ok_strat = false;
+                            break;
                         }
-                    })
-                    .or_insert((cp.ci_min_ma, cp.ci_max_ma));
+                    }
+                    cur_p = tree_nodes[pid].parent_id;
+                }
+                if ok_strat {
+                    node_cal_bounds
+                        .entry(mid)
+                        .and_modify(|(lo, hi)| {
+                            let n_lo = lo.max(cp.ci_min_ma);
+                            let n_hi = hi.min(cp.ci_max_ma);
+                            if n_lo <= n_hi {
+                                *lo = n_lo;
+                                *hi = n_hi;
+                            }
+                        })
+                        .or_insert((cp.ci_min_ma, cp.ci_max_ma));
+                }
             }
         }
     }

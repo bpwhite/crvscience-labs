@@ -100,6 +100,25 @@ pub fn render_supermatrix_positional_coverage_svg(
     rows: &[SupermatrixTaxonRow],
     phasing: &CircularPhasingComparison,
 ) -> String {
+    render_supermatrix_positional_coverage_svg_with_gate(
+        study_subtitle,
+        partitions,
+        rows,
+        phasing,
+        crate::supervisor_study::MIN_SUPERMATRIX_OTU_COVERAGE_RATIO,
+        crate::supervisor_study::MIN_SUPERMATRIX_OTU_LOCI,
+    )
+}
+
+pub fn render_supermatrix_positional_coverage_svg_with_gate(
+    study_subtitle: &str,
+    partitions: &[SupermatrixPartitionSpan],
+    rows: &[SupermatrixTaxonRow],
+    phasing: &CircularPhasingComparison,
+    min_coverage_ratio: f64,
+    min_loci: usize,
+) -> String {
+    let gate_pct = (min_coverage_ratio * 100.0).round();
     let w = 1480.0f64;
     let h = 1020.0f64;
     let x_plot0 = 136.0f64;
@@ -471,10 +490,12 @@ pub fn render_supermatrix_positional_coverage_svg(
             }
         }
         let occ_pct = (valid_t as f64 / total_cols as f64) * 100.0;
-        let gated_in = crate::supervisor_study::passes_supermatrix_phylogram_coverage_gate(
+        let gated_in = crate::supervisor_study::passes_supermatrix_phylogram_coverage_gate_with_thresholds(
             valid_t,
             total_cols,
             loci_present,
+            min_coverage_ratio,
+            min_loci,
         );
         row_stats.push((occ_pct, loci_present, gated_in));
     }
@@ -484,8 +505,8 @@ pub fn render_supermatrix_positional_coverage_svg(
     // ================= PANEL B =================
     out.push_str("<rect x=\"16\" y=\"328\" width=\"1448\" height=\"416\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");
     out.push_str(&format!(
-        "<text x=\"28\" y=\"347\" font-size=\"12.5\" font-weight=\"700\" fill=\"#0f172a\">Panel B | {}-Taxon x Position Occupancy ({} Phylogram &gt;=80%; {} Coalescent/PopGen-Only)</text>\n",
-        n_taxa, n_gated_in, n_popgen_only
+        "<text x=\"28\" y=\"347\" font-size=\"12.5\" font-weight=\"700\" fill=\"#0f172a\">Panel B | {}-Taxon x Position Occupancy ({} Phylogram &gt;={:.0}%; {} Coalescent/PopGen-Only)</text>\n",
+        n_taxa, n_gated_in, gate_pct, n_popgen_only
     ));
     if is_bacterial {
         out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Bacterial CDS | Blue = Bacterial rRNA | Orange = Gap (-) | Slate = Missing (?)</text>\n");
@@ -631,16 +652,19 @@ pub fn render_supermatrix_positional_coverage_svg(
             ));
         }
     }
-    let gate_x = 1324.0 + 0.80 * 104.0;
+    let gate_x = 1324.0 + min_coverage_ratio.clamp(0.0, 1.0) * 104.0;
     out.push_str(&format!(
         "<line x1=\"{:.1}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" stroke=\"#b91c1c\" stroke-width=\"1.4\" stroke-dasharray=\"4,3\"/>\n",
         gate_x, y_m0, gate_x, y_m1
     ));
     out.push_str(&format!(
-        "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"8.2\" font-weight=\"700\" fill=\"#b91c1c\">80% Gate</text>\n",
-        gate_x, y_m0 - 2.5
+        "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\" font-size=\"8.2\" font-weight=\"700\" fill=\"#b91c1c\">{:.0}% Gate</text>\n",
+        gate_x, y_m0 - 2.5, gate_pct
     ));
-    out.push_str("<text x=\"1376\" y=\"737\" text-anchor=\"middle\" font-size=\"9.2\" font-weight=\"700\" fill=\"#334155\">Completeness (Green &gt;=80%)</text>\n");
+    out.push_str(&format!(
+        "<text x=\"1376\" y=\"737\" text-anchor=\"middle\" font-size=\"9.2\" font-weight=\"700\" fill=\"#334155\">Completeness (Green &gt;={:.0}%)</text>\n",
+        gate_pct
+    ));
 
     // ================= PANEL C =================
     out.push_str("<rect x=\"16\" y=\"756\" width=\"1448\" height=\"250\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");

@@ -12,13 +12,21 @@
     "univ_vmaB",
     "univ_rad51",
     "univ_cct",
+    "univ_eif5b",
+    "univ_sec61a",
+    "univ_rpl2",
+    "univ_rpl3",
+    "univ_rps3",
+    "univ_fen1",
+    "univ_pcna",
+    "univ_thrrs",
     "univ_ssu",
     "univ_lsu"
   ],
   "sampling_families": {
     "A_Euryarchaeota_Outgroup": ["Halobacteriaceae", "Methanosarcinaceae", "Methanococcaceae", "Methanobacteriaceae", "Archaeoglobaceae"],
     "B_TACK_Proteoarchaeota": ["Sulfolobaceae", "Acidianaceae", "Thermoproteaceae", "Nitrosopumilaceae", "Nitrososphaeraceae", "Korarchaeaceae"],
-    "C_Asgardarchaeota_Stem": ["Promethearchaeaceae", "Lokiarchaeaceae", "Heimdallarchaeaceae", "Odinarchaeaceae"],
+    "C_Asgardarchaeota_Stem": ["Promethearchaeaceae", "Lokiarchaeaceae", "Hodarchaeia", "Heimdallarchaeaceae", "Odinarchaeaceae"],
     "D_Discoba_Amoebozoa": ["Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae"],
     "E_Opisthokonta_Fungi_Metazoa": ["Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae"],
     "F_Archaeplastida": ["Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae"],
@@ -37,7 +45,8 @@
     "Nitrososphaeraceae": 1,
     "Korarchaeaceae": 1,
     "Promethearchaeaceae": 1,
-    "Lokiarchaeaceae": 4,
+    "Lokiarchaeaceae": 2,
+    "Hodarchaeia": 2,
     "Heimdallarchaeaceae": 2,
     "Odinarchaeaceae": 1,
     "Dictyosteliaceae": 3,
@@ -88,8 +97,8 @@
     },
     {
       "id": "C3_Asgardarchaeota",
-      "name": "Asgardarchaeota / Promethearchaeota (Loki-, Odin-, Heimdallarchaeia)",
-      "families": ["Promethearchaeaceae", "Lokiarchaeaceae", "Heimdallarchaeaceae", "Odinarchaeaceae"]
+      "name": "Asgardarchaeota / Promethearchaeota (Loki-, Odin-, Hod-, Heimdallarchaeia)",
+      "families": ["Promethearchaeaceae", "Lokiarchaeaceae", "Hodarchaeia", "Heimdallarchaeaceae", "Odinarchaeaceae"]
     },
     {
       "id": "C4_DiscobaAmoebozoa",
@@ -116,7 +125,7 @@
     {
       "id": "C8_AsgardEukaryotaSister",
       "name": "Asgardarchaeota + Eukarya Nuclear-Origin Clade ([C]-[G])",
-      "families": ["Promethearchaeaceae", "Lokiarchaeaceae", "Heimdallarchaeaceae", "Odinarchaeaceae", "Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae", "Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae", "Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae", "Perkinsidae", "Phaeodactylaceae", "Thalassiosiraceae", "Monodopsidaceae", "Peronosporaceae", "Saprolegniaceae", "Chlorarachniaceae"],
+      "families": ["Promethearchaeaceae", "Lokiarchaeaceae", "Hodarchaeia", "Heimdallarchaeaceae", "Odinarchaeaceae", "Dictyosteliaceae", "Cavenderiaceae", "Acanthamoebidae", "Vahlkampfiidae", "Euglenaceae", "Apusomonadidae", "Saccharomycetaceae", "Schizosaccharomycetaceae", "Sordariaceae", "Aspergillaceae", "Ustilaginaceae", "Psathyrellaceae", "Hypocreaceae", "Salpingoecidae", "Capsasporidae", "Edwardsiidae", "Hydridae", "Cyprinidae", "Cyanidioschyzonaceae", "Gigartinaceae", "Galdieriaceae", "Bathycoccaceae", "Volvocaceae", "Funariaceae", "Selaginellaceae", "Brassicaceae", "Poaceae", "Perkinsidae", "Phaeodactylaceae", "Thalassiosiraceae", "Monodopsidaceae", "Peronosporaceae", "Saprolegniaceae", "Chlorarachniaceae"],
       "why_not_scored": "Eocyte-Asgard-Eukaryote sister clade uniting Asgardarchaeota ESP-encoding archaea with LECA."
     },
     {

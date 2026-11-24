@@ -4186,6 +4186,10 @@ pub struct DeclarativeManuscriptProse {
     pub discussion_paragraphs: Vec<String>,
     pub latex_intro: String,
     #[serde(default)]
+    pub abstract_context: Option<String>,
+    #[serde(default)]
+    pub executive_summary_lead: Option<String>,
+    #[serde(default)]
     pub seed_base: u64,
 }
 

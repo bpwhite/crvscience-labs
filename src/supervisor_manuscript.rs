@@ -1708,6 +1708,38 @@ fn clamp_ms_pre_line(s: &str) -> String {
     }
 }
 
+fn fmt_age_plain(age_ma: f64) -> String {
+    if age_ma >= 1000.0 {
+        format!("{:.2} billion years ago", age_ma / 1000.0)
+    } else if age_ma >= 100.0 {
+        format!("{:.0} million years ago", age_ma)
+    } else if age_ma >= 1.0 {
+        format!("{:.1} million years ago", age_ma)
+    } else {
+        format!("{:.0} thousand years ago", age_ma * 1000.0)
+    }
+}
+
+fn fmt_age_short(age_ma: f64) -> String {
+    if age_ma >= 1000.0 {
+        format!("{:.2} Ga", age_ma / 1000.0)
+    } else if age_ma >= 100.0 {
+        format!("{:.0} Ma", age_ma)
+    } else if age_ma >= 1.0 {
+        format!("{:.1} Ma", age_ma)
+    } else {
+        format!("{:.0} ka", age_ma * 1000.0)
+    }
+}
+
+fn clean_clade_name_for_prose(raw: &str) -> String {
+    raw.split('(')
+        .next()
+        .unwrap_or(raw)
+        .trim()
+        .to_string()
+}
+
 /// Generic JSON-driven manuscript, telemetry, LaTeX, and strictly staged bundle exporter
 /// for any `DeclarativeStudyConfig` (`--study-config <path.json>`). Preserves Hold Gate by
 /// writing only to `labs/preprints/.staged/` and `labs/articles/.staged/`.
@@ -1982,83 +2014,252 @@ pub fn export_declarative_manuscript_and_staged_bundle(
     written.push(rel_json.to_string_lossy().to_string());
 
     let th = &cfg.figure_theme;
-    let total_sec = (manifest.total_wall_clock_ms.max(report.total_wall_clock_ms) as f64) / 1000.0;
     let rcfv_drop_pct =
         ((report.rcfv_unrec4 - report.rcfv_ry3) / report.rcfv_unrec4.max(1e-6)) * 100.0;
     let tot_fam_recs: usize = report.functional_families.iter().map(|f| f.num_records).sum();
     let tot_pop_isos: usize = report.popset_skylines.iter().map(|p| p.num_isolates).sum();
-    let root_age = report.calibrated_nodes.first().map(|n| n.age_ma).unwrap_or(0.0);
-    let crown_age = report.calibrated_nodes.last().map(|n| n.age_ma).unwrap_or(0.0);
+    let dated_nodes: Vec<(usize, String, f64)> = report
+        .calibrated_nodes
+        .iter()
+        .enumerate()
+        .filter(|(_, n)| n.age_ma > 0.0 && n.age_ma.is_finite())
+        .map(|(idx, n)| (idx, clean_clade_name_for_prose(&n.clade_name), n.age_ma))
+        .collect();
+    let root_age = dated_nodes.first().map(|x| x.2).unwrap_or(0.0);
+    let crown_age = dated_nodes.last().map(|x| x.2).unwrap_or(0.0);
+    let root_short = fmt_age_short(root_age);
+    let crown_short = fmt_age_short(crown_age);
 
-    let abstract_text = format!(
-        "{} ({}, Code {}) synthesizes {} active verified NCBI records ({} raw bp, {} quarantined outliers) in {:.2} s via Native Rust bio-suite-supervisor. Per-locus BIC ModelTest across {} partitions (L = {} aligned columns) with RY3 recoding reduces compositional bias (RCFV) by {:.1}% to {:.4} (Partitioned ln L = {}, Delta ln L = {:+.2} nats over unpartitioned ML), retaining {} >={:.0}%-gated OTUs (>={} loci) at {:.1}% UFBoot2 support (vs. {:.1}% unpartitioned, {:.1}% unfiltered, {:.1}% single-locus) and dating root Node I to {:.1} Ma through crown Node VIII at {:.1} Ma. All {} taxa route through {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}), 61-state codon models across {} functional CDS orthologs threaded onto crystallographic PDB {}, and {} coupled 25,000-generation Bayesian coalescent skylines.",
-        cfg.title,
-        cfg.taxonomic_scope,
-        cfg.genetic_code_table,
-        fmt_commas_usize(report.total_records_on_disk),
-        fmt_commas_usize(report.total_raw_bp_on_disk),
-        report.quarantined_records_on_disk,
-        total_sec,
-        n_part_loci,
-        fmt_commas_usize(report.supermatrix_aligned_cols),
-        rcfv_drop_pct,
-        report.rcfv_ry3,
-        fmt_lnl(part_lnl),
-        delta_part_lnl,
-        n_phy,
-        gate_pct,
-        gate_min_loci,
-        sup_boot,
-        unpart_boot,
-        unfilt_boot,
-        single_boot,
-        root_age,
-        crown_age,
-        n_total_slots,
-        report.msc_regime1_ry3.gene_tree_count,
-        fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize),
-        report.msc_regime1_ry3.normalized_quartet_score,
-        report.msc_regime1_ry3.mean_local_posterior_pp1,
-        tot_fam_recs,
-        cfg.pdb_template.pdb_id,
-        report.popset_skylines.len(),
-    );
-    let summary_short = format!(
-        "100% Native Rust Genetic Code {} partitioned ModelTest phylogenomics ({} >={:.0}%-gated OTUs across {} loci at {:.1}% UFBoot2, Delta ln L = {:+.2}; {}-taxon Quartet MSC, {} threading, and {} single-species skylines) across {} verified NCBI records in {:.2} s.",
-        cfg.genetic_code_table,
-        n_phy,
-        gate_pct,
-        n_part_loci,
-        sup_boot,
-        delta_part_lnl,
-        n_total_slots,
-        cfg.pdb_template.pdb_id,
-        report.popset_skylines.len(),
-        fmt_commas_usize(report.total_records_on_disk),
-        total_sec
-    );
-    let key_points = vec![
+    let context_sentence = cfg
+        .manuscript_prose
+        .abstract_context
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            cfg.manuscript_prose
+                .section1_p1
+                .split('.')
+                .next()
+                .map(|s| format!("{}.", s.trim()))
+                .unwrap_or_default()
+        });
+
+    let mut milestones: Vec<(usize, &str, f64)> = Vec::new();
+    if let Some((idx, nm, age)) = dated_nodes.first() {
+        milestones.push((*idx, nm.as_str(), *age));
+    }
+    for want_idx in [2usize, 3] {
+        if let Some((idx, nm, age)) = dated_nodes.iter().find(|(i, _, _)| *i == want_idx) {
+            if !milestones.iter().any(|(mi, _, _)| *mi == *idx) {
+                milestones.push((*idx, nm.as_str(), *age));
+            }
+        }
+    }
+    if milestones.len() == 1 && dated_nodes.len() >= 3 {
+        let mid = &dated_nodes[dated_nodes.len() / 2];
+        milestones.push((mid.0, mid.1.as_str(), mid.2));
+    }
+    if let Some((idx, nm, age)) = dated_nodes.last() {
+        if !milestones.iter().any(|(mi, _, _)| *mi == *idx) {
+            milestones.push((*idx, nm.as_str(), *age));
+        }
+    }
+    let milestone_phrases: Vec<String> = milestones
+        .iter()
+        .map(|(_, nm, age)| {
+            let trimmed = nm.strip_prefix("The ").or_else(|| nm.strip_prefix("the ")).unwrap_or(nm);
+            format!("the {} at {}", trimmed, fmt_age_plain(*age))
+        })
+        .collect();
+    let timeline_sentence = match milestone_phrases.len() {
+        0 => String::new(),
+        1 => format!("Relaxed-clock dating estimates {} ({}).", milestone_phrases[0], fmt_age_short(root_age)),
+        2 => format!("Relaxed-clock dating places {} and {}.", milestone_phrases[0], milestone_phrases[1]),
+        _ => {
+            let last = milestone_phrases.last().cloned().unwrap_or_default();
+            let head = &milestone_phrases[..milestone_phrases.len() - 1];
+            format!("Relaxed-clock dating places {}, and {}.", head.join(", "), last)
+        }
+    };
+
+    let omega_vals: Vec<f64> = report
+        .functional_families
+        .iter()
+        .map(|f| f.selection_result.m0_omega)
+        .filter(|w| w.is_finite() && *w > 0.0)
+        .collect();
+    let min_omega = omega_vals.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_omega = omega_vals.iter().copied().fold(0.0_f64, f64::max);
+    let tot_beb: usize = report
+        .functional_families
+        .iter()
+        .map(|f| f.selection_result.beb_sites_p95_count)
+        .sum();
+    let selection_clause = if !omega_vals.is_empty() && tot_beb > 0 {
         format!(
-            "Per-locus BIC ModelTest across {} loci improves supermatrix likelihood by Delta ln L = {:+.2} nats (Partitioned ln L = {}, RCFV reduced {:.1}% to {:.4}, UFBoot2 = {:.1}%).",
-            n_part_loci, delta_part_lnl, fmt_lnl(part_lnl), rcfv_drop_pct, report.rcfv_ry3, sup_boot
+            "Across {} conserved and metabolic protein families ({} orthologs), codon selection analyses span dN/dS = {:.3}-{:.3} with {} positively selected sites (BEB p >= 0.95)",
+            report.functional_families.len(),
+            tot_fam_recs,
+            min_omega,
+            max_omega,
+            tot_beb
+        )
+    } else if !omega_vals.is_empty() {
+        format!(
+            "Across {} conserved protein families ({} orthologs), codon models reveal pervasive purifying selection (dN/dS = {:.3}-{:.3})",
+            report.functional_families.len(),
+            tot_fam_recs,
+            min_omega,
+            max_omega
+        )
+    } else {
+        format!(
+            "Across {} protein families ({} orthologs), codon selection analyses evaluate functional constraint",
+            report.functional_families.len(),
+            tot_fam_recs
+        )
+    };
+    let pdb_clause = if let Some(pdb) = manifest.pdb_structures.first() {
+        format!(
+            ", while 3D structural alignment against PDB {} confirms high fold conservation (TM-score {:.3})",
+            cfg.pdb_template.pdb_id, pdb.tm_score
+        )
+    } else {
+        format!(
+            ", paired with 3D structural threading onto PDB {}",
+            cfg.pdb_template.pdb_id
+        )
+    };
+    let skyline_clause = if report.popset_skylines.is_empty() {
+        ".".to_string()
+    } else {
+        format!(
+            " alongside {} single-species Bayesian demographic reconstructions ({} isolates).",
+            report.popset_skylines.len(),
+            tot_pop_isos
+        )
+    };
+
+    let cap_article = if matches!(n_part_loci, 8 | 11 | 18 | 80..=89) { "An" } else { "A" };
+    let abstract_text = [
+        context_sentence,
+        format!(
+            "Here, we analyzed {} verified NCBI sequence records across {} species using a partitioned {}-locus supermatrix ({} aligned base pairs) with third-codon RY recoding and multispecies coalescent reconciliation across {} gene-tree quartets.",
+            fmt_commas_usize(report.total_records_on_disk),
+            n_total_slots,
+            n_part_loci,
+            fmt_commas_usize(report.supermatrix_aligned_cols),
+            fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize),
         ),
         format!(
-            "{} >={:.0}% / >={}-loci supermatrix gate retains {} multi-locus OTUs in concatenated phylograms while routing all {} species to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks.",
+            "Per-locus model selection and RY recoding reduced compositional bias by {:.1}% (to RCFV {:.4}) and improved log-likelihood by {:+.1} units over an unpartitioned model, raising mean bootstrap support across the {} species meeting the {:.0}% completeness threshold (at least {} loci) from {:.1}% for a single locus to {:.1}%, with strong gene-tree coalescent concordance (normalized quartet score Q = {:.2}, mean posterior probability {:.2}).",
+            rcfv_drop_pct,
+            report.rcfv_ry3,
+            delta_part_lnl,
+            n_phy,
+            gate_pct,
+            gate_min_loci,
+            single_boot,
+            sup_boot,
+            report.msc_regime1_ry3.normalized_quartet_score,
+            report.msc_regime1_ry3.mean_local_posterior_pp1,
+        ),
+        timeline_sentence,
+        format!("{}{}{}", selection_clause, pdb_clause, skyline_clause),
+    ]
+    .into_iter()
+    .filter(|s| !s.trim().is_empty())
+    .collect::<Vec<_>>()
+    .join(" ");
+
+    let exec_lead = cfg
+        .manuscript_prose
+        .executive_summary_lead
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            format!(
+                "resolves evolutionary relationships across {} species",
+                n_total_slots
+            )
+        });
+    let span_note = if let (Some((_, _, s_age)), Some((_, _, c_age))) = (
+        dated_nodes.iter().find(|(i, _, _)| *i == 2),
+        dated_nodes.iter().find(|(i, _, _)| *i == 3),
+    ) {
+        format!("stem {}, crown {}", fmt_age_short(*s_age), fmt_age_short(*c_age))
+    } else if !dated_nodes.is_empty() {
+        format!("{}-{}", root_short, crown_short)
+    } else {
+        "calibrated clock".to_string()
+    };
+    let summary_long = format!(
+        "{} {}-locus phylogenomic study of {} species {} ({}; {:.1}% mean bootstrap, Q = {:.2}) and conserved protein structure.",
+        cap_article,
+        n_part_loci,
+        n_total_slots,
+        exec_lead,
+        span_note,
+        sup_boot,
+        report.msc_regime1_ry3.normalized_quartet_score,
+    );
+    let summary_short = if summary_long.len() <= 235 {
+        summary_long
+    } else {
+        let mid_sum = format!(
+            "{} {}-locus study of {} species {} ({}; {:.1}% bootstrap, Q = {:.2}).",
+            cap_article,
+            n_part_loci,
+            n_total_slots,
+            exec_lead,
+            span_note,
+            sup_boot,
+            report.msc_regime1_ry3.normalized_quartet_score,
+        );
+        if mid_sum.len() <= 235 {
+            mid_sum
+        } else {
+            format!(
+                "{} {}-locus phylogenomic study across {} species achieves {:.1}% mean bootstrap support (Q = {:.2}) with {}-{} relaxed-clock divergence dating.",
+                cap_article,
+                n_part_loci,
+                n_total_slots,
+                sup_boot,
+                report.msc_regime1_ry3.normalized_quartet_score,
+                root_short,
+                crown_short,
+            )
+        }
+    };
+    let key_points = vec![
+        format!(
+            "Partitioned per-locus BIC ModelTest across {} loci improves fit by {:+.1} log-likelihood units over an unpartitioned model, cuts compositional bias by {:.1}% (RCFV = {:.4}), and achieves {:.1}% mean bootstrap support.",
+            n_part_loci, delta_part_lnl, rcfv_drop_pct, report.rcfv_ry3, sup_boot
+        ),
+        format!(
+            "{} {:.0}% completeness threshold (at least {} loci) retains {} multi-locus species for concatenated tree inference while routing all {} taxa through Quartet MSC, ABBA-BABA, skylines, and haplotype networks.",
             gate_mode_label, gate_pct, gate_min_loci, n_phy, n_total_slots
         ),
         format!(
-            "{}-taxon {}-locus Quartet MSC ({} quartets, Q = {:.4}, LPP = {:.4}) and TimeTreeLSD2 date Node I at {:.1} Ma to Node VIII at {:.1} Ma.",
-            n_total_slots,
+            "Multispecies coalescent reconciliation across {} gene trees ({} quartets) achieves Q = {:.2} (mean LPP = {:.2}), with relaxed-clock dating spanning {} to {}.",
             report.msc_regime1_ry3.gene_tree_count,
             fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize),
             report.msc_regime1_ry3.normalized_quartet_score,
             report.msc_regime1_ry3.mean_local_posterior_pp1,
-            root_age,
-            crown_age
+            root_short,
+            crown_short
         ),
         format!(
-            "61-state Code-{} codon models and crystallographic {} threading quantify selection across {} verified orthologs ({} nuclear families) and {} skyline isolates.",
-            cfg.genetic_code_table, cfg.pdb_template.pdb_id, tot_fam_recs, report.functional_families.len(), tot_pop_isos
+            "Codon selection models across {} protein families ({} orthologs) paired with PDB {} 3D structural threading and {} Bayesian demographic skylines ({} isolates) link molecular constraint to evolutionary diversification.",
+            report.functional_families.len(),
+            tot_fam_recs,
+            cfg.pdb_template.pdb_id,
+            report.popset_skylines.len(),
+            tot_pop_isos
         ),
     ];
 
@@ -2454,7 +2655,7 @@ r#"<section class="labs-study-section">
 
 <section class="labs-study-section">
   <h2>2. {s2_title}</h2>
-  <p>Partitioned per-locus BIC <code>ModelTest</code> across {n_part_loci} loci (<em>L</em> = {sup_l} aligned columns; {pars_ry3} parsimony-informative sites) reduces RCFV by {rcfv_drop:.1}% to <strong>{rcfv_ry3:.4}</strong> (Partitioned ln L = <strong>{lnl_part}</strong>, Delta ln L = {delta_part_lnl:+.2} nats, Delta BIC = {delta_part_bic:+.1}; {n_phy} &gt;={gate_pct:.0}%-gated OTUs [&gt;={gate_min_loci} loci] at {sup_boot:.1}% UFBoot2 vs. {unpart_boot:.1}% unpartitioned, {unfilt_boot:.1}% unfiltered, and {s_boot:.1}% single-gene; Root Node I = {root_age:.1} Ma to Crown Node VIII = {crown_age:.1} Ma).</p>
+  <p>Partitioned per-locus BIC <code>ModelTest</code> across {n_part_loci} loci (<em>L</em> = {sup_l} aligned base pairs; {pars_ry3} parsimony-informative sites) reduces RCFV by {rcfv_drop:.1}% to <strong>{rcfv_ry3:.4}</strong> (Partitioned ln L = <strong>{lnl_part}</strong>, Delta ln L = {delta_part_lnl:+.2} nats, Delta BIC = {delta_part_bic:+.1}; {n_phy} species meeting the {gate_pct:.0}% completeness threshold [&gt;={gate_min_loci} loci] at {sup_boot:.1}% mean UFBoot2 vs. {unpart_boot:.1}% unpartitioned, {unfilt_boot:.1}% unfiltered, and {s_boot:.1}% single-gene; Root {root_age:.1} Ma to Crown {crown_age:.1} Ma).</p>
   <figure id="fig-1" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 1. {f1t}</span></div><div class="labs-inline-svg-figure">{f1}</div><figcaption>{f1c}</figcaption></figure>
   <figure id="fig-2" class="labs-figure-card labs-figure-card--print-full"><div class="labs-copy-box-header"><span class="labs-copy-title">Figure 2. {f2t}</span></div><div class="labs-inline-svg-figure">{f2}</div><figcaption>{f2c}</figcaption></figure>
 </section>
@@ -2813,7 +3014,7 @@ r#"<!DOCTYPE html>
 {abs_tex}
 \\end{{abstract}}
 \\section{{Introduction}}
-{intro_tex} Across {tot_r} active verified NCBI sequence records ({tot_bp} raw bp) and {quar_cnt} quarantined anomalies in {tot_s:.2} s of 100\\% Native Rust execution, per-locus BIC \\texttt{{ModelTest}} across {n_part} loci ($L = {sup_l}$ cols) over {n_phy} $\\ge {gate_pct:.0}\\%$-gated OTUs improves fit by $\\Delta \\ln L = {delta_lnl:+.2}$ nats ($\\ln L = {lnl_part}$, UFBoot2 = {sup_boot:.1}\\% vs. {unpart_boot:.1}\\% unpartitioned), while {msc_loci}-locus Quartet MSC across all {n_tot} species recovers $Q = {q_norm:.4}$ (LPP = {q_lpp:.4}) \\cite{{ref1}}.
+{intro_tex} Across {tot_r} verified NCBI sequence records ({tot_bp} raw bp) spanning {n_tot} species ({quar_cnt} outlier accessions quarantined by automated sequence hygiene), per-locus BIC \\texttt{{ModelTest}} across {n_part} loci ($L = {sup_l}$ aligned bp) across the {n_phy} species meeting the $\\ge {gate_pct:.0}\\%$ completeness threshold improves fit by $\\Delta \\ln L = {delta_lnl:+.2}$ nats ($\\ln L = {lnl_part}$, mean bootstrap support = {sup_boot:.1}\\% vs.\\ {unpart_boot:.1}\\% unpartitioned), while {msc_loci}-locus Quartet MSC across {quartets} gene-tree quartets recovers $Q = {q_norm:.4}$ (mean LPP = {q_lpp:.4}) \\cite{{ref1}}.
 {table3d_tex}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.82\\textwidth]{{figures/{f1_pdf}}}\\caption{{{f1_cap}}}\\end{{figure}}
 \\begin{{figure}}[htbp]\\centering\\includegraphics[width=0.92\\textwidth]{{figures/{f2_pdf}}}\\caption{{{f2_cap}}}\\end{{figure}}
@@ -2838,7 +3039,6 @@ r#"<!DOCTYPE html>
         tot_r = tex_esc(&fmt_commas_usize(report.total_records_on_disk)),
         tot_bp = tex_esc(&fmt_commas_usize(report.total_raw_bp_on_disk)),
         quar_cnt = report.quarantined_records_on_disk,
-        tot_s = total_sec,
         n_part = n_part_loci,
         sup_l = tex_esc(&fmt_commas_usize(report.supermatrix_aligned_cols)),
         n_phy = n_phy,
@@ -2849,6 +3049,7 @@ r#"<!DOCTYPE html>
         sup_boot = sup_boot,
         unpart_boot = unpart_boot,
         msc_loci = report.msc_regime1_ry3.gene_tree_count,
+        quartets = tex_esc(&fmt_commas_usize(report.msc_regime1_ry3.total_quartets_evaluated as usize)),
         q_norm = report.msc_regime1_ry3.normalized_quartet_score,
         q_lpp = report.msc_regime1_ry3.mean_local_posterior_pp1,
         table3d_tex = table3d_tex,

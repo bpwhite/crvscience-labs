@@ -2,7 +2,7 @@
 
 `bio-suite-supervisor` (`src/supervisor.rs`, `src/figure_generator.rs`, `src/bio_suite_gui.rs`) is an autonomous, multi-threaded Rust orchestrator for **CRV Science Labs (`bio-suite` & `RuNIE`)**. It eliminates ad-hoc JavaScript/Python scripts by managing the entire bioinformatics study lifecycle inside compiled Rust:
 
-1. **Flexible Cohort Ingestion**: Accepts NCBI Entrez accession numbers (`--accessions`), local FASTA files (`--fasta`), or built-in gold-standard study presets (`--preset anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `nematoda-pests-27`, `acanthochitonidae-28`, `china-australia-pests-29`, `us-ag-pests-30`, `basal-metazoa-05`) combined with a factorial **Model Design** (`3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration`).
+1. **Flexible Cohort Ingestion**: Accepts NCBI Entrez accession numbers (`--accessions`), local FASTA files (`--fasta`), or built-in gold-standard study presets (`--preset anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `nematoda-pests-27`, `acanthochitonidae-28`, `china-australia-pests-29`, `us-ag-pests-30`, `gram-positive-31`, `basal-metazoa-05`) combined with a factorial **Model Design** (`3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration`).
 2. **Autonomous `Super-BLAST` Annotation Validation & Self-Healing Loop-Back Engine (95%+ Autonomous)**:
    - Audits every fetched sequence in parallel (`rayon`) via `super_blast` homology scoring against the cohort medoid, strand orientation verification (`--adjustdirection`), full-length completeness gates, 3-frame translation internal stop-codon scans (`NUMT` nuclear pseudogene detection), and terminal `5' C->T / 3' G->A` ancient-DNA deamination checks.
    - Automatically repairs recoverable errors in Rust (reverse-complement strand rescue, terminal deamination `N`-masking) and quarantines severe repository artifacts (e.g., sample swaps such as `PQ585799.1`, nuclear `NUMT` paralogs such as `KU551299.1`, partial fragments, or withdrawn/failed Entrez IDs) into the **`0🧪` Uncleaned Negative Control** track while automatically pulling verified full-length replacement sequences from the reserve pool.
@@ -34,7 +34,7 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 .\target\release\bio-suite-supervisor.exe run --preset coleoptera-function-18 --design 3way-multifactorial
 .\target\release\bio-suite-supervisor.exe run --preset rhinolophus-asia-21 --design 3way-multifactorial
 
-# 2b. Run the Preprint 23–30 Multi-Compartment Native Bio-Suite studies (multi-locus supermatrix, Quartet MSC, 12x36 skylines, 61-state codon selection)
+# 2b. Run the Preprint 23–31 Multi-Compartment Native Bio-Suite studies (multi-locus supermatrix, Quartet MSC, 12x36 skylines, 61-state codon selection)
 .\target\release\bio-suite-supervisor.exe run --preset bemisia-global-23 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset invasive-snails-24 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset nudibranchs-global-25 --design biosuite-only --generations 25000
@@ -43,6 +43,7 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 .\target\release\bio-suite-supervisor.exe run --preset acanthochitonidae-28 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset china-australia-pests-29 --design biosuite-only --generations 25000
 .\target\release\bio-suite-supervisor.exe run --preset us-ag-pests-30 --design biosuite-only --generations 25000
+.\target\release\bio-suite-supervisor.exe run --preset gram-positive-31 --design biosuite-only --generations 25000
 
 # 3. Run with custom NCBI Accession numbers and a custom Run ID (study title is derived automatically from the preset/accession cohort)
 .\target\release\bio-suite-supervisor.exe run `
@@ -93,12 +94,12 @@ You can invoke the supervisor either via the dedicated binary `bio-suite-supervi
 | :--- | :--- | :--- |
 | `run` / `list` / `inspect` / `figures` / `gui` | Primary supervisor mode (plus `supermatrix-viz` for Preprint 28/29 diagnostics) | `run` |
 | `--run-id <id>` (`--id`) | Unique identifier for the managed run directory (`runs/<run-id>/`) | Derived from preset or `runie-3way-multifactorial-anopheles-mosquitos` |
-| `--preset <name>` | Built-in dataset preset: `anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `nematoda-pests-27`, `acanthochitonidae-28`, `china-australia-pests-29`, `us-ag-pests-30`, `basal-metazoa-05` | `anopheles-3way` |
+| `--preset <name>` | Built-in dataset preset: `anopheles-3way`, `coleoptera-function-18`, `rhinolophus-asia-21`, `bemisia-global-23`, `invasive-snails-24`, `nudibranchs-global-25`, `isoptera-termites-26`, `nematoda-pests-27`, `acanthochitonidae-28`, `china-australia-pests-29`, `us-ag-pests-30`, `gram-positive-31`, `basal-metazoa-05` | `anopheles-3way` |
 | `--design <mode>` (`--mode`, `--model-design`) | Model design: `3way-multifactorial`, `biosuite-only`, `external-only`, `tool-calibration` | `3way-multifactorial` |
 | `--accessions <A,B,C>` | Comma-separated NCBI Entrez accession list | Empty (uses preset) |
 | `--fasta <path>` (`--input`) | Path to an input FASTA sequence file | `None` |
 | `--runs-dir <dir>` (`--out-dir`) | Root directory storing managed run units | `runs` |
-| `--generations <N>` (`-g`) | MCMC generations (`-g`) for Bayesian coalescent skylines | `10000` (`25000` for `basal-metazoa-05` and Preprint 23–30 presets) |
+| `--generations <N>` (`-g`) | MCMC generations (`-g`) for Bayesian coalescent skylines | `10000` (`25000` for `basal-metazoa-05` and Preprint 23–31 presets) |
 | `--no-loopback` | Disable autonomous replacement pull during `Super-BLAST` hygiene | Loop-back enabled |
 | `--no-haplotype-clusters` | Disable haplotype cluster computation | Enabled where supported |
 | `--no-figures` | Skip `.svg`/`.png`/`.pdf` figure & LaTeX manuscript generation | Enabled |

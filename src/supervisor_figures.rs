@@ -5287,7 +5287,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     };
     svg.push_str(&format!(
         r##"  <text x="28" y="164" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene &amp; Full-Length Alignment: Quarantines {} defective GenBank submissions in Iteration 1 and aligns L = {} supermatrix columns ({} PI sites) in {:.2} s.</text>
-  <text x="28" y="180" font-size="7.8" font-weight="700" fill="#065f46">• 32-Chain Combinatorial Sweep (Table 3A/3C): 1st {} (ln L = {:.2}, BIC = {:.2}) beats 2nd {} ({:.2}) and 3rd {} ({:.2}) by {:+.2} nats.</text>
+  <text x="28" y="180" font-size="7.1" font-weight="700" fill="#065f46">• 32-Chain Sweep (Table 3A/3C): 1st {} (ln L = {:.2}, BIC = {:.2}) beats 2nd {} ({:.2}) and 3rd {} ({:.2}) by {:+.2} nats.</text>
   <text x="28" y="196" font-size="7.8" font-weight="600" fill="#047857">• Quartet Multispecies Coalescent &amp; Relaxed Clock: Satisfies {} / {} quartets (Q = {:.4}, LPP = {:.4}) and reconstructs all {} internal chronogram nodes with strictly interior two-sided 95% HPDs.</text>
   <text x="28" y="212" font-size="7.8" font-weight="600" fill="#334155">• {}</text>
 "##,

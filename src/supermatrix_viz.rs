@@ -754,7 +754,10 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
 
     // Sub-panel C2 (`x = 846..1452, y = 788..994`): Diagnostic Resolution Comparison
     out.push_str("<rect x=\"846\" y=\"788\" width=\"606\" height=\"206\" rx=\"6\" fill=\"#ffffff\" stroke=\"#cbd5e1\" stroke-width=\"1\"/>\n");
-    out.push_str("<text x=\"858\" y=\"806\" font-size=\"10.8\" font-weight=\"700\" fill=\"#0f172a\">C2. Single-Locus &amp; Unfiltered vs. >=80% Gated Supermatrix Recovery</text>\n");
+    out.push_str(&format!(
+        "<text x=\"858\" y=\"806\" font-size=\"10.8\" font-weight=\"700\" fill=\"#0f172a\">C2. Single-Locus &amp; Unfiltered vs. &gt;={:.0}% Gated Supermatrix Recovery</text>\n",
+        gate_pct
+    ));
 
     let mut cards: Vec<(String, String, f64, &str)> = vec![
         (
@@ -785,7 +788,7 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
         ));
     }
     cards.push((
-        format!(">=80% Gated {}-OTU Supermatrix", n_gated_in),
+        format!(">={:.0}% Gated {}-OTU Supermatrix", gate_pct, n_gated_in),
         format!(
             "{} bp ({} loci) | {}: {:.1}% UFBoot2",
             phasing.trimmed_supermatrix_cols,

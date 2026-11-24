@@ -29,10 +29,10 @@ Every module runs in native multi-threaded Rust out of the box while offering he
 
 To keep this front page concise, detailed mathematical formulations, validation protocols, and full benchmark tables are organized into dedicated documentation pages:
 
-1. **[`docs/runie_architecture_and_studies.md`](docs/runie_architecture_and_studies.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **31 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-31`)**, and the **15 Core Documented Multi-Stage Studies (`17` Total Solved by `bio-suite runie`)**.
-2. **[`docs/validation_and_calibration_process.md`](docs/validation_and_calibration_process.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate (B<sub>prior</sub> → B<sub>posterior</sub>), Dual-Pass Blinded `SHA-256` Validation (D<sub>ctx</sub>), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **70 Validation Datasets (`VAL-SET-001`–`VAL-SET-070`)**.
+1. **[`docs/runie_architecture_and_studies.md`](docs/runie_architecture_and_studies.md)** — `candle-core` Tensor Markov Policy, Parallel-Tempering `GA-MCMC`, the 4-Generation Step-Up Investigation Loop, Representative Pipeline Log-Likelihood Comparisons (`Best`, `Nearest-Best`, `Medium`, `Rejected`), the **32 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-32`)**, and the **15 Core Documented Multi-Stage Studies (`17` Total Solved by `bio-suite runie`)**.
+2. **[`docs/validation_and_calibration_process.md`](docs/validation_and_calibration_process.md)** — The 3-Tier Research Scope System (`Tier 1: Exploratory`, `Tier 2: Validation`, `Tier 3: Scientific`), the `1🧪`–`5🧪` Beaker Signal Gate (B<sub>prior</sub> → B<sub>posterior</sub>), Dual-Pass Blinded `SHA-256` Validation (D<sub>ctx</sub>), Genomic Marker Diagnostic Horizons (`16S`, `23S`, `18S`, `ITS`, `COX1`, `RP16` Dayhoff-6), and the **71 Validation Datasets (`VAL-SET-001`–`VAL-SET-071`)**.
 3. **[`docs/tool_benchmark_matrix.md`](docs/tool_benchmark_matrix.md)** — Complete **37-Tool Head-to-Head Comparison Table** (Native Rust vs. `MAFFT`, `IQ-TREE 2`, `PAML`, `BEAST`, `HMMER3`, `ViennaRNA`, `US-align`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`, plus `bio-suite-supervisor`) and the active validation queue.
-4. **[`docs/discoveries_and_critical_reports.md`](docs/discoveries_and_critical_reports.md)** — Auto-synced index of all **31 Empirically Verified Preprints**, Lab Discoveries (`#1`–`#146`; `92` public discoveries cataloged), and dataset provenance mappings.
+4. **[`docs/discoveries_and_critical_reports.md`](docs/discoveries_and_critical_reports.md)** — Auto-synced index of all **32 Empirically Verified Preprints**, Lab Discoveries (`#1`–`#147`; `93` public discoveries cataloged), and dataset provenance mappings.
 5. **[`docs/supervisor_and_gui_guide.md`](docs/supervisor_and_gui_guide.md)** — Guide to the autonomous **`bio-suite-supervisor`** study orchestrator, `Super-BLAST` self-healing loop-back engine, and 5-tab native Win32 desktop GUI (`bio-suite-supervisor gui` & `runie-align-view`).
 6. **[`runie_changelog.md`](runie_changelog.md)** — Chronological engineering log of every calibration gap identified, native Rust fix implemented, and multi-stage `DAG` integrated (`RN-2026-001` through `RN-2026-037`).
 
@@ -89,7 +89,7 @@ cargo build --release
 
 ---
 
-## Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-31`)
+## Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-32`)
 
 <!-- AUTO-FRONTPAGE-HIGHLIGHTS:START -->
 | ID & Status | Verified Preprint Title & Live Reader Link | Master Concept Zenodo DOI | Signal | Primary Validation Set |
@@ -138,8 +138,8 @@ crvscience-labs/
 ├── readme.md                             # High-level overview, quick-start examples & repo layout
 ├── runie_changelog.md                    # Chronological RuNIE tool-modification & pipeline ledger (RN-2026-001..037)
 ├── docs/                                 # Detailed technical & validation documentation
-│   ├── runie_architecture_and_studies.md # Candle tensor GA-MCMC math, Step-Up loop & 31 Verified Preprints
-│   ├── validation_and_calibration_process.md # 3-Tier system, 0🧪–5🧪 gate, Blinded SHA-256 audit & VAL-SET-001..070
+│   ├── runie_architecture_and_studies.md # Candle tensor GA-MCMC math, Step-Up loop & 32 Verified Preprints
+│   ├── validation_and_calibration_process.md # 3-Tier system, 0🧪–5🧪 gate, Blinded SHA-256 audit & VAL-SET-001..071
 │   ├── tool_benchmark_matrix.md          # Full 37-tool Native Rust vs. External Counterpart benchmark table
 │   ├── discoveries_and_critical_reports.md # Auto-synced Verified Preprints & Lab Discoveries index
 │   └── supervisor_and_gui_guide.md       # Autonomous bio-suite-supervisor & 5-tab Win32 desktop GUI manual
@@ -227,7 +227,7 @@ See [**`docs/supervisor_and_gui_guide.md`**](docs/supervisor_and_gui_guide.md) f
 
 ## How to Cite
 
-If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-070`) in your research, software, or teaching, please cite our architecture preprint:
+If you use **`crvscience-labs` (`bio-suite`)**, **`RuNIE` (`Rust Native Inference Engine`)**, or any of the curated validation datasets (`VAL-SET-001`–`VAL-SET-071`) in your research, software, or teaching, please cite our architecture preprint:
 
 > **White, B. P.** (2026). *RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing*. CRV Science Labs Preprint Monograph (`PREPRINT-01`, `v2.0.2`, 26 pp.).  
 > - **Master Concept Zenodo DOI**: [`10.5281/zenodo.23969275`](https://doi.org/10.5281/zenodo.23969275)  

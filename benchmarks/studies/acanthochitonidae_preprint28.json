@@ -6,7 +6,7 @@
   "discovery_slug": "acanthochitonidae-phylogenomics",
   "validation_set_id": "VAL-SET-067-ACANTHOCHITONIDAE-POLYPLACOPHORA-544RECS",
   "preprint_label": "PREPRINT-28",
-  "preprint_version": "3.0.0",
+  "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24263607",
   "remediation_note": "Version 3.0.0 remediates PREPRINT-28 v2.0.0 through the generalized declarative bio-suite pipeline: (1) replaced truncated Stage 4 FAM-04 CYP3A records (previously 1/12 I-helix, 0/12 Cys-loop) with 14 verified full-length Mollusca/Polyplacophora CYP3A mRNAs retaining 12/12 conserved I-helix and FxxGxxxCxG Cys-loop heme-thiolate motifs threaded onto PDB 1TQN, and ordered soma/heavy Ferritins ahead of oocyte Ferritins in FAM-01; (2) isolated Cohort L6 to single-compartment Chitonida 16S rRNA (acantho_pop_l6_16s_v3) purging cached Liolophura CYP3A contamination and converged all 12 skylines at minESS >= 200 and maxRhat <= 1.05; (3) disambiguated F:T044 (Acanthochitona sp. Adriatic) and G:T060 (Acanthochitona sp. IWP); and (4) activated acanthochitonidae_preprint28_design.json clade recovery evaluation plus metadata hygiene.",
   "telemetry_filename": "acanthochitonidae-native-biosuite.json",
@@ -1798,6 +1798,8 @@
       "Replacing legacy truncated CYP3A transcripts with 14 verified full-length Mollusca/Polyplacophora CYP3A mRNAs restored 12/12 I-helix and Cys-loop motif fidelity on 1TQN, while isolating Cohort L6 to pure Chitonida 16S rRNA resolved all 12 coalescent skylines cleanly at minESS >= 200 and maxRhat <= 1.05.",
       "Paired evaluation against acanthochitonidae_preprint28_design.json, 64-species Quartet MSC, ABBA-BABA introgression tests, and Stage 3C TCS/MSN haplotype graphs provides a reproducible baseline across benthic molluscan biomineralization and coastal biogeography."
     ],
+    "abstract_context": "Reconstructing the global radiation of acanthochitonid chitons requires resolving deep polyplacophoran relationships alongside the molecular evolution of magnetite biomineralization and shell-plate internalization.",
+    "executive_summary_lead": "traces the global radiation and biomineralization evolution of acanthochitonid chitons",
     "latex_intro": "Sixty-four Polyplacophora taxa spanning Lepidopleurida outgroups [A], Chitonina [B], Mopalioidea [C], Cryptoplacidae [D], basal Acanthochitonidae [E], Atlanto-American Acanthochitona [F], and NW/Indo-West Pacific Acanthochitona [G] are evaluated across 17 loci and 4 biomineralization/detoxification families in Version 3.0.0.",
     "seed_base": 20261128
   }

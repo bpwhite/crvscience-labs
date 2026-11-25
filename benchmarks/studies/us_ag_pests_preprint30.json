@@ -6,7 +6,7 @@
   "discovery_slug": "us-agricultural-arthropod-pests-phylogenomics",
   "validation_set_id": "VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS",
   "preprint_label": "PREPRINT-30",
-  "preprint_version": "2.0.0",
+  "preprint_version": "3.0.0",
   "concept_doi": "10.5281/zenodo.24359245",
   "remediation_note": "Version 2.0.0 re-executed Stage 1-5 under generalized declarative bio-suite-supervisor + bio-suite-seqnet codon QC: (1) Stage 1/2 mitochondrial COI/PCG extraction now requires >2400 bp homologous matching without blind mitogenome slicing, yielding a clean frame-locked COX1 S3 core; (2) Stage 4 families were de-mixed into strictly single-family alignments (FAM-01 ace-1, FAM-02 Orco, FAM-03 Hsp70, FAM-04 Clan-3 CYP6) evaluated with Universal Standard PAML Genetic Code 1 (icode = 0); (3) Skyline Cohorts L2 and L5 (Supp S2) were scoped cleanly to single-subunit LSU 28S rDNA (D1-D2).",
   "telemetry_filename": "us-agricultural-arthropod-pests-native-biosuite.json",
@@ -1954,6 +1954,8 @@
       "Enforcing homogeneous single-family nuclear ortholog curation under Universal Standard Code 1 alongside homologous mitochondrial locus extraction eliminates inter-gene frame contamination across COX1 and reveals clean purifying and episodic positive selection across ace-1, Orco, Hsp70, and CYP6 compartments.",
       "Methodologically, integrating per-locus BIC ModelTest, edge-linked proportional rate optimization, the >=80% supermatrix gate, 64-species Quartet MSC, and single-subunit 28S E-INS-i cohorts yields reproducible phylogenomic and demographic inference conditional on public GenBank sampling density."
     ],
+    "abstract_context": "Tracking evolutionary relationships and resistance evolution across major U.S. agricultural arthropod pests requires separating deep phylogenetic signal from mitochondrial base-composition bias and recent population bottlenecks.",
+    "executive_summary_lead": "resolves deep phylogeny and resistance selection across U.S. agricultural pests",
     "latex_intro": "United States agricultural arthropod pests span Chelicerata Acari outgroups [A] through six Hexapoda orders [B]-[G], analyzed under Genetic Codes 5 and 1 in Version 2.0.0.",
     "seed_base": 20261130
   }

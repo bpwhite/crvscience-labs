@@ -6,7 +6,7 @@
   "discovery_slug": "isoptera-global-radiation-phylogenomics",
   "validation_set_id": "VAL-SET-065-ISOPTERA-GLOBAL-RADIATION-544RECS",
   "preprint_label": "PREPRINT-26",
-  "preprint_version": "4.0.0",
+  "preprint_version": "5.0.0",
   "concept_doi": "10.5281/zenodo.24116968",
   "remediation_note": "Version 4.0.0 remediates PREPRINT-26 v3.0.0 through the generalized declarative bio-suite pipeline: (1) split mixed Stage 4 nuclear sets into four homogeneous single-family Code-1 panels purged of laccases, vitellogenins/Notum, Hsp60/Hsp90/Toll, and mitochondrial Clan-M CYP44 (retaining pure GH9 endoglucanases, JHE/FE4 carboxylesterases, Hsp70 ATPase chaperones, and 12/12 I-helix + Cys-loop Clan-4 CYP4G15/CYP4C monooxygenases); (2) restored unphased complete mitogenome controls in Regime 4 Raw-0Beaker eliminating the v3.0.0 bootstrap inversion; (3) upgraded L2 and L5 ribosomal cohorts to strictly single-subunit 16S LSU rRNA; and (4) enforced disable-wiki-links and metadata hygiene guards.",
   "telemetry_filename": "isoptera-global-radiation-native-biosuite.json",
@@ -1794,6 +1794,8 @@
       "Separating mixed Stage 4 nuclear gene sets into homogeneous GH9 endoglucanase, JHE carboxylesterase, Hsp70 chaperone, and Clan-4 CYP4G15/CYP4C alignments eliminates cross-fold homology noise and confirms 100% proximal Cys-loop and I-helix retention across the S1 cytochrome P450 benchmark.",
       "Restoring authentic unphased circular mitogenomes to Regime 4 Raw-0Beaker resolves the v3.0.0 bootstrap inversion cleanly while single-subunit 16S LSU rRNA E-INS-i cohorts (L2 and L5) contrast buffered ribosomal diversity against Pleistocene contractions and maritime bridgehead bottlenecks in Coptotermes and Reticulitermes."
     ],
+    "abstract_context": "Resolving the evolutionary transition from wood-feeding cockroaches to eusocial termites requires separating deep blattodean phylogeny from compositional saturation while tracking endogenous lignocellulase and detoxification evolution.",
+    "executive_summary_lead": "traces the global radiation and lignocellulase evolution of eusocial termites",
     "latex_intro": "Blattodea and Isoptera lineages span Xylophagodea wood-roach outgroups [A] through Nasutitermitinae [G], analyzed under Genetic Codes 5 and 1 in Version 4.0.0.",
     "seed_base": 20261126
   }

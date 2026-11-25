@@ -6,7 +6,12 @@
   "discovery_slug": "gram-positive-bacteria-phylogenomics",
   "validation_set_id": "VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS",
   "preprint_label": "PREPRINT-31",
-  "companion_label": "Lab Discovery",
+  "preprint_version": "2.0.0",
+  "concept_doi": "10.5281/zenodo.24455504",
+  "telemetry_filename": "gram-positive-bacteria-native-biosuite.json",
+  "s3_locus_canonical": "rpoB",
+  "remediation_note": "Version 2.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, static skyline epoch labels, and fixed substitution-rate constants), using real per-locus partitioned ModelTest (with internal-partition chunk parallelization), empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary.",
+  "companion_label": "Lab Discovery #146",
   "title": "Partitioned ModelTest Phylogenomics, Cell-Wall Evolution, and Coalescent Dynamics Across Gram-Positive Bacteria (Bacillota and Actinomycetota)",
   "subtitle_prefix": "100% Native Rust Genetic Code 11 Partitioned ModelTest Phylogenomics",
   "category": "Microbiology, Partitioned Phylogenomics & Population Genetics",
@@ -736,6 +741,8 @@
       "Across functional cell-wall and stress compartments, peptidoglycan transferase murA and molecular chaperone dnaK remain under pervasive purifying selection, while the master endospore regulator spo0A preserves sporulation machinery prior to independent losses along non-sporulating Staphylococcales, Listeriaceae, and Lactobacillales stems and soluble P450 BM3 heme-thiolate architecture remains conserved on 1BU7.",
       "Because this dry-lab synthesis relies exclusively on public RefSeq and GenBank deposits curated through autonomous quality gates and Quartet MSC reconciliation, deep Archean-Proterozoic credibility intervals remain conditional on cross-phylum taxon occupancy and horizontal transfer equilibria."
     ],
+    "abstract_context": "Resolving deep evolutionary relationships between low-GC Bacillota and high-GC Actinomycetota requires accounting for strong genomic base-composition divergence alongside the conservation of cell-wall, sporulation, and metabolic enzymes.",
+    "executive_summary_lead": "traces deep divergence and cell-wall evolution across Gram-positive bacteria",
     "latex_intro": "Monoderm Gram-positive bacteria span the low-GC Bacillota and high-GC Actinomycetota rooted against diderm Terrabacteria outgroups.",
     "seed_base": 20261140
   }

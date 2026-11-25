@@ -2313,6 +2313,23 @@ mod empirical_anti_shortcut_tests {
                 );
             }
         }
+
+        let mcmc_skyline_src = fs::read_to_string(src_dir.join("mcmc_skyline.rs")).unwrap();
+        for banned_floor in [
+            ".max(12_840)",
+            ".max(9_420)",
+            ".max(9_680)",
+            ".max(9_820)",
+            ".max(1_850_000)",
+            ".max(1_420)",
+            ".max(3_680)",
+        ] {
+            assert!(
+                !mcmc_skyline_src.contains(banned_floor),
+                "Banned artificial timing floor `{}` reappeared inside mcmc_skyline.rs",
+                banned_floor
+            );
+        }
     }
 
     #[test]

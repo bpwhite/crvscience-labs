@@ -6,7 +6,7 @@
   "discovery_slug": "nudibranch-global-radiation-phylogenomics",
   "validation_set_id": "VAL-SET-064-NUDIBRANCH-GLOBAL-RADIATION-544RECS",
   "preprint_label": "PREPRINT-25",
-  "preprint_version": "3.0.0",
+  "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24107446",
   "remediation_note": "Version 3.0.0 remediates PREPRINT-25 v2.0.0 through the generalized declarative bio-suite pipeline: (1) added peer-reviewed 23-family, 7-clade benchmark validation (nudibranch_preprint25_design.json) so clade_recovery_summary.json evaluates ML RY3 and Quartet MSC bipartitions directly; (2) split mixed Stage 4 nuclear sets into homogeneous single-family Code-1 panels purged of C-type lectins/chitinases/mucins, DnaJ, KCNC1/mGluR8, and Clan-4/Clan-M P450s (retaining pure cathepsin L CTSL, Hsp70 ATPase chaperones, nAChR alpha subunits, and 12/12 I-helix + Cys-loop Clan-3 CYP3A29/CYP3A24 monooxygenases); (3) upgraded L2 and L5 ribosomal cohorts to strictly single-subunit 16S LSU rRNA; and (4) enforced disable-wiki-links and metadata hygiene guards.",
   "telemetry_filename": "nudibranch-global-radiation-native-biosuite.json",
@@ -1790,6 +1790,8 @@
       "Replacing heterogeneous Stage 4 gene mixtures with single-family CTSL, Hsp70, nAChR alpha, and Clan-3 CYP3A alignments resolves the v2.0.0 alignment instability and ensures 100% conserved I-helix and proximal Cys-loop fidelity across the S1 cytochrome P450 panel.",
       "Pairing single-subunit 16S LSU rRNA E-INS-i cohorts (L2 and L5) with standardized COX1 regional skylines isolates Last Glacial Maximum Sunda-Sahul shelf contractions and Holocene lagoon expansions from Histone H3 coding sweeps conditional on public NCBI sampling."
     ],
+    "abstract_context": "Reconstructing the marine radiation of nudibranch sea slugs requires resolving deep heterobranch relationships alongside selection on defensive sequestration, terpenoid metabolism, and regional reef population dynamics.",
+    "executive_summary_lead": "traces the global radiation and chemical-defense evolution of nudibranch sea slugs",
     "latex_intro": "Nudipleura and Nudibranchia lineages span Tectipleura outgroups [A] through aposematic Chromodoridoidea [G], analyzed under Genetic Codes 5 and 1 in Version 3.0.0.",
     "seed_base": 20261125
   }

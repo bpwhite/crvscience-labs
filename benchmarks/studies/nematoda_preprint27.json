@@ -6,7 +6,7 @@
   "discovery_slug": "nematoda-agricultural-pests-phylogenomics",
   "validation_set_id": "VAL-SET-066-NEMATODA-AGRICULTURAL-PESTS-544RECS",
   "preprint_label": "PREPRINT-27",
-  "preprint_version": "3.0.0",
+  "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24223794",
   "remediation_note": "Version 3.0.0 re-executed Stage 1-5 under generalized declarative bio-suite-supervisor + bio-suite-seqnet codon QC: (1) strict title classification separated the 28 short 28S/18S rRNA fallback accessions from the 36 complete mitogenomes so zero ribosomal sequences entered the COX1 (S3) codon alignment; (2) Stage 4 functional families were de-mixed into single-family full-length non-EST cohorts (FAM-01 GH5 beta-1,4-endoglucanase, FAM-02 CRT1 calreticulin, FAM-03 Hsp70, FAM-04 C. elegans P450) preserving conserved CYP I-helix and Cys-loop residues on 1TQN; (3) Skyline Cohorts L2 and L5 (Supp S2) were scoped cleanly to single-subunit LSU 28S D2-D3 rDNA.",
   "telemetry_filename": "nematoda-agricultural-pests-native-biosuite.json",
@@ -1756,6 +1756,8 @@
       "Strict pre-MSA motif and post-MSA codon auditing under Universal Standard Code 1 guarantees zero spurious termination artifacts and isolates genuine evolutionary conservation across HGT GH5 cellulases, CRT1 stylet effectors, hsp-70 chaperones, and detoxification P450s.",
       "Separating mitochondrial loci cleanly from nuclear LSU 28S D2-D3 rDNA cohorts prevents inter-subunit alignment stagger in Katoh E-INS-i skylines and grounds downstream bridgehead comparisons across transoceanic seed-potato, soybean, and timber trade corridors."
     ],
+    "abstract_context": "Understanding how plant parasitism evolved repeatedly across nematodes requires resolving deep phylum-level relationships alongside the conservation of horizontally acquired cellulases, stylet effectors, and detoxification enzymes.",
+    "executive_summary_lead": "traces plant-parasitism, HGT cellulases, and demography across pest nematodes",
     "latex_intro": "Plant-parasitic and free-living nematodes across Phylum Nematoda span Chromadorea outgroups [A] through Clade I virus vectors [B], Aphelenchoidea [C], and sedentary cyst/root-knot parasites [D]-[G] in Version 3.0.0.",
     "seed_base": 20261127
   }

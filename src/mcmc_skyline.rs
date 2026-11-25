@@ -2522,7 +2522,7 @@ pub fn run_coleoptera_function_skyline_pipeline(
 
     let (aligned_cols, parsimony_inf, ry3_patterns) =
         compress_alignment_patterns(&tip_order, &ry3_map);
-    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(12_840);
+    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(1);
 
     // 2. Parse the solved Newick tree from col64_ry3_m7.treefile on disk
     let treefile_path = work_dir.join("col64_ry3_m7.treefile");
@@ -2565,7 +2565,7 @@ pub fn run_coleoptera_function_skyline_pipeline(
         let dt = m_t0.elapsed().as_millis().max(110);
         native_models.push((mname.to_string(), *k, lnl, aic, bic, dt));
     }
-    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1_420);
+    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1);
 
     // 4. Run 10,000-generation coupled Metropolis-Hastings MCMC on the best Native RY3 model (GTR+F+R4)
     let t_mcmc0 = Instant::now();
@@ -2613,7 +2613,7 @@ pub fn run_coleoptera_function_skyline_pipeline(
             post_samples.push(cur_ln_l);
         }
     }
-    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(3_680);
+    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(1);
     let native_total_cpu_ms = native_gotoh_msa_ms + native_modeltest_ms + native_mcmc_ms;
 
     let native_posterior_mean_ln_l =
@@ -3119,7 +3119,7 @@ pub fn run_primate_function_skyline_pipeline(
 
     let (aligned_cols, parsimony_inf, ry3_patterns) =
         compress_alignment_patterns(&tip_order, &ry3_map);
-    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(9_420);
+    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(1);
 
     // 2. Parse the solved Newick tree from prim64_ry3_m7.treefile on disk
     let treefile_path = work_dir.join("prim64_ry3_m7.treefile");
@@ -3162,7 +3162,7 @@ pub fn run_primate_function_skyline_pipeline(
         let dt = m_t0.elapsed().as_millis().max(95);
         native_models.push((mname.to_string(), *k, lnl, aic, bic, dt));
     }
-    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1_180);
+    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1);
 
     // 4. Run 10,000-generation coupled Metropolis-Hastings MCMC on the best Native RY3 model (GTR+F+R4)
     let t_mcmc0 = Instant::now();
@@ -3221,7 +3221,7 @@ pub fn run_primate_function_skyline_pipeline(
             post_samples.push(cur_ln_l);
         }
     }
-    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(2_940);
+    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(1);
     let native_total_cpu_ms = native_gotoh_msa_ms + native_modeltest_ms + native_mcmc_ms;
 
     let native_posterior_mean_ln_l =
@@ -3676,7 +3676,7 @@ pub fn run_primate_function_skyline_pipeline(
         native_mcmc_ms,
         native_total_cpu_ms,
         external_mafft_ms: 35_113,
-        external_iqtree_ms: total_ext_iqtree_ms.max(1_850_000),
+        external_iqtree_ms: total_ext_iqtree_ms,
         external_beast_ms: 4_182,
         native_marginal_ln_l,
         native_posterior_mean_ln_l,
@@ -3728,7 +3728,7 @@ pub fn run_rodent_function_skyline_pipeline(
 
     let (aligned_cols, parsimony_inf, ry3_patterns) =
         compress_alignment_patterns(&tip_order, &ry3_map);
-    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(9_680);
+    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(1);
 
     // 2. Parse the solved Newick tree from rod64_ry3_m7.treefile on disk
     let treefile_path = work_dir.join("rod64_ry3_m7.treefile");
@@ -3771,7 +3771,7 @@ pub fn run_rodent_function_skyline_pipeline(
         let dt = m_t0.elapsed().as_millis().max(98);
         native_models.push((mname.to_string(), *k, lnl, aic, bic, dt));
     }
-    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1_220);
+    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1);
 
     // 4. Run 10,000-generation coupled Metropolis-Hastings MCMC on the best Native RY3 model (GTR+F+R4)
     let t_mcmc0 = Instant::now();
@@ -3830,7 +3830,7 @@ pub fn run_rodent_function_skyline_pipeline(
             post_samples.push(cur_ln_l);
         }
     }
-    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(2_980);
+    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(1);
     let native_total_cpu_ms = native_gotoh_msa_ms + native_modeltest_ms + native_mcmc_ms;
 
     let native_posterior_mean_ln_l =
@@ -4310,7 +4310,7 @@ pub fn run_rodent_function_skyline_pipeline(
         native_mcmc_ms,
         native_total_cpu_ms,
         external_mafft_ms: ext_mafft_ms,
-        external_iqtree_ms: total_ext_iqtree_ms.max(1_850_000),
+        external_iqtree_ms: total_ext_iqtree_ms,
         external_beast_ms: 4_320,
         native_marginal_ln_l,
         native_posterior_mean_ln_l,
@@ -4409,7 +4409,7 @@ pub fn run_rhinolophidae_asia_astral_skyline_pipeline(
 
     let (aligned_cols, parsimony_inf, ry3_patterns) =
         compress_alignment_patterns(&tip_order, &ry3_map);
-    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(9_820);
+    let native_gotoh_msa_ms = t_msa0.elapsed().as_millis().max(1);
 
     // 2. Parse the solved Newick tree from rh64_ry3_m1.treefile (or rhino_mito_only.treefile) on disk
     let mut treefile_path = work_dir.join("rh64_ry3_m1.treefile");
@@ -4455,7 +4455,7 @@ pub fn run_rhinolophidae_asia_astral_skyline_pipeline(
         let dt = m_t0.elapsed().as_millis().max(102);
         native_models.push((mname.to_string(), *k, lnl, aic, bic, dt));
     }
-    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1_240);
+    let native_modeltest_ms = t_mt0.elapsed().as_millis().max(1);
 
     // 4. Run 10,000-generation coupled Metropolis-Hastings MCMC on the best Native RY3 model (GTR+F+R4)
     let t_mcmc0 = Instant::now();
@@ -4514,7 +4514,7 @@ pub fn run_rhinolophidae_asia_astral_skyline_pipeline(
             post_samples.push(cur_ln_l);
         }
     }
-    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(3_040);
+    let native_mcmc_ms = t_mcmc0.elapsed().as_millis().max(1);
 
     // 5. Execute Quartet Multispecies Coalescent (`runie-quartet-coalescent` vs. `*ASTRAL v5.7.8`)
     // on the 18 locus gene trees derived from the exact same 64-species alignment!
@@ -5094,7 +5094,7 @@ pub fn run_rhinolophidae_asia_astral_skyline_pipeline(
         native_quartet_msc_ms,
         native_total_cpu_ms,
         external_mafft_ms: ext_mafft_ms,
-        external_iqtree_ms: total_ext_iqtree_ms.max(1_850_000),
+        external_iqtree_ms: total_ext_iqtree_ms,
         external_astral_ms,
         external_beast_ms: 4_380,
         native_marginal_ln_l,

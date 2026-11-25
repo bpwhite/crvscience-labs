@@ -6,7 +6,7 @@
   "discovery_slug": "china-australia-arthropod-pests-phylogenomics",
   "validation_set_id": "VAL-SET-068-CHINA-AUSTRALIA-ARTHROPOD-PESTS-544RECS",
   "preprint_label": "PREPRINT-29",
-  "preprint_version": "3.0.0",
+  "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24295798",
   "remediation_note": "Version 3.0.0 remediates PREPRINT-29 v2.0.0 through the generalized declarative bio-suite pipeline: (1) re-executed partitioned Edge-Linked ModelTest vs. Unpartitioned ML (zero estimation distortion / proper Table 3A ranking) and fixed benchmark clade evaluation via china_australia_pests_preprint29_design.json; (2) enforced homogeneous single-family Code-1 nuclear ortholog curation purging truncated/paralogous ace-1, CSP, Hsp70, and Cys-loop-incomplete CYP6 sequences (12/12 full-length I-helix + Cys-loop CYP6 orthologs retained on 1TQN); (3) isolated contaminated L2 (28S), L3 (ace-1), L6 (intron-free CYP6 mRNA), and R1/R6 (COII/CYTB-free COX1) skyline caches with fresh v3 keys eliminating ESS < 200 and Rhat > 1.05 plateaus; and (4) eliminated all-gap S3 COX1 rows and enforced metadata hygiene.",
   "telemetry_filename": "china-australia-arthropod-pests-native-biosuite.json",
@@ -1830,6 +1830,8 @@
       "Re-executing Stage 4 under strict single-family Code-1 ortholog QC eliminated truncated Hsp70 fragments and Cys-loop-incomplete CYP6 paralogs, yielding 12/12 full-length heme-thiolate CYP6 orthologs aligned cleanly on 1TQN while isolating COII/CYTB fragments, genomic introns, and non-homologous rRNA caches from Stage 3B multi-locus skyline inference (12/12 cohorts converged at minESS >= 200 and maxRhat <= 1.05).",
       "Cross-validation against china_australia_pests_preprint29_design.json paired with 64-species Quartet MSC and calibrated TimeTreeLSD2 node bounds establishes a reproducible dry-lab phylogenomic baseline bounded by public GenBank availability and empirical sampling density across East Asian and Australian monitoring programs."
     ],
+    "abstract_context": "Understanding how invasive crop pests adapt across East Asian and Australasian agroecosystems requires resolving deep arthropod relationships alongside xenobiotic-resistance selection and regional demographic history.",
+    "executive_summary_lead": "resolves phylogeny, resistance selection, and demography of China-Australia crop pests",
     "latex_intro": "Sixteen major China and Australia agricultural arthropod pest complexes spanning Chelicerata Acari [A] through Hexapoda [B]-[G] are jointly evaluated across 16 loci and 4 nuclear resistance families in Version 3.0.0.",
     "seed_base": 20261129
   }

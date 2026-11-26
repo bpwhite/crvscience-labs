@@ -745,7 +745,7 @@ pub fn run_anopheles_global_radiation_biosuite_pipeline(
         ch.global_rank = g_i + 1;
         ch.delta_ln_l_vs_best = round4(ch.marginal_ln_l - global_best_lnl);
     }
-    let native_modeltest_sweep_ms = t_mt0.elapsed().as_millis().max(940);
+    let native_modeltest_sweep_ms = t_mt0.elapsed().as_millis().max(1);
 
     // =========================================================================
     // STAGE 3: 18-Locus Native Rust Quartet Multispecies Coalescent
@@ -867,7 +867,7 @@ pub fn run_anopheles_global_radiation_biosuite_pipeline(
             "Pleistocene Amazonian riverine vs. circum-Caribbean coastal Nyssorhynchus radiation & historical introgression",
         ),
     ];
-    let native_quartet_msc_ms = t_msc0.elapsed().as_millis().max(260);
+    let native_quartet_msc_ms = t_msc0.elapsed().as_millis().max(1);
     // =========================================================================
     // STAGE 4: Native Rust 61-State Goldman-Yang Codon Selection (`run_native_codon_selection`)
     //          Across All 4 Functional Nuclear Gene Families (`48` CDS)
@@ -939,7 +939,7 @@ pub fn run_anopheles_global_radiation_biosuite_pipeline(
             selection_result: sel_res,
         });
     }
-    let native_codon_dnds_ms = t_dnds0.elapsed().as_millis().max(620);
+    let native_codon_dnds_ms = t_dnds0.elapsed().as_millis().max(1);
 
     // =========================================================================
     // STAGE 5: Native Rust 25,000-Generation Coupled Bayesian Coalescent Skyline

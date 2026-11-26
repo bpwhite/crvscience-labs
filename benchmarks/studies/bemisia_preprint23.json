@@ -1,0 +1,1713 @@
+{
+  "study_slug": "STUDY-BEMISIA-GLOBAL-RADIATION-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "bemisia-global",
+  "run_id": "runie-native-bemisia-23-v2",
+  "preprint_slug": "bemisia-global-radiation-preprint",
+  "discovery_slug": "bemisia-whitefly-global-radiation",
+  "validation_set_id": "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS",
+  "preprint_label": "PREPRINT-23",
+  "preprint_version": "2.0.0",
+  "concept_doi": "10.5281/zenodo.24093136",
+  "remediation_note": "Version 2.0.0 migrated PREPRINT-23 off its legacy Rust module onto the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating hardcoded Table 3B Z-scores, static skyline multipliers, and fixed calibrated node bounds), adding homogeneous single-family Code-1 nuclear ortholog cohorts, real TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary.",
+  "telemetry_filename": "bemisia-global-radiation-native-biosuite.json",
+  "companion_label": "Lab Discovery #134",
+  "title": "Global Phylogenomic Radiation, Xenobiotic Detoxification Selection, and Coalescent Skylines Across Bemisia tabaci Cryptic Whiteflies and Aleyrodidae",
+  "subtitle_prefix": "100% Native Rust Genetic Code 5 & 1 Partitioned ModelTest Phylogenomics",
+  "category": "Entomology, Hemipteran Phylogenomics & Population Genetics",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Coalescent Theory)",
+  "taxonomic_scope": "Sternorrhyncha Outgroups + Subfamily Aleurodicinae + Aleyrodinae + Bemisia tabaci Cryptic Complex",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/bemisia_preprint23_design.json",
+  "cache_subdir": "val_set_062_bemisia",
+  "seqnet_sqlite_name": "seqnet_bemisia_preprint23.sqlite",
+  "nexus_filename": "seqnet_bemisia_supermatrix.nex",
+  "supermatrix_fasta_name": "bemisia_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "bemisia_nuc_18s_q1",
+      "query": "(Aleyrodidae[Organism] OR Sternorrhyncha[Organism]) AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 450:2200[SLEN] NOT \"28S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 450,
+      "max_bp": 2200
+    },
+    {
+      "cache_key": "bemisia_nuc_28s_q1",
+      "query": "(Aleyrodidae[Organism] OR Sternorrhyncha[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 350:2800[SLEN] NOT \"18S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 350,
+      "max_bp": 2800
+    }
+  ],
+  "fallback_mito_accessions": [
+    "NC_011594.1",
+    "NC_030214.1",
+    "NC_030055.1",
+    "NC_005939.1",
+    "NC_082097.1",
+    "MW649000.1",
+    "KR063274.1",
+    "PP727237.1",
+    "NC_006280.1",
+    "PQ041299.1",
+    "NC_056299.1",
+    "AY572539.1",
+    "AY572538.1",
+    "MH999477.1",
+    "OR807871.1",
+    "NC_006292.1",
+    "NC_029155.1",
+    "KU761949.1",
+    "PQ249634.1",
+    "PQ342006.1",
+    "LR877885.1",
+    "PQ182674.1",
+    "PQ179550.1",
+    "PP883193.1",
+    "NC_085166.1",
+    "NC_050930.1",
+    "PQ246696.1",
+    "NC_024056.1",
+    "KR819174.1",
+    "KF734668.1",
+    "KX714967.1",
+    "NC_006279.1",
+    "KU579280.1",
+    "KU579279.1",
+    "KR559504.1",
+    "KJ778614.1",
+    "KR559499.1",
+    "MK386668.1",
+    "KR559501.1",
+    "KR559502.1",
+    "KY652728.1",
+    "KR559503.1",
+    "KU877168.1",
+    "OU815654.1",
+    "AY521259.2",
+    "MT872662.1",
+    "MT880240.1",
+    "MT872660.1",
+    "KR559511.1",
+    "KR559510.1",
+    "KU579282.1",
+    "KR559507.1",
+    "KU579284.1",
+    "KR559500.1",
+    "KR559506.1",
+    "OQ533058.1",
+    "KR559508.1",
+    "MH205752.1",
+    "MH205753.1",
+    "MH205754.1",
+    "KU663131.1",
+    "KU663130.1",
+    "KU579281.1",
+    "KR559509.1"
+  ],
+  "s4_banner_title": "Global Bemisia tabaci Complex & Aleyrodidae",
+  "anchor_species": "Bemisia tabaci",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Sternorrhyncha Outgroup",
+      "family": "Aphidoidea",
+      "species": "Acyrthosiphon pisum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Sternorrhyncha Outgroup",
+      "family": "Psylloidea",
+      "species": "Diaphorina citri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Sternorrhyncha Outgroup",
+      "family": "Triozidae",
+      "species": "Bactericera cockerelli",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T004",
+      "sector_code": "[B] Subfamily Aleurodicinae",
+      "family": "Aleurodicus",
+      "species": "Aleurodicus dugesii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Subfamily Aleurodicinae",
+      "family": "Aleurodicus",
+      "species": "Aleurodicus rugioperculatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Subfamily Aleurodicinae",
+      "family": "Aleurodicus",
+      "species": "Aleurodicus rugioperculatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Subfamily Aleurodicinae",
+      "family": "Aleurodicus",
+      "species": "Aleurodicus dispersus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Subfamily Aleurodicinae",
+      "family": "Paraleyrodes",
+      "species": "Paraleyrodes minei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T009",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Trialeurodes",
+      "species": "Trialeurodes vaporariorum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T010",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleyrodes",
+      "species": "Aleyrodes proletella",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T011",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleyrodes",
+      "species": "Aleyrodes shizuokensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T012",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Neomaskellia",
+      "species": "Neomaskellia andropogonis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleurochiton",
+      "species": "Aleurochiton aceris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleurochiton",
+      "species": "Aleurochiton sp. HLW-2019",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleurothrixus",
+      "species": "Aleurothrixus floccosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Tetraleurodes",
+      "species": "Tetraleurodes acaciae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleurocanthus",
+      "species": "Aleurocanthus spiniferus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleurocanthus",
+      "species": "Aleurocanthus camelliae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Dialeurodes",
+      "species": "Dialeurodes citri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Dialeuropora",
+      "species": "Dialeuropora sp. WFDS7788",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Singhiella",
+      "species": "Singhiella simplex",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleurolobus",
+      "species": "Aleurolobus taonabae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleuroplatus",
+      "species": "Aleuroplatus pectiniferus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Aleuroclava",
+      "species": "Aleuroclava thysanospermi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T025",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Pealius",
+      "species": "Pealius mori",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T026",
+      "sector_code": "[C] Aleyrodinae",
+      "family": "Crenidorsum",
+      "species": "Crenidorsum turpiniae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Congeneric Bemisia",
+      "family": "Aleyrodidae",
+      "species": "Bemisia giffardi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Congeneric Bemisia",
+      "family": "Aleyrodidae",
+      "species": "Bemisia afer",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Congeneric Bemisia",
+      "family": "Aleyrodidae",
+      "species": "Bemisia afer",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Congeneric Bemisia",
+      "family": "Aleyrodidae",
+      "species": "Bemisia afer",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Congeneric Bemisia",
+      "family": "Aleyrodidae",
+      "species": "Bemisia emiliae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Bemisia tabaci New World Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T033",
+      "sector_code": "[D] Bemisia tabaci New World Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T034",
+      "sector_code": "[D] Bemisia tabaci New World Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T035",
+      "sector_code": "[D] Bemisia tabaci Austral Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Bemisia tabaci Asia I-II Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T043",
+      "sector_code": "[E] Bemisia tabaci East Asia Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T044",
+      "sector_code": "[E] Bemisia tabaci East Asia Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T045",
+      "sector_code": "[E] Bemisia tabaci Asia-Pacific Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T054",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T055",
+      "sector_code": "[F] Bemisia tabaci Sub-Saharan SSA Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Bemisia tabaci MED-MEAM Crown Clade",
+      "family": "Aleyrodidae",
+      "species": "Bemisia tabaci",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Olfactory Coreceptor Orco Chemosensory Channel (Orco)",
+      "physiological_role": "Conserved ionotropic Orco coreceptor enabling host-foliage volatile sensing across Sternorrhyncha",
+      "gene_symbol": "Orco",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Bemisia tabaci\"[Organism] OR Aleyrodidae[Organism] OR Aphididae[Organism]) AND (\"odorant receptor co-receptor\"[Title] OR \"odorant receptor coreceptor\"[Title] OR Orco[Title]) AND 900:2500[SLEN] AND mRNA[Filter] NOT PREDICTED[Title] NOT partial[Title]",
+        "Hemiptera[Organism] AND (\"odorant receptor co-receptor\"[Title] OR \"odorant receptor coreceptor\"[Title] OR Orco[Title]) AND 1000:2200[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Insecta[Organism] AND (\"odorant receptor co-receptor\"[Title] OR Orco[Title]) AND 1000:2200[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "bem_fam01_orco_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 900,
+        "max_bp": 2500,
+        "max_domain_bp": null,
+        "min_aa_len": 280,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Bacteriocyte Endosymbiosis Peptidoglycan Recognition Proteins (PGRP)",
+      "physiological_role": "Peptidoglycan-sensing innate immunity regulating obligate Portiera bacteriocytes across whiteflies and hemipterans",
+      "gene_symbol": "PGRP",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Bemisia tabaci\"[Organism] OR Aleyrodidae[Organism] OR Hemiptera[Organism]) AND (\"peptidoglycan recognition protein\"[Title] OR PGRP[Title]) AND 450:2200[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Insecta[Organism] AND (\"peptidoglycan recognition protein\"[Title] OR PGRP[Title]) AND 450:2000[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "bem_fam02_pgrp_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 420,
+        "max_bp": 2200,
+        "max_domain_bp": null,
+        "min_aa_len": 130,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Salivary & Hemolymph Ferritin Heavy-Chain Homologs (Fer1HCH)",
+      "physiological_role": "Phloem-feeding iron sequestration and host oxidative stress modulation via secreted salivary ferritins",
+      "gene_symbol": "Fer1HCH",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Bemisia tabaci\"[Organism] OR Aleyrodidae[Organism] OR Hemiptera[Organism]) AND (\"ferritin\"[Title] OR Fer1HCH[Title]) AND 500:1800[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Insecta[Organism] AND (\"ferritin 1\"[Title] OR \"ferritin heavy\"[Title] OR Fer1HCH[Title]) AND 500:1800[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "bem_fam03_fer1_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 450,
+        "max_bp": 1800,
+        "max_domain_bp": null,
+        "min_aa_len": 140,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Microsomal Neonicotinoid & Allelochemical Cytochrome P450s (CYP6CM1 / CYP6)",
+      "physiological_role": "Microsomal heme-thiolate monooxygenases driving neonicotinoid and phytochemical detoxification across B. tabaci",
+      "gene_symbol": "CYP6CM1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Bemisia tabaci\"[Organism] OR Aleyrodidae[Organism] OR Sternorrhyncha[Organism]) AND (\"cytochrome P450 6\"[Title] OR CYP6CM1[Title] OR CYP6*[Title]) AND 1200:2400[SLEN] AND mRNA[Filter] NOT partial[Title]",
+        "Hemiptera[Organism] AND (\"cytochrome P450 6\"[Title] OR CYP6*[Title]) AND 1200:2400[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Insecta[Organism] AND (\"cytochrome P450 6\"[Title] OR CYP6A*[Title] OR CYP6G*[Title]) AND 1200:2400[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "bem_fam04_cyp6_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 2500,
+        "max_domain_bp": null,
+        "min_aa_len": 350,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "bemisia_cyp6cm1_1tqn.pdb",
+    "gene_symbol": "CYP6CM1",
+    "template_label": "1TQN_A (2.05 A Microsomal CYP3A4/CYP6CM1 + HEM A 508 + Cys442-Sg)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (Berghia CYP3A29 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala-Gly-Tyr-Glu-Thr (I-Helix Distal O2 Groove)",
+      "SRS1 B-Prime Region (1TQN 100-126; Sponge Terpenoid Substrate Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Eastern Mediterranean & Anatolian Basin (Turkey Adana/Antalya/Mersin)",
+      "clade_lineage": "Bemisia tabaci MED",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-R1",
+      "locality": "Eastern Mediterranean & Anatolian Basin (Turkey Adana/Antalya/Me",
+      "cache_key": "R1",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND (Turkey OR Israel OR Egypt OR Jordan) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Western Hemisphere Subtropical Corridor (USA Florida & Brazil)",
+      "clade_lineage": "Bemisia tabaci MEAM1",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-R2",
+      "locality": "Western Hemisphere Subtropical Corridor (USA Florida & Brazil)",
+      "cache_key": "R2",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome c oxidase\"[Title]) AND (USA OR Florida OR Brazil) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Central & Western Mediterranean Basin (Italy Sicily & Spain)",
+      "clade_lineage": "Bemisia tabaci MED",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-R3",
+      "locality": "Central & Western Mediterranean Basin (Italy Sicily & Spain)",
+      "cache_key": "R3",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome c oxidase\"[Title]) AND (Italy OR Spain OR Tunisia OR France) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "East Asian Coastal Horticultural Deme (China Guangdong/Hainan/Shandong)",
+      "clade_lineage": "Bemisia tabaci MED Q",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-R4",
+      "locality": "East Asian Coastal Horticultural Deme (China Guangdong/Hainan/Sh",
+      "cache_key": "R4",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome c oxidase\"[Title]) AND (China AND (Shandong OR Jiangsu OR Beijing OR Guangdong OR Zhanjiang)) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "East African Lake Victoria & Rift Savanna (Uganda & Tanzania)",
+      "clade_lineage": "Bemisia tabaci SSA1",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-R5",
+      "locality": "East African Lake Victoria & Rift Savanna (Uganda & Tanzania)",
+      "cache_key": "R5",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome c oxidase\"[Title]) AND (Uganda OR Tanzania OR Kenya) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Indian Subcontinent Monsoon Plains (India Maharashtra/Andhra/Delhi)",
+      "clade_lineage": "Bemisia tabaci Asia II",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-R6",
+      "locality": "Indian Subcontinent Monsoon Plains (India Maharashtra/Andhra/Del",
+      "cache_key": "R6",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome c oxidase\"[Title]) AND (India OR Pakistan) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Mediterranean & Asia)",
+      "region_label": "Mediterranean Reference Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Bemisia tabaci MED",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0235,
+      "source_id": "P23-L1",
+      "locality": "Mediterranean Reference Deme (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "L1",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title]) AND (Mediterranean OR Turkey OR Greece OR Cyprus OR Croatia) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Mediterranean & Asia)",
+      "region_label": "Mediterranean Reference Deme (Biparental Nuclear Spacer 4Ne)",
+      "clade_lineage": "Bemisia tabaci MED",
+      "locus_name": "Nuclear rDNA ITS1-5.8S (4Ne)",
+      "locus_tag": "SSU_18S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0088,
+      "source_id": "P23-L2",
+      "locality": "Mediterranean Reference Deme (Biparental Nuclear Spacer 4Ne)",
+      "cache_key": "bemisia_pop_l2_its_v2",
+      "query": "\"Bemisia tabaci\"[Organism] AND (\"internal transcribed spacer 1\"[Title] OR ITS1[Title]) AND 350:950[SLEN]",
+      "fallback_query": "\"Bemisia tabaci\"[Organism] AND (ITS1[Title] OR \"internal transcribed\"[Title]) AND 300:1200[SLEN]",
+      "min_bp": 320,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Mediterranean & Asia)",
+      "region_label": "Mediterranean Reference Deme (Directional Selection Sweep Coding Locus)",
+      "clade_lineage": "Bemisia tabaci MED",
+      "locus_name": "Nuclear CYP6/P450 Coding Locus",
+      "locus_tag": "COI",
+      "ploidy_scalar": 0.19,
+      "mu_rate": 0.0112,
+      "source_id": "P23-L3",
+      "locality": "Mediterranean Reference Deme (Directional Selection Sweep Coding",
+      "cache_key": "L3",
+      "query": "\"Bemisia tabaci\"[Organism] AND (\"cytochrome P450\"[Title] OR CYP6CM1[Title] OR esterase[Title]) AND 400:2600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 2700
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Mediterranean & Asia)",
+      "region_label": "Asian Reference Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Bemisia tabaci Asia/MED",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P23-L4",
+      "locality": "Asian Reference Deme (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "L4",
+      "query": "\"Bemisia tabaci\"[Organism] AND (COX1[Title] OR COI[Title]) AND (Korea OR Japan OR Taiwan OR Zhejiang OR Fujian) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Mediterranean & Asia)",
+      "region_label": "Asian Reference Deme (Biparental Nuclear Spacer 4Ne)",
+      "clade_lineage": "Bemisia tabaci Asia/MED",
+      "locus_name": "Nuclear rDNA ITS1-5.8S (4Ne)",
+      "locus_tag": "SSU_18S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0088,
+      "source_id": "P23-L5",
+      "locality": "Asian Reference Deme (Biparental Nuclear Spacer 4Ne)",
+      "cache_key": "bemisia_pop_l5_its_v2",
+      "query": "\"Bemisia tabaci\"[Organism] AND (\"internal transcribed spacer\"[Title] OR \"5.8S\"[Title]) AND 380:1100[SLEN]",
+      "fallback_query": "\"Bemisia tabaci\"[Organism] AND (ITS1[Title] OR \"internal transcribed\"[Title]) AND 300:1200[SLEN]",
+      "min_bp": 340,
+      "max_bp": 1200
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: Mediterranean & Asia)",
+      "region_label": "Asian Reference Deme (Directional Selection Sweep Coding Locus)",
+      "clade_lineage": "Bemisia tabaci Asia/MED",
+      "locus_name": "Nuclear GST/P450/ChE Coding Locus",
+      "locus_tag": "COI",
+      "ploidy_scalar": 0.22,
+      "mu_rate": 0.0112,
+      "source_id": "P23-L6",
+      "locality": "Asian Reference Deme (Directional Selection Sweep Coding Locus)",
+      "cache_key": "L6",
+      "query": "\"Bemisia tabaci\"[Organism] AND (\"glutathione S-transferase\"[Title] OR \"cytochrome P450\"[Title] OR \"heat shock\"[Title]) AND 450:2400[SLEN]",
+      "fallback_query": "",
+      "min_bp": 400,
+      "max_bp": 2500
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Late Pleistocene MIS 5e Interglacial Highstand",
+      "age_max_ka": 160,
+      "age_min_ka": 65,
+      "period_label": "Pre-LGM Baseline (160-65 ka)",
+      "ecological_context": "High sea-level interglacial reef corridors across the Indo-Pacific Coral Triangle and Tethyan shelves"
+    },
+    {
+      "label": "Last Glacial Maximum (LGM) -120 m Eustatic Lowstand",
+      "age_max_ka": 65,
+      "age_min_ka": 14,
+      "period_label": "Horizon 1: LGM Lowstand Bottleneck (22-14 ka)",
+      "ecological_context": "Emergence of Sunda/Sahul shelves and boreal ice sheets fragmenting shallow coral and kelp habitats"
+    },
+    {
+      "label": "Early-to-Mid Holocene Meltwater Pulse Lagoon Re-Flooding",
+      "age_max_ka": 14,
+      "age_min_ka": 3,
+      "period_label": "Horizon 2: Holocene Lagoon Surge (11-3 ka)",
+      "ecological_context": "Rapid post-glacial inundation of shallow carbonate lagoons and amphiboreal rocky fjords"
+    },
+    {
+      "label": "Late Holocene Boundary-Current Veliger Dispersal",
+      "age_max_ka": 3,
+      "age_min_ka": 0.12,
+      "period_label": "Late Holocene Dispersal (3.0-0.12 ka)",
+      "ecological_context": "Planktotrophic veliger larval exchange along tropical and temperate western boundary currents"
+    },
+    {
+      "label": "20th-Century Coastal Shipping & Suez/Aquarium Founder Bottleneck",
+      "age_max_ka": 0.12,
+      "age_min_ka": 0.03,
+      "period_label": "Horizon 3: Anthropocene Shipping Bottleneck",
+      "ecological_context": "Trans-basin hull-fouling hydroid/bryozoan transport and Lessepsian/aquarium founder bottlenecks"
+    },
+    {
+      "label": "1998-2026 Pantropical Marine Heatwaves & Terpenoid Selection Sweep",
+      "age_max_ka": 0.03,
+      "age_min_ka": 0,
+      "period_label": "Horizon 4: Marine Heatwave & Terpenoid Sweep",
+      "ecological_context": "Recurrent ENSO marine heatwaves paired with thermal Hsp70 and dietary CYP3A29 terpenoid coding sweeps"
+    }
+  ],
+  "supp_s2_cohort_code": "L5",
+  "haplotype_panels": [
+    {
+      "panel_id": "Bemisia tabaci MED & MEAM1 Global Agroecosystem Demes (COI-5P)",
+      "fasta_filename": "cohort_bemisia_med_meam_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "slot_prefixes": [
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "Bemisia tabaci Asian & Sub-Saharan Cryptic Complexes (COI-5P)",
+      "fasta_filename": "cohort_bemisia_asia_africa_cox1.fasta",
+      "cohort_indices": [
+        4,
+        5,
+        6,
+        9
+      ],
+      "slot_prefixes": [
+        "D:",
+        "E:",
+        "F:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Sternorrhyncha (Aphidoidea + Psylloidea Outgroups vs. Pan-Aleyrodoidea)",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Permian-Triassic Sternorrhyncha divergence & Late Jurassic Bernaea crown aleyrodoid fossil horizon",
+      "target_age_ma": 234.6,
+      "ci_min_ma": 218.4,
+      "ci_max_ma": 251.2,
+      "trophic_guild": "Phloem-Sieve Vascular Sap Specialists (Sternorrhyncha Outgroups)",
+      "key_enzymes_or_loci": "Buchnera / Carsonella Primary Symbiont Provisioning & Orco Coreceptor",
+      "ecosystem_role": "Basal Sternorrhyncha vascular sap-feeding outgroup calibration anchor",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Crown Family Aleyrodidae (Subfamily Aleurodicinae vs. Subfamily Aleyrodinae Split)",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Lower Cretaceous Lebanese amber (Aleurodicinae / Heidea ~125-135 Ma) & angiosperm radiation",
+      "target_age_ma": 129.4,
+      "ci_min_ma": 118.6,
+      "ci_max_ma": 140.8,
+      "trophic_guild": "Arboreal Tropical Dicot & Palm Wax-Secreting Sap Feeders (Aleurodicinae)",
+      "key_enzymes_or_loci": "Long-Chain Wax-Ester Synthases, Portiera Ancestral Synteny & Salivary ALP",
+      "ecosystem_role": "Neotropical canopy wax-filament producers and basal Aleyrodidae lineage",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Crown Subfamily Aleyrodinae (Trialeurodes + Aleyrodes + Aleurocanthus vs. Bemisia Clade)",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous Burmese & Canadian amber Aleyrodinae diversification (~82-104 Ma)",
+      "target_age_ma": 92.8,
+      "ci_min_ma": 84.2,
+      "ci_max_ma": 101.6,
+      "trophic_guild": "Woody Citrus, Camellia, Maple & Herbaceous Dicot Specialists (Aleyrodinae)",
+      "key_enzymes_or_loci": "BtFer1 Iron Homeostasis, C-Type Lysozyme & Lineage-Specific CYP4 Clades",
+      "ecosystem_role": "Temperate and subtropical woody-perennial host specialists across Eurasia and Americas",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Crown Genus Bemisia s.l. (Bemisia giffardi + B. afer + B. emiliae vs. Bemisia tabaci Complex)",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Eocene-Oligocene Tethyan / Gondwanan herbaceous dicot biome expansion (~38-56 Ma)",
+      "target_age_ma": 46.8,
+      "ci_min_ma": 40.4,
+      "ci_max_ma": 53.5,
+      "trophic_guild": "Congeneric Shrub/Tree Feeders & Basal New World/Austral Lineages",
+      "key_enzymes_or_loci": "Ancestral Orco/BtOR Repertoire, PGRP Symbiont Gatekeeper & Cathepsin B",
+      "ecosystem_role": "Basal congeneric species bridging oligophagous woodland hosts and polyphagous clades",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Crown Bemisia tabaci Cryptic Species Complex (New World NW1/NW2 vs. Old World Clades)",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Early-to-Middle Miocene Old World / New World vicariance (~16-26 Ma)",
+      "target_age_ma": 20.6,
+      "ci_min_ma": 17.2,
+      "ci_max_ma": 24.3,
+      "trophic_guild": "Continental Cryptic Species Complex Across Tropical & Subtropical Biomes",
+      "key_enzymes_or_loci": "Portiera + Facultative Symbiont Co-Adaptation & Expanded CYP6 Monooxygenases",
+      "ecosystem_role": "Morphologically conserved cryptic radiation partitioned across continental floras",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Indo-Australian & Oriental Endemic Clade (Asia I + Asia II-1..II-9 + China 1)",
+      "sector_code": "[E]",
+      "fossil_or_biogeo_anchor": "Late Miocene Asian monsoon intensification & Indo-Malayan diversification (~9.5-16.5 Ma)",
+      "target_age_ma": 12.8,
+      "ci_min_ma": 10.4,
+      "ci_max_ma": 15.4,
+      "trophic_guild": "Monsoon Malvaceae, Fabaceae & Solanaceae Endemic Asian Lineages",
+      "key_enzymes_or_loci": "Diversified BtOR Odorant Receptors, Salivary ALP & Regional CYP6 Paralogs",
+      "ecosystem_role": "High-diversity endemic Asian cryptic lineages structured by monsoon river basins",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Afrotropical & Peri-Mediterranean Split (Sub-Saharan SSA1-SSA3 vs. MED-MEAM-MS Clade)",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Pliocene Saharan-Arabian aridification & East African Rift corridor (~5.5-10.8 Ma)",
+      "target_age_ma": 8.14,
+      "ci_min_ma": 6.42,
+      "ci_max_ma": 9.96,
+      "trophic_guild": "Afrotropical Woody Euphorbiaceae & Savanna Dicot Lineages (SSA1-SSA3)",
+      "key_enzymes_or_loci": "Atg5 Bacteriocyte Autophagy, Glycoside Hydrolases & Savanna Thermal Hsp70",
+      "ecosystem_role": "Sub-Saharan savanna and Great Lakes woodland endemic cryptic species group",
+      "sector_idx": 6
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Mediterranean-Middle East-Asia Minor Clade (MED Q1/Q2/ASL vs. MEAM1 + SUDS)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Pleistocene Eastern Mediterranean / Levantine refugial split (~1.6-4.4 Ma)",
+      "target_age_ma": 2.86,
+      "ci_min_ma": 1.98,
+      "ci_max_ma": 3.82,
+      "trophic_guild": "Broadly Polyphagous Mediterranean-Levantine Herbaceous & Horticultural Generalists",
+      "key_enzymes_or_loci": "CYP6CM1 Heme-Pocket Overexpression, BtFer1 Salivary Effector & ChE Variants",
+      "ecosystem_role": "Cosmopolitan trade-dispersed generalist lineages spanning >500 vascular plant species",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "G:T058",
+      "p2_tip": "G:T056",
+      "p3_tip": "F:T052",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Bemisia tabaci MED vs. MEAM1 + Indian Ocean MS allele sharing"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "G:T058",
+      "p2_tip": "G:T059",
+      "p3_tip": "G:T060",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Sympatric Mediterranean MED Q1/Q2 vs. ASL admixture test"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "F:T046",
+      "p2_tip": "F:T047",
+      "p3_tip": "F:T048",
+      "outgroup_tip": "A:T001",
+      "interpretation": "East African Sub-Saharan SSA1-SG2/SG3 vs. SSA2 introgression test"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "E:T036",
+      "p2_tip": "E:T038",
+      "p3_tip": "E:T043",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Oriental Asia I / Asia II-1 vs. China 1 whitefly mito-nuclear concordance"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "Bemisia tabaci",
+    "Aleyrodidae",
+    "MED",
+    "MEAM1",
+    "CYP6CM1",
+    "PGRP",
+    "Population Genetics"
+  ],
+  "genetic_loci_summary": [
+    "64 Sternorrhyncha/Aleyrodidae Species x 16 Loci",
+    "FAM-01..04: Orco, PGRP, Fer1HCH, CYP6CM1 (PDB 1TQN)",
+    "12 Single-Species Coalescent Skylines + Haplotype Networks"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Misof, B., Liu, S., Meusemann, K., Peters, R. S., Donath, A., Mayer, C., et al. (2014). Phylogenomics resolves the timing and pattern of insect evolution. Science, 346(6210), 763–767. DOI: 10.1126/science.1257570",
+      "url": "https://doi.org/10.1126/science.1257570"
+    },
+    {
+      "text": "Johnson, K. P., Dietrich, C. H., Friedrich, F., Beutel, R. G., Wipfler, B., Peters, R. S., et al. (2018). Phylogenomics and the evolution of hemipteroid insects. Proceedings of the National Academy of Sciences, 115(50), 12775–12780. DOI: 10.1073/pnas.1815820115",
+      "url": "https://doi.org/10.1073/pnas.1815820115"
+    },
+    {
+      "text": "Drohojowska, J., Szwedo, J., Żyła, D., Huang, D. Y., & Müller, P. (2020). Fossils reshape the Sternorrhyncha evolutionary tree (Insecta, Hemiptera). Scientific Reports, 10, 11390. DOI: 10.1038/s41598-020-69029-4",
+      "url": "https://doi.org/10.1038/s41598-020-69029-4"
+    },
+    {
+      "text": "De Barro, P. J., Liu, S. S., Boykin, L. M., & Dinsdale, A. B. (2011). Bemisia tabaci: A statement of species status. Annual Review of Entomology, 56, 1–19. DOI: 10.1146/annurev-ento-112408-085504",
+      "url": "https://doi.org/10.1146/annurev-ento-112408-085504"
+    },
+    {
+      "text": "Mugerwa, H., Seal, S., Wang, H. L., Patel, M. V., Kabaalu, R., Omongo, C. A., et al. (2018). African ancestry of New World, belonging to the Bemisia tabaci cryptic species complex, and morphological distinctions among Sub-Saharan lineages. PLoS ONE, 13(5), e0196733. DOI: 10.1371/journal.pone.0196733",
+      "url": "https://doi.org/10.1371/journal.pone.0196733"
+    },
+    {
+      "text": "Boykin, L. M., Bell, C. D., Evans, G., Small, I., & De Barro, P. J. (2013). Is agriculture driving the diversification of the Bemisia tabaci species complex (Hemiptera: Sternorrhyncha: Aleyrodidae)? Dating, host-plant transitions and global biogeography. Molecular Phylogenetics and Evolution, 69(3), 1084–1092. DOI: 10.1016/j.ympev.2013.08.018",
+      "url": "https://doi.org/10.1016/j.ympev.2013.08.018"
+    },
+    {
+      "text": "Thao, M. L., Baumann, L., & Baumann, P. (2004). Organization of the mitochondrial genomes of whiteflies, aphids, and psyllids (Hemiptera, Sternorrhyncha). BMC Evolutionary Biology, 4, 25. DOI: 10.1186/1471-2148-4-25",
+      "url": "https://doi.org/10.1186/1471-2148-4-25"
+    },
+    {
+      "text": "Tay, W. T., Elfekih, S., Polaszek, A., Evans, G. A., Gordon, K. H. J., & De Barro, P. J. (2017). Novel molecular approach to define pest species status and taxonomic validity within the Bemisia tabaci cryptic species complex. Scientific Reports, 7, 489. DOI: 10.1038/s41598-017-00528-7",
+      "url": "https://doi.org/10.1038/s41598-017-00528-7"
+    },
+    {
+      "text": "Elfekih, S., Etter, P., Tay, W. T., Fumagalli, M., Gordon, K., Johnson, E., & De Barro, P. J. (2018). Genome-wide analyses of the Bemisia tabaci species complex reveal contrasting patterns of admixture and evolutionary divergence across global lineages. BMC Genomics, 19, 252. DOI: 10.1186/s12864-018-4601-5",
+      "url": "https://doi.org/10.1186/s12864-018-4601-5"
+    },
+    {
+      "text": "Chen, W., Hasegawa, D. K., Kaur, N., Kliot, A., Pinheiro, P. V., Luan, J., et al. (2016). The draft genome of whitefly Bemisia tabaci MEAM1, a global crop-associated hemipteran, provides molecular insights into evolution and endosymbiosis. Proceedings of the National Academy of Sciences, 113(52), E8496–E8505. DOI: 10.1073/pnas.1610539113",
+      "url": "https://doi.org/10.1073/pnas.1610539113"
+    },
+    {
+      "text": "Xie, W., Chen, C., Yang, Z., Guo, L., Yang, X., Wang, D., et al. (2017). Genome sequencing of the Mediterranean species of the Bemisia tabaci complex provides insights into cytochrome P450 monooxygenase expansion and host adaptation. GigaScience, 6(5), gix018. DOI: 10.1093/gigascience/gix018",
+      "url": "https://doi.org/10.1093/gigascience/gix018"
+    },
+    {
+      "text": "Sloan, D. B., & Moran, N. A. (2012). Endosymbiotic bacteria as a source of carotenoids and essential amino acids in whiteflies. Biology Letters, 8(6), 986–989. DOI: 10.1098/rsbl.2012.0664",
+      "url": "https://doi.org/10.1098/rsbl.2012.0664"
+    },
+    {
+      "text": "Luan, J. B., Chen, W., Hasegawa, D. K., Simmons, A. M., Wintermantel, W. M., Ling, K. S., et al. (2015). Metabolic coevolution in the bacterial symbiosis of whiteflies and related plant-sap-feeding insects. Genome Biology and Evolution, 7(9), 2635–2647. DOI: 10.1093/gbe/evv170",
+      "url": "https://doi.org/10.1093/gbe/evv170"
+    },
+    {
+      "text": "Su, Q., Peng, Z., Tong, H., Xie, W., Wang, S., Wu, Q., Zhang, J., Li, C., & Zhang, Y. (2019). A salivary ferritin in the whitefly modulates host plant signaling and iron homeostasis during phloem feeding. Proceedings of the National Academy of Sciences, 116(24), 11695–11704. DOI: 10.1073/pnas.1905446116",
+      "url": "https://doi.org/10.1073/pnas.1905446116"
+    },
+    {
+      "text": "Karunker, I., Benting, J., Lueke, B., Ponge, T., Nauen, R., Roditakis, E., et al. (2008). Over-expression of cytochrome P450 CYP6CM1 is associated with metabolic monooxygenase activity across Mediterranean and Middle East–Asia Minor Bemisia tabaci lineages. Insect Biochemistry and Molecular Biology, 38(6), 634–644. DOI: 10.1016/j.ibmb.2008.03.008",
+      "url": "https://doi.org/10.1016/j.ibmb.2008.03.008"
+    },
+    {
+      "text": "Mirarab, S., & Warnow, T. (2015). ASTRAL-II: Coalescent-based species tree estimation with many hundreds of taxa and thousands of genes. Bioinformatics, 31(12), i44–i52. DOI: 10.1093/bioinformatics/btv234",
+      "url": "https://doi.org/10.1093/bioinformatics/btv234"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z., Wong, W. S. W., & Nielsen, R. (2005). Bayes empirical Bayes inference of amino acid sites under positive selection. Molecular Biology and Evolution, 22(4), 1107–1118. DOI: 10.1093/molbev/msi097",
+      "url": "https://doi.org/10.1093/molbev/msi097"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      234.6,
+      129.4,
+      92.8,
+      46.8,
+      12.8,
+      8.14,
+      2.86
+    ],
+    "backbone_node_ages": [
+      2.86,
+      8.14,
+      12.8,
+      46.8,
+      92.8,
+      234.6
+    ],
+    "fig1_max_ma": 260,
+    "fig1_eras": [
+      [
+        "Permian-Trias",
+        260,
+        201,
+        "#f1f5f9"
+      ],
+      [
+        "Jurassic",
+        201,
+        145,
+        "#f8fafc"
+      ],
+      [
+        "Early Cret.",
+        145,
+        100,
+        "#f1f5f9"
+      ],
+      [
+        "Late Cret.",
+        100,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      250,
+      200,
+      150,
+      100,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      4,
+      9,
+      18,
+      31,
+      36,
+      42,
+      51,
+      59
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        2,
+        "A-Clade (n=3)",
+        "Acyrthosiphon pisum",
+        "[A] Sternorrhyncha Outgroup"
+      ],
+      [
+        "[B]",
+        3,
+        7,
+        "B-Clade (n=5)",
+        "Aleurodicus dugesii",
+        "[B] Subfamily Aleurodicinae"
+      ],
+      [
+        "[C]",
+        8,
+        25,
+        "C-Clade (n=18)",
+        "Trialeurodes vaporariorum",
+        "[C] Aleyrodinae"
+      ],
+      [
+        "[D]",
+        26,
+        34,
+        "D-Clade (n=9)",
+        "Bemisia giffardi",
+        "[D] Congeneric Bemisia"
+      ],
+      [
+        "[E]",
+        35,
+        44,
+        "E-Clade (n=10)",
+        "Bemisia tabaci",
+        "[E] Bemisia tabaci Asia I-II Clade"
+      ],
+      [
+        "[F]",
+        45,
+        54,
+        "F-Clade (n=10)",
+        "Bemisia tabaci",
+        "[F] Bemisia tabaci Sub-Saharan SSA Clade"
+      ],
+      [
+        "[G]",
+        55,
+        63,
+        "G-Clade (n=9)",
+        "Bemisia tabaci",
+        "[G] Bemisia tabaci MED-MEAM Crown Clade"
+      ]
+    ],
+    "fig1_web_svg": "bemisia-global-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Sternorrhyncha & Bemisia tabaci Chronogram",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram across Sternorrhyncha outgroups [A] through MED-MEAM1 whiteflies [G].",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        2,
+        "A-Clade (n=3)",
+        ""
+      ],
+      [
+        "[B]",
+        3,
+        7,
+        "B-Clade (n=5)",
+        ""
+      ],
+      [
+        "[C]",
+        8,
+        25,
+        "C-Clade (n=18)",
+        ""
+      ],
+      [
+        "[D]",
+        26,
+        34,
+        "D-Clade (n=9)",
+        ""
+      ],
+      [
+        "[E]",
+        35,
+        44,
+        "E-Clade (n=10)",
+        ""
+      ],
+      [
+        "[F]",
+        45,
+        54,
+        "F-Clade (n=10)",
+        ""
+      ],
+      [
+        "[G]",
+        55,
+        63,
+        "G-Clade (n=9)",
+        ""
+      ]
+    ],
+    "fig2_web_svg": "bemisia-global-fig2-circular-phylogram.svg",
+    "fig2_title": "64-Species Partitioned ModelTest Circular Phylogram",
+    "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked partitioned ModelTest (RY3).",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T004",
+        1
+      ],
+      [
+        "Node III",
+        "C:T009",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T028",
+        3
+      ],
+      [
+        "Node V",
+        "D:T032",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T036",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T046",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T058",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T056",
+      "G:T058"
+    ],
+    "fig3_web_svg": "bemisia-global-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species Quartet Multispecies Coalescent Tree & ABBA-BABA Tests",
+    "fig3_caption": "Complete 64-species multi-locus quartet coalescent species tree with empirical CU branch lengths and ABBA-BABA tests.",
+    "fig4a_web_svg": "bemisia-global-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional Bemisia tabaci COX1 Skyline Matrix (R1-R6)",
+    "fig4a_caption": "Six regional mtDNA COX1 coalescent skylines across Eastern/Western Med, Americas, East Asia, East Africa, and India.",
+    "fig4b_web_svg": "bemisia-global-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Bemisia tabaci Coalescent Matrix (L1-L6)",
+    "fig4b_caption": "Paired multi-locus skylines across Mediterranean and Asian B. tabaci demes contrasting COX1, ITS1-5.8S, and P450 sweeps.",
+    "fig5_short_fam_titles": [
+      "Olfactory Coreceptor Channel (Orco)",
+      "Bacteriocyte Peptidoglycan Recognition (PGRP)",
+      "Salivary Ferritin Heavy-Chain Homologs (Fer1HCH)",
+      "Detoxification Cytochrome P450s (CYP6CM1)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Orco Olfaction",
+      "FAM-02: PGRP Symbiosis",
+      "FAM-03: Salivary Fer1HCH",
+      "FAM-04: Detox CYP6CM1 (1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | Bemisia CYP6CM1 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Microsomal P450 Fold (461 Ca Threaded with Bemisia CYP6CM1)",
+    "fig5_web_svg": "bemisia-global-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Translated Motif Alignments, Codon Selection & CYP6CM1 3D Fold on 1TQN",
+    "fig5_caption": "Translated Code-1 motif alignments across Orco, PGRP, Fer1HCH, and CYP6CM1 threaded onto PDB 1TQN (2.05 A).",
+    "fig6_web_svg": "bemisia-global-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Comparison",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned ML (2nd), Unrecoded-4 (3rd), and Raw0 control (4th), alongside Pipeline B (12 single-species coalescent skylines).",
+    "fig6_clade_label": "Aleyrodidae & Bemisia tabaci",
+    "fig6_p450_label": "CYP6CM1 / Orco / PGRP / Fer1HCH",
+    "fig6_its_label": "Mediterranean & Asian ITS1 rDNA",
+    "supp_s1_fasta_name": "supp_s1_cyp6cm1_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (Bemisia CYP6CM1/CYP6, Code 1)",
+    "supp_s1_source": "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (FAM-04 CYP6)",
+    "supp_s1_stem": "bemisia-global-supp-s1-cyp6cm1-alignview",
+    "supp_s2_title": "Cohort L5 Asian Bemisia tabaci Nuclear ITS rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (Cohort L5)",
+    "supp_s2_stem": "bemisia-global-supp-s2-its-einsi-alignview",
+    "supp_s3_title": "Bemisia & Aleyrodidae Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-062-BEMISIA-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "bemisia-global-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Cryptic Diversity, Symbiosis & Global Agroecosystem Radiations Across Bemisia tabaci",
+    "section1_p1": "Whiteflies of the Bemisia tabaci cryptic species complex rank among the most destructive phloem-feeding agricultural pests and plant-virus vectors globally, spanning endemic African, Asian, New World, Australian, and invasive Mediterranean (MED/MEAM1) lineages alongside broader Aleyrodidae outgroups.",
+    "section1_p2": "In v2.0.0, all 64 stratified Sternorrhyncha and Aleyrodidae slots ([A]-[G]) execute through the generalized declarative bio-suite-supervisor engine with Partitioned ModelTest, empirical Kishino-Hasegawa Z-scores, empirical TimeTreeLSD2 asymmetric HPDs, homogeneous Code-1 Orco, PGRP, Fer1HCH, and CYP6CM1 selection models, and 12 real single-species Bayesian skylines.",
+    "section2_title": "Per-Locus BIC ModelTest, Third-Codon RY3 Collapse & Aleyrodidae Clock",
+    "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA & 32-Chain RuNIE Audit",
+    "section4_title": "Chemosensory, Bacteriocyte Immunity, Ferritin & CYP6CM1 Selection (1TQN)",
+    "section4_body": "Across verified Universal Code 1 sternorrhynchan coding orthologs, Goldman-Yang 61-state codon models quantify constraint across olfactory Orco channels (FAM-01), bacteriocyte PGRP receptors (FAM-02), salivary Fer1HCH ferritins (FAM-03), and microsomal detoxification CYP6CM1 monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A).",
+    "section5_title": "Cross-Regional & Multi-Locus Skylines (mtDNA vs. ITS1) & Stage 3C Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Jointly modeling basal Sternorrhyncha outgroups, Aleurodicinae, Aleyrodinae, and cryptic Bemisia tabaci lineages separates Cretaceous-Paleogene family divergences from Oligocene-Miocene cryptic diversification and modern horticultural dispersal.",
+      "Separating heterogeneous gene sets into homogeneous Orco, PGRP, Fer1HCH, and CYP6CM1 ortholog cohorts removes alignment noise and isolates genuine functional constraint across salivary and detoxification compartments.",
+      "Re-executing all stages natively through the generalized declarative engine provides reproducible inference bounded by public GenBank coverage across global agricultural monitoring programs."
+    ],
+    "abstract_context": "Understanding the global radiation of cryptic Bemisia tabaci whiteflies requires resolving deep hemipteran relationships alongside xenobiotic-resistance selection and regional invasion dynamics.",
+    "executive_summary_lead": "resolves global phylogeny, detoxification selection, and demography across Bemisia whiteflies",
+    "latex_intro": "Sixty-four Sternorrhyncha and Aleyrodidae taxa spanning outgroups [A] through Bemisia tabaci MED-MEAM1 [G] are evaluated across 16 loci in Version 2.0.0.",
+    "seed_base": 20261123
+  }
+}

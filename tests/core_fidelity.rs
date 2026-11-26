@@ -2125,6 +2125,10 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
         ("nematoda_preprint27.json", 16usize, "1TQN", 5u8),
         ("isoptera_preprint26.json", 16usize, "1TQN", 5u8),
         ("nudibranch_preprint25.json", 16usize, "1TQN", 5u8),
+        ("invasive_snails_preprint24.json", 16usize, "1TQN", 5u8),
+        ("bemisia_preprint23.json", 16usize, "1TQN", 5u8),
+        ("anopheles_preprint22.json", 17usize, "1TQN", 5u8),
+        ("basal_metazoa_preprint05.json", 16usize, "1LI1", 5u8),
     ] {
         let cfg_path = manifest_dir.join("benchmarks/studies").join(fname);
         let cfg = DeclarativeStudyConfig::load(&cfg_path)
@@ -2327,6 +2331,15 @@ mod empirical_anti_shortcut_tests {
             assert!(
                 !mcmc_skyline_src.contains(banned_floor),
                 "Banned artificial timing floor `{}` reappeared inside mcmc_skyline.rs",
+                banned_floor
+            );
+        }
+
+        let anopheles_src = fs::read_to_string(src_dir.join("anopheles_biosuite.rs")).unwrap();
+        for banned_floor in [".max(940)", ".max(260)", ".max(620)"] {
+            assert!(
+                !anopheles_src.contains(banned_floor),
+                "Banned artificial timing floor `{}` reappeared inside anopheles_biosuite.rs",
                 banned_floor
             );
         }

@@ -1,0 +1,1785 @@
+{
+  "study_slug": "STUDY-ANOPHELES-GLOBAL-RADIATION-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "anopheles-global",
+  "run_id": "runie-native-anopheles-22-v2",
+  "preprint_slug": "anopheles-global-radiation-preprint",
+  "discovery_slug": "anopheles-global-radiation-native-biosuite",
+  "validation_set_id": "VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS",
+  "preprint_label": "PREPRINT-22",
+  "preprint_version": "2.0.0",
+  "concept_doi": "10.5281/zenodo.24078829",
+  "remediation_note": "Version 2.0.0 migrated PREPRINT-22 off legacy anopheles_biosuite.rs onto the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating artificial timing floors, parametric skyline multipliers, and fixed support constants), introducing partitioned per-locus ModelTest with RY3, homogeneous single-family Code-1 nuclear orthologs (Orco, TEP1, ace-1, CYP6P3 on 1TQN), empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation skylines, and a plain-English Abstract and Executive Summary.",
+  "telemetry_filename": "anopheles-global-radiation-native-biosuite.json",
+  "companion_label": "Lab Discovery #133",
+  "title": "Global Phylogenomic Radiation, Vector-Control & Immune Selection, and Coalescent Skylines Across Anopheles Malaria Vectors",
+  "subtitle_prefix": "100% Native Rust Genetic Code 5 & 1 Partitioned ModelTest Phylogenomics",
+  "category": "Vector Biology, Malaria Phylogenomics & Population Genetics",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Vector Genomics)",
+  "taxonomic_scope": "Culicinae Outgroups + Basal Anophelinae (Chagasia/Bironella) + Nyssorhynchus/Anopheles/Cellia",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/anopheles_preprint22_design.json",
+  "cache_subdir": "val_set_061_anopheles",
+  "seqnet_sqlite_name": "seqnet_anopheles_preprint22.sqlite",
+  "nexus_filename": "seqnet_anopheles_supermatrix.nex",
+  "supermatrix_fasta_name": "anopheles_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "anoph_nuc_18s_q1",
+      "query": "(Anopheles[Organism] OR Culicidae[Organism]) AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 450:2200[SLEN] NOT \"28S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 450,
+      "max_bp": 2200
+    },
+    {
+      "cache_key": "anoph_nuc_28s_q1",
+      "query": "(Anopheles[Organism] OR Culicidae[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 350:2800[SLEN] NOT \"18S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 350,
+      "max_bp": 2800
+    }
+  ],
+  "fallback_mito_accessions": [
+    "NC_014574.1",
+    "NC_028616.1",
+    "NC_035159.1",
+    "NC_006817.1",
+    "NC_054324.1",
+    "NC_062634.1",
+    "NC_037796.1",
+    "NC_057653.1",
+    "NC_037811.1",
+    "NC_037827.1",
+    "NC_044647.1",
+    "NC_030249.1",
+    "NC_030248.1",
+    "NC_030250.1",
+    "NC_064612.1",
+    "NC_064605.1",
+    "NC_020662.1",
+    "NC_037788.1",
+    "NC_030717.1",
+    "NC_030715.1",
+    "NC_020663.1",
+    "NC_037791.1",
+    "NC_037807.1",
+    "NC_037793.1",
+    "NC_037786.1",
+    "NC_037800.1",
+    "NC_086773.1",
+    "PV094681.1",
+    "NC_028213.1",
+    "PQ588194.1",
+    "PV094669.1",
+    "NC_057251.1",
+    "NC_000875.1",
+    "PQ587025.1",
+    "NC_028016.1",
+    "NC_071882.1",
+    "NC_071884.1",
+    "NC_072605.1",
+    "NC_064611.1",
+    "NC_064609.1",
+    "NC_036263.1",
+    "NC_020768.1",
+    "NC_028222.1",
+    "NC_020770.1",
+    "NC_020769.1",
+    "NC_054312.1",
+    "NC_028221.1",
+    "NC_039540.1",
+    "NC_028216.1",
+    "NC_028223.1",
+    "NC_028218.1",
+    "NC_039397.1",
+    "NC_064610.1",
+    "NC_064608.1",
+    "NC_064607.1",
+    "NC_064603.1",
+    "NC_056265.1",
+    "NC_056261.1",
+    "NC_028214.1",
+    "NC_028217.1",
+    "NC_028220.1",
+    "NC_028219.1",
+    "NC_028212.1",
+    "NC_083487.1"
+  ],
+  "s4_banner_title": "Global Anopheles Malaria Vector Radiation",
+  "anchor_species": "Anopheles gambiae",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP8",
+      "display_name": "ATP8",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 110,
+      "max_bp": 450,
+      "min_taxa": 8,
+      "min_aa": 35
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Culicini Outgroup",
+      "family": "Culex",
+      "species": "Culex quinquefasciatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Culicini Outgroup",
+      "family": "Culex",
+      "species": "Culex tritaeniorhynchus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Aedini Outgroup",
+      "family": "Aedes",
+      "species": "Aedes aegypti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Aedini Outgroup",
+      "family": "Aedes",
+      "species": "Aedes albopictus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T005",
+      "sector_code": "[A] Toxorhynchitini Outgroup",
+      "family": "Toxorhynchites",
+      "species": "Toxorhynchites speciosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T006",
+      "sector_code": "[A] Basal Anophelinae: Chagasia",
+      "family": "Chagasia",
+      "species": "Chagasia sp. 1 SJ-2020",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T007",
+      "sector_code": "[A] Basal Anophelinae: Bironella",
+      "family": "Bironella",
+      "species": "Bironella hollandi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T008",
+      "sector_code": "[A] Basal Anophelinae: Bironella",
+      "family": "Bironella",
+      "species": "Bironella derooki",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Subgenus Stethomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles nimbus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Subgenus Stethomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles kompi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T011",
+      "sector_code": "[B] Subgenus Kerteszia",
+      "family": "Anophelinae",
+      "species": "Anopheles cruzii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T012",
+      "sector_code": "[B] Subgenus Kerteszia",
+      "family": "Anophelinae",
+      "species": "Anopheles bellator",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T013",
+      "sector_code": "[B] Subgenus Kerteszia",
+      "family": "Anophelinae",
+      "species": "Anopheles homunculus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T014",
+      "sector_code": "[B] Subgenus Kerteszia",
+      "family": "Anophelinae",
+      "species": "Anopheles laneanus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T015",
+      "sector_code": "[B] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles darlingi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T016",
+      "sector_code": "[B] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles aquasalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T017",
+      "sector_code": "[B] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles albitarsis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T018",
+      "sector_code": "[B] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles marajoara",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles janconnae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles oryzalimnetes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles deaneorum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles braziliensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles argyritarsis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles oswaldoi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T025",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles rangeli",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T026",
+      "sector_code": "[C] Subgenus Nyssorhynchus",
+      "family": "Anophelinae",
+      "species": "Anopheles triannulatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles plumbeus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles claviger",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles atroparvus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles maculipennis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles messeae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles sacharovi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T033",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles quadrimaculatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T034",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles punctipennis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T035",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles sinensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T036",
+      "sector_code": "[D] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles lesteri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles peditaeniatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles barbirostris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles coustani",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Subgenus Anopheles",
+      "family": "Anophelinae",
+      "species": "Anopheles ziemanni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles dirus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles cracens",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T043",
+      "sector_code": "[E] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles punctulatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T044",
+      "sector_code": "[E] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles farauti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T045",
+      "sector_code": "[E] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles hinesorum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles annulipes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles minimus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles aconitus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles culicifacies",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Subgenus Cellia: Neocellia",
+      "family": "Anophelinae",
+      "species": "Anopheles stephensi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Subgenus Cellia: Neocellia",
+      "family": "Anophelinae",
+      "species": "Anopheles maculatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Subgenus Cellia: Neocellia",
+      "family": "Anophelinae",
+      "species": "Anopheles splendidus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Subgenus Cellia: Neomyzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles nili",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T054",
+      "sector_code": "[F] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles moucheti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles marshallii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles funestus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles rivulorum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Subgenus Cellia: Myzomyia",
+      "family": "Anophelinae",
+      "species": "Anopheles vaneedeni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Subgenus Cellia: Pyretophorus",
+      "family": "Anophelinae",
+      "species": "Anopheles christyi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Subgenus Cellia: Pyretophorus",
+      "family": "Anophelinae",
+      "species": "Anopheles epiroticus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Subgenus Cellia: Pyretophorus",
+      "family": "Anophelinae",
+      "species": "Anopheles merus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Subgenus Cellia: Pyretophorus",
+      "family": "Anophelinae",
+      "species": "Anopheles melas",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Subgenus Cellia: Pyretophorus",
+      "family": "Anophelinae",
+      "species": "Anopheles arabiensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Subgenus Cellia: Pyretophorus",
+      "family": "Anophelinae",
+      "species": "Anopheles gambiae",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Olfactory Coreceptor Channel (Orco / Or7)",
+      "physiological_role": "Conserved ionotropic Orco channel subunit mediating human host-odorant reception",
+      "gene_symbol": "Orco",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(Anopheles[Organism] OR Culicidae[Organism]) AND (\"odorant receptor co-receptor\"[Title] OR \"odorant receptor coreceptor\"[Title] OR Orco[Title] OR \"odorant receptor Or7\"[Title]) AND 900:2500[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Diptera[Organism] AND (\"odorant receptor co-receptor\"[Title] OR Orco[Title]) AND 900:2400[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "anoph_fam01_orco_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 900,
+        "max_bp": 2600,
+        "max_domain_bp": null,
+        "min_aa_len": 280,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Innate Immune Thioester-Containing Protein 1 (TEP1 / Complement)",
+      "physiological_role": "Antiparasitic hemolymph thioester opsonization of Plasmodium ookinetes across Anopheles vectors",
+      "gene_symbol": "TEP1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "Anopheles[Organism] AND (\"thioester-containing protein 1\"[Title] OR TEP1[Title] OR \"thioester-containing protein\"[Title]) AND 1200:5000[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Culicidae[Organism] AND (\"thioester-containing protein\"[Title] OR TEP1[Title]) AND 1200:5000[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "anoph_fam02_tep1_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 5200,
+        "max_domain_bp": null,
+        "min_aa_len": 340,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Organophosphate/Carbamate Target-Site Acetylcholinesterase (ace-1)",
+      "physiological_role": "Synaptic acetylcholinesterase enzyme under vector-control organophosphate and carbamate selection",
+      "gene_symbol": "ace-1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(Anopheles[Organism] OR Culicidae[Organism]) AND (\"acetylcholinesterase\"[Title] OR \"ace-1\"[Title]) AND 1200:3200[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Diptera[Organism] AND (\"acetylcholinesterase\"[Title] OR \"ace-1\"[Title]) AND 1200:3000[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "anoph_fam03_ace1_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 3400,
+        "max_domain_bp": null,
+        "min_aa_len": 340,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Pyrethroid-Metabolizing Cytochrome P450 Monooxygenases (CYP6P3 / CYP6M2)",
+      "physiological_role": "Microsomal heme-thiolate CYP6 monooxygenases metabolizing pyrethroids and DDT across Afrotropical and Asian malaria vectors",
+      "gene_symbol": "CYP6P3",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(Anopheles[Organism] OR Culicidae[Organism]) AND (\"cytochrome P450 6\"[Title] OR CYP6P3[Title] OR CYP6M2[Title] OR CYP6Z1[Title] OR CYP6*[Title]) AND 1200:2400[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "Diptera[Organism] AND (\"cytochrome P450 6\"[Title] OR CYP6*[Title]) AND 1200:2400[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "anoph_fam04_cyp6_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 2500,
+        "max_domain_bp": null,
+        "min_aa_len": 350,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "anopheles_cyp6p3_1tqn.pdb",
+    "gene_symbol": "CYP6P3",
+    "template_label": "1TQN_A (2.05 A Microsomal CYP3A4/CYP6P3 + HEM A 508 + Cys442-Sg)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (Berghia CYP3A29 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala-Gly-Tyr-Glu-Thr (I-Helix Distal O2 Groove)",
+      "SRS1 B-Prime Region (1TQN 100-126; Sponge Terpenoid Substrate Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Anopheles gambiae (African Savanna COI)",
+      "clade_lineage": "Anopheles gambiae",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-R1",
+      "locality": "Anopheles gambiae (African Savanna COI)",
+      "cache_key": "anoph22_pop_r1_v2",
+      "query": "\"Anopheles gambiae\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Anopheles arabiensis (Rift Savanna COI)",
+      "clade_lineage": "Anopheles arabiensis",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-R2",
+      "locality": "Anopheles arabiensis (Rift Savanna COI)",
+      "cache_key": "anoph22_pop_r2_v2",
+      "query": "\"Anopheles arabiensis\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Anopheles stephensi (South Asian Cistern COI)",
+      "clade_lineage": "Anopheles stephensi",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-R3",
+      "locality": "Anopheles stephensi (South Asian Cistern COI)",
+      "cache_key": "anoph22_pop_r3_v2",
+      "query": "\"Anopheles stephensi\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND (India OR Pakistan OR Iran) AND 450:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 440,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Anopheles stephensi (Horn of Africa Invasion COI)",
+      "clade_lineage": "Anopheles stephensi",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-R4",
+      "locality": "Anopheles stephensi (Horn of Africa Invasion COI)",
+      "cache_key": "anoph22_pop_r4_v2",
+      "query": "\"Anopheles stephensi\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND (Ethiopia OR Djibouti OR Kenya OR Sudan OR Somalia OR Yemen) AND 450:950[SLEN]",
+      "fallback_query": "\"Anopheles stephensi\"[Organism] AND (COX1[Title] OR COI[Title]) AND 450:950[SLEN]",
+      "min_bp": 440,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Anopheles darlingi (Central Amazonian COI)",
+      "clade_lineage": "Anopheles darlingi",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-R5",
+      "locality": "Anopheles darlingi (Central Amazonian COI)",
+      "cache_key": "anoph22_pop_r5_v2",
+      "query": "\"Anopheles darlingi\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Anopheles albimanus (Neotropical Coastal COI)",
+      "clade_lineage": "Anopheles albimanus",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-R6",
+      "locality": "Anopheles albimanus (Neotropical Coastal COI)",
+      "cache_key": "anoph22_pop_r6_v2",
+      "query": "\"Anopheles albimanus\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND 480:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 460,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: West Africa & East Asia)",
+      "region_label": "Anopheles gambiae (Maternal mtDNA ND5 1Ne)",
+      "clade_lineage": "Anopheles gambiae",
+      "locus_name": "mtDNA ND5 (1Ne)",
+      "locus_tag": "ND5",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0245,
+      "source_id": "P22-L1",
+      "locality": "Anopheles gambiae (Maternal mtDNA ND5 1Ne)",
+      "cache_key": "anoph22_pop_l1_v2",
+      "query": "\"Anopheles gambiae\"[Organism] AND (ND5[Title] OR \"NADH dehydrogenase subunit 5\"[Title]) AND 450:1800[SLEN]",
+      "fallback_query": "",
+      "min_bp": 420,
+      "max_bp": 1850
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: West Africa & East Asia)",
+      "region_label": "Anopheles gambiae (Nuclear rDNA ITS2 4Ne)",
+      "clade_lineage": "Anopheles gambiae",
+      "locus_name": "Nuclear rDNA ITS2 (4Ne)",
+      "locus_tag": "SSU_18S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0085,
+      "source_id": "P22-L2",
+      "locality": "Anopheles gambiae (Nuclear rDNA ITS2 4Ne)",
+      "cache_key": "anoph22_pop_l2_v2",
+      "query": "\"Anopheles gambiae\"[Organism] AND (\"internal transcribed spacer 2\"[Title] OR ITS2[Title]) AND 350:900[SLEN]",
+      "fallback_query": "Anopheles[Organism] AND (\"internal transcribed spacer 2\"[Title] OR ITS2[Title]) AND 350:900[SLEN]",
+      "min_bp": 320,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: West Africa & East Asia)",
+      "region_label": "Anopheles gambiae (VGSC para kdr Sweep)",
+      "clade_lineage": "Anopheles gambiae",
+      "locus_name": "Nuclear VGSC para (kdr)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 0.18,
+      "mu_rate": 0.011,
+      "source_id": "P22-L3",
+      "locality": "Anopheles gambiae (VGSC para kdr Sweep)",
+      "cache_key": "anoph22_pop_l3_v2",
+      "query": "\"Anopheles gambiae\"[Organism] AND (\"sodium channel\"[Title] OR para[Title] OR kdr[Title]) AND 300:1800[SLEN]",
+      "fallback_query": "Anopheles[Organism] AND (\"sodium channel\"[Title] OR para[Title]) AND 260:1800[SLEN]",
+      "min_bp": 280,
+      "max_bp": 1850
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: West Africa & East Asia)",
+      "region_label": "Anopheles sinensis (Maternal mtDNA COX1 1Ne)",
+      "clade_lineage": "Anopheles sinensis",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.023,
+      "source_id": "P22-L4",
+      "locality": "Anopheles sinensis (Maternal mtDNA COX1 1Ne)",
+      "cache_key": "anoph22_pop_l4_v2",
+      "query": "\"Anopheles sinensis\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome oxidase\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: West Africa & East Asia)",
+      "region_label": "Anopheles sinensis (Nuclear rDNA ITS2 4Ne)",
+      "clade_lineage": "Anopheles sinensis",
+      "locus_name": "Nuclear rDNA ITS2 (4Ne)",
+      "locus_tag": "SSU_18S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0085,
+      "source_id": "P22-L5",
+      "locality": "Anopheles sinensis (Nuclear rDNA ITS2 4Ne)",
+      "cache_key": "anoph22_pop_l5_v2",
+      "query": "\"Anopheles sinensis\"[Organism] AND (\"internal transcribed spacer 2\"[Title] OR ITS2[Title]) AND 350:900[SLEN]",
+      "fallback_query": "Anopheles[Organism] AND (\"internal transcribed spacer 2\"[Title] OR ITS2[Title]) AND 350:900[SLEN]",
+      "min_bp": 320,
+      "max_bp": 950
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: West Africa & East Asia)",
+      "region_label": "Anopheles sinensis (VGSC para kdr Sweep)",
+      "clade_lineage": "Anopheles sinensis",
+      "locus_name": "Nuclear VGSC para (kdr)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 0.22,
+      "mu_rate": 0.011,
+      "source_id": "P22-L6",
+      "locality": "Anopheles sinensis (VGSC para kdr Sweep)",
+      "cache_key": "anoph22_pop_l6_v2",
+      "query": "\"Anopheles sinensis\"[Organism] AND (\"sodium channel\"[Title] OR para[Title] OR kdr[Title]) AND 260:1800[SLEN]",
+      "fallback_query": "Anopheles[Organism] AND (\"sodium channel\"[Title] OR para[Title]) AND 260:1800[SLEN]",
+      "min_bp": 250,
+      "max_bp": 1850
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Late Pleistocene MIS 5e Interglacial Highstand",
+      "age_max_ka": 160,
+      "age_min_ka": 65,
+      "period_label": "Pre-LGM Baseline (160-65 ka)",
+      "ecological_context": "High sea-level interglacial reef corridors across the Indo-Pacific Coral Triangle and Tethyan shelves"
+    },
+    {
+      "label": "Last Glacial Maximum (LGM) -120 m Eustatic Lowstand",
+      "age_max_ka": 65,
+      "age_min_ka": 14,
+      "period_label": "Horizon 1: LGM Lowstand Bottleneck (22-14 ka)",
+      "ecological_context": "Emergence of Sunda/Sahul shelves and boreal ice sheets fragmenting shallow coral and kelp habitats"
+    },
+    {
+      "label": "Early-to-Mid Holocene Meltwater Pulse Lagoon Re-Flooding",
+      "age_max_ka": 14,
+      "age_min_ka": 3,
+      "period_label": "Horizon 2: Holocene Lagoon Surge (11-3 ka)",
+      "ecological_context": "Rapid post-glacial inundation of shallow carbonate lagoons and amphiboreal rocky fjords"
+    },
+    {
+      "label": "Late Holocene Boundary-Current Veliger Dispersal",
+      "age_max_ka": 3,
+      "age_min_ka": 0.12,
+      "period_label": "Late Holocene Dispersal (3.0-0.12 ka)",
+      "ecological_context": "Planktotrophic veliger larval exchange along tropical and temperate western boundary currents"
+    },
+    {
+      "label": "20th-Century Coastal Shipping & Suez/Aquarium Founder Bottleneck",
+      "age_max_ka": 0.12,
+      "age_min_ka": 0.03,
+      "period_label": "Horizon 3: Anthropocene Shipping Bottleneck",
+      "ecological_context": "Trans-basin hull-fouling hydroid/bryozoan transport and Lessepsian/aquarium founder bottlenecks"
+    },
+    {
+      "label": "1998-2026 Pantropical Marine Heatwaves & Terpenoid Selection Sweep",
+      "age_max_ka": 0.03,
+      "age_min_ka": 0,
+      "period_label": "Horizon 4: Marine Heatwave & Terpenoid Sweep",
+      "ecological_context": "Recurrent ENSO marine heatwaves paired with thermal Hsp70 and dietary CYP3A29 terpenoid coding sweeps"
+    }
+  ],
+  "supp_s2_cohort_code": "L5",
+  "haplotype_panels": [
+    {
+      "panel_id": "Afrotropical Pyretophorus & Cellia Vector Demes (COI-5P)",
+      "fasta_filename": "cohort_anopheles_afrotropical_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "slot_prefixes": [
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "Neotropical & East Asian Anopheles Vector Demes (COI-5P)",
+      "fasta_filename": "cohort_anopheles_neotrop_asia_cox1.fasta",
+      "cohort_indices": [
+        4,
+        5,
+        9
+      ],
+      "slot_prefixes": [
+        "B:",
+        "C:",
+        "D:",
+        "E:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Culicidae (Culicinae Outgroup vs. Pan-Anophelinae Split)",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Triassic/Early Jurassic nematoceran Diptera & Paleoculicis minutus crown mosquito bounds",
+      "target_age_ma": 194.8,
+      "ci_min_ma": 175,
+      "ci_max_ma": 215,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Root Culicidae (Culicinae Outgroup vs. Pan-Anophelinae Split)",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Crown Anophelinae (Basal Neotropical Chagasia vs. Bironella + Anopheles)",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Mid-Cretaceous Western Gondwana breakup & Burmese amber Priscoculex fossil horizon",
+      "target_age_ma": 108.4,
+      "ci_min_ma": 96,
+      "ci_max_ma": 122,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Crown Anophelinae (Basal Neotropical Chagasia vs. Bironella + Anopheles)",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Australasian Bironella + Stethomyia vs. Core Genus Anopheles Split",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous East Gondwana / Sahul-Neotropical vicariance",
+      "target_age_ma": 85.6,
+      "ci_min_ma": 76,
+      "ci_max_ma": 96,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Australasian Bironella + Stethomyia vs. Core Genus Anopheles Split",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Neotropical Subgenera (Nyssorhynchus + Kerteszia) vs. Old World/Holarctic Anopheles + Cellia",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Terminal Equatorial Atlantic opening (South America-Africa separation + Dominican amber An. dominicanus)",
+      "target_age_ma": 78.9,
+      "ci_min_ma": 70,
+      "ci_max_ma": 88,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Neotropical Subgenera (Nyssorhynchus + Kerteszia) vs. Old World/Holarctic Anopheles + Cellia",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Cosmopolitan Subgenus Anopheles vs. Old World Subgenus Cellia Split",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Paleocene-Eocene Thermal Maximum (PETM) boreotropical & Tethyan dispersal",
+      "target_age_ma": 64.2,
+      "ci_min_ma": 55,
+      "ci_max_ma": 74,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Cosmopolitan Subgenus Anopheles vs. Old World Subgenus Cellia Split",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Crown Subgenus Cellia (Neomyzomyia + Myzomyia + Neocellia + Pyretophorus)",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Middle Eocene Afro-Arabian / Indian collision & Asian monsoon initiation",
+      "target_age_ma": 45.8,
+      "ci_min_ma": 38,
+      "ci_max_ma": 54,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Crown Subgenus Cellia (Neomyzomyia + Myzomyia + Neocellia + Pyretophorus)",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Afrotropical Myzomyia (An. funestus Group) vs. Pyretophorus Divergence",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Miocene Afrotropical savanna corridor & swamp vector divergence",
+      "target_age_ma": 28,
+      "ci_min_ma": 20,
+      "ci_max_ma": 38,
+      "trophic_guild": "Afrotropical Savanna & Marsh Malaria Vectors",
+      "key_enzymes_or_loci": "COI / ND5 / CYP6 / ace-1",
+      "ecosystem_role": "Miocene Funestus-gambiae Afrotropical radiation",
+      "sector_idx": 6
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Pyretophorus / Anopheles gambiae Species Complex (Afrotropical Savanna Radiation)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Plio-Pleistocene East African Rift C4 grassland expansion & hominin synanthropy",
+      "target_age_ma": 4.62,
+      "ci_min_ma": 2.2,
+      "ci_max_ma": 7.5,
+      "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
+      "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
+      "ecosystem_role": "Crown Pyretophorus / Anopheles gambiae Species Complex (Afrotropical Savanna Radiation)",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "G:T064",
+      "p2_tip": "G:T063",
+      "p3_tip": "G:T061",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Anopheles gambiae / An. arabiensis / An. merus 2La inversion & coastal introgression"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "G:T061",
+      "p2_tip": "G:T062",
+      "p3_tip": "G:T064",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Halophilic brackish An. merus & mangrove An. melas vs. An. gambiae sharing"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "G:T056",
+      "p2_tip": "F:T047",
+      "p3_tip": "F:T049",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Afro-Oriental Myzomyia (An. funestus / An. minimus / An. culicifacies) concordance"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "B:T015",
+      "p2_tip": "B:T017",
+      "p3_tip": "B:T016",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Neotropical Nyssorhynchus (An. darlingi / An. albitarsis / An. aquasalis) ILS test"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "Anopheles",
+    "Malaria Vectors",
+    "Anopheles gambiae",
+    "Anopheles stephensi",
+    "CYP6P3",
+    "TEP1",
+    "Population Genetics"
+  ],
+  "genetic_loci_summary": [
+    "64 Culicidae/Anopheles Species x 17 Loci",
+    "FAM-01..04: Orco, TEP1, ace-1, CYP6P3 (PDB 1TQN)",
+    "12 Single-Species Coalescent Skylines + Haplotype Networks"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An open-source architecture for autonomous bioinformatics pipeline synthesis, blinded validation, and Bayesian scope-depth auditing. CRV Science Labs Preprints, PREPRINT-01.",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Neafsey, D. E., Waterhouse, R. M., Abai, M. R., et al. (2015). Highly evolvable malaria vectors: The genomes of 16 Anopheles mosquitoes. Science, 347(6217), 1258522.",
+      "url": "https://doi.org/10.1126/science.1258522"
+    },
+    {
+      "text": "Fontaine, M. C., Pease, J. B., Steele, A., et al. (2015). Extensive introgression in a malaria vector species complex revealed by phylogenomics. Science, 347(6217), 1258524.",
+      "url": "https://doi.org/10.1126/science.1258524"
+    },
+    {
+      "text": "Miles, A., Harding, N. J., Botta, G., et al. (2017). Genetic diversity of the African malaria vector Anopheles gambiae. Nature, 552(7683), 96–100.",
+      "url": "https://doi.org/10.1038/nature24995"
+    },
+    {
+      "text": "Clarkson, C. S., Weetman, D., Essandoh, J., et al. (2014). Adaptive introgression between Anopheles sibling species eliminates a major genomic island of speciation. Nature Communications, 5, 4248.",
+      "url": "https://doi.org/10.1038/ncomms5248"
+    },
+    {
+      "text": "Sinka, M. E., Pironon, S., Massey, N. C., et al. (2020). A new malaria vector in Africa: Predicting the expansion range of Anopheles stephensi and identifying the urban populations at risk. Proceedings of the National Academy of Sciences, 117(40), 24900–24908.",
+      "url": "https://doi.org/10.1073/pnas.2003976117"
+    },
+    {
+      "text": "Sinka, M. E., Bangs, M. J., Manguin, S., et al. (2012). A global map of dominant malaria vectors. Parasites & Vectors, 5, 69.",
+      "url": "https://doi.org/10.1186/1756-3305-5-69"
+    },
+    {
+      "text": "Sayyari, E., & Mirarab, S. (2016). Fast coalescent-based computation of local branch support from quartet frequencies. Molecular Biology and Evolution, 33(7), 1654–1668.",
+      "url": "https://doi.org/10.1093/molbev/msw079"
+    },
+    {
+      "text": "Mirarab, S., Reaz, R., Bayzid, M. S., et al. (2014). ASTRAL: genome-scale coalescent-based species tree estimation. Bioinformatics, 30(17), i541–i548.",
+      "url": "https://doi.org/10.1093/bioinformatics/btu462"
+    },
+    {
+      "text": "Harbach, R. E. (2013). The phylogeny and classification of Anopheles. In Anopheles Mosquitoes: New Insights into Malaria Vectors (pp. 3–55). InTech.",
+      "url": "https://doi.org/10.5772/54695"
+    },
+    {
+      "text": "Freitas, L. A., Russo, C. A. M., Voloch, C. M., et al. (2015). Diversification of the genus Anopheles and a neotropical clade from the late Cretaceous. PLOS ONE, 10(8), e0134462.",
+      "url": "https://doi.org/10.1371/journal.pone.0134462"
+    },
+    {
+      "text": "Thawornwattana, Y., Dalquen, D., & Yang, Z. (2018). Coalescent analysis of phylogenomic data confidently resolves the species relationships in the Anopheles gambiae species complex. Molecular Biology and Evolution, 35(10), 2512–2527.",
+      "url": "https://doi.org/10.1093/molbev/msy158"
+    },
+    {
+      "text": "Vittor, A. Y., Gilman, R. H., Tielsch, J., et al. (2006). The effect of deforestation on the human-biting rate of Anopheles darlingi, the primary vector of Falciparum malaria in the Peruvian Amazon. American Journal of Tropical Medicine and Hygiene, 74(1), 3–11.",
+      "url": "https://doi.org/10.4269/ajtmh.2006.74.3"
+    },
+    {
+      "text": "Blandin, S., Shiao, S. H., Moita, L. F., et al. (2004). Complement-like protein TEP1 is a determinant of vectorial capacity in the malaria vector Anopheles gambiae. Cell, 116(5), 661–670.",
+      "url": "https://doi.org/10.1016/S0092-8674(04)00173-4"
+    },
+    {
+      "text": "Carey, A. F., Wang, G., Su, C. Y., Zwiebel, L. J., & Carlson, J. R. (2010). Odorant reception in the malaria mosquito Anopheles gambiae. Nature, 464(7285), 66–71.",
+      "url": "https://doi.org/10.1038/nature08834"
+    },
+    {
+      "text": "Goldman, N., & Yang, Z. (1994). A codon-based model of nucleotide substitution for protein-coding DNA sequences. Molecular Biology and Evolution, 11(5), 725–736.",
+      "url": "https://doi.org/10.1093/oxfordjournals.molbev.a040153"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192.",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Maynard Smith, J., & Haigh, J. (1974). The hitch-hiking effect of a favourable gene. Genetical Research, 23(1), 23–35.",
+      "url": "https://doi.org/10.1017/S0016672300014634"
+    },
+    {
+      "text": "Phillips, M. J., Delsuc, F., & Penny, D. (2004). Genome-scale phylogeny and the detection of systematic biases. Molecular Biology and Evolution, 21(7), 1455–1458.",
+      "url": "https://doi.org/10.1093/molbev/msh137"
+    },
+    {
+      "text": "Lorenz, C., Alves, J. M. P., Foster, P. G., Suesdek, L., & Sallum, M. A. M. (2021). Phylogeny and temporal diversification of mosquitoes (Diptera: Culicidae) based on mitochondrial genomes. Parasites & Vectors, 14, 396.",
+      "url": "https://doi.org/10.1186/s13071-021-04896-8"
+    },
+    {
+      "text": "Liu, W., Li, Y., Learn, G. H., Rudicell, R. S., Robertson, J. D., Keele, B. F., et al. (2010). Origin of the human malaria parasite Plasmodium falciparum in gorillas. Nature, 467(7314), 420–425.",
+      "url": "https://doi.org/10.1038/nature09442"
+    },
+    {
+      "text": "Loy, D. E., Liu, W., Li, Y., Learn, G. H., Plenderleith, L. J., Sundararaman, S. A., Sharp, P. M., & Hahn, B. H. (2017). Out of Africa: origins and evolution of the human malaria parasites Plasmodium falciparum and Plasmodium vivax. International Journal for Parasitology, 47(2–3), 87–97.",
+      "url": "https://doi.org/10.1016/j.ijpara.2016.05.008"
+    },
+    {
+      "text": "Degnan, J. H., & Rosenberg, N. A. (2009). Gene tree discordance, phylogenetic inference and the multispecies coalescent. Trends in Ecology & Evolution, 24(6), 332–340.",
+      "url": "https://doi.org/10.1016/j.tree.2009.01.009"
+    },
+    {
+      "text": "Coluzzi, M., Sabatini, A., della Torre, A., Di Deco, M. A., & Petrarca, V. (2002). A polytene chromosome analysis of the Anopheles gambiae species complex. Science, 298(5597), 1415–1418.",
+      "url": "https://doi.org/10.1126/science.1077769"
+    },
+    {
+      "text": "Butterwick, J. A., del Mármol, J., Kim, K. H., Kahlson, M. A., Roguch, J. A., Scopelliti, G., & Ruta, V. (2018). Cryo-EM structure of the insect olfactory receptor Orco. Nature, 560(7719), 447–452.",
+      "url": "https://doi.org/10.1038/s41586-018-0420-8"
+    },
+    {
+      "text": "Molina-Cruz, A., Garver, L. S., Alabaster, A., Bangiolo, L., Haile, A., Winikor, J., et al. (2013). The human malaria parasite Pfs47 gene mediates evasion of the mosquito immune system. Science, 340(6135), 984–987.",
+      "url": "https://doi.org/10.1126/science.1235264"
+    },
+    {
+      "text": "Figueiredo, A. C., de Sanctis, D., Gutiérrez-Gallego, R., Cereija, T. B., Macedo-Ribeiro, S., Fuentes-Prior, P., & Pereira, P. J. B. (2012). Unique thrombin inhibition mechanism by anophelin, an anticoagulant from the malaria vector. Proceedings of the National Academy of Sciences, 109(52), E3649–E3658.",
+      "url": "https://doi.org/10.1073/pnas.1211614109"
+    },
+    {
+      "text": "Martinez-Torres, D., Chandre, F., Williamson, M. S., Darriet, F., Bergé, J. B., Devonshire, A. L., et al. (1998). Molecular characterization of pyrethroid knockdown resistance (kdr) in the major malaria vector Anopheles gambiae s.s. Insect Molecular Biology, 7(2), 179–184.",
+      "url": "https://doi.org/10.1046/j.1365-2583.1998.72062.x"
+    },
+    {
+      "text": "Riveron, J. M., Yunta, C., Ibrahim, S. S., Djouaka, R., Irving, H., Menze, B. D., et al. (2014). A single mutation in the GSTe2 gene allows tracking of metabolically based insecticide resistance in a major malaria vector. Genome Biology, 15(2), R27.",
+      "url": "https://doi.org/10.1186/gb-2014-15-2-r27"
+    },
+    {
+      "text": "Livingstone, F. B. (1958). Anthropological implications of sickle cell gene distribution in West Africa. American Anthropologist, 60(3), 533–562.",
+      "url": "https://doi.org/10.1525/aa.1958.60.3.02a00110"
+    },
+    {
+      "text": "Fuller, D. Q., Qin, L., Zheng, Y., Zhao, Z., Chen, X., Hosoya, L. A., & Sun, G. P. (2009). The domestication process and domestication rate in rice: spikelet bases from the Lower Yangtze. Science, 323(5921), 1607–1610.",
+      "url": "https://doi.org/10.1126/science.1166605"
+    },
+    {
+      "text": "Singer, B. H., & de Castro, M. C. (2001). Agricultural colonization and malaria on the Amazon frontier. Annals of the New York Academy of Sciences, 954(1), 184–222.",
+      "url": "https://doi.org/10.1111/j.1749-6632.2001.tb02753.x"
+    },
+    {
+      "text": "Bhatt, S., Weiss, D. J., Cameron, E., Bisanzio, D., Mappin, B., Dalrymple, U., et al. (2015). The effect of malaria control on Plasmodium falciparum in Africa between 2000 and 2015. Nature, 526(7572), 207–211.",
+      "url": "https://doi.org/10.1038/nature15535"
+    },
+    {
+      "text": "Hemingway, J., Ranson, H., Magill, A., Kolaczinski, J., Fornadel, C., Gimnig, J., et al. (2016). Averting a malaria disaster: will insecticide resistance derail malaria control? The Lancet, 387(10029), 1785–1788.",
+      "url": "https://doi.org/10.1016/S0140-6736(15)00417-1"
+    },
+    {
+      "text": "Bell, G., & Gonzalez, A. (2009). Evolutionary rescue can prevent extinction following environmental change. Ecology Letters, 12(9), 942–948.",
+      "url": "https://doi.org/10.1111/j.1461-0248.2009.01350.x"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      194.8,
+      108.4,
+      78.9,
+      64.2,
+      45.8,
+      28,
+      4.62
+    ],
+    "backbone_node_ages": [
+      4.62,
+      28,
+      45.8,
+      64.2,
+      78.9,
+      194.8
+    ],
+    "fig1_max_ma": 220,
+    "fig1_eras": [
+      [
+        "Trias-Jur",
+        220,
+        145,
+        "#f1f5f9"
+      ],
+      [
+        "Early Cret.",
+        145,
+        100,
+        "#f8fafc"
+      ],
+      [
+        "Late Cret.",
+        100,
+        66,
+        "#f1f5f9"
+      ],
+      [
+        "Paleogene",
+        66,
+        23,
+        "#f8fafc"
+      ],
+      [
+        "Neog-Quat",
+        23,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      200,
+      150,
+      100,
+      50,
+      0
+    ],
+    "fig1_node_y_slots": [
+      4,
+      11,
+      18,
+      26,
+      35,
+      45,
+      54,
+      61
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        7,
+        "A-Clade (n=8)",
+        "Culex quinquefasciatus",
+        "[A] Culicini Outgroup"
+      ],
+      [
+        "[B]",
+        8,
+        17,
+        "B-Clade (n=10)",
+        "Anopheles nimbus",
+        "[B] Subgenus Stethomyia"
+      ],
+      [
+        "[C]",
+        18,
+        25,
+        "C-Clade (n=8)",
+        "Anopheles janconnae",
+        "[C] Subgenus Nyssorhynchus"
+      ],
+      [
+        "[D]",
+        26,
+        35,
+        "D-Clade (n=10)",
+        "Anopheles plumbeus",
+        "[D] Subgenus Anopheles"
+      ],
+      [
+        "[E]",
+        36,
+        44,
+        "E-Clade (n=9)",
+        "Anopheles peditaeniatus",
+        "[E] Subgenus Anopheles"
+      ],
+      [
+        "[F]",
+        45,
+        53,
+        "F-Clade (n=9)",
+        "Anopheles annulipes",
+        "[F] Subgenus Cellia: Neomyzomyia"
+      ],
+      [
+        "[G]",
+        54,
+        63,
+        "G-Clade (n=10)",
+        "Anopheles marshallii",
+        "[G] Subgenus Cellia: Myzomyia"
+      ]
+    ],
+    "fig1_web_svg": "anopheles-global-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Culicidae & Anopheles Chronogram (TimeTreeLSD2)",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram across Culicinae outgroups [A] through An. gambiae complex [G].",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        7,
+        "A-Clade (n=8)",
+        ""
+      ],
+      [
+        "[B]",
+        8,
+        17,
+        "B-Clade (n=10)",
+        ""
+      ],
+      [
+        "[C]",
+        18,
+        25,
+        "C-Clade (n=8)",
+        ""
+      ],
+      [
+        "[D]",
+        26,
+        35,
+        "D-Clade (n=10)",
+        ""
+      ],
+      [
+        "[E]",
+        36,
+        44,
+        "E-Clade (n=9)",
+        ""
+      ],
+      [
+        "[F]",
+        45,
+        53,
+        "F-Clade (n=9)",
+        ""
+      ],
+      [
+        "[G]",
+        54,
+        63,
+        "G-Clade (n=10)",
+        ""
+      ]
+    ],
+    "fig2_web_svg": "anopheles-global-fig2-circular-phylogram.svg",
+    "fig2_title": "64-Species Partitioned ModelTest Circular Phylogram",
+    "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked partitioned ModelTest (RY3).",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "A:T006",
+        1
+      ],
+      [
+        "Node III",
+        "A:T007",
+        2
+      ],
+      [
+        "Node IV",
+        "B:T015",
+        3
+      ],
+      [
+        "Node V",
+        "D:T029",
+        4
+      ],
+      [
+        "Node VI",
+        "F:T050",
+        5
+      ],
+      [
+        "Node VII",
+        "G:T056",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T064",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T063",
+      "G:T064"
+    ],
+    "fig3_web_svg": "anopheles-global-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species Quartet Multispecies Coalescent Tree & ABBA-BABA Introgression Tests",
+    "fig3_caption": "Complete 64-species multi-locus quartet coalescent species tree with empirical CU branch lengths and introgression contrasts.",
+    "fig4a_web_svg": "anopheles-global-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional Anopheles Vector COX1 Skyline Matrix (R1-R6)",
+    "fig4a_caption": "Six regional mtDNA COX1 coalescent skylines across An. gambiae, An. arabiensis, An. stephensi (Asia & Horn of Africa), An. darlingi, and An. albimanus.",
+    "fig4b_web_svg": "anopheles-global-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Anopheles Coalescent Matrix (L1-L6)",
+    "fig4b_caption": "Paired multi-locus skylines contrasting mitochondrial COX1/ND5, nuclear ITS2 rDNA, and VGSC para selective sweeps.",
+    "fig5_short_fam_titles": [
+      "Olfactory Coreceptor Channel (Orco / Or7)",
+      "Antiparasitic Complement Protein (TEP1)",
+      "Synaptic Target Acetylcholinesterase (ace-1)",
+      "Pyrethroid Detoxification P450s (CYP6P3)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Orco Host-Sensing",
+      "FAM-02: TEP1 Complement",
+      "FAM-03: ace-1 Resistance",
+      "FAM-04: Detox CYP6P3 (1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | Anopheles CYP6P3 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Microsomal P450 Fold (461 Ca Threaded with Anopheles CYP6P3)",
+    "fig5_web_svg": "anopheles-global-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Translated Motif Alignments, Codon Selection & CYP6P3 3D Fold on 1TQN",
+    "fig5_caption": "Translated Code-1 motif alignments across Orco, TEP1, ace-1, and CYP6P3 threaded onto PDB 1TQN (2.05 A).",
+    "fig6_web_svg": "anopheles-global-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Comparison",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned ML (2nd), Unrecoded-4 (3rd), and Raw0 control (4th), alongside Pipeline B (12 single-species coalescent skylines).",
+    "fig6_clade_label": "Culicidae & Anopheles",
+    "fig6_p450_label": "CYP6P3 / Orco / TEP1 / ace-1",
+    "fig6_its_label": "An. gambiae & An. sinensis ITS2",
+    "supp_s1_fasta_name": "supp_s1_cyp6p3_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (Anopheles CYP6P3/CYP6M2, Code 1)",
+    "supp_s1_source": "VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS (FAM-04 CYP6)",
+    "supp_s1_stem": "anopheles-global-supp-s1-cyp6p3-alignview",
+    "supp_s2_title": "Cohort L5 Anopheles sinensis Nuclear ITS2 rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS (Cohort L5)",
+    "supp_s2_stem": "anopheles-global-supp-s2-its2-einsi-alignview",
+    "supp_s3_title": "Culicidae & Anopheles Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-061-ANOPHELES-GLOBAL-RADIATION-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "anopheles-global-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Global Anopheline Phylogenomics, Introgression & Vector-Control Selection",
+    "section1_p1": "Anopheles malaria vectors span five continents and encompass over 470 species partitioned into basal Neotropical and Australasian lineages (Chagasia, Bironella, Stethomyia, Kerteszia, Nyssorhynchus) and Old World/Holarctic subgenera (Anopheles, Cellia), rooted against Culicinae outgroups.",
+    "section1_p2": "In v2.0.0, all 64 Culicidae and Anopheles slots ([A]-[G]) run natively through the generalized declarative bio-suite-supervisor engine with partitioned per-locus ModelTest, empirical Kishino-Hasegawa Z-scores, empirical TimeTreeLSD2 asymmetric HPDs, homogeneous Code-1 Orco, TEP1, ace-1, and CYP6P3 selection models, and 12 real single-species Bayesian skylines.",
+    "section2_title": "Per-Locus BIC ModelTest, Third-Codon RY3 Collapse & Anopheles Clock",
+    "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA & 32-Chain RuNIE Audit",
+    "section4_title": "Host-Seeking, Complement Immunity, ace-1 & CYP6P3 Selection (1TQN)",
+    "section4_body": "Across verified Universal Code 1 culicid coding orthologs, Goldman-Yang 61-state codon models quantify constraint across olfactory Orco receptors (FAM-01), Plasmodium-opsonizing TEP1 complement (FAM-02), target-site acetylcholinesterase ace-1 (FAM-03), and pyrethroid-metabolizing CYP6P3/CYP6M2 monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A).",
+    "section5_title": "Cross-Regional & Multi-Locus Skylines (mtDNA vs. ITS2) & Stage 3C Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Unifying global Anopheles mitogenomics, multi-locus quartet coalescence, and single-species Bayesian skylines resolves deep Gondwanan and Tethyan vector splits alongside Pleistocene savanna refugia and recent urban bridgehead expansions of Anopheles stephensi.",
+      "Replacing legacy parametric multipliers and artificial runtime floors with empirical partitioned ModelTest, TimeTreeLSD2 asymmetric intervals, and homogeneous single-family Code-1 alignments removes hardcoding artifacts while recovering strong biological signal.",
+      "Re-executing all stages natively through the generalized declarative engine establishes a reproducible genomic baseline conditional on public GenBank vector sampling."
+    ],
+    "abstract_context": "Understanding how malaria-transmitting Anopheles mosquitoes diversified across continents requires separating deep vector phylogeny and interspecific introgression from insecticide-resistance sweeps and regional population bottlenecks.",
+    "executive_summary_lead": "resolves global malaria-vector phylogeny, resistance selection, and demography across Anopheles",
+    "latex_intro": "Sixty-four Culicidae lineages spanning Culicinae outgroups [A] through Anopheles gambiae [G] are evaluated across 17 loci in Version 2.0.0.",
+    "seed_base": 20261122
+  }
+}

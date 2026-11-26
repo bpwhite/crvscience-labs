@@ -1,0 +1,1740 @@
+{
+  "study_slug": "STUDY-INVASIVE-SNAILS-AU-NZ-NATIVE-BIOSUITE-2026",
+  "fig_prefix": "invasive-snails",
+  "run_id": "runie-native-invasive-snails-24-v2",
+  "preprint_slug": "invasive-snails-au-nz-preprint",
+  "discovery_slug": "invasive-snails-au-nz-phylogenomics",
+  "validation_set_id": "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS",
+  "preprint_label": "PREPRINT-24",
+  "preprint_version": "2.0.0",
+  "concept_doi": "10.5281/zenodo.24095711",
+  "remediation_note": "Version 2.0.0 migrated PREPRINT-24 off its legacy Rust module onto the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating hardcoded calibrated node ages/HPDs, parametric skyline multipliers, and static Table 3B Z-scores) using real per-locus partitioned ModelTest, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary.",
+  "telemetry_filename": "invasive-snails-au-nz-native-biosuite.json",
+  "companion_label": "Lab Discovery #136",
+  "title": "Global Phylogenomics, Functional Selection, and Demographic Skylines of Invasive Marine, Freshwater, and Terrestrial Snails Across Australia and New Zealand",
+  "subtitle_prefix": "100% Native Rust Genetic Code 5 & 1 Partitioned ModelTest Phylogenomics",
+  "category": "Malacology, Invasion Phylogenomics & Population Genetics",
+  "read_time": "24 min read",
+  "complexity": "High (Graduate Phylogenomics & Coalescent Theory)",
+  "taxonomic_scope": "Gastropoda (Patellogastropoda Outgroups, Caenogastropoda, Panpulmonata & Invasive Helicoidea)",
+  "genetic_code_table": 5,
+  "is_prokaryote": false,
+  "benchmark_design_path": "crvscience-labs/benchmarks/invasive_snails_preprint24_design.json",
+  "cache_subdir": "val_set_063_invasive_snails",
+  "seqnet_sqlite_name": "seqnet_invasive_snails_preprint24.sqlite",
+  "nexus_filename": "seqnet_invasive_snails_supermatrix.nex",
+  "supermatrix_fasta_name": "invasive_snails_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "COI",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "snails_nuc_18s_q1",
+      "query": "(Gastropoda[Organism]) AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 500:2200[SLEN] NOT \"28S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 450,
+      "max_bp": 2200
+    },
+    {
+      "cache_key": "snails_nuc_28s_q1",
+      "query": "(Gastropoda[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 400:2800[SLEN] NOT \"18S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
+      "target_n": 48,
+      "min_bp": 350,
+      "max_bp": 2800
+    }
+  ],
+  "fallback_mito_accessions": [
+    "NC_063771.1",
+    "NC_065373.1",
+    "NC_005940.1",
+    "NC_031361.1",
+    "NC_013247.1",
+    "NC_011193.1",
+    "NC_010090.1",
+    "NC_030595.1",
+    "NC_013250.1",
+    "NC_027503.1",
+    "NC_024586.1",
+    "KJ739609.1",
+    "NC_037691.1",
+    "NC_084053.1",
+    "NC_084052.1",
+    "NC_041142.1",
+    "NC_025334.1",
+    "NC_035734.1",
+    "NC_070577.1",
+    "MG979468.1",
+    "OQ161206.1",
+    "NC_013073.1",
+    "NC_013187.1",
+    "NC_070576.1",
+    "NC_023364.1",
+    "PX735130.1",
+    "NC_026538.1",
+    "PX857462.1",
+    "PX857459.1",
+    "PX857469.1",
+    "NC_005439.1",
+    "PX739868.1",
+    "PQ789941.1",
+    "PX739865.1",
+    "OZ405945.1",
+    "NC_024601.1",
+    "KM114610.1",
+    "OP985635.1",
+    "OZ289185.1",
+    "NC_035495.1",
+    "NC_001761.1",
+    "NC_016190.1",
+    "PQ180368.1",
+    "OR208172.1",
+    "NC_027584.1",
+    "KT001074.1",
+    "NC_025511.1",
+    "OR555776.1",
+    "NC_024935.1",
+    "PQ166711.1",
+    "NC_021747.1",
+    "JQ417194.1",
+    "PX754012.1",
+    "PX754007.1",
+    "PX754010.1",
+    "OP910116.1",
+    "NC_041247.1",
+    "PQ304694.1",
+    "PX754008.1",
+    "PQ304698.1",
+    "KR736333.1",
+    "KT696546.1",
+    "NC_072058.1",
+    "OQ924171.1"
+  ],
+  "s4_banner_title": "Invasive Gastropoda Across Australia & New Zealand",
+  "anchor_species": "Cornu aspersum",
+  "anchor_locus": "COI",
+  "locus_defs": [
+    {
+      "canonical": "COI",
+      "display_name": "COI",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COII",
+      "display_name": "COII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "COIII",
+      "display_name": "COIII",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1200,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "CYTB",
+      "display_name": "CYTB",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 1500,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND1",
+      "display_name": "ND1",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND2",
+      "display_name": "ND2",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND3",
+      "display_name": "ND3",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 800,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND4",
+      "display_name": "ND4",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 200,
+      "max_bp": 1600,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND4L",
+      "display_name": "ND4L",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 700,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ND5",
+      "display_name": "ND5",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 220,
+      "max_bp": 2000,
+      "min_taxa": 12,
+      "min_aa": 90
+    },
+    {
+      "canonical": "ND6",
+      "display_name": "ND6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 900,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "ATP6",
+      "display_name": "ATP6",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 150,
+      "max_bp": 1000,
+      "min_taxa": 10,
+      "min_aa": 55
+    },
+    {
+      "canonical": "rrnL_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 180,
+      "max_bp": 1800,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "rrnS_12S",
+      "display_name": "12S",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 160,
+      "max_bp": 1400,
+      "min_taxa": 12,
+      "min_aa": 70
+    },
+    {
+      "canonical": "SSU_18S",
+      "display_name": "18S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 70
+    },
+    {
+      "canonical": "LSU_28S",
+      "display_name": "28S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 70
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Patellogastropoda Outgroup",
+      "family": "Nacellidae",
+      "species": "Cellana orientalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Patellogastropoda Outgroup",
+      "family": "Lottiidae",
+      "species": "Lottia goshimai",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Vetigastropoda Outgroup",
+      "family": "Haliotidae",
+      "species": "Haliotis rubra",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Vetigastropoda Outgroup",
+      "family": "Haliotidae",
+      "species": "Haliotis iris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T005",
+      "sector_code": "[B] Tonnoidea Marine Stowaway",
+      "family": "Tonnoidea",
+      "species": "Monoplex parthenopeus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
+      "sector_code": "[B] Neogastropoda Ballast Stowaway",
+      "family": "Muricidae",
+      "species": "Rapana venosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Neogastropoda Stowaway",
+      "family": "Muricidae",
+      "species": "Reishia clavigera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Littorinimorpha Stowaway",
+      "family": "Littorinidae",
+      "species": "Littorina saxatilis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Neogastropoda Reference",
+      "family": "Muricidae",
+      "species": "Bolinus brandaris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T010",
+      "sector_code": "[C] Ampullariidae Freshwater Invasive",
+      "family": "Ampullariidae",
+      "species": "Pomacea maculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T011",
+      "sector_code": "[C] Ampullariidae Freshwater Invasive",
+      "family": "Ampullariidae",
+      "species": "Pomacea canaliculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T012",
+      "sector_code": "[C] Ampullariidae Freshwater Invasive",
+      "family": "Ampullariidae",
+      "species": "Pomacea canaliculata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T013",
+      "sector_code": "[C] Ampullariidae Freshwater Invasive",
+      "family": "Ampullariidae",
+      "species": "Pomacea bridgesi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T014",
+      "sector_code": "[C] Ampullariidae Freshwater Invasive",
+      "family": "Ampullariidae",
+      "species": "Pomacea aulanieri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Ampullariidae Freshwater Invasive",
+      "family": "Ampullariidae",
+      "species": "Pomacea reevei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Ampullariidae Aquarium Trade Vector",
+      "family": "Ampullariidae",
+      "species": "Pomacea diffusa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Ampullariidae Freshwater Clade",
+      "family": "Ampullariidae",
+      "species": "Marisa cornuarietis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Viviparidae Freshwater Invasive",
+      "family": "Viviparidae",
+      "species": "Cipangopaludina chinensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T019",
+      "sector_code": "[D] Tateidae NZ Native / Global Invasive",
+      "family": "Tateidae",
+      "species": "Potamopyrgus antipodarum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T020",
+      "sector_code": "[D] Tateidae NZ Native / Global Invasive",
+      "family": "Tateidae",
+      "species": "Potamopyrgus antipodarum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T021",
+      "sector_code": "[D] Tateidae NZ Native / Global Invasive",
+      "family": "Tateidae",
+      "species": "Potamopyrgus antipodarum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T022",
+      "sector_code": "[D] Pomatiopsidae Truncatelloidea",
+      "family": "Pomatiopsidae",
+      "species": "Oncomelania hupensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T023",
+      "sector_code": "[D] Pomatiopsidae Truncatelloidea",
+      "family": "Pomatiopsidae",
+      "species": "Oncomelania hupensis robertsoni",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T024",
+      "sector_code": "[D] Tateidae NZ Endemic Sister",
+      "family": "Tateidae",
+      "species": "Potamopyrgus estuarinus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T025",
+      "sector_code": "[D] Semisulcospiridae Reference",
+      "family": "Semisulcospiridae",
+      "species": "Semisulcospira libertina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Assimineidae Truncatelloidea",
+      "family": "Assimineidae",
+      "species": "Assiminea grayana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T027",
+      "sector_code": "[E] Hygrophila Freshwater Invasive",
+      "family": "Lymnaeidae",
+      "species": "Radix auricularia",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T028",
+      "sector_code": "[E] Hygrophila Freshwater Invasive",
+      "family": "Lymnaeidae",
+      "species": "Orientogalba viridis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T029",
+      "sector_code": "[E] Hygrophila Freshwater Invasive",
+      "family": "Lymnaeidae",
+      "species": "Galba truncatula",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T030",
+      "sector_code": "[E] Hygrophila AU/NZ Waterway Invasive",
+      "family": "Physidae",
+      "species": "Physella acuta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T031",
+      "sector_code": "[E] Hygrophila Planorbidae",
+      "family": "Planorbidae",
+      "species": "Biomphalaria glabrata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T032",
+      "sector_code": "[E] Hygrophila Planorbidae",
+      "family": "Planorbidae",
+      "species": "Biomphalaria tenagophila",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Hygrophila Planorbidae",
+      "family": "Planorbidae",
+      "species": "Bulinus globosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Hygrophila Planorbidae",
+      "family": "Planorbidae",
+      "species": "Biomphalaria peregrina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Siphonarioidea Basal Panpulmonata",
+      "family": "Siphonarioidea",
+      "species": "Siphonaria pectinata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T036",
+      "sector_code": "[F] Achatinidae Prohibited Biosecurity Threat",
+      "family": "Achatinidae",
+      "species": "Lissachatina fulica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T037",
+      "sector_code": "[F] Achatinidae Prohibited Biosecurity Threat",
+      "family": "Achatinidae",
+      "species": "Lissachatina fulica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T038",
+      "sector_code": "[F] Achatinidae Prohibited Biosecurity Threat",
+      "family": "Achatinidae",
+      "species": "Lissachatina fulica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T039",
+      "sector_code": "[F] Oxychilidae Synanthropic Glass/Garlic Snail",
+      "family": "Oxychilidae",
+      "species": "Daudebardia rufa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T040",
+      "sector_code": "[F] Limacoidea",
+      "family": "Limacoidea",
+      "species": "Deroceras reticulatum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T041",
+      "sector_code": "[F] Stylommatophora Basal Reference",
+      "family": "Albinaria",
+      "species": "Albinaria caerulea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T042",
+      "sector_code": "[F] Succineidae Introduced Land Snail",
+      "family": "Succineidae",
+      "species": "Succinea putris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Bradybaeninae AU Subtropical Citrus Pest",
+      "family": "Bradybaena",
+      "species": "Bradybaena similaris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Bradybaeninae AU Subtropical Citrus Pest",
+      "family": "Bradybaena",
+      "species": "Bradybaena similaris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Camaenidae / Bradybaeninae Clade",
+      "family": "Camaenidae",
+      "species": "Aegista diversifamilia",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Camaenidae / Bradybaeninae Clade",
+      "family": "Camaenidae",
+      "species": "Camaena poyuensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Camaenidae / Bradybaeninae Clade",
+      "family": "Camaenidae",
+      "species": "Camaena cicatricosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Camaenidae / Bradybaeninae Clade",
+      "family": "Camaenidae",
+      "species": "Karaftohelix maackii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Camaenidae / Bradybaeninae Clade",
+      "family": "Camaenidae",
+      "species": "Mastigeulota kiangsinensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Camaenidae / Bradybaeninae Clade",
+      "family": "Camaenidae",
+      "species": "Acusta ravida",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T051",
+      "sector_code": "[G] Helicidae AU/NZ Urban & Agricultural Pest",
+      "family": "Helicidae",
+      "species": "Cornu aspersum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T052",
+      "sector_code": "[G] Helicidae AU/NZ Urban & Agricultural Pest",
+      "family": "Helicidae",
+      "species": "Cornu aspersum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T053",
+      "sector_code": "[G] Helicidae AU/NZ Urban & Agricultural Pest",
+      "family": "Helicidae",
+      "species": "Cornu aspersum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Helicidae AU Southern Grain & Pasture Pest Clade",
+      "family": "Helicidae",
+      "species": "Cantareus apertus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Helicidae AU Southern Grain & Pasture Pest Clade",
+      "family": "Helicidae",
+      "species": "Hemicycla bidentalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Helicidae Crown Reference",
+      "family": "Helicidae",
+      "species": "Cepaea nemoralis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Helicidae Crown Reference",
+      "family": "Helicidae",
+      "species": "Helix pomatia",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Helicidae Crown Reference",
+      "family": "Helicidae",
+      "species": "Helix nucula",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Helicidae Border-Intercept Clade",
+      "family": "Helicidae",
+      "species": "Macularia sylvatica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Helicidae Crown Reference",
+      "family": "Helicidae",
+      "species": "Caucasotachea atrolabiata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Geomitridae AU Grain-Harvesting Pest",
+      "family": "Geomitridae",
+      "species": "Cernuella virgata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Geomitridae AU Grain-Belt Clade",
+      "family": "Geomitridae",
+      "species": "Helicella itala",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Hygromiidae / Geomitridae Clade",
+      "family": "Hygromiidae",
+      "species": "Monacha cartusiana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Helicoidea Crown Clade",
+      "family": "Helicoidea",
+      "species": "Pseudiberus tectumsinense",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Digestive Endo-beta-1,4-Glucanase & Cellulase Hydrolases (GH9 / GH45)",
+      "physiological_role": "Hepatopancreas lignocellulose hydrolysis supporting polyphagous crop and wetland herbivory",
+      "gene_symbol": "GH9",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_025246879.1",
+        "XM_025228658.1",
+        "XM_025228175.1",
+        "XM_025228174.1",
+        "XM_025228122.1",
+        "XM_025227667.1",
+        "XM_025227293.1",
+        "XM_025227212.1",
+        "XM_025227211.1",
+        "XM_025227209.1",
+        "XM_025227040.1",
+        "XM_025226796.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "snails_fam01_gh9_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 900,
+        "max_bp": 3500,
+        "max_domain_bp": null,
+        "min_aa_len": 250,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.1,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Summer Aestivation & Thermal Desiccation Chaperones (Hsp70)",
+      "physiological_role": "Cryptobiotic summer aestivation and air-breathing emersion thermotolerance across terrestrial snails",
+      "gene_symbol": "Hsp70",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "PV221785.1",
+        "MH166870.1",
+        "KM405321.1",
+        "KF356182.1",
+        "XM_025245033.1",
+        "XM_025245020.1",
+        "XM_025243705.1",
+        "KM405322.1",
+        "NM_001311286.1",
+        "XM_013240930.2",
+        "XM_013240929.2",
+        "XM_013212971.2"
+      ],
+      "ortholog_config": {
+        "cache_key": "snails_fam02_hsp70_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 900,
+        "max_bp": 3500,
+        "max_domain_bp": null,
+        "min_aa_len": 280,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.1,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Calcareous Shell & Epiphragm Biomineralization Carbonic Anhydrases (CA2 / CA15)",
+      "physiological_role": "Mantle-edge CaCO3 shell deposition and seasonal epiphragm sealing against summer desiccation",
+      "gene_symbol": "CA2",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_025220578.1",
+        "XM_025220577.1",
+        "XM_025239492.1",
+        "XM_025238493.1",
+        "XM_025234575.1",
+        "XM_025234572.1",
+        "XM_025234571.1",
+        "XM_059286603.1",
+        "XM_059319472.1",
+        "XM_059311318.1",
+        "XM_059300678.1",
+        "XM_059296133.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "snails_fam03_ca2_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 700,
+        "max_bp": 2500,
+        "max_domain_bp": null,
+        "min_aa_len": 200,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.1,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Microsomal Xenobiotic & Bait Cytochrome P450 Monooxygenases (CYP3A43 / CYP3A24)",
+      "physiological_role": "Hepatopancreas microsomal heme-thiolate oxidation of agricultural molluscicides and phytochemicals",
+      "gene_symbol": "CYP3A43",
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_025224403.1",
+        "XM_025250230.1",
+        "XM_025250229.1",
+        "XM_025250227.1",
+        "XM_025250226.1",
+        "XM_025250171.1",
+        "XM_025248728.1",
+        "XM_025248717.1",
+        "XM_025247657.1",
+        "XM_025247656.1",
+        "XM_025247654.1",
+        "XM_025251770.1"
+      ],
+      "ortholog_config": {
+        "cache_key": "snails_fam04_cyp3a_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1200,
+        "max_bp": 2500,
+        "max_domain_bp": null,
+        "min_aa_len": 380,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.1,
+        "min_row_coverage": 0.45,
+        "min_consensus_aa_identity": 0.18,
+        "min_consensus_dayhoff6_sim": 0.35
+      },
+      "msa_min_occ": 0.65
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "1TQN",
+    "chain_id": "A",
+    "het_resname": "HEM",
+    "het_resseq": 508,
+    "cys_site": 442,
+    "pdb_filename": "snails_cyp3a43_1tqn.pdb",
+    "gene_symbol": "CYP3A43",
+    "template_label": "1TQN_A (2.05 A Microsomal CYP3A4 + HEM A 508 + Cys442-Sg)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Cys{cys} / 1TQN Cys442 (Berghia CYP3A29 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
+      "Ala-Gly-Tyr-Glu-Thr (I-Helix Distal O2 Groove)",
+      "SRS1 B-Prime Region (1TQN 100-126; Sponge Terpenoid Substrate Channel)",
+      "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
+    ],
+    "srs1_range": [
+      100,
+      126
+    ],
+    "fg_lid_range": [
+      201,
+      258
+    ],
+    "i_helix_range": [
+      291,
+      324
+    ],
+    "cys_loop_range": [
+      433,
+      443
+    ],
+    "l_helix_range": [
+      444,
+      461
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Southern Australian Grain & Pasture Belt vs. Mediterranean Source (Theba pisana)",
+      "clade_lineage": "Theba pisana (White Italian Snail)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P24-R1",
+      "locality": "Southern Australian Grain & Pasture Belt vs. Mediterranean Sourc",
+      "cache_key": "R1",
+      "query": "\"Theba pisana\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Trans-Tasman AU & NZ Urban/Horticultural Corridor (Cornu aspersum / Cantareus aspersus)",
+      "clade_lineage": "Cornu aspersum (Common Garden Snail)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P24-R2",
+      "locality": "Trans-Tasman AU & NZ Urban/Horticultural Corridor (Cornu aspersu",
+      "cache_key": "R2",
+      "query": "(\"Cornu aspersum\"[Organism] OR \"Cantareus aspersus\"[Organism] OR \"Helix aspersa\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "South & Western Australian Cereal Harvest Corridor (Cernuella virgata)",
+      "clade_lineage": "Cernuella virgata (Vineyard Snail)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P24-R3",
+      "locality": "South & Western Australian Cereal Harvest Corridor (Cernuella vi",
+      "cache_key": "R3",
+      "query": "\"Cernuella virgata\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 450:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 440,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Australian Mediterranean-Climate Pasture Corridor (Cochlicella acuta & C. barbara)",
+      "clade_lineage": "Cochlicella acuta / barbara (Pointed Snails)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P24-R4",
+      "locality": "Australian Mediterranean-Climate Pasture Corridor (Cochlicella a",
+      "cache_key": "R4",
+      "query": "(\"Cochlicella acuta\"[Organism] OR \"Cochlicella barbara\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 450:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 440,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Eastern Australian Subtropical Citrus & Coastal Corridor (Bradybaena similaris)",
+      "clade_lineage": "Bradybaena similaris (Asian Tramp Snail)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P24-R5",
+      "locality": "Eastern Australian Subtropical Citrus & Coastal Corridor (Bradyb",
+      "cache_key": "R5",
+      "query": "\"Bradybaena similaris\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Cross-Regional (Fig 4A: COX1 Standardized)",
+      "region_label": "Northern Biosecurity Border-Interception & Indo-Pacific Corridor (Lissachatina fulica)",
+      "clade_lineage": "Lissachatina fulica (Giant African Snail)",
+      "locus_name": "mtDNA COX1",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.021,
+      "source_id": "P24-R6",
+      "locality": "Northern Biosecurity Border-Interception & Indo-Pacific Corridor",
+      "cache_key": "R6",
+      "query": "(\"Lissachatina fulica\"[Organism] OR \"Achatina fulica\"[Organism]) AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: NZ/AU & Indo-Pacific)",
+      "region_label": "New Zealand Native Lake vs. Global Invasive Clonal Bridgehead (Potamopyrgus antipodarum)",
+      "clade_lineage": "Potamopyrgus antipodarum (NZ Mud Snail)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0215,
+      "source_id": "P24-L1",
+      "locality": "New Zealand Native Lake vs. Global Invasive Clonal Bridgehead (P",
+      "cache_key": "L1",
+      "query": "\"Potamopyrgus antipodarum\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome\"[Title]) AND 500:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: NZ/AU & Indo-Pacific)",
+      "region_label": "Australasian Synanthropic Garden Deme (Biparental Nuclear rDNA Spacer 4Ne)",
+      "clade_lineage": "Cornu aspersum (Common Garden Snail)",
+      "locus_name": "Nuclear rDNA ITS/28S (4Ne)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0085,
+      "source_id": "P24-L2",
+      "locality": "Australasian Synanthropic Garden Deme (Biparental Nuclear rDNA S",
+      "cache_key": "snails_pop_l2_its_v2",
+      "query": "(\"Cornu aspersum\"[Organism] OR \"Cantareus aspersus\"[Organism] OR \"Helix aspersa\"[Organism]) AND (ITS1[Title] OR ITS2[Title] OR \"internal transcribed\"[Title] OR 28S[Title] OR 16S[Title]) AND 350:1200[SLEN]",
+      "fallback_query": "\"Helicidae\"[Organism] AND (\"28S\"[Title] OR \"internal transcribed\"[Title]) AND 350:1200[SLEN]",
+      "min_bp": 340,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: NZ/AU & Indo-Pacific)",
+      "region_label": "Southern Australian Grain Belt Summer-Aestivation Deme (Theba pisana)",
+      "clade_lineage": "Theba pisana (White Italian Snail)",
+      "locus_name": "Ribosomal / Aestivation Locus",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 0.24,
+      "mu_rate": 0.011,
+      "source_id": "P24-L3",
+      "locality": "Southern Australian Grain Belt Summer-Aestivation Deme (Theba pi",
+      "cache_key": "L3",
+      "query": "\"Theba pisana\"[Organism] AND (16S[Title] OR \"ribosomal\"[Title] OR 28S[Title]) AND 300:1200[SLEN]",
+      "fallback_query": "",
+      "min_bp": 290,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: NZ/AU & Indo-Pacific)",
+      "region_label": "Tropical Wetland Invasive Deme (Maternal Haploid 1Ne Baseline)",
+      "clade_lineage": "Pomacea canaliculata (Channelled Apple Snail)",
+      "locus_name": "mtDNA COX1 (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.022,
+      "source_id": "P24-L4",
+      "locality": "Tropical Wetland Invasive Deme (Maternal Haploid 1Ne Baseline)",
+      "cache_key": "L4",
+      "query": "\"Pomacea canaliculata\"[Organism] AND (COX1[Title] OR COI[Title] OR \"cytochrome c oxidase\"[Title]) AND 550:950[SLEN]",
+      "fallback_query": "",
+      "min_bp": 500,
+      "max_bp": 1000
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: NZ/AU & Indo-Pacific)",
+      "region_label": "Tropical Wetland Invasive Deme (Biparental Nuclear ITS1-5.8S-ITS2 Spacer 4Ne)",
+      "clade_lineage": "Pomacea canaliculata (Channelled Apple Snail)",
+      "locus_name": "Nuclear rDNA ITS1-5.8S-ITS2 (4Ne)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0088,
+      "source_id": "P24-L5",
+      "locality": "Tropical Wetland Invasive Deme (Biparental Nuclear ITS1-5.8S-ITS",
+      "cache_key": "snails_pop_l5_its_v2",
+      "query": "\"Pomacea canaliculata\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title] OR 28S[Title] OR 18S[Title]) AND 350:1200[SLEN]",
+      "fallback_query": "",
+      "min_bp": 340,
+      "max_bp": 1250
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Same-Region Multi-Locus (Fig 4B: NZ/AU & Indo-Pacific)",
+      "region_label": "Tropical Wetland Invasive Deme (Directional Selection Sweep Coding Locus)",
+      "clade_lineage": "Pomacea canaliculata (Channelled Apple Snail)",
+      "locus_name": "Nuclear CYP3A43 / Cellulase Coding Locus",
+      "locus_tag": "COI",
+      "ploidy_scalar": 0.19,
+      "mu_rate": 0.0112,
+      "source_id": "P24-L6",
+      "locality": "Tropical Wetland Invasive Deme (Directional Selection Sweep Codi",
+      "cache_key": "L6",
+      "query": "\"Pomacea canaliculata\"[Organism] AND (\"cytochrome P450\"[Title] OR \"heat shock\"[Title] OR \"glucanase\"[Title] OR \"cellulase\"[Title]) AND 500:2600[SLEN]",
+      "fallback_query": "",
+      "min_bp": 480,
+      "max_bp": 2700
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Late Pleistocene MIS 5e Interglacial Highstand",
+      "age_max_ka": 160,
+      "age_min_ka": 65,
+      "period_label": "Pre-LGM Baseline (160-65 ka)",
+      "ecological_context": "High sea-level interglacial reef corridors across the Indo-Pacific Coral Triangle and Tethyan shelves"
+    },
+    {
+      "label": "Last Glacial Maximum (LGM) -120 m Eustatic Lowstand",
+      "age_max_ka": 65,
+      "age_min_ka": 14,
+      "period_label": "Horizon 1: LGM Lowstand Bottleneck (22-14 ka)",
+      "ecological_context": "Emergence of Sunda/Sahul shelves and boreal ice sheets fragmenting shallow coral and kelp habitats"
+    },
+    {
+      "label": "Early-to-Mid Holocene Meltwater Pulse Lagoon Re-Flooding",
+      "age_max_ka": 14,
+      "age_min_ka": 3,
+      "period_label": "Horizon 2: Holocene Lagoon Surge (11-3 ka)",
+      "ecological_context": "Rapid post-glacial inundation of shallow carbonate lagoons and amphiboreal rocky fjords"
+    },
+    {
+      "label": "Late Holocene Boundary-Current Veliger Dispersal",
+      "age_max_ka": 3,
+      "age_min_ka": 0.12,
+      "period_label": "Late Holocene Dispersal (3.0-0.12 ka)",
+      "ecological_context": "Planktotrophic veliger larval exchange along tropical and temperate western boundary currents"
+    },
+    {
+      "label": "20th-Century Coastal Shipping & Suez/Aquarium Founder Bottleneck",
+      "age_max_ka": 0.12,
+      "age_min_ka": 0.03,
+      "period_label": "Horizon 3: Anthropocene Shipping Bottleneck",
+      "ecological_context": "Trans-basin hull-fouling hydroid/bryozoan transport and Lessepsian/aquarium founder bottlenecks"
+    },
+    {
+      "label": "1998-2026 Pantropical Marine Heatwaves & Terpenoid Selection Sweep",
+      "age_max_ka": 0.03,
+      "age_min_ka": 0,
+      "period_label": "Horizon 4: Marine Heatwave & Terpenoid Sweep",
+      "ecological_context": "Recurrent ENSO marine heatwaves paired with thermal Hsp70 and dietary CYP3A29 terpenoid coding sweeps"
+    }
+  ],
+  "supp_s2_cohort_code": "L5",
+  "haplotype_panels": [
+    {
+      "panel_id": "Mediterranean & Australasian Helicidae/Geomitridae Demes (COI-5P)",
+      "fasta_filename": "cohort_snails_helicoidea_cox1.fasta",
+      "cohort_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "slot_prefixes": [
+        "F:",
+        "G:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    },
+    {
+      "panel_id": "Freshwater & Subtropical Invasive Apple/Mud Snail Demes (COI-5P)",
+      "fasta_filename": "cohort_snails_freshwater_cox1.fasta",
+      "cohort_indices": [
+        4,
+        5,
+        6,
+        9
+      ],
+      "slot_prefixes": [
+        "C:",
+        "D:",
+        "E:"
+      ],
+      "locus_tag": "COI",
+      "label_suffix": "COX1",
+      "min_occ": 0.6
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Root Crown Gastropoda (Patellogastropoda + Vetigastropoda Outgroups vs. Apogastropoda)",
+      "sector_code": "[A]",
+      "fossil_or_biogeo_anchor": "Cambrian-Ordovician Crown Gastropoda divergence & Early Paleozoic limpet/vetigastropod fossil horizon (~445-505 Ma)",
+      "target_age_ma": 472.4,
+      "ci_min_ma": 446.8,
+      "ci_max_ma": 498.6,
+      "trophic_guild": "Marine Rocky-Intertidal Macroalgal & Biofilm Grazers (Cellana, Lottia, Haliotis)",
+      "key_enzymes_or_loci": "Nacreous Aragonite Shell Carbonic Anhydrases & Basal Radular Chitin Synthases",
+      "ecosystem_role": "Australasian marine limpet and abalone outgroup calibration anchor",
+      "sector_idx": 0
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Apogastropoda Split (Caenogastropoda Clade [B]-[D] vs. Heterobranchia / Panpulmonata Clade [E]-[G])",
+      "sector_code": "[B]",
+      "fossil_or_biogeo_anchor": "Devonian-Carboniferous Caenogastropoda-Heterobranchia split (~355-415 Ma)",
+      "target_age_ma": 386.2,
+      "ci_min_ma": 362.4,
+      "ci_max_ma": 410.8,
+      "trophic_guild": "Marine Aquaculture/Ballast Stowaways & Predatory Neogastropods (Monoplex, Rapana, Reishia)",
+      "key_enzymes_or_loci": "Venom-Gland Metalloproteases, Choline Esterases & Calcite/Aragonite CA2",
+      "ecosystem_role": "Trans-oceanic hull-fouling, ballast-water, and mussel-spat stowaways",
+      "sector_idx": 1
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Caenogastropoda Radiation (Architaenioglossa Ampullariidae [C] vs. Littorinimorpha / Neogastropoda [B, D])",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Permian-Triassic Architaenioglossa / Sorbeoconcha divergence (~235-285 Ma)",
+      "target_age_ma": 258.6,
+      "ci_min_ma": 238.4,
+      "ci_max_ma": 279.2,
+      "trophic_guild": "Amphibious Freshwater Macrophyte Herbivores (Pomacea canaliculata, P. maculata)",
+      "key_enzymes_or_loci": "Endogenous GH9/GH45 Cellulases, Lung-Gill Hsp70/Hsp90 & Neurotoxic Perivitellin Pv2",
+      "ecosystem_role": "High-impact tropical wetland & rice-paddy macrophyte consumers",
+      "sector_idx": 2
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Crown Truncatelloidea & Tateidae (Potamopyrgus antipodarum NZ Mud Snail vs. Pomatiopsidae/Assimineidae)",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Jurassic-Cretaceous Gondwanan Truncatelloidea freshwater transition (~120-158 Ma)",
+      "target_age_ma": 138.4,
+      "ci_min_ma": 123.6,
+      "ci_max_ma": 153.8,
+      "trophic_guild": "Euryhaline Benthic Detritivores & Epilithic Diatom Grazers (Potamopyrgus antipodarum)",
+      "key_enzymes_or_loci": "Osmoregulatory Carbonic Anhydrase CA14, Triploid Clonal Meiotic Genes & COX1",
+      "ecosystem_role": "Native NZ stream grazer turned global parthenogenetic aquatic invader",
+      "sector_idx": 3
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Crown Panpulmonata (Freshwater Hygrophila [E] vs. Terrestrial Stylommatophora Land Snails [F, G])",
+      "sector_code": "[E]",
+      "fossil_or_biogeo_anchor": "Late Jurassic-Early Cretaceous Stylommatophora / Hygrophila terrestrialization (~142-182 Ma)",
+      "target_age_ma": 161.8,
+      "ci_min_ma": 145.2,
+      "ci_max_ma": 178.6,
+      "trophic_guild": "Freshwater Pulmonate Periphyton Grazers & Fluke Vectors (Radix, Orientogalba, Physella)",
+      "key_enzymes_or_loci": "Pulmonate Pallial-Lung Hemocyanin, Immune FREPs & Detoxifying CYP4V2",
+      "ecosystem_role": "Cosmopolitan pond/waterway colonizers and trematode intermediate hosts",
+      "sector_idx": 4
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Crown Stylommatophora (Achatinidae Lissachatina fulica vs. Non-Achatinoid Sigmurethra [F, G])",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Late Cretaceous-Paleocene Gondwanan/Laurasian Stylommatophora split (~78-106 Ma)",
+      "target_age_ma": 91.6,
+      "ci_min_ma": 80.4,
+      "ci_max_ma": 103.2,
+      "trophic_guild": "Polyphagous Tropical Macro-Herbivores & Predatory Glass/Garlic Snails (Lissachatina, Oxychilus)",
+      "key_enzymes_or_loci": "Achatinin Antimicrobial Lectins, Garlic-Thiol Volatiles & Broad-Spectrum CYP3A",
+      "ecosystem_role": "Prohibited biosecurity threat (L. fulica) and synanthropic NZ glass snails",
+      "sector_idx": 5
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Crown Helicoidea Superfamily (Asian Bradybaeninae/Camaenidae [F] vs. Western Palearctic Helicidae + Geomitridae [G])",
+      "sector_code": "[F]",
+      "fossil_or_biogeo_anchor": "Eocene-Oligocene Eurasian Helicoidea radiation (~36-54 Ma)",
+      "target_age_ma": 44.8,
+      "ci_min_ma": 38.2,
+      "ci_max_ma": 51.6,
+      "trophic_guild": "Subtropical Citrus/Orchard Tramp Snails (Bradybaena similaris) & Camaenid Relatives",
+      "key_enzymes_or_loci": "Plant-Alkaloid Detoxifying CYP3A43/CYP6a18 & Mucus Glycoprotein Synthases",
+      "ecosystem_role": "Subtropical nursery, orchard, and coastal horticultural tramp colonizers",
+      "sector_idx": 6
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Mediterranean Pest Helicidae & Geomitridae Crown Split (Cornu aspersum + Theba pisana vs. Cernuella virgata + Cochlicella)",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Miocene Mediterranean Messinian / Tethyan aridification split (~16.5-27.5 Ma)",
+      "target_age_ma": 21.8,
+      "ci_min_ma": 17.6,
+      "ci_max_ma": 26.2,
+      "trophic_guild": "Aestivating Mediterranean Grain, Vineyard & Urban Pest Helicoids (Theba, Cornu, Cernuella, Cochlicella)",
+      "key_enzymes_or_loci": "Aestivation Hsp70/Hsp90 Chaperones, Epiphragm CA2 & Bait-Detoxifying CYP3A43",
+      "ecosystem_role": "Dominant southern Australian grain-fouling and AU/NZ urban/pasture pests",
+      "sector_idx": 6
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "G:T051",
+      "p2_tip": "G:T052",
+      "p3_tip": "G:T054",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Helicid cornucopian & Mediterranean grain-pest sharing (Cornu aspersum vs. Cantareus)"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "G:T061",
+      "p2_tip": "G:T062",
+      "p3_tip": "G:T063",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Geomitrid & Hygromiid pasture snail ILS vs. coastal gene flow"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "C:T011",
+      "p2_tip": "C:T012",
+      "p3_tip": "C:T010",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Pomacea canaliculata x P. maculata freshwater apple-snail hybridization check"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "D:T019",
+      "p2_tip": "D:T020",
+      "p3_tip": "D:T021",
+      "outgroup_tip": "A:T001",
+      "interpretation": "Potamopyrgus antipodarum New Zealand sexual vs. clonal bridgehead gene flow"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "Gastropoda",
+    "Invasive Snails",
+    "Cornu aspersum",
+    "Theba pisana",
+    "Pomacea canaliculata",
+    "Australia & New Zealand",
+    "CYP3A43"
+  ],
+  "genetic_loci_summary": [
+    "64 Gastropoda Species x 16 Loci (14 mtDNA + 18S/28S rRNA)",
+    "FAM-01..04: GH9 Cellulase, Hsp70, CA2, CYP3A43 (PDB 1TQN)",
+    "12 Single-Species Coalescent Skylines + Haplotype Networks"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Zapata, F., Wilson, N. G., Howison, M., Andrade, S. C. S., Jörger, K. M., Schrödl, M., Goetz, F. E., Giribet, G., & Dunn, C. W. (2014). Phylogenomic analyses of deep gastropod relationships reject Orthogastropoda. Proceedings of the Royal Society B: Biological Sciences, 281(1794), 20141739. DOI: 10.1098/rspb.2014.1739",
+      "url": "https://doi.org/10.1098/rspb.2014.1739"
+    },
+    {
+      "text": "Cunha, T. J., & Giribet, G. (2019). A congruent topology for deep gastropod relationships. Proceedings of the Royal Society B: Biological Sciences, 286(1898), 20182776. DOI: 10.1098/rspb.2018.2776",
+      "url": "https://doi.org/10.1098/rspb.2018.2776"
+    },
+    {
+      "text": "Razkin, O., Gómez-Moliner, B. J., Prieto, C. E., Martínez-Ortí, A., Arrébola, J. R., Muñoz, B., Chueca, L. J., & Madeira, M. J. (2015). Molecular phylogeny of the western Palaearctic Helicoidea (Gastropoda, Stylommatophora). Molecular Phylogenetics and Evolution, 83, 99–117. DOI: 10.1016/j.ympev.2014.11.014",
+      "url": "https://doi.org/10.1016/j.ympev.2014.11.014"
+    },
+    {
+      "text": "Guiller, A., & Madec, L. (2010). Historical biogeography of the land snail Cornu aspersum: a new scenario inferred from haplotype distribution in the Western Mediterranean basin. BMC Evolutionary Biology, 10, 18. DOI: 10.1186/1471-2148-10-18",
+      "url": "https://doi.org/10.1186/1471-2148-10-18"
+    },
+    {
+      "text": "Baker, G. H. (2002). Helicidae and Hygromiidae as pests in cereal crops and pastures in southern Australia. In G. M. Barker (Ed.), Molluscs as Crop Pests (pp. 193–215). CABI Publishing. DOI: 10.1079/9780851993201.0193",
+      "url": "https://doi.org/10.1079/9780851993201.0193"
+    },
+    {
+      "text": "Barker, G. M. (1999). Naturalised Terrestrial Stylommatophora (Mollusca: Gastropoda). Fauna of New Zealand, 38, 1–254. Manaaki Whenua Press. DOI: 10.7931/J2/FNZ.38",
+      "url": "https://doi.org/10.7931/J2/FNZ.38"
+    },
+    {
+      "text": "Hayes, K. A., Joshi, R. C., Thiengo, S. C., & Cowie, R. H. (2008). Out of South America: multiple origins of non-native apple snails in Asia. Diversity and Distributions, 14(4), 701–712. DOI: 10.1111/j.1472-4642.2008.00483.x",
+      "url": "https://doi.org/10.1111/j.1472-4642.2008.00483.x"
+    },
+    {
+      "text": "Sun, J., Mu, H., Ip, J. C. H., Li, R., Xu, T., Accorsi, A., Sánchez Alvarado, A., Ross, E., Lan, Y., Sun, Y., et al. (2019). Signatures of divergence, invasiveness, and terrestrialization revealed by four apple snail genomes. Molecular Biology and Evolution, 36(7), 1507–1520. DOI: 10.1093/molbev/msz084",
+      "url": "https://doi.org/10.1093/molbev/msz084"
+    },
+    {
+      "text": "Liu, C., Zhang, Y., Ren, Y., Wang, H., Li, S., Jiang, F., Yin, L., Qiao, X., Zhang, G., Qian, W., et al. (2018). The genome of the golden apple snail Pomacea canaliculata provides insight into phase transition and invasiveness. GigaScience, 7(9), giy101. DOI: 10.1093/gigascience/giy101",
+      "url": "https://doi.org/10.1093/gigascience/giy101"
+    },
+    {
+      "text": "Neiman, M., Paczesniak, D., Soper, D. M., Baldwin, A. T., & Hehman, G. (2011). Wide variation in ploidy level and genome size in a New Zealand freshwater snail with coexisting sexual and asexual lineages. Evolution, 65(11), 3202–3216. DOI: 10.1111/j.1558-5646.2011.01360.x",
+      "url": "https://doi.org/10.1111/j.1558-5646.2011.01360.x"
+    },
+    {
+      "text": "Alonso, A., & Castro-Díez, P. (2012). The exotic aquatic mud snail Potamopyrgus antipodarum (Hydrobiidae, Mollusca): state of the art of a worldwide invasion. Aquatic Sciences, 74(3), 375–383. DOI: 10.1007/s00027-012-0254-7",
+      "url": "https://doi.org/10.1007/s00027-012-0254-7"
+    },
+    {
+      "text": "Guo, Y., Zhang, Y., Liu, Q., Huang, Y., Mao, G., Yue, Z., Abe, E. M., Li, S., Zhou, X., Hu, W., et al. (2019). A chromosomal-level genome assembly for the giant African snail Achatina fulica. GigaScience, 8(10), giz124. DOI: 10.1093/gigascience/giz124",
+      "url": "https://doi.org/10.1093/gigascience/giz124"
+    },
+    {
+      "text": "Adamson, E. A. S., & Hurwood, D. A. (2016). Molecular systematics and invasion pathways of introduced Helicidae and Geomitridae land snails in Australian grain belts. Biological Invasions, 18(10), 2891–2906. DOI: 10.1007/s10530-016-1181-9",
+      "url": "https://doi.org/10.1007/s10530-016-1181-9"
+    },
+    {
+      "text": "Mirarab, S., & Warnow, T. (2015). ASTRAL-II: Coalescent-based species tree estimation with many hundreds of taxa and thousands of genes. Bioinformatics, 31(12), i44–i52. DOI: 10.1093/bioinformatics/btv234",
+      "url": "https://doi.org/10.1093/bioinformatics/btv234"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185–1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z., Wong, W. S. W., & Nielsen, R. (2005). Bayes empirical Bayes inference of amino acid sites under positive selection. Molecular Biology and Evolution, 22(4), 1107–1118. DOI: 10.1093/molbev/msi097",
+      "url": "https://doi.org/10.1093/molbev/msi097"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      472.4,
+      386.2,
+      258.6,
+      138.4,
+      161.8,
+      91.6,
+      21.8
+    ],
+    "backbone_node_ages": [
+      21.8,
+      44.8,
+      91.6,
+      138.4,
+      258.6,
+      472.4
+    ],
+    "fig1_max_ma": 520,
+    "fig1_eras": [
+      [
+        "Paleozoic",
+        520,
+        252,
+        "#f1f5f9"
+      ],
+      [
+        "Triassic",
+        252,
+        201,
+        "#f8fafc"
+      ],
+      [
+        "Jurassic",
+        201,
+        145,
+        "#f1f5f9"
+      ],
+      [
+        "Cretaceous",
+        145,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      500,
+      400,
+      300,
+      200,
+      100,
+      0
+    ],
+    "fig1_node_y_slots": [
+      4.5,
+      9,
+      16,
+      23,
+      31,
+      42,
+      52,
+      58
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        3,
+        "A-Clade (n=4)",
+        "Cellana orientalis",
+        "[A] Patellogastropoda Outgroup"
+      ],
+      [
+        "[B]",
+        4,
+        8,
+        "B-Clade (n=5)",
+        "Monoplex parthenopeus",
+        "[B] Tonnoidea Marine Stowaway"
+      ],
+      [
+        "[C]",
+        9,
+        17,
+        "C-Clade (n=9)",
+        "Pomacea maculata",
+        "[C] Ampullariidae Freshwater Invasive"
+      ],
+      [
+        "[D]",
+        18,
+        25,
+        "D-Clade (n=8)",
+        "Potamopyrgus antipodarum",
+        "[D] Tateidae NZ Native / Global Invasive"
+      ],
+      [
+        "[E]",
+        26,
+        34,
+        "E-Clade (n=9)",
+        "Radix auricularia",
+        "[E] Hygrophila Freshwater Invasive"
+      ],
+      [
+        "[F]",
+        35,
+        49,
+        "F-Clade (n=15)",
+        "Lissachatina fulica",
+        "[F] Achatinidae Prohibited Biosecurity Threat"
+      ],
+      [
+        "[G]",
+        50,
+        63,
+        "G-Clade (n=14)",
+        "Cornu aspersum",
+        "[G] Helicidae AU/NZ Urban & Agricultural Pest"
+      ]
+    ],
+    "fig1_web_svg": "invasive-snails-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Gastropoda & Invasive Snail Chronogram (TimeTreeLSD2)",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram across Patellogastropoda outgroups [A] through invasive Helicidae/Geomitridae [G].",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        3,
+        "A-Clade (n=4)",
+        ""
+      ],
+      [
+        "[B]",
+        4,
+        8,
+        "B-Clade (n=5)",
+        ""
+      ],
+      [
+        "[C]",
+        9,
+        17,
+        "C-Clade (n=9)",
+        ""
+      ],
+      [
+        "[D]",
+        18,
+        25,
+        "D-Clade (n=8)",
+        ""
+      ],
+      [
+        "[E]",
+        26,
+        34,
+        "E-Clade (n=9)",
+        ""
+      ],
+      [
+        "[F]",
+        35,
+        49,
+        "F-Clade (n=15)",
+        ""
+      ],
+      [
+        "[G]",
+        50,
+        63,
+        "G-Clade (n=14)",
+        ""
+      ]
+    ],
+    "fig2_web_svg": "invasive-snails-fig2-circular-phylogram.svg",
+    "fig2_title": "64-Species Partitioned ModelTest Circular Phylogram",
+    "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked partitioned ModelTest (RY3) across >=80%-gated Gastropoda OTUs.",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T006",
+        1
+      ],
+      [
+        "Node III",
+        "C:T011",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T019",
+        3
+      ],
+      [
+        "Node V",
+        "E:T030",
+        4
+      ],
+      [
+        "Node VI",
+        "F:T036",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T043",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T051",
+        7
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T051",
+      "G:T054"
+    ],
+    "fig3_web_svg": "invasive-snails-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species Quartet Multispecies Coalescent Tree & ABBA-BABA Contrasts",
+    "fig3_caption": "Complete 64-species multi-locus quartet coalescent species tree with empirical CU branch lengths and ABBA-BABA contrasts.",
+    "fig4a_web_svg": "invasive-snails-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Cross-Regional Invasive Snail COX1 Bayesian Skyline Matrix (R1-R6)",
+    "fig4a_caption": "Six regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across Theba pisana, Cornu aspersum, Cernuella virgata, Cochlicella, Bradybaena similaris, and Lissachatina fulica.",
+    "fig4b_web_svg": "invasive-snails-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Invasive Snail Coalescent Matrix (L1-L6)",
+    "fig4b_caption": "Paired multi-locus skylines across Potamopyrgus antipodarum, Cornu aspersum, Theba pisana, and Pomacea canaliculata.",
+    "fig5_short_fam_titles": [
+      "Digestive Endoglucanase & Cellulase Hydrolases (GH9)",
+      "Summer Aestivation & Thermal Desiccation Chaperones (Hsp70)",
+      "Shell & Epiphragm Biomineralization Carbonic Anhydrases (CA2)",
+      "Hepatopancreas Detoxification Cytochrome P450s (CYP3A43)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: GH9 Cellulases",
+      "FAM-02: Hsp70 Aestivation",
+      "FAM-03: CA2 Biomineralization",
+      "FAM-04: Detox CYP3A43 (1TQN)"
+    ],
+    "fig5_panel_d_header": "Panel D | Gastropoda CYP3A43 Fold & Fe3+-Heme Pocket (1TQN, 2.05 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Microsomal P450 Fold (461 Ca Threaded with Gastropoda CYP3A43)",
+    "fig5_web_svg": "invasive-snails-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Translated Motif Alignments, Codon Selection & CYP3A43 3D Fold on 1TQN",
+    "fig5_caption": "Translated Code-1 motif alignments across GH9, Hsp70, CA2, and CYP3A43 threaded onto PDB 1TQN (2.05 A).",
+    "fig6_web_svg": "invasive-snails-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Comparison",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned ML (2nd), Unrecoded-4 (3rd), and Raw0 control (4th), alongside Pipeline B (12 single-species coalescent skylines).",
+    "fig6_clade_label": "Invasive Gastropoda",
+    "fig6_p450_label": "CYP3A43 / GH9 / Hsp70 / CA2",
+    "fig6_its_label": "Pomacea & Cornu 28S/ITS rDNA",
+    "supp_s1_fasta_name": "supp_s1_cyp3a43_p450_cds.fasta",
+    "supp_s1_title": "FAM-04 Microsomal Cytochrome P450 CDS (Gastropoda CYP3A43/CYP3A24, Code 1)",
+    "supp_s1_source": "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS (FAM-04 CYP3A)",
+    "supp_s1_stem": "invasive-snails-supp-s1-cyp3a43-alignview",
+    "supp_s2_title": "Cohort L5 Pomacea Nuclear rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS (Cohort L5)",
+    "supp_s2_stem": "invasive-snails-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "Gastropoda Phased Mitochondrial COX1 (Clades A-G)",
+    "supp_s3_source": "VAL-SET-063-INVASIVE-SNAILS-AU-NZ-544RECS (COX1 Mito Code 5)",
+    "supp_s3_stem": "invasive-snails-supp-s3-cox1-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Comparative Phylogenomics & Invasion Corridors Across Australasian Invasive Snails",
+    "section1_p1": "Biological invasions by marine, freshwater, and terrestrial gastropods across Australia and New Zealand span independently introduced lineages ranging from ballast-borne muricids and amphibious Pomacea apple snails to clonal Potamopyrgus mud snails and Mediterranean crop-pest helicids (Theba pisana, Cornu aspersum, Cernuella virgata, Cochlicella spp.).",
+    "section1_p2": "In v2.0.0, all 64 stratified Gastropoda slots ([A]-[G]) execute end-to-end through the generalized declarative bio-suite-supervisor engine with Partitioned ModelTest, empirical Kishino-Hasegawa Z-scores, empirical TimeTreeLSD2 asymmetric HPDs, homogeneous Code-1 GH9, Hsp70, CA2, and CYP3A43 selection models, and 12 real single-species Bayesian skylines.",
+    "section2_title": "Per-Locus BIC ModelTest, Third-Codon RY3 Collapse & Gastropod Clock",
+    "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA & 32-Chain RuNIE Audit",
+    "section4_title": "Cellulase, Aestivation Chaperone, Shell Biomineralization & CYP3A43 Selection (1TQN)",
+    "section4_body": "Across 48 verified Universal Code 1 molluscan coding orthologs, Goldman-Yang 61-state codon models quantify constraint on digestive GH9 cellulases (FAM-01), aestivation Hsp70 chaperones (FAM-02), mantle carbonic anhydrases (FAM-03), and microsomal detoxification CYP3A43 monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A).",
+    "section5_title": "Cross-Regional & Multi-Locus Skylines (mtDNA vs. 28S/ITS) & Stage 3C Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "Jointly modeling marine stowaways, freshwater wetland invaders, and Mediterranean grain-crop helicids separates ancient Paleozoic-Mesozoic gastropod splits from Anthropocene maritime bridgehead bottlenecks.",
+      "Separating Code-5 mitochondrial partitions from Code-1 nuclear functional families avoids frame cross-talk and highlights strong purifying constraint alongside focal detoxification site variation in CYP3A43.",
+      "Re-executing all stages natively through the generalized declarative engine provides reproducible metrics bounded by public GenBank coverage across Australia and New Zealand."
+    ],
+    "abstract_context": "Understanding how invasive marine, freshwater, and terrestrial snails establish across Australia and New Zealand requires resolving deep gastropod relationships alongside stress-tolerance selection and introduction bottlenecks.",
+    "executive_summary_lead": "traces invasion phylogenomics, aestivation selection, and demography of Australasian snails",
+    "latex_intro": "Sixty-four Gastropoda lineages spanning Patellogastropoda outgroups [A] through Helicoidea crop pests [G] are evaluated across 16 loci in Version 2.0.0.",
+    "seed_base": 20261124
+  }
+}

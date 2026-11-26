@@ -1,0 +1,169 @@
+{
+  "benchmark_id": "bemisia-preprint23-design-v1",
+  "title": "Bemisia tabaci Cryptic Complex & Aleyrodidae 64-species x 16-locus design",
+  "fixed_before_first_run": "2026-11-25",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at PREPRINT-23 dimensions (64 species x 16 loci) scored against published taxonomic clades without circular tuning.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-23",
+    "species": 64,
+    "loci": 16
+  },
+  "sources": [
+    {
+      "key": "DeBarro2011",
+      "citation": "De Barro et al. (2011) Annu. Rev. Entomol. 56: 1-19",
+      "doi": "10.1146/annurev-ento-112408-085504"
+    },
+    {
+      "key": "Boykin2013",
+      "citation": "Boykin et al. (2013) Mol. Phylogenet. Evol. 69(3): 1084-1092",
+      "doi": "10.1016/j.ympev.2013.08.018"
+    },
+    {
+      "key": "Mugerwa2018",
+      "citation": "Mugerwa et al. (2018) PLoS ONE 13(5): e0196733",
+      "doi": "10.1371/journal.pone.0196733"
+    }
+  ],
+  "taxon_group": "Aleyrodidae",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 18,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Sector_A": [
+      "Aphidoidea",
+      "Psylloidea",
+      "Triozidae"
+    ],
+    "Sector_B": [
+      "Aleurodicus",
+      "Paraleyrodes"
+    ],
+    "Sector_C": [
+      "Trialeurodes",
+      "Aleyrodes",
+      "Neomaskellia",
+      "Aleurochiton",
+      "Aleurothrixus",
+      "Tetraleurodes",
+      "Aleurocanthus",
+      "Dialeurodes",
+      "Dialeuropora",
+      "Singhiella",
+      "Aleurolobus",
+      "Aleuroplatus",
+      "Aleuroclava",
+      "Pealius",
+      "Crenidorsum"
+    ],
+    "Sector_D": [
+      "Aleyrodidae"
+    ],
+    "Sector_E": [],
+    "Sector_F": [],
+    "Sector_G": []
+  },
+  "species_per_family": {
+    "Aphidoidea": 1,
+    "Psylloidea": 1,
+    "Triozidae": 1,
+    "Aleurodicus": 4,
+    "Paraleyrodes": 1,
+    "Trialeurodes": 1,
+    "Aleyrodes": 2,
+    "Neomaskellia": 1,
+    "Aleurochiton": 2,
+    "Aleurothrixus": 1,
+    "Tetraleurodes": 1,
+    "Aleurocanthus": 2,
+    "Dialeurodes": 1,
+    "Dialeuropora": 1,
+    "Singhiella": 1,
+    "Aleurolobus": 1,
+    "Aleuroplatus": 1,
+    "Aleuroclava": 1,
+    "Pealius": 1,
+    "Crenidorsum": 1,
+    "Aleyrodidae": 38
+  },
+  "scored_clades": [
+    {
+      "id": "aleyrodidae",
+      "name": "Crown Family Aleyrodidae",
+      "families": [
+        "Aleurodicus",
+        "Paraleyrodes",
+        "Trialeurodes",
+        "Aleyrodes",
+        "Neomaskellia",
+        "Aleurochiton",
+        "Aleurothrixus",
+        "Tetraleurodes",
+        "Aleurocanthus",
+        "Dialeurodes",
+        "Dialeuropora",
+        "Singhiella",
+        "Aleurolobus",
+        "Aleuroplatus",
+        "Aleuroclava",
+        "Pealius",
+        "Crenidorsum",
+        "Aleyrodidae"
+      ]
+    },
+    {
+      "id": "aleyrodinae",
+      "name": "Subfamily Aleyrodinae",
+      "families": [
+        "Trialeurodes",
+        "Aleyrodes",
+        "Neomaskellia",
+        "Aleurochiton",
+        "Aleurothrixus",
+        "Tetraleurodes",
+        "Aleurocanthus",
+        "Dialeurodes",
+        "Dialeuropora",
+        "Singhiella",
+        "Aleurolobus",
+        "Aleuroplatus",
+        "Aleuroclava",
+        "Pealius",
+        "Crenidorsum",
+        "Aleyrodidae"
+      ]
+    },
+    {
+      "id": "bemisia_tabaci_ow",
+      "name": "Bemisia tabaci Old World Complex (Asia + Africa + MED/MEAM1)",
+      "families": [
+        "Aleyrodidae"
+      ]
+    },
+    {
+      "id": "med_meam",
+      "name": "Bemisia tabaci MED + MEAM1 Crown Clade",
+      "families": [
+        "Aleyrodidae"
+      ]
+    }
+  ],
+  "report_only_clades": []
+}

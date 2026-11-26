@@ -1,0 +1,101 @@
+{
+  "benchmark_id": "anopheles-preprint22-design-v1",
+  "title": "Global Anopheles Malaria Vector Phylogenomics 64-species x 17-locus design",
+  "fixed_before_first_run": "2026-11-25",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at PREPRINT-22 dimensions (64 species x 17 loci) scored against published taxonomic clades without circular tuning.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-22",
+    "species": 64,
+    "loci": 17
+  },
+  "sources": [
+    {
+      "key": "Neafsey2015",
+      "citation": "Neafsey et al. (2015) Science 347(6217): 1258522",
+      "doi": "10.1126/science.1258522"
+    },
+    {
+      "key": "Fontaine2015",
+      "citation": "Fontaine et al. (2015) Science 347(6217): 1258524",
+      "doi": "10.1126/science.1258524"
+    }
+  ],
+  "taxon_group": "Culicidae",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 18,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "ATP8",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Sector_A": [
+      "Culex",
+      "Aedes",
+      "Toxorhynchites",
+      "Chagasia",
+      "Bironella"
+    ],
+    "Sector_B": [
+      "Anophelinae"
+    ],
+    "Sector_C": [],
+    "Sector_D": [],
+    "Sector_E": [],
+    "Sector_F": [],
+    "Sector_G": []
+  },
+  "species_per_family": {
+    "Culex": 2,
+    "Aedes": 2,
+    "Toxorhynchites": 1,
+    "Chagasia": 1,
+    "Bironella": 2,
+    "Anophelinae": 56
+  },
+  "scored_clades": [
+    {
+      "id": "nyssorhynchus",
+      "name": "Neotropical Subgenus Nyssorhynchus + Kerteszia",
+      "families": [
+        "Anophelinae"
+      ]
+    },
+    {
+      "id": "anopheles_subg",
+      "name": "Subgenus Anopheles",
+      "families": [
+        "Anophelinae"
+      ]
+    },
+    {
+      "id": "cellia",
+      "name": "Subgenus Cellia",
+      "families": [
+        "Anophelinae"
+      ]
+    },
+    {
+      "id": "pyretophorus",
+      "name": "Series Pyretophorus / An. gambiae Complex",
+      "families": [
+        "Anophelinae"
+      ]
+    }
+  ],
+  "report_only_clades": []
+}

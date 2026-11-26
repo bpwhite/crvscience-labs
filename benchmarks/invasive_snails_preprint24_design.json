@@ -1,0 +1,202 @@
+{
+  "benchmark_id": "invasive-snails-preprint24-design-v1",
+  "title": "Australian and New Zealand Invasive Marine, Freshwater, and Terrestrial Snails (Gastropoda) 64-species x 16-locus design",
+  "fixed_before_first_run": "2026-11-25",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at PREPRINT-24 dimensions (64 species x 16 loci) scored against published taxonomic clades without circular tuning.",
+  "design_reference": {
+    "preprint_id": "PREPRINT-24",
+    "species": 64,
+    "loci": 16
+  },
+  "sources": [
+    {
+      "key": "Zapata2014",
+      "citation": "Zapata et al. (2014) Proc. R. Soc. B 281: 20141739",
+      "doi": "10.1098/rspb.2014.1739"
+    },
+    {
+      "key": "Cunha2019",
+      "citation": "Cunha & Giribet (2019) Proc. R. Soc. B 286: 20182776",
+      "doi": "10.1098/rspb.2018.2776"
+    },
+    {
+      "key": "Razkin2015",
+      "citation": "Razkin et al. (2015) Mol. Phylogenet. Evol. 83: 99-117",
+      "doi": "10.1016/j.ympev.2014.11.014"
+    }
+  ],
+  "taxon_group": "Gastropoda",
+  "mitogenome_loci": true,
+  "mitogenome_retmax_per_family": 18,
+  "loci": [
+    "COI",
+    "COII",
+    "COIII",
+    "CYTB",
+    "ND1",
+    "ND2",
+    "ND3",
+    "ND4",
+    "ND4L",
+    "ND5",
+    "ND6",
+    "ATP6",
+    "rrnL_16S",
+    "rrnS_12S",
+    "SSU_18S",
+    "LSU_28S"
+  ],
+  "sampling_families": {
+    "Sector_A": [
+      "Nacellidae",
+      "Lottiidae",
+      "Haliotidae"
+    ],
+    "Sector_B": [
+      "Tonnoidea",
+      "Muricidae",
+      "Littorinidae"
+    ],
+    "Sector_C": [
+      "Ampullariidae",
+      "Viviparidae"
+    ],
+    "Sector_D": [
+      "Tateidae",
+      "Pomatiopsidae",
+      "Semisulcospiridae",
+      "Assimineidae"
+    ],
+    "Sector_E": [
+      "Lymnaeidae",
+      "Physidae",
+      "Planorbidae",
+      "Siphonarioidea"
+    ],
+    "Sector_F": [
+      "Achatinidae",
+      "Oxychilidae",
+      "Limacoidea",
+      "Albinaria",
+      "Succineidae",
+      "Bradybaena",
+      "Camaenidae"
+    ],
+    "Sector_G": [
+      "Helicidae",
+      "Geomitridae",
+      "Hygromiidae",
+      "Helicoidea"
+    ]
+  },
+  "species_per_family": {
+    "Nacellidae": 1,
+    "Lottiidae": 1,
+    "Haliotidae": 2,
+    "Tonnoidea": 1,
+    "Muricidae": 3,
+    "Littorinidae": 1,
+    "Ampullariidae": 8,
+    "Viviparidae": 1,
+    "Tateidae": 4,
+    "Pomatiopsidae": 2,
+    "Semisulcospiridae": 1,
+    "Assimineidae": 1,
+    "Lymnaeidae": 3,
+    "Physidae": 1,
+    "Planorbidae": 4,
+    "Siphonarioidea": 1,
+    "Achatinidae": 3,
+    "Oxychilidae": 1,
+    "Limacoidea": 1,
+    "Albinaria": 1,
+    "Succineidae": 1,
+    "Bradybaena": 2,
+    "Camaenidae": 6,
+    "Helicidae": 10,
+    "Geomitridae": 2,
+    "Hygromiidae": 1,
+    "Helicoidea": 1
+  },
+  "scored_clades": [
+    {
+      "id": "apogastropoda",
+      "name": "Apogastropoda (Caenogastropoda + Heterobranchia)",
+      "families": [
+        "Tonnoidea",
+        "Muricidae",
+        "Littorinidae",
+        "Ampullariidae",
+        "Viviparidae",
+        "Tateidae",
+        "Pomatiopsidae",
+        "Semisulcospiridae",
+        "Assimineidae",
+        "Lymnaeidae",
+        "Physidae",
+        "Planorbidae",
+        "Siphonarioidea",
+        "Achatinidae",
+        "Oxychilidae",
+        "Limacoidea",
+        "Albinaria",
+        "Succineidae",
+        "Bradybaena",
+        "Camaenidae",
+        "Helicidae",
+        "Geomitridae",
+        "Hygromiidae",
+        "Helicoidea"
+      ]
+    },
+    {
+      "id": "panpulmonata",
+      "name": "Panpulmonata (Hygrophila + Stylommatophora)",
+      "families": [
+        "Lymnaeidae",
+        "Physidae",
+        "Planorbidae",
+        "Siphonarioidea",
+        "Achatinidae",
+        "Oxychilidae",
+        "Limacoidea",
+        "Albinaria",
+        "Succineidae",
+        "Bradybaena",
+        "Camaenidae",
+        "Helicidae",
+        "Geomitridae",
+        "Hygromiidae",
+        "Helicoidea"
+      ]
+    },
+    {
+      "id": "stylommatophora",
+      "name": "Stylommatophora Terrestrial Snails",
+      "families": [
+        "Achatinidae",
+        "Oxychilidae",
+        "Limacoidea",
+        "Albinaria",
+        "Succineidae",
+        "Bradybaena",
+        "Camaenidae",
+        "Helicidae",
+        "Geomitridae",
+        "Hygromiidae",
+        "Helicoidea"
+      ]
+    },
+    {
+      "id": "helicoidea",
+      "name": "Helicoidea Crown (Bradybaeninae + Helicidae + Geomitridae)",
+      "families": [
+        "Helicidae",
+        "Geomitridae",
+        "Hygromiidae",
+        "Helicoidea"
+      ]
+    }
+  ],
+  "report_only_clades": []
+}

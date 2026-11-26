@@ -2467,6 +2467,23 @@ pub(crate) fn render_stage3c_haplotype_section_html(
     )
 }
 
+pub(crate) const MIN_DISTINGUISHABLE_HAPLOTYPE_CLUSTERS: usize = 3;
+
+/// Counts distinguishable rendered haplotype clusters (matching `haplotype.rs` hull rendering:
+/// when `clusters.len() > 10`, singleton haplotypes `unique_haplotypes < 2` do not draw a hull;
+/// otherwise each connected component within `max_cluster_step_threshold` draws a hull).
+pub(crate) fn count_distinguishable_haplotype_clusters(rep: &HaplotypeClusterCohortReport) -> usize {
+    if rep.clusters.len() > 10 {
+        rep.clusters.iter().filter(|c| c.unique_haplotypes >= 2).count()
+    } else {
+        rep.clusters.len()
+    }
+}
+
+pub(crate) fn has_min_distinguishable_haplotype_clusters(rep: &HaplotypeClusterCohortReport) -> bool {
+    count_distinguishable_haplotype_clusters(rep) >= MIN_DISTINGUISHABLE_HAPLOTYPE_CLUSTERS
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn render_stage3c_haplotype_section_html_with_locus(
     rep_a: Option<&HaplotypeClusterCohortReport>,
@@ -2493,6 +2510,17 @@ pub(crate) fn render_stage3c_haplotype_section_html_with_locus(
     ] {
         if let Some(rep) = rep_opt {
             let dm = &rep.diversity_metrics;
+            let dist_c = count_distinguishable_haplotype_clusters(rep);
+            let cluster_cell = if rep.clusters.len() != dist_c {
+                format!("{} ({} hulls)", rep.clusters.len(), dist_c)
+            } else {
+                format!("{}", rep.clusters.len())
+            };
+            let fig_note = if dist_c < MIN_DISTINGUISHABLE_HAPLOTYPE_CLUSTERS {
+                " [Figure omitted: <3 distinguishable clusters]"
+            } else {
+                ""
+            };
             let top_hub: String = hubs
                 .iter()
                 .take(3)
@@ -2509,12 +2537,12 @@ pub(crate) fn render_stage3c_haplotype_section_html_with_locus(
                 .collect::<Vec<_>>()
                 .join("; ");
             hap_rows.push_str(&format!(
-                "<tr><td><strong>{}</strong></td><td>{}</td><td>{} ({} bp)</td><td>{}</td><td>{}</td><td>{:.4}</td><td>{:.4} / {:.4}</td><td>{:+.3}</td><td><em>k</em><sub>max</sub> = {} | {}</td></tr>\n",
+                "<tr><td><strong>{}</strong></td><td>{}</td><td>{} ({} bp)</td><td>{}</td><td>{}</td><td>{:.4}</td><td>{:.4} / {:.4}</td><td>{:+.3}</td><td><em>k</em><sub>max</sub> = {} | {}{}</td></tr>\n",
                 html_esc(label),
                 dm.total_sequences_n,
                 dm.unique_haplotypes_h,
                 dm.alignment_length_bp,
-                rep.clusters.len(),
+                html_esc(&cluster_cell),
                 rep.msn_edges.len(),
                 dm.haplotype_diversity_hd,
                 dm.nucleotide_diversity_pi,
@@ -2522,15 +2550,44 @@ pub(crate) fn render_stage3c_haplotype_section_html_with_locus(
                 dm.tajimas_d,
                 k_max,
                 html_esc(&top_hub),
+                html_esc(fig_note),
             ));
         }
     }
-    let svg7a = rep_a
-        .map(|r| r.visualizations.svg_vector_network.as_str())
-        .unwrap_or("");
-    let svg7b = rep_b
-        .map(|r| r.visualizations.svg_vector_network.as_str())
-        .unwrap_or("");
+    let show_7a = rep_a
+        .map(has_min_distinguishable_haplotype_clusters)
+        .unwrap_or(false);
+    let show_7b = rep_b
+        .map(has_min_distinguishable_haplotype_clusters)
+        .unwrap_or(false);
+    let fig7a_block = if show_7a {
+        let svg7a = rep_a
+            .map(|r| r.visualizations.svg_vector_network.as_str())
+            .unwrap_or("");
+        format!(
+            "\n<figure class=\"labs-copy-box labs-figure-card labs-figure-card--print-full\" id=\"fig-7a\" data-copy-mode=\"figure\">\n  <div class=\"labs-copy-box-header\"><span class=\"labs-copy-title\">{}</span><button type=\"button\" class=\"labs-copy-btn\" data-copy-target=\"fig-7a\">&#x1F4CB; Copy Figure Info</button></div>\n  <div class=\"labs-inline-svg-figure\" data-svg-source=\"{}\" style=\"width: 100%; overflow-x: auto;\">{}</div>\n  <figcaption>{}</figcaption>\n</figure>",
+            html_esc(fig7a_title),
+            html_esc(fig7a_svg_url),
+            svg7a,
+            fig7a_cap,
+        )
+    } else {
+        String::new()
+    };
+    let fig7b_block = if show_7b {
+        let svg7b = rep_b
+            .map(|r| r.visualizations.svg_vector_network.as_str())
+            .unwrap_or("");
+        format!(
+            "\n<figure class=\"labs-copy-box labs-figure-card labs-figure-card--print-full\" id=\"fig-7b\" data-copy-mode=\"figure\">\n  <div class=\"labs-copy-box-header\"><span class=\"labs-copy-title\">{}</span><button type=\"button\" class=\"labs-copy-btn\" data-copy-target=\"fig-7b\">&#x1F4CB; Copy Figure Info</button></div>\n  <div class=\"labs-inline-svg-figure\" data-svg-source=\"{}\" style=\"width: 100%; overflow-x: auto;\">{}</div>\n  <figcaption>{}</figcaption>\n</figure>",
+            html_esc(fig7b_title),
+            html_esc(fig7b_svg_url),
+            svg7b,
+            fig7b_cap,
+        )
+    } else {
+        String::new()
+    };
     format!(
         r#"<div class="labs-copy-box" data-copy-mode="table" id="table-haplo-hubs">
   <div class="labs-copy-box-header"><span class="labs-copy-title">{}</span></div>
@@ -2541,29 +2598,13 @@ pub(crate) fn render_stage3c_haplotype_section_html_with_locus(
     <tbody>
 {}    </tbody>
   </table></div>
-  <div class="labs-box-tool-footer" role="note" aria-label="Computational Tool Attribution">Stage 3C Radiative-Forcing TCS/MSN Engine ({}; Zero Edge Crossings &amp; Zero Node Overlaps).</div>
-</div>
-<figure class="labs-copy-box labs-figure-card labs-figure-card--print-full" id="fig-7a" data-copy-mode="figure">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">{}</span><button type="button" class="labs-copy-btn" data-copy-target="fig-7a">&#x1F4CB; Copy Figure Info</button></div>
-  <div class="labs-inline-svg-figure" data-svg-source="{}" style="width: 100%; overflow-x: auto;">{}</div>
-  <figcaption>{}</figcaption>
-</figure>
-<figure class="labs-copy-box labs-figure-card labs-figure-card--print-full" id="fig-7b" data-copy-mode="figure">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">{}</span><button type="button" class="labs-copy-btn" data-copy-target="fig-7b">&#x1F4CB; Copy Figure Info</button></div>
-  <div class="labs-inline-svg-figure" data-svg-source="{}" style="width: 100%; overflow-x: auto;">{}</div>
-  <figcaption>{}</figcaption>
-</figure>"#,
+  <div class="labs-box-tool-footer" role="note" aria-label="Computational Tool Attribution">Stage 3C Radiative-Forcing TCS/MSN Engine ({}; &gt;=3 Distinguishable Clusters Gate; Zero Edge Crossings &amp; Zero Node Overlaps).</div>
+</div>{}{}"#,
         html_esc(hub_table_title),
         hap_rows,
         gate_locus_html,
-        html_esc(fig7a_title),
-        html_esc(fig7a_svg_url),
-        svg7a,
-        fig7a_cap,
-        html_esc(fig7b_title),
-        html_esc(fig7b_svg_url),
-        svg7b,
-        fig7b_cap,
+        fig7a_block,
+        fig7b_block,
     )
 }
 

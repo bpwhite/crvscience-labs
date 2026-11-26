@@ -2291,11 +2291,14 @@ pub fn export_declarative_manuscript_and_staged_bundle(
     };
     let svg7a_name = format!("{}-fig7a-haplotype.svg", cfg.fig_prefix);
     let svg7b_name = format!("{}-fig7b-haplotype.svg", cfg.fig_prefix);
+    manifest
+        .figures
+        .retain(|f| f.figure_id != "fig-7a" && f.figure_id != "fig-7b");
     if let Some(ref r7a) = hap7a {
-        for d in [&run_fig_dir, &labs_figures_dir, &arxiv_fig_dir] {
-            let _ = fs::write(d.join(&svg7a_name), &r7a.visualizations.svg_vector_network);
-        }
-        if !manifest.figures.iter().any(|f| f.figure_id == "fig-7a") {
+        if crate::supermatrix_audit_util::has_min_distinguishable_haplotype_clusters(r7a) {
+            for d in [&run_fig_dir, &labs_figures_dir, &arxiv_fig_dir] {
+                let _ = fs::write(d.join(&svg7a_name), &r7a.visualizations.svg_vector_network);
+            }
             manifest.figures.push(GeneratedFigureArtifact {
                 figure_number: 8,
                 figure_id: "fig-7a".to_string(),
@@ -2317,10 +2320,10 @@ pub fn export_declarative_manuscript_and_staged_bundle(
         }
     }
     if let Some(ref r7b) = hap7b {
-        for d in [&run_fig_dir, &labs_figures_dir, &arxiv_fig_dir] {
-            let _ = fs::write(d.join(&svg7b_name), &r7b.visualizations.svg_vector_network);
-        }
-        if !manifest.figures.iter().any(|f| f.figure_id == "fig-7b") {
+        if crate::supermatrix_audit_util::has_min_distinguishable_haplotype_clusters(r7b) {
+            for d in [&run_fig_dir, &labs_figures_dir, &arxiv_fig_dir] {
+                let _ = fs::write(d.join(&svg7b_name), &r7b.visualizations.svg_vector_network);
+            }
             manifest.figures.push(GeneratedFigureArtifact {
                 figure_number: 9,
                 figure_id: "fig-7b".to_string(),

@@ -513,7 +513,12 @@ pub fn discover_and_cache_entrez_cohort(
     let forbid_predicted_mrna =
         term.contains("NOT PREDICTED") || require_mito || term.contains("NOT protein[Title]");
     let is_valid_summary = |s: &DiscoveredEntrezSummary| -> bool {
-        if s.title.to_ascii_uppercase().contains("UNVERIFIED") {
+        let t_up = s.title.to_ascii_uppercase();
+        if t_up.contains("UNVERIFIED")
+            || t_up.contains("WHOLE GENOME SHOTGUN")
+            || t_up.contains("TRANSCRIPTOME SHOTGUN")
+            || s.accession.contains("000000.")
+        {
             return false;
         }
         if forbid_predicted_mrna
@@ -2074,7 +2079,8 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         }
     }
 
-    let need_nt_core = !is_coding_cds || core_seqs.first().is_none_or(|s| s.len() < 120);
+    let need_nt_core =
+        !is_coding_cds || core_seqs.iter().filter(|s| s.len() >= 120).count() < 6;
     let nt_recs: Vec<FastaRecord> = recs_36
         .iter()
         .enumerate()
@@ -2092,6 +2098,10 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         use_secondary_structure_weights: false,
     };
     if need_nt_core {
+        valid_mask.fill(false);
+        for s in &mut core_seqs {
+            s.clear();
+        }
         let cfg_core = MafftNativeConfig {
             strategy: if !is_coding_cds { MafftNativeStrategy::EInsI } else { MafftNativeStrategy::FftNsI },
             max_iterations: 2,
@@ -2189,9 +2199,77 @@ pub(crate) fn evaluate_population_cohort_4regimes(
         }
     }
 
+    // Prune paralogous or staggered non-overlapping outlier rows (<82% nucleotide identity to conspecific consensus)
+    {
+        let cand_rows: Vec<usize> = (0..n_iso).filter(|&i| core_seqs[i].len() >= 80).collect();
+        let w_cons = cand_rows
+            .iter()
+            .map(|&i| core_seqs[i].len())
+            .max()
+            .unwrap_or(0);
+        if cand_rows.len() >= 8 && w_cons >= 80 {
+            let mut cons = vec![b'-'; w_cons];
+            for c in 0..w_cons {
+                let mut cts = [0usize; 4];
+                for &i in &cand_rows {
+                    match core_seqs[i].as_bytes().get(c).copied().unwrap_or(b'-') {
+                        b'A' => cts[0] += 1,
+                        b'C' => cts[1] += 1,
+                        b'G' => cts[2] += 1,
+                        b'T' => cts[3] += 1,
+                        _ => {}
+                    }
+                }
+                let (best_k, &best_v) = cts
+                    .iter()
+                    .enumerate()
+                    .max_by_key(|&(_, v)| *v)
+                    .unwrap_or((0, &0));
+                if best_v >= 2 {
+                    cons[c] = [b'A', b'C', b'G', b'T'][best_k];
+                }
+            }
+            let row_idents: Vec<(usize, f64)> = cand_rows
+                .iter()
+                .map(|&i| {
+                    let sb = core_seqs[i].as_bytes();
+                    let (mut m_cnt, mut v_cnt) = (0usize, 0usize);
+                    for c in 0..w_cons.min(sb.len()) {
+                        let cb = cons[c];
+                        let rb = sb[c];
+                        if cb != b'-' && matches!(rb, b'A' | b'C' | b'G' | b'T') {
+                            v_cnt += 1;
+                            if rb == cb {
+                                m_cnt += 1;
+                            }
+                        }
+                    }
+                    let id_frac = if v_cnt >= 40 {
+                        (m_cnt as f64) / (v_cnt as f64)
+                    } else {
+                        0.0
+                    };
+                    (i, id_frac)
+                })
+                .collect();
+            for thresh in [0.84_f64, 0.76] {
+                let pass_n = row_idents.iter().filter(|&&(_, f)| f >= thresh).count();
+                if pass_n >= 8 {
+                    for &(i, f) in &row_idents {
+                        if f < thresh {
+                            core_seqs[i].clear();
+                            valid_mask[i] = false;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     // Retain only isolates that genuinely passed alignment (never duplicate sequences across isolates)
     let kept_iso: Vec<usize> = (0..n_iso).filter(|&i| !core_seqs[i].is_empty()).collect();
-    if kept_iso.len() >= 4 && kept_iso.len() < n_iso {
+    if !kept_iso.is_empty() && kept_iso.len() < n_iso {
         let filter_s = |v: &[String]| -> Vec<String> { kept_iso.iter().map(|&i| v[i].clone()).collect() };
         core_seqs = filter_s(&core_seqs);
     } else if kept_iso.is_empty() {
@@ -2699,34 +2777,60 @@ pub(crate) fn append_zero_star_dump_entry(
 }
 
 pub(crate) fn parse_locality_and_host(subname: &str, default_region: &str) -> (String, String, String) {
-    let parts: Vec<&str> = subname.split('|').map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+    let parts: Vec<&str> = subname
+        .split('|')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
     let mut loc = default_region.to_string();
-    let mut host = "Field foliage collection".to_string();
-    let mut yr = "2021-2025".to_string();
+    let mut host = "GenBank / RefSeq deposit".to_string();
+    let mut yr = "Archived".to_string();
+    let mut found_loc = false;
+    let mut found_host = false;
+    let mut found_yr = false;
+
+    let geo_markers = [
+        "USA", "Brazil", "Italy", "Spain", "China", "Uganda", "Tanzania", "India",
+        "Australia", "New Zealand", "Japan", "Germany", "France", "UK", "United Kingdom",
+        "Canada", "Mexico", "South Africa", "Kenya", "Russia", "Norway", "Iceland",
+        "Ocean", "Sea", "Basin", "Vent", "Spring", "Island", "Province", "Turkey",
+    ];
+    let strain_prefixes = [
+        "atcc", "dsm", "cbs", "jcm", "nrrl", "nbrc", "ncyc", "ccap", "utex", "pcc", "strain",
+    ];
+
     for p in &parts {
-        if p.contains(':')
-            || p.contains("Turkey")
-            || p.contains("USA")
-            || p.contains("Brazil")
-            || p.contains("Italy")
-            || p.contains("Spain")
-            || p.contains("China")
-            || p.contains("Uganda")
-            || p.contains("Tanzania")
-            || p.contains("India")
+        let p_low = p.to_ascii_lowercase();
+        let is_strain_code = p.contains('.')
+            || strain_prefixes.iter().any(|k| p_low.contains(k))
+            || p.chars().any(|c| c == '_');
+        if !found_yr && !is_strain_code && p.len() <= 20 {
+            let maybe_year = p
+                .split(|c: char| matches!(c, '-' | '/' | ' ' | ','))
+                .find_map(|tok| {
+                    if tok.len() == 4 && tok.chars().all(|c| c.is_ascii_digit()) {
+                        tok.parse::<u16>().ok().filter(|&y| (1950..=2026).contains(&y))
+                    } else {
+                        None
+                    }
+                });
+            if let Some(y) = maybe_year {
+                yr = y.to_string();
+                found_yr = true;
+                continue;
+            }
+        }
+        if !found_loc
+            && (p.contains(':') || geo_markers.iter().any(|g| p.contains(g)))
+            && p.len() <= 56
         {
             loc = (*p).to_string();
-        } else if p.contains("Solanum")
-            || p.contains("Capsicum")
-            || p.contains("Gossypium")
-            || p.contains("Cucumis")
-            || p.contains("Cucurbita")
-            || p.contains("Manihot")
-            || p.contains("farm")
-        {
+            found_loc = true;
+            continue;
+        }
+        if !found_host && p.chars().any(|c| c.is_ascii_alphabetic()) && (2..=48).contains(&p.len()) {
             host = (*p).to_string();
-        } else if p.chars().filter(|c| c.is_ascii_digit()).count() >= 4 && p.len() <= 14 {
-            yr = (*p).to_string();
+            found_host = true;
         }
     }
     (loc, host, yr)

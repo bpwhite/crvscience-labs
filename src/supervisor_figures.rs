@@ -5278,13 +5278,43 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
     }
 
     let n_chrono_int = n_phy.saturating_sub(1);
-    let fig6_tpl_desc = if is_bacterial {
-        "61-State Codon Selection &amp; 1BU7 Structural Threading: Identifies selection regimes on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 1.65 Å crystal template 1BU7_A."
-    } else if is_universal_ae {
-        "61-State Codon Selection &amp; 1BYU Structural Threading: Identifies selection regimes on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.15 Å Ran-GDP crystal template 1BYU_A."
+    let tot_beb: usize = study
+        .functional_families
+        .iter()
+        .map(|f| f.selection_result.beb_sites_p95_count)
+        .sum();
+    let pdb_code_short = manifest
+        .pdb_structures
+        .first()
+        .and_then(|p| {
+            p.structure_id
+                .rsplit('-')
+                .next()
+                .filter(|s| s.len() == 4)
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| {
+            if is_bacterial {
+                "1BU7".to_string()
+            } else if is_universal_ae {
+                "1BYU".to_string()
+            } else {
+                "1TQN".to_string()
+            }
+        });
+    let sel_verb = if tot_beb > 0 {
+        "Identifies diversifying selection"
     } else {
-        "61-State Codon Selection &amp; 1TQN Structural Threading: Identifies diversifying selection on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto 2.05 Å crystal template 1TQN_A."
+        "Confirms purifying constraint"
     };
+    let fig6_tpl_line = format!(
+        "61-State Codon Selection &amp; {} Structural Threading: {} on {} (ω2 = {:.2}) with Kabsch 3D Cα superposition onto crystal template {}_A.",
+        xml_esc(&pdb_code_short),
+        sel_verb,
+        xml_esc(&theme.fig6_p450_label),
+        f4_w2,
+        xml_esc(&pdb_code_short)
+    );
     svg.push_str(&format!(
         r##"  <text x="28" y="164" font-size="7.8" font-weight="600" fill="#1e293b">• Autonomous Super-BLAST Hygiene &amp; Full-Length Alignment: Quarantines {} defective GenBank submissions in Iteration 1 and aligns L = {} supermatrix columns ({} PI sites) in {:.2} s.</text>
   <text x="28" y="180" font-size="7.1" font-weight="700" fill="#065f46">• 32-Chain Sweep (Table 3A/3C): 1st {} (ln L = {:.2}, BIC = {:.2}) beats 2nd {} ({:.2}) and 3rd {} ({:.2}) by {:+.2} nats.</text>
@@ -5308,7 +5338,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         study.msc_regime1_ry3.normalized_quartet_score,
         study.msc_regime1_ry3.mean_local_posterior_pp1,
         n_chrono_int,
-        fig6_tpl_desc.replacen("{}", &xml_esc(&theme.fig6_p450_label), 1).replacen("{:.2}", &format!("{:.2}", f4_w2), 1)
+        fig6_tpl_line
     ));
 
     // =========================================================================
@@ -5367,8 +5397,18 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
         ),
         (
             "B3. RCFV & Ploidy Gate",
-            "• Maternal mtDNA: 1Ne".to_string(),
-            "• Diploid Nuclear: 4Ne".to_string(),
+            if is_universal_ae {
+                "• Archaeal Haploid: 1Ne".to_string()
+            } else if is_bacterial {
+                "• Chromosomal CDS: 1Ne".to_string()
+            } else {
+                "• Maternal mtDNA: 1Ne".to_string()
+            },
+            if is_bacterial {
+                "• Multicopy rRNA: 1Ne".to_string()
+            } else {
+                "• Diploid Nuclear: 4Ne".to_string()
+            },
             format!("• Raw RCFV = {:.4} (FAIL)", pop_rcfv_raw),
             format!("• RY3 RCFV = {:.4} (PASS)", pop_rcfv_ry3),
             "#eff6ff",

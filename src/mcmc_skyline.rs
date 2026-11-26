@@ -2405,71 +2405,90 @@ pub struct Coleoptera6FamilyMcmcReport {
     pub popset_skylines: Vec<ColeopteraPopsetSkylineReport>,
 }
 
-/// Computes empirical Watterson's $\theta_W$, pairwise diversity $\pi$, and Tajima's $D$ directly from aligned sequences.
+/// Computes empirical Watterson's $\theta_W$, pairwise diversity $\pi$, and Tajima's $D$ directly from aligned sequences
+/// over a consistent high-occupancy homologous site set so staggered terminal gaps never decouple $\hat{k}$ from $S$.
 pub(crate) fn compute_popgen_summary_stats(seqs: &[Vec<u8>]) -> (f64, f64, f64) {
     let n = seqs.len();
     if n < 3 {
         return (0.0, 0.0, 0.0);
     }
-    let len = seqs[0].len().max(1);
-    let mut seg_sites = 0usize;
+    let len = seqs.iter().map(|s| s.len()).max().unwrap_or(0);
+    if len == 0 {
+        return (0.0, 0.0, 0.0);
+    }
+
+    let harmonic_a1 = |m: usize| -> f64 {
+        let mut s = 0.0f64;
+        for i in 1..m {
+            s += 1.0 / (i as f64);
+        }
+        s.max(1e-9)
+    };
+
+    let mut col_counts: Vec<([usize; 4], usize)> = Vec::with_capacity(len);
+    let min_occ_hi = ((n as f64) * 0.75).ceil() as usize;
+    let min_occ_strict = min_occ_hi.max(3).min(n);
+    let mut hi_cnt = 0usize;
     for col in 0..len {
-        let mut mask = 0u8;
+        let mut cts = [0usize; 4];
         for s in seqs {
             match s.get(col).copied().unwrap_or(b'-') {
-                b'A' => mask |= 1,
-                b'C' => mask |= 2,
-                b'G' => mask |= 4,
-                b'T' => mask |= 8,
+                b'A' | b'a' => cts[0] += 1,
+                b'C' | b'c' => cts[1] += 1,
+                b'G' | b'g' => cts[2] += 1,
+                b'T' | b't' => cts[3] += 1,
                 _ => {}
             }
         }
-        if mask.count_ones() >= 2 {
+        let nc = cts[0] + cts[1] + cts[2] + cts[3];
+        if nc >= min_occ_strict {
+            hi_cnt += 1;
+        }
+        col_counts.push((cts, nc));
+    }
+
+    let req_nc = if hi_cnt >= 30 { min_occ_strict } else { 3.min(n) };
+    let mut kept_cols = 0usize;
+    let mut sum_nc = 0usize;
+    let mut seg_sites = 0usize;
+    let mut k_hat = 0.0f64;
+    let mut theta_w_total = 0.0f64;
+
+    for &(cts, nc) in &col_counts {
+        if nc < req_nc || nc < 2 {
+            continue;
+        }
+        kept_cols += 1;
+        sum_nc += nc;
+        let sum_sq: usize = cts.iter().map(|&c| c * c).sum();
+        let pi_col = ((nc * nc).saturating_sub(sum_sq) as f64) / ((nc * (nc - 1)) as f64);
+        k_hat += pi_col;
+        let distinct = cts.iter().filter(|&&c| c > 0).count();
+        if distinct >= 2 {
             seg_sites += 1;
+            theta_w_total += 1.0 / harmonic_a1(nc);
         }
     }
+
+    if kept_cols == 0 {
+        return (0.0, 0.0, 0.0);
+    }
+    let l_eff = kept_cols as f64;
+    let theta_w_per_site = theta_w_total / l_eff;
+    let pi_per_site = k_hat / l_eff;
+    if seg_sites == 0 {
+        return (round4(theta_w_per_site), round4(pi_per_site), 0.0);
+    }
+
+    let n_eff = ((sum_nc as f64 / l_eff).round() as usize).clamp(3, n);
     let mut a1 = 0.0f64;
     let mut a2 = 0.0f64;
-    for i in 1..n {
+    for i in 1..n_eff {
         a1 += 1.0 / (i as f64);
         a2 += 1.0 / ((i * i) as f64);
     }
+    let nf = n_eff as f64;
     let s_f = seg_sites as f64;
-    let theta_w_total = s_f / a1.max(1e-9);
-    let theta_w_per_site = theta_w_total / (len as f64);
-
-    let mut diff_sum = 0.0f64;
-    let mut pairs = 0usize;
-    for i in 0..n {
-        for j in (i + 1)..n {
-            let mut diffs = 0usize;
-            let mut valid = 0usize;
-            for c in 0..len.min(seqs[i].len()).min(seqs[j].len()) {
-                let b1 = seqs[i][c];
-                let b2 = seqs[j][c];
-                if (b1 == b'A' || b1 == b'C' || b1 == b'G' || b1 == b'T')
-                    && (b2 == b'A' || b2 == b'C' || b2 == b'G' || b2 == b'T')
-                {
-                    valid += 1;
-                    if b1 != b2 {
-                        diffs += 1;
-                    }
-                }
-            }
-            if valid > 0 {
-                diff_sum += (diffs as f64) * ((len as f64) / (valid as f64));
-                pairs += 1;
-            }
-        }
-    }
-    let k_hat = if pairs > 0 {
-        diff_sum / (pairs as f64)
-    } else {
-        0.0
-    };
-    let pi_per_site = k_hat / (len as f64);
-
-    let nf = n as f64;
     let b1 = (nf + 1.0) / (3.0 * (nf - 1.0));
     let b2 = (2.0 * (nf * nf + nf + 3.0)) / (9.0 * nf * (nf - 1.0));
     let c1 = b1 - (1.0 / a1);

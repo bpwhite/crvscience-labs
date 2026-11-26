@@ -130,13 +130,19 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
     let n_bins = 320usize.min(total_cols).max(24);
 
     let is_bacterial = study_subtitle.contains("Gram-Positive") || study_subtitle.contains("Bacterial");
+    let is_universal_ae = study_subtitle.contains("Archaea")
+        || study_subtitle.contains("Nuclear Origin")
+        || partitions
+            .iter()
+            .any(|p| p.locus_class_label.contains("Universal") || p.locus_class_label.contains("SSU/LSU"));
+    let is_non_mito = is_bacterial || is_universal_ae;
 
-    // Precompute column compartment type (`0 = mito PCG / bact CDS, 1 = rRNA, 2 = nuc`)
+    // Precompute column compartment type (`0 = mito PCG / bact/univ CDS, 1 = rRNA, 2 = nuc`)
     let mut col_comp = vec![0u8; total_cols];
     for p in partitions {
         let s = p.start_col_1based.saturating_sub(1).min(total_cols);
         let e = p.end_col_1based.min(total_cols);
-        let code = if is_bacterial {
+        let code = if is_non_mito {
             if !p.protein_coding { 1u8 } else { 0u8 }
         } else if p.is_nuclear {
             2u8
@@ -267,7 +273,7 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
         let e0 = p.end_col_1based.min(total_cols) as f64;
         let rx = x_plot0 + (s0 / total_cols as f64) * plot_w;
         let rw = (((e0 - s0) / total_cols as f64) * plot_w).max(2.0);
-        let fill = if is_bacterial {
+        let fill = if is_non_mito {
             if !p.protein_coding {
                 "#0284c7"
             } else {
@@ -425,7 +431,17 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
     // Panel A Right-Margin Legend (`x = 1324..1456`)
     out.push_str("<rect x=\"1324\" y=\"68\" width=\"132\" height=\"212\" rx=\"6\" fill=\"#ffffff\" stroke=\"#cbd5e1\" stroke-width=\"1\"/>\n");
     out.push_str("<text x=\"1332\" y=\"85\" font-size=\"10\" font-weight=\"700\" fill=\"#0f172a\">Locus &amp; State Legend</text>\n");
-    let a_items: [(&str, &str); 7] = if is_bacterial {
+    let a_items: [(&str, &str); 7] = if is_universal_ae {
+        [
+            ("#0f766e", "Universal CDS (RY3)"),
+            ("#0284c7", "SSU/LSU rRNA (4-St)"),
+            ("#7c3aed", "Core Cellular Locus"),
+            ("#0d9488", "Valid ACGT %"),
+            ("#f97316", "Indel Gap (-) %"),
+            ("#e2e8f0", "Missing Locus (?)"),
+            ("#1e1b4b", "Parsim. Inf. (PI %)"),
+        ]
+    } else if is_bacterial {
         [
             ("#0f766e", "Bacterial CDS (RY3)"),
             ("#0284c7", "Bacterial rRNA (4-St)"),
@@ -668,13 +684,15 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
 
     // ================= PANEL C =================
     out.push_str("<rect x=\"16\" y=\"756\" width=\"1448\" height=\"250\" rx=\"8\" fill=\"#f8fafc\" stroke=\"#cbd5e1\" stroke-width=\"1.2\"/>\n");
-    if is_bacterial {
+    if is_universal_ae {
+        out.push_str("<text x=\"28\" y=\"776\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel C | Strand-Oriented Codon/ORF Phasing (Code 1/11) &amp; Partitioned UFBoot2 Recovery</text>\n");
+    } else if is_bacterial {
         out.push_str("<text x=\"28\" y=\"776\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel C | Strand-Oriented Codon Table-11 Phasing &amp; Partitioned UFBoot2 Recovery</text>\n");
     } else {
         out.push_str("<text x=\"28\" y=\"776\" font-size=\"13.5\" font-weight=\"700\" fill=\"#0f172a\">Panel C | Circular Mitogenome Origin-Position Phasing (Table-5 COX1 Rotation) &amp; Partitioned UFBoot2 Recovery</text>\n");
     }
 
-    // Sub-panel C1 (`x = 70..830, y = 796..972`): Unphased vs COX1-Rotated Positional Occupancy Profile
+    // Sub-panel C1 (`x = 70..830, y = 796..972`): Unphased vs Phased Positional Occupancy Profile
     let cx0 = 76.0f64;
     let cx1 = 824.0f64;
     let cy0 = 804.0f64;
@@ -685,7 +703,9 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
         "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" fill=\"#ffffff\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n",
         cx0, cy0, cw, ch
     ));
-    if is_bacterial {
+    if is_universal_ae {
+        out.push_str("<text x=\"82\" y=\"797\" font-size=\"10.5\" font-weight=\"700\" fill=\"#1e293b\">C1. Universal Locus gotoh-msa Positional Occupancy Before vs. After Strand/Codon Phasing</text>\n");
+    } else if is_bacterial {
         out.push_str("<text x=\"82\" y=\"797\" font-size=\"10.5\" font-weight=\"700\" fill=\"#1e293b\">C1. Bacterial Locus gotoh-msa Occupancy Before vs. After Strand/Codon Phasing</text>\n");
     } else {
         out.push_str("<text x=\"82\" y=\"797\" font-size=\"10.5\" font-weight=\"700\" fill=\"#1e293b\">C1. Mitogenome gotoh-msa Positional Occupancy Before vs. After COX1 Codon-1 Rotation</text>\n");
@@ -730,7 +750,12 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
     } else {
         0.0
     };
-    if is_bacterial {
+    if is_universal_ae {
+        out.push_str(&format!(
+            "<text x=\"{:.1}\" y=\"988\" text-anchor=\"middle\" font-size=\"9.5\" fill=\"#334155\">Normalized Locus Alignment Coordinate (0% -&gt; 100% of Aligned Columns; n = {} Reference Taxa)</text>\n",
+            0.5 * (cx0 + cx1), phasing.n_mitogenomes
+        ));
+    } else if is_bacterial {
         out.push_str(&format!(
             "<text x=\"{:.1}\" y=\"988\" text-anchor=\"middle\" font-size=\"9.5\" fill=\"#334155\">Normalized Bacterial Alignment Coordinate (0% -&gt; 100% of Aligned Columns; n = {} Loci/OTUs)</text>\n",
             0.5 * (cx0 + cx1), phasing.n_mitogenomes
@@ -746,7 +771,7 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
         "<line x1=\"524\" y1=\"829\" x2=\"546\" y2=\"829\" stroke=\"#dc2626\" stroke-width=\"2.1\" stroke-dasharray=\"6,4\"/><text x=\"552\" y=\"833\" font-size=\"9.3\" font-weight=\"700\" fill=\"#991b1b\">Unphased Start: L = {} cols (occ {:.1}%)</text>\n",
         phasing.unphased_aligned_cols, phasing.unphased_mean_occ_pct
     ));
-    let phased_lbl = if is_bacterial { "Strand-Phased:" } else { "COX1-Rotated:" };
+    let phased_lbl = if is_non_mito { "Strand-Phased:" } else { "COX1-Rotated:" };
     out.push_str(&format!(
         "<line x1=\"524\" y1=\"851\" x2=\"546\" y2=\"851\" stroke=\"#0f766e\" stroke-width=\"2.1\"/><text x=\"552\" y=\"855\" font-size=\"9.3\" font-weight=\"700\" fill=\"#0f766e\">{} L = {} cols ({:.1}% | -{:.0}% bloat)</text>\n",
         phased_lbl, phasing.phased_aligned_cols, phasing.phased_mean_occ_pct, pct_drop
@@ -761,7 +786,14 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
 
     let mut cards: Vec<(String, String, f64, &str)> = vec![
         (
-            if is_bacterial { "Legacy 1-Locus 16S rRNA Only" } else { "Legacy 1-Locus Truncated COX1 Only" }.to_string(),
+            if is_universal_ae {
+                "Single-Locus SSU rRNA Only"
+            } else if is_bacterial {
+                "Legacy 1-Locus 16S rRNA Only"
+            } else {
+                "Legacy 1-Locus Truncated COX1 Only"
+            }
+            .to_string(),
             format!(
                 "{} bp aligned | UFBoot2 = {:.1}%",
                 phasing.single_gene_cols, phasing.single_gene_ufboot_pct

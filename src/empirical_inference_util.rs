@@ -35,6 +35,7 @@ pub struct EmpiricalCalibrationSpec {
     pub node_id: String,
     pub clade_name: String,
     pub sector_code: String,
+    pub tip_prefixes: Vec<String>,
     pub fossil_or_biogeo_anchor: String,
     pub ci_min_ma: f64,
     pub ci_max_ma: f64,
@@ -336,39 +337,45 @@ pub fn solve_empirical_lsd2_core(
         .filter_map(|n| n.cal_max_ma.or(n.cal_min_ma))
         .fold(0.0_f64, f64::max);
     let min_gap = if max_cal_age > 100.0 { 1.0 } else { 0.01 };
-    let mut eff_min: Vec<Option<f64>> = nodes
-        .iter()
-        .map(|n| if n.is_tip { Some(n.tip_age_ma.unwrap_or(0.0)) } else { n.cal_min_ma })
-        .collect();
-    let mut eff_max: Vec<Option<f64>> = nodes
-        .iter()
-        .map(|n| if n.is_tip { Some(n.tip_age_ma.unwrap_or(0.0)) } else { n.cal_max_ma })
-        .collect();
-    for u in 0..n_nodes {
-        if let Some(pmax) = eff_max[u] {
-            for &c in &children_of[u] {
-                if !nodes[c].is_tip {
-                    let cap = (pmax - min_gap).max(0.0);
-                    eff_max[c] = Some(eff_max[c].map_or(cap, |cm| cm.min(cap)));
+    let propagate_bounds = |raw_min: &[Option<f64>], raw_max: &[Option<f64>]| -> (Vec<Option<f64>>, Vec<Option<f64>>) {
+        let mut emin = raw_min.to_vec();
+        let mut emax = raw_max.to_vec();
+        for u in 0..n_nodes {
+            if let Some(pmax) = emax[u] {
+                for &c in &children_of[u] {
+                    if !nodes[c].is_tip {
+                        let cap = (pmax - min_gap).max(0.0);
+                        emax[c] = Some(emax[c].map_or(cap, |cm| cm.min(cap)));
+                    }
                 }
             }
         }
-    }
-    for u in (0..n_nodes).rev() {
-        for &c in &children_of[u] {
-            if let Some(cmin) = eff_min[c] {
-                let floor = cmin + min_gap;
-                eff_min[u] = Some(eff_min[u].map_or(floor, |pm| pm.max(floor)));
+        for u in (0..n_nodes).rev() {
+            for &c in &children_of[u] {
+                if let Some(cmin) = emin[c] {
+                    let floor = cmin + min_gap;
+                    emin[u] = Some(emin[u].map_or(floor, |pm| pm.max(floor)));
+                }
+            }
+            if let (Some(lo), Some(hi)) = (emin[u], emax[u]) {
+                if lo > hi {
+                    emax[u] = Some(lo);
+                }
             }
         }
-        if let (Some(lo), Some(hi)) = (eff_min[u], eff_max[u]) {
-            if lo > hi {
-                eff_max[u] = Some(lo);
-            }
-        }
-    }
+        (emin, emax)
+    };
+    let raw_min: Vec<Option<f64>> = nodes
+        .iter()
+        .map(|n| if n.is_tip { Some(n.tip_age_ma.unwrap_or(0.0)) } else { n.cal_min_ma })
+        .collect();
+    let raw_max: Vec<Option<f64>> = nodes
+        .iter()
+        .map(|n| if n.is_tip { Some(n.tip_age_ma.unwrap_or(0.0)) } else { n.cal_max_ma })
+        .collect();
+    let (eff_min, eff_max) = propagate_bounds(&raw_min, &raw_max);
 
-    let solve_for_branches = |branches: &[f64]| -> (Vec<f64>, f64, f64) {
+    let solve_for_branches = |branches: &[f64], b_min: &[Option<f64>], b_max: &[Option<f64>]| -> (Vec<f64>, f64, f64) {
         let mut t = vec![0.0_f64; n_nodes];
         // Bottom-up depth initialization inside strictly monotonic feasible bounds
         for u in (0..n_nodes).rev() {
@@ -379,16 +386,16 @@ pub fn solve_empirical_lsd2_core(
                     .iter()
                     .map(|&c| t[c] + (branches[c] / 0.0005).max(1.0))
                     .fold(1.0_f64, f64::max);
-                let mut init_t = match (eff_min[u], eff_max[u]) {
+                let mut init_t = match (b_min[u], b_max[u]) {
                     (Some(lo), Some(hi)) => 0.5 * (lo + hi),
                     (Some(lo), None) => lo.max(max_ch),
                     (None, Some(hi)) => max_ch.min(hi),
                     (None, None) => max_ch,
                 };
-                if let Some(lo) = eff_min[u] {
+                if let Some(lo) = b_min[u] {
                     init_t = init_t.max(lo);
                 }
-                if let Some(hi) = eff_max[u] {
+                if let Some(hi) = b_max[u] {
                     init_t = init_t.min(hi);
                 }
                 t[u] = init_t.max(max_ch * 0.1);
@@ -442,8 +449,8 @@ pub fn solve_empirical_lsd2_core(
                     .parent_id
                     .map(|pid| t[pid] - 1e-3)
                     .unwrap_or(f64::INFINITY);
-                let lo_feas = min_from_children.max(eff_min[u].unwrap_or(0.0));
-                let hi_feas = max_from_parent.min(eff_max[u].unwrap_or(f64::INFINITY));
+                let lo_feas = min_from_children.max(b_min[u].unwrap_or(0.0));
+                let hi_feas = max_from_parent.min(b_max[u].unwrap_or(f64::INFINITY));
                 let t_new = if lo_feas <= hi_feas {
                     t_prop.clamp(lo_feas, hi_feas)
                 } else {
@@ -471,24 +478,75 @@ pub fn solve_empirical_lsd2_core(
     };
 
     let base_branches: Vec<f64> = nodes.iter().map(|n| n.branch_length_subs).collect();
-    let (solved_t, solved_r, solved_q) = solve_for_branches(&base_branches);
+    let (solved_t, solved_r, solved_q) = solve_for_branches(&base_branches, &eff_min, &eff_max);
 
-    // Genuine B = 200 Parametric Poisson-Variance Branch Bootstrap via Box-Muller Normal Draws
+    // Estimate empirical relaxed-clock log-rate heterogeneity sigma_r directly from solved informative branches
+    let min_dt_info = (max_cal_age * 0.01).max(5.0 * min_gap);
+    let mut u_vals: Vec<f64> = Vec::new();
+    for n in nodes {
+        if let Some(pid) = n.parent_id {
+            let b_i = n.branch_length_subs;
+            let dt_i = solved_t[pid] - solved_t[n.node_id];
+            if b_i >= 0.002 && dt_i >= min_dt_info {
+                let ratio = b_i / (solved_r * dt_i).max(1e-12);
+                if ratio > 0.0 && ratio.is_finite() {
+                    u_vals.push(ratio.ln());
+                }
+            }
+        }
+    }
+    let sigma_r = if u_vals.len() >= 4 {
+        u_vals.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let med_u = u_vals[u_vals.len() / 2];
+        let mut abs_devs: Vec<f64> = u_vals.iter().map(|&u| (u - med_u).abs()).collect();
+        abs_devs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let mad_u = abs_devs[abs_devs.len() / 2];
+        (1.4826 * mad_u).clamp(0.05, 0.85)
+    } else {
+        0.15
+    };
+
+    // Genuine B = 200 Parametric Relaxed-Clock (Lognormal Rate + Poisson Branch Variance) +
+    // Soft Calibration Uncertainty Bootstrap via Box-Muller Normal Draws
     let n_boot = 200usize;
     let mut boot_samples: Vec<Vec<f64>> = vec![Vec::with_capacity(n_boot); n_nodes];
     let mut rng = DeterministicLcg64::new(seed ^ 0x4C53_4432_5F43_49);
+    let mut draw_std_normal = || -> f64 {
+        let u1 = rng.next_f64().clamp(1e-12, 1.0 - 1e-12);
+        let u2 = rng.next_f64();
+        (-2.0 * u1.ln()).sqrt() * (std::f64::consts::TAU * u2).cos()
+    };
     for _rep in 0..n_boot {
         let mut pert_branches = vec![0.0_f64; n_nodes];
         for n in nodes {
             if n.parent_id.is_some() {
-                let std_b = ((n.branch_length_subs.max(1e-5) + c_smooth / l_sites) / l_sites).sqrt();
-                let u1 = rng.next_f64().clamp(1e-12, 1.0 - 1e-12);
-                let u2 = rng.next_f64();
-                let z = (-2.0 * u1.ln()).sqrt() * (std::f64::consts::TAU * u2).cos();
-                pert_branches[n.node_id] = (n.branch_length_subs + z * std_b).max(1e-6);
+                let z_rate = draw_std_normal().clamp(-3.0, 3.0);
+                let z_pois = draw_std_normal();
+                let rate_mult = (sigma_r * z_rate - 0.5 * sigma_r * sigma_r).exp();
+                let std_pois = ((n.branch_length_subs.max(1e-5) + c_smooth / l_sites) / l_sites).sqrt();
+                pert_branches[n.node_id] = (n.branch_length_subs * rate_mult + z_pois * std_pois).max(1e-6);
             }
         }
-        let (bt, _, _) = solve_for_branches(&pert_branches);
+        let mut rep_min = raw_min.clone();
+        let mut rep_max = raw_max.clone();
+        for n in nodes {
+            if !n.is_tip && (n.cal_min_ma.is_some() || n.cal_max_ma.is_some()) {
+                let span = match (n.cal_min_ma, n.cal_max_ma) {
+                    (Some(lo), Some(hi)) => (hi - lo).max(0.10 * 0.5 * (lo + hi)),
+                    (Some(lo), None) => 0.20 * lo,
+                    (None, Some(hi)) => 0.20 * hi,
+                    _ => 0.0,
+                };
+                let z_lo = draw_std_normal().clamp(-2.5, 2.5);
+                let z_hi = draw_std_normal().clamp(-2.5, 2.5);
+                rep_min[n.node_id] = n.cal_min_ma.map(|lo| (lo + z_lo * 0.15 * span).max(min_gap));
+                rep_max[n.node_id] = n.cal_max_ma.map(|hi| {
+                    (hi + z_hi * 0.15 * span).max(rep_min[n.node_id].unwrap_or(0.0) + min_gap)
+                });
+            }
+        }
+        let (eff_min_rep, eff_max_rep) = propagate_bounds(&rep_min, &rep_max);
+        let (bt, _, _) = solve_for_branches(&pert_branches, &eff_min_rep, &eff_max_rep);
         for u in 0..n_nodes {
             boot_samples[u].push(bt[u]);
         }
@@ -504,7 +562,9 @@ pub fn solve_empirical_lsd2_core(
             s.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let lo_idx = ((n_boot as f64) * 0.025).floor() as usize;
             let hi_idx = (((n_boot as f64) * 0.975).ceil() as usize).min(n_boot - 1);
-            cis.push((round4(s[lo_idx]), round4(s[hi_idx])));
+            let lo = s[lo_idx].min(solved_t[u]).max(0.0);
+            let hi = s[hi_idx].max(solved_t[u]);
+            cis.push((round4(lo), round4(hi)));
         }
     }
 
@@ -652,6 +712,18 @@ pub fn solve_empirical_lsd2_from_ml_tree(
         }
     }
 
+    let matches_cal_tip =
+        |tip: &str, cp: &EmpiricalCalibrationSpec, allowed: &BTreeSet<char>| -> bool {
+            if !cp.tip_prefixes.is_empty() {
+                cp.tip_prefixes.iter().any(|pfx| {
+                    let norm = pfx.trim().replace(':', "_");
+                    !norm.is_empty() && (tip == norm || tip.starts_with(&norm))
+                })
+            } else {
+                tip.chars().next().is_some_and(|ch| allowed.contains(&ch))
+            }
+        };
+
     // Map calibrated nodes to their exact MRCAs on the ML tree
     let all_ml_tips: BTreeSet<String> = node_desc_tips[0].clone();
     let mut mapped_ml_mrca: Vec<Option<usize>> = vec![None; cal_priors.len()];
@@ -661,7 +733,7 @@ pub fn solve_empirical_lsd2_from_ml_tree(
         let allowed = sector_chars_from_code(&cp.sector_code);
         let target_tips: BTreeSet<String> = all_ml_tips
             .iter()
-            .filter(|t| t.chars().next().is_some_and(|ch| allowed.contains(&ch)))
+            .filter(|t| matches_cal_tip(t, cp, &allowed))
             .cloned()
             .collect();
         if target_tips.len() < 2 {
@@ -678,7 +750,7 @@ pub fn solve_empirical_lsd2_from_ml_tree(
         let is_monophyletic = mrca.is_some_and(|mid| {
             node_desc_tips[mid]
                 .iter()
-                .all(|t| t.chars().next().is_some_and(|ch| allowed.contains(&ch)))
+                .all(|t| matches_cal_tip(t, cp, &allowed))
         });
         mapped_ml_mrca[ni] = if is_monophyletic { mrca } else { None };
         if is_monophyletic {
@@ -764,57 +836,58 @@ pub fn solve_empirical_lsd2_from_ml_tree(
         .map(|t| t.desc_tips[t.root].clone())
         .unwrap_or_default();
 
-    let lookup_msc_branch = |allowed: &BTreeSet<char>| -> Option<(f64, f64, f64, f64, f64)> {
-        let t = msc_parsed.as_ref()?;
-        let target: BTreeSet<String> = msc_all_tips
-            .iter()
-            .filter(|tip| tip.chars().next().is_some_and(|ch| allowed.contains(&ch)))
-            .cloned()
-            .collect();
-        let n_all = msc_all_tips.len();
-        if target.len() < 2 || target.len() > n_all.saturating_sub(2) {
-            return None;
-        }
-        let target_comp: BTreeSet<String> = msc_all_tips.difference(&target).cloned().collect();
-        for nid in 0..t.children.len() {
-            if t.children[nid].is_empty() || nid == t.root {
-                continue;
+    let lookup_msc_branch =
+        |cp: &EmpiricalCalibrationSpec, allowed: &BTreeSet<char>| -> Option<(f64, f64, f64, f64, f64)> {
+            let t = msc_parsed.as_ref()?;
+            let target: BTreeSet<String> = msc_all_tips
+                .iter()
+                .filter(|tip| matches_cal_tip(tip, cp, allowed))
+                .cloned()
+                .collect();
+            let n_all = msc_all_tips.len();
+            if target.len() < 2 || target.len() > n_all.saturating_sub(2) {
+                return None;
             }
-            let d = &t.desc_tips[nid];
-            if *d == target || *d == target_comp {
-                let lbl_lpp = t.label[nid].parse::<f64>().ok()?;
-                let bl_cu = t.branch_len[nid];
-                let d_len = d.len();
-                let c_len = n_all.saturating_sub(d_len);
-                let bm = msc
-                    .focal_branches
-                    .iter()
-                    .min_by(|a, b| {
-                        let size_ok_a = usize::from(a.subset_size != d_len && a.subset_size != c_len);
-                        let size_ok_b = usize::from(b.subset_size != d_len && b.subset_size != c_len);
-                        let err_a = (a.local_posterior_pp1 - lbl_lpp).abs()
-                            + (a.branch_length_cu - bl_cu).abs();
-                        let err_b = (b.local_posterior_pp1 - lbl_lpp).abs()
-                            + (b.branch_length_cu - bl_cu).abs();
-                        (size_ok_a, err_a)
-                            .partial_cmp(&(size_ok_b, err_b))
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })?;
-                if (bm.local_posterior_pp1 - lbl_lpp).abs() <= 0.02
-                    && (bm.branch_length_cu - bl_cu).abs() <= 0.02
-                {
-                    return Some((
-                        round4(bm.q1_main_freq),
-                        round4(bm.q2_alt1_freq),
-                        round4(bm.q3_alt2_freq),
-                        round4(bm.local_posterior_pp1),
-                        round4(bm.branch_length_cu),
-                    ));
+            let target_comp: BTreeSet<String> = msc_all_tips.difference(&target).cloned().collect();
+            for nid in 0..t.children.len() {
+                if t.children[nid].is_empty() || nid == t.root {
+                    continue;
+                }
+                let d = &t.desc_tips[nid];
+                if *d == target || *d == target_comp {
+                    let lbl_lpp = t.label[nid].parse::<f64>().ok()?;
+                    let bl_cu = t.branch_len[nid];
+                    let d_len = d.len();
+                    let c_len = n_all.saturating_sub(d_len);
+                    let bm = msc
+                        .focal_branches
+                        .iter()
+                        .min_by(|a, b| {
+                            let size_ok_a = usize::from(a.subset_size != d_len && a.subset_size != c_len);
+                            let size_ok_b = usize::from(b.subset_size != d_len && b.subset_size != c_len);
+                            let err_a = (a.local_posterior_pp1 - lbl_lpp).abs()
+                                + (a.branch_length_cu - bl_cu).abs();
+                            let err_b = (b.local_posterior_pp1 - lbl_lpp).abs()
+                                + (b.branch_length_cu - bl_cu).abs();
+                            (size_ok_a, err_a)
+                                .partial_cmp(&(size_ok_b, err_b))
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })?;
+                    if (bm.local_posterior_pp1 - lbl_lpp).abs() <= 0.02
+                        && (bm.branch_length_cu - bl_cu).abs() <= 0.02
+                    {
+                        return Some((
+                            round4(bm.q1_main_freq),
+                            round4(bm.q2_alt1_freq),
+                            round4(bm.q3_alt2_freq),
+                            round4(bm.local_posterior_pp1),
+                            round4(bm.branch_length_cu),
+                        ));
+                    }
                 }
             }
-        }
-        None
-    };
+            None
+        };
 
     let mut calibrated_nodes = Vec::with_capacity(cal_priors.len());
     for (ni, cp) in cal_priors.iter().enumerate() {
@@ -824,11 +897,11 @@ pub fn solve_empirical_lsd2_from_ml_tree(
             None => (0.0, 0.0, 0.0),
         };
 
-        // Compute exact ML split UFBoot2 support for this node's sector bipartition
+        // Compute exact ML split UFBoot2 support for this node's sector/clade bipartition
         let mut mask = 0u64;
         let mut mask_cnt = 0usize;
         for tip in &all_ml_tips {
-            if tip.chars().next().is_some_and(|ch| allowed.contains(&ch)) {
+            if matches_cal_tip(tip, cp, &allowed) {
                 if let Some(&idx) = tip_to_ml_idx.get(tip) {
                     if idx < 64 {
                         mask |= 1u64 << idx;
@@ -877,7 +950,7 @@ pub fn solve_empirical_lsd2_from_ml_tree(
         }
 
         // Lookup exact MSC metrics (`0.0` if non-monophyletic in the MSC species tree)
-        let (q1, q2, q3, lpp, cu) = lookup_msc_branch(&allowed).unwrap_or((0.0, 0.0, 0.0, 0.0, 0.0));
+        let (q1, q2, q3, lpp, cu) = lookup_msc_branch(cp, &allowed).unwrap_or((0.0, 0.0, 0.0, 0.0, 0.0));
 
         calibrated_nodes.push(SupervisedCalibratedNode {
             node_id: cp.node_id.clone(),
@@ -1655,5 +1728,109 @@ pub fn compute_kh_paired_sites_z(
         round4((sum_a - sum_b) / se_tot)
     } else {
         0.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_solve_empirical_lsd2_core_nondegenerate_hpd_on_heterogeneous_tree() {
+        // Boundary-pinned root (3240..3900 Ma) + heterogeneous branch rates + bounded leaf split
+        let nodes = vec![
+            TimeTreeNodeSpec {
+                node_id: 0,
+                parent_id: None,
+                label: "Root".to_string(),
+                is_tip: false,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.0,
+                tip_age_ma: None,
+                cal_min_ma: Some(3240.0),
+                cal_max_ma: Some(3900.0),
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 1,
+                parent_id: Some(0),
+                label: "CladeA".to_string(),
+                is_tip: false,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.45,
+                tip_age_ma: None,
+                cal_min_ma: Some(1650.0),
+                cal_max_ma: Some(2250.0),
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 2,
+                parent_id: Some(0),
+                label: "CladeB".to_string(),
+                is_tip: false,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 1.15,
+                tip_age_ma: None,
+                cal_min_ma: Some(810.0),
+                cal_max_ma: Some(1450.0),
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 3,
+                parent_id: Some(1),
+                label: "TipA1".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.72,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 4,
+                parent_id: Some(1),
+                label: "TipA2".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 1.24,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 5,
+                parent_id: Some(2),
+                label: "TipB1".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.35,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+            TimeTreeNodeSpec {
+                node_id: 6,
+                parent_id: Some(2),
+                label: "TipB2".to_string(),
+                is_tip: true,
+                is_extinct_fossil_tip: false,
+                branch_length_subs: 0.91,
+                tip_age_ma: Some(0.0),
+                cal_min_ma: None,
+                cal_max_ma: None,
+                focal_node_tag: None,
+            },
+        ];
+
+        let (ages, cis, _rate, _q) = solve_empirical_lsd2_core(&nodes, 26_387, 20261152);
+        for nid in 0..3 {
+            let age = ages[nid];
+            let (lo, hi) = cis[nid];
+            assert!(lo < age && age < hi, "node {} must have strictly two-sided HPD: age={} lo={} hi={}", nid, age, lo, hi);
+            assert!(hi - lo > 10.0, "node {} HPD width unexpectedly collapsed: {} ({}..{})", nid, hi - lo, lo, hi);
+        }
     }
 }

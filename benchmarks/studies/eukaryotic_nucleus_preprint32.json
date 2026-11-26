@@ -6,6 +6,9 @@
   "discovery_slug": "eukaryotic-nucleus-asgard-origin",
   "validation_set_id": "VAL-SET-071-EUKARYOTIC-NUCLEUS-ASGARD-LECA-ORIGIN",
   "preprint_label": "PREPRINT-32",
+  "preprint_version": "1.0.1",
+  "concept_doi": "10.5281/zenodo.24504303",
+  "telemetry_filename": "eukaryotic-nucleus-origin-telemetry.json",
   "companion_label": "Lab Discovery",
   "title": "Asgardarchaeota-to-LECA Phylogenomics, Nuclear Pore Ran-GTPase Switching (1BYU), and Transcriptional Compartmentalization in the Origin of the Eukaryotic Nucleus",
   "subtitle_prefix": "100% Native Rust Dual-Pass Blinded Universal Archaea-Eukarya Partitioned ModelTest Phylogenomics",
@@ -29,96 +32,719 @@
   "coverage_gate_floor_ratio": 0.55,
   "coverage_gate_min_otus_per_sector": 4,
   "locus_defs": [
-    { "canonical": "univ_rpb2", "display_name": "RPB2/rpoB", "is_protein_coding": true, "is_nuclear": true, "min_bp": 650, "max_bp": 5500, "min_taxa": 14, "min_aa": 180, "min_aa_identity": 0.11, "min_dayhoff6_sim": 0.24 },
-    { "canonical": "univ_rpb1", "display_name": "RPB1/rpoA1", "is_protein_coding": true, "is_nuclear": true, "min_bp": 700, "max_bp": 8500, "min_taxa": 14, "min_aa": 200, "min_aa_identity": 0.11, "min_dayhoff6_sim": 0.24 },
-    { "canonical": "univ_ef1a", "display_name": "EF1A/tuf", "is_protein_coding": true, "is_nuclear": true, "min_bp": 600, "max_bp": 2800, "min_taxa": 14, "min_aa": 160, "min_aa_identity": 0.13, "min_dayhoff6_sim": 0.28 },
-    { "canonical": "univ_ef2", "display_name": "EF2/fusA", "is_protein_coding": true, "is_nuclear": true, "min_bp": 800, "max_bp": 4500, "min_taxa": 14, "min_aa": 200, "min_aa_identity": 0.12, "min_dayhoff6_sim": 0.26 },
-    { "canonical": "univ_vmaA", "display_name": "VMA1/atpA", "is_protein_coding": true, "is_nuclear": true, "min_bp": 700, "max_bp": 4000, "min_taxa": 14, "min_aa": 180, "min_aa_identity": 0.12, "min_dayhoff6_sim": 0.26 },
-    { "canonical": "univ_vmaB", "display_name": "VMA2/atpB", "is_protein_coding": true, "is_nuclear": true, "min_bp": 650, "max_bp": 3400, "min_taxa": 14, "min_aa": 160, "min_aa_identity": 0.13, "min_dayhoff6_sim": 0.28 },
-    { "canonical": "univ_rad51", "display_name": "RAD51/radA", "is_protein_coding": true, "is_nuclear": true, "min_bp": 550, "max_bp": 2800, "min_taxa": 14, "min_aa": 130, "min_aa_identity": 0.11, "min_dayhoff6_sim": 0.24 },
-    { "canonical": "univ_cct", "display_name": "CCT/Thermosome", "is_protein_coding": true, "is_nuclear": true, "min_bp": 700, "max_bp": 3200, "min_taxa": 14, "min_aa": 160, "min_aa_identity": 0.11, "min_dayhoff6_sim": 0.24 },
-    { "canonical": "univ_eif5b", "display_name": "eIF5B/infB", "is_protein_coding": true, "is_nuclear": true, "min_bp": 600, "max_bp": 4500, "min_taxa": 14, "min_aa": 160, "min_aa_identity": 0.12, "min_dayhoff6_sim": 0.25 },
-    { "canonical": "univ_sec61a", "display_name": "Sec61A/SecY", "is_protein_coding": true, "is_nuclear": true, "min_bp": 600, "max_bp": 2800, "min_taxa": 14, "min_aa": 150, "min_aa_identity": 0.11, "min_dayhoff6_sim": 0.24 },
-    { "canonical": "univ_rpl2", "display_name": "RPL2/uL2", "is_protein_coding": true, "is_nuclear": true, "min_bp": 450, "max_bp": 1600, "min_taxa": 14, "min_aa": 120, "min_aa_identity": 0.16, "min_dayhoff6_sim": 0.30 },
-    { "canonical": "univ_rpl3", "display_name": "RPL3/uL3", "is_protein_coding": true, "is_nuclear": true, "min_bp": 550, "max_bp": 2000, "min_taxa": 14, "min_aa": 150, "min_aa_identity": 0.15, "min_dayhoff6_sim": 0.29 },
-    { "canonical": "univ_rps3", "display_name": "RPS3/uS3", "is_protein_coding": true, "is_nuclear": true, "min_bp": 450, "max_bp": 1600, "min_taxa": 14, "min_aa": 120, "min_aa_identity": 0.14, "min_dayhoff6_sim": 0.28 },
-    { "canonical": "univ_fen1", "display_name": "FEN1/RAD27", "is_protein_coding": true, "is_nuclear": true, "min_bp": 550, "max_bp": 2200, "min_taxa": 14, "min_aa": 150, "min_aa_identity": 0.12, "min_dayhoff6_sim": 0.25 },
-    { "canonical": "univ_pcna", "display_name": "PCNA/pol30", "is_protein_coding": true, "is_nuclear": true, "min_bp": 450, "max_bp": 1600, "min_taxa": 14, "min_aa": 120, "min_aa_identity": 0.11, "min_dayhoff6_sim": 0.24 },
-    { "canonical": "univ_thrrs", "display_name": "ThrRS/TARS", "is_protein_coding": true, "is_nuclear": true, "min_bp": 700, "max_bp": 3400, "min_taxa": 14, "min_aa": 180, "min_aa_identity": 0.12, "min_dayhoff6_sim": 0.25 },
-    { "canonical": "univ_ssu", "display_name": "16S/18S SSU", "is_protein_coding": false, "is_nuclear": false, "min_bp": 600, "max_bp": 2500, "min_taxa": 14 },
-    { "canonical": "univ_lsu", "display_name": "23S/28S LSU", "is_protein_coding": false, "is_nuclear": false, "min_bp": 650, "max_bp": 4500, "min_taxa": 14 }
+    {
+      "canonical": "univ_rpb2",
+      "display_name": "RPB2/rpoB",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 650,
+      "max_bp": 5500,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.11,
+      "min_dayhoff6_sim": 0.24
+    },
+    {
+      "canonical": "univ_rpb1",
+      "display_name": "RPB1/rpoA1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 8500,
+      "min_taxa": 14,
+      "min_aa": 200,
+      "min_aa_identity": 0.11,
+      "min_dayhoff6_sim": 0.24
+    },
+    {
+      "canonical": "univ_ef1a",
+      "display_name": "EF1A/tuf",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.13,
+      "min_dayhoff6_sim": 0.28
+    },
+    {
+      "canonical": "univ_ef2",
+      "display_name": "EF2/fusA",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 4500,
+      "min_taxa": 14,
+      "min_aa": 200,
+      "min_aa_identity": 0.12,
+      "min_dayhoff6_sim": 0.26
+    },
+    {
+      "canonical": "univ_vmaA",
+      "display_name": "VMA1/atpA",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 4000,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.12,
+      "min_dayhoff6_sim": 0.26
+    },
+    {
+      "canonical": "univ_vmaB",
+      "display_name": "VMA2/atpB",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 650,
+      "max_bp": 3400,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.13,
+      "min_dayhoff6_sim": 0.28
+    },
+    {
+      "canonical": "univ_rad51",
+      "display_name": "RAD51/radA",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 550,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 130,
+      "min_aa_identity": 0.11,
+      "min_dayhoff6_sim": 0.24
+    },
+    {
+      "canonical": "univ_cct",
+      "display_name": "CCT/Thermosome",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 3200,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.11,
+      "min_dayhoff6_sim": 0.24
+    },
+    {
+      "canonical": "univ_eif5b",
+      "display_name": "eIF5B/infB",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 4500,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.12,
+      "min_dayhoff6_sim": 0.25
+    },
+    {
+      "canonical": "univ_sec61a",
+      "display_name": "Sec61A/SecY",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 150,
+      "min_aa_identity": 0.11,
+      "min_dayhoff6_sim": 0.24
+    },
+    {
+      "canonical": "univ_rpl2",
+      "display_name": "RPL2/uL2",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1600,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_rpl3",
+      "display_name": "RPL3/uL3",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 550,
+      "max_bp": 2000,
+      "min_taxa": 14,
+      "min_aa": 150,
+      "min_aa_identity": 0.15,
+      "min_dayhoff6_sim": 0.29
+    },
+    {
+      "canonical": "univ_rps3",
+      "display_name": "RPS3/uS3",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1600,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.28
+    },
+    {
+      "canonical": "univ_fen1",
+      "display_name": "FEN1/RAD27",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 550,
+      "max_bp": 2200,
+      "min_taxa": 14,
+      "min_aa": 150,
+      "min_aa_identity": 0.12,
+      "min_dayhoff6_sim": 0.25
+    },
+    {
+      "canonical": "univ_pcna",
+      "display_name": "PCNA/pol30",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1600,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.11,
+      "min_dayhoff6_sim": 0.24
+    },
+    {
+      "canonical": "univ_thrrs",
+      "display_name": "ThrRS/TARS",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 3400,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.12,
+      "min_dayhoff6_sim": 0.25
+    },
+    {
+      "canonical": "univ_ssu",
+      "display_name": "16S/18S SSU",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 600,
+      "max_bp": 2500,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "univ_lsu",
+      "display_name": "23S/28S LSU",
+      "is_protein_coding": false,
+      "is_nuclear": false,
+      "min_bp": 650,
+      "max_bp": 4500,
+      "min_taxa": 14
+    }
   ],
   "species_slots": [
-    { "tip_code": "A:T001", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Halobacteriaceae", "species": "Haloferax volcanii", "synonyms": [], "genome_accession": "NZ_CP106966" },
-    { "tip_code": "A:T002", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Halobacteriaceae", "species": "Haloarcula marismortui", "synonyms": [], "genome_accession": "NZ_CP073366" },
-    { "tip_code": "A:T003", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Halobacteriaceae", "species": "Halobacterium salinarum", "synonyms": [], "genome_accession": "NZ_CP085882" },
-    { "tip_code": "A:T004", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Methanosarcinaceae", "species": "Methanosarcina mazei", "synonyms": [], "genome_accession": "NZ_AP019780" },
-    { "tip_code": "A:T005", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Methanosarcinaceae", "species": "Methanosarcina barkeri", "synonyms": [], "genome_accession": "NZ_CP009517" },
-    { "tip_code": "A:T006", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Methanococcaceae", "species": "Methanococcus maripaludis", "synonyms": [], "genome_accession": "NZ_CP186018" },
-    { "tip_code": "A:T007", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Methanobacteriaceae", "species": "Methanothermobacter thermautotrophicus", "synonyms": [], "genome_accession": "NZ_CP064324" },
-    { "tip_code": "A:T008", "sector_code": "[A] Euryarchaeota Outgroups", "family": "Archaeoglobaceae", "species": "Archaeoglobus fulgidus", "synonyms": [], "genome_accession": "NZ_CP006577" },
-
-    { "tip_code": "B:T009", "sector_code": "[B] TACK Proteoarchaeota", "family": "Sulfolobaceae", "species": "Saccharolobus solfataricus", "synonyms": ["Saccharolobus solfataricus", "Sulfolobus solfataricus"], "genome_accession": "NZ_CP160827" },
-    { "tip_code": "B:T010", "sector_code": "[B] TACK Proteoarchaeota", "family": "Sulfolobaceae", "species": "Sulfolobus acidocaldarius", "synonyms": [], "genome_accession": "NZ_CP046615" },
-    { "tip_code": "B:T011", "sector_code": "[B] TACK Proteoarchaeota", "family": "Sulfolobaceae", "species": "Metallosphaera sedula", "synonyms": [], "genome_accession": "NZ_AP019770" },
-    { "tip_code": "B:T012", "sector_code": "[B] TACK Proteoarchaeota", "family": "Acidianaceae", "species": "Acidianus brierleyi", "synonyms": [], "genome_accession": "NZ_CP029289" },
-    { "tip_code": "B:T013", "sector_code": "[B] TACK Proteoarchaeota", "family": "Thermoproteaceae", "species": "Pyrobaculum organotrophum", "synonyms": [], "genome_accession": "NZ_AP042430" },
-    { "tip_code": "B:T014", "sector_code": "[B] TACK Proteoarchaeota", "family": "Nitrosopumilaceae", "species": "Nitrosopumilus zosterae", "synonyms": [], "genome_accession": "NZ_AP026695" },
-    { "tip_code": "B:T015", "sector_code": "[B] TACK Proteoarchaeota", "family": "Nitrososphaeraceae", "species": "Nitrososphaera viennensis", "synonyms": [], "genome_accession": "NZ_CP103305" },
-    { "tip_code": "B:T016", "sector_code": "[B] TACK Proteoarchaeota", "family": "Korarchaeaceae", "species": "Candidatus Korarchaeum cryptofilum", "synonyms": ["Korarchaeum cryptofilum"], "genome_accession": "NC_010482" },
-
-    { "tip_code": "C:T017", "sector_code": "[C] Asgardarchaeota Stem", "family": "Promethearchaeaceae", "species": "Promethearchaeum syntrophicum", "synonyms": [], "genome_accession": "NZ_CP042905" },
-    { "tip_code": "C:T018", "sector_code": "[C] Asgardarchaeota Stem", "family": "Lokiarchaeaceae", "species": "Candidatus Lokiarchaeum ossiferum", "synonyms": ["Lokiarchaeum ossiferum"], "genome_accession": "NZ_CP104013" },
-    { "tip_code": "C:T019", "sector_code": "[C] Asgardarchaeota Stem", "family": "Lokiarchaeaceae", "species": "Candidatus Lokiarchaeum ossiferum B36", "synonyms": ["Candidatus Lokiarchaeum ossiferum"], "genome_accession": "NZ_CP163304" },
-    { "tip_code": "C:T020", "sector_code": "[C] Asgardarchaeota Stem", "family": "Hodarchaeia", "species": "Candidatus Flexarchaeum multiprotrusionis", "synonyms": [], "genome_accession": "AP029247" },
-    { "tip_code": "C:T021", "sector_code": "[C] Asgardarchaeota Stem", "family": "Hodarchaeia", "species": "Candidatus Margulisarchaeum peptidophila", "synonyms": [], "genome_accession": "AP029002" },
-    { "tip_code": "C:T022", "sector_code": "[C] Asgardarchaeota Stem", "family": "Odinarchaeaceae", "species": "Candidatus Odinarchaeum yellowstonii", "synonyms": ["Odinarchaeum yellowstonii"], "genome_accession": "CP091871" },
-    { "tip_code": "C:T023", "sector_code": "[C] Asgardarchaeota Stem", "family": "Heimdallarchaeaceae", "species": "Candidatus Heimdallarchaeum endolithica", "synonyms": [], "genome_accession": "CP084167" },
-    { "tip_code": "C:T024", "sector_code": "[C] Asgardarchaeota Stem", "family": "Heimdallarchaeaceae", "species": "Candidatus Heimdallarchaeum aukensis", "synonyms": [], "genome_accession": "CP084166" },
-
-    { "tip_code": "D:T025", "sector_code": "[D] Discoba & Amoebozoa", "family": "Dictyosteliaceae", "species": "Dictyostelium discoideum", "synonyms": [] },
-    { "tip_code": "D:T026", "sector_code": "[D] Discoba & Amoebozoa", "family": "Dictyosteliaceae", "species": "Dictyostelium purpureum", "synonyms": [] },
-    { "tip_code": "D:T027", "sector_code": "[D] Discoba & Amoebozoa", "family": "Dictyosteliaceae", "species": "Heterostelium album", "synonyms": ["Heterostelium album", "Polysphondylium album"] },
-    { "tip_code": "D:T028", "sector_code": "[D] Discoba & Amoebozoa", "family": "Cavenderiaceae", "species": "Cavenderia fasciculata", "synonyms": ["Cavenderia fasciculata", "Dictyostelium fasciculatum"] },
-    { "tip_code": "D:T029", "sector_code": "[D] Discoba & Amoebozoa", "family": "Acanthamoebidae", "species": "Acanthamoeba castellanii", "synonyms": [] },
-    { "tip_code": "D:T030", "sector_code": "[D] Discoba & Amoebozoa", "family": "Vahlkampfiidae", "species": "Naegleria gruberi", "synonyms": [] },
-    { "tip_code": "D:T031", "sector_code": "[D] Discoba & Amoebozoa", "family": "Euglenaceae", "species": "Euglena gracilis", "synonyms": [] },
-    { "tip_code": "D:T032", "sector_code": "[D] Discoba & Amoebozoa", "family": "Apusomonadidae", "species": "Thecamonas trahens", "synonyms": [] },
-
-    { "tip_code": "E:T033", "sector_code": "[E] Opisthokonta Crown", "family": "Saccharomycetaceae", "species": "Saccharomyces cerevisiae", "synonyms": [] },
-    { "tip_code": "E:T034", "sector_code": "[E] Opisthokonta Crown", "family": "Schizosaccharomycetaceae", "species": "Schizosaccharomyces pombe", "synonyms": [] },
-    { "tip_code": "E:T035", "sector_code": "[E] Opisthokonta Crown", "family": "Sordariaceae", "species": "Neurospora crassa", "synonyms": [] },
-    { "tip_code": "E:T036", "sector_code": "[E] Opisthokonta Crown", "family": "Aspergillaceae", "species": "Aspergillus nidulans", "synonyms": ["Aspergillus nidulans", "Emericella nidulans"] },
-    { "tip_code": "E:T037", "sector_code": "[E] Opisthokonta Crown", "family": "Ustilaginaceae", "species": "Ustilago maydis", "synonyms": [] },
-    { "tip_code": "E:T038", "sector_code": "[E] Opisthokonta Crown", "family": "Psathyrellaceae", "species": "Coprinopsis cinerea", "synonyms": [] },
-    { "tip_code": "E:T039", "sector_code": "[E] Opisthokonta Crown", "family": "Hypocreaceae", "species": "Trichoderma reesei", "synonyms": ["Trichoderma reesei", "Hypocrea jecorina"] },
-    { "tip_code": "E:T040", "sector_code": "[E] Opisthokonta Crown", "family": "Salpingoecidae", "species": "Salpingoeca rosetta", "synonyms": [] },
-    { "tip_code": "E:T041", "sector_code": "[E] Opisthokonta Crown", "family": "Capsasporidae", "species": "Capsaspora owczarzaki", "synonyms": [] },
-    { "tip_code": "E:T042", "sector_code": "[E] Opisthokonta Crown", "family": "Edwardsiidae", "species": "Nematostella vectensis", "synonyms": [] },
-    { "tip_code": "E:T043", "sector_code": "[E] Opisthokonta Crown", "family": "Hydridae", "species": "Hydra vulgaris", "synonyms": [] },
-    { "tip_code": "E:T044", "sector_code": "[E] Opisthokonta Crown", "family": "Cyprinidae", "species": "Danio rerio", "synonyms": [] },
-
-    { "tip_code": "F:T045", "sector_code": "[F] Archaeplastida Crown", "family": "Cyanidioschyzonaceae", "species": "Cyanidioschyzon merolae", "synonyms": [] },
-    { "tip_code": "F:T046", "sector_code": "[F] Archaeplastida Crown", "family": "Gigartinaceae", "species": "Chondrus crispus", "synonyms": [] },
-    { "tip_code": "F:T047", "sector_code": "[F] Archaeplastida Crown", "family": "Galdieriaceae", "species": "Galdieria sulphuraria", "synonyms": [] },
-    { "tip_code": "F:T048", "sector_code": "[F] Archaeplastida Crown", "family": "Bathycoccaceae", "species": "Ostreococcus tauri", "synonyms": [] },
-    { "tip_code": "F:T049", "sector_code": "[F] Archaeplastida Crown", "family": "Volvocaceae", "species": "Volvox carteri", "synonyms": [] },
-    { "tip_code": "F:T050", "sector_code": "[F] Archaeplastida Crown", "family": "Funariaceae", "species": "Physcomitrium patens", "synonyms": ["Physcomitrium patens", "Physcomitrella patens"] },
-    { "tip_code": "F:T051", "sector_code": "[F] Archaeplastida Crown", "family": "Selaginellaceae", "species": "Selaginella moellendorffii", "synonyms": [] },
-    { "tip_code": "F:T052", "sector_code": "[F] Archaeplastida Crown", "family": "Brassicaceae", "species": "Arabidopsis thaliana", "synonyms": [] },
-    { "tip_code": "F:T053", "sector_code": "[F] Archaeplastida Crown", "family": "Poaceae", "species": "Oryza sativa", "synonyms": [] },
-    { "tip_code": "F:T054", "sector_code": "[F] Archaeplastida Crown", "family": "Poaceae", "species": "Zea mays", "synonyms": [] },
-
-    { "tip_code": "G:T055", "sector_code": "[G] SAR Supergroup", "family": "Perkinsidae", "species": "Perkinsus marinus", "synonyms": [] },
-    { "tip_code": "G:T056", "sector_code": "[G] SAR Supergroup", "family": "Phaeodactylaceae", "species": "Phaeodactylum tricornutum", "synonyms": [] },
-    { "tip_code": "G:T057", "sector_code": "[G] SAR Supergroup", "family": "Thalassiosiraceae", "species": "Thalassiosira pseudonana", "synonyms": [] },
-    { "tip_code": "G:T058", "sector_code": "[G] SAR Supergroup", "family": "Monodopsidaceae", "species": "Nannochloropsis gaditana", "synonyms": ["Nannochloropsis gaditana", "Microchloropsis gaditana"] },
-    { "tip_code": "G:T059", "sector_code": "[G] SAR Supergroup", "family": "Peronosporaceae", "species": "Phytophthora infestans", "synonyms": [] },
-    { "tip_code": "G:T060", "sector_code": "[G] SAR Supergroup", "family": "Peronosporaceae", "species": "Phytophthora nicotianae", "synonyms": [] },
-    { "tip_code": "G:T061", "sector_code": "[G] SAR Supergroup", "family": "Peronosporaceae", "species": "Plasmopara halstedii", "synonyms": [] },
-    { "tip_code": "G:T062", "sector_code": "[G] SAR Supergroup", "family": "Saprolegniaceae", "species": "Saprolegnia parasitica", "synonyms": [] },
-    { "tip_code": "G:T063", "sector_code": "[G] SAR Supergroup", "family": "Saprolegniaceae", "species": "Saprolegnia diclina", "synonyms": [] },
-    { "tip_code": "G:T064", "sector_code": "[G] SAR Supergroup", "family": "Chlorarachniaceae", "species": "Bigelowiella natans", "synonyms": [] }
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Halobacteriaceae",
+      "species": "Haloferax volcanii",
+      "synonyms": [],
+      "genome_accession": "NZ_CP106966"
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Halobacteriaceae",
+      "species": "Haloarcula marismortui",
+      "synonyms": [],
+      "genome_accession": "NZ_CP073366"
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Halobacteriaceae",
+      "species": "Halobacterium salinarum",
+      "synonyms": [],
+      "genome_accession": "NZ_CP085882"
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Methanosarcinaceae",
+      "species": "Methanosarcina mazei",
+      "synonyms": [],
+      "genome_accession": "NZ_AP019780"
+    },
+    {
+      "tip_code": "A:T005",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Methanosarcinaceae",
+      "species": "Methanosarcina barkeri",
+      "synonyms": [],
+      "genome_accession": "NZ_CP009517"
+    },
+    {
+      "tip_code": "A:T006",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Methanococcaceae",
+      "species": "Methanococcus maripaludis",
+      "synonyms": [],
+      "genome_accession": "NZ_CP186018"
+    },
+    {
+      "tip_code": "A:T007",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Methanobacteriaceae",
+      "species": "Methanothermobacter thermautotrophicus",
+      "synonyms": [],
+      "genome_accession": "NZ_CP064324"
+    },
+    {
+      "tip_code": "A:T008",
+      "sector_code": "[A] Euryarchaeota Outgroups",
+      "family": "Archaeoglobaceae",
+      "species": "Archaeoglobus fulgidus",
+      "synonyms": [],
+      "genome_accession": "NZ_CP006577"
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Sulfolobaceae",
+      "species": "Saccharolobus solfataricus",
+      "synonyms": [
+        "Saccharolobus solfataricus",
+        "Sulfolobus solfataricus"
+      ],
+      "genome_accession": "NZ_CP160827"
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Sulfolobaceae",
+      "species": "Sulfolobus acidocaldarius",
+      "synonyms": [],
+      "genome_accession": "NZ_CP046615"
+    },
+    {
+      "tip_code": "B:T011",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Sulfolobaceae",
+      "species": "Metallosphaera sedula",
+      "synonyms": [],
+      "genome_accession": "NZ_AP019770"
+    },
+    {
+      "tip_code": "B:T012",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Acidianaceae",
+      "species": "Acidianus brierleyi",
+      "synonyms": [],
+      "genome_accession": "NZ_CP029289"
+    },
+    {
+      "tip_code": "B:T013",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Thermoproteaceae",
+      "species": "Pyrobaculum organotrophum",
+      "synonyms": [],
+      "genome_accession": "NZ_AP042430"
+    },
+    {
+      "tip_code": "B:T014",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Nitrosopumilaceae",
+      "species": "Nitrosopumilus zosterae",
+      "synonyms": [],
+      "genome_accession": "NZ_AP026695"
+    },
+    {
+      "tip_code": "B:T015",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Nitrososphaeraceae",
+      "species": "Nitrososphaera viennensis",
+      "synonyms": [],
+      "genome_accession": "NZ_CP103305"
+    },
+    {
+      "tip_code": "B:T016",
+      "sector_code": "[B] TACK Proteoarchaeota",
+      "family": "Korarchaeaceae",
+      "species": "Candidatus Korarchaeum cryptofilum",
+      "synonyms": [
+        "Korarchaeum cryptofilum"
+      ],
+      "genome_accession": "NC_010482"
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Promethearchaeaceae",
+      "species": "Promethearchaeum syntrophicum",
+      "synonyms": [],
+      "genome_accession": "NZ_CP042905"
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Lokiarchaeaceae",
+      "species": "Candidatus Lokiarchaeum ossiferum",
+      "synonyms": [
+        "Lokiarchaeum ossiferum"
+      ],
+      "genome_accession": "NZ_CP104013"
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Lokiarchaeaceae",
+      "species": "Candidatus Lokiarchaeum ossiferum B36",
+      "synonyms": [
+        "Candidatus Lokiarchaeum ossiferum"
+      ],
+      "genome_accession": "NZ_CP163304"
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Hodarchaeia",
+      "species": "Candidatus Flexarchaeum multiprotrusionis",
+      "synonyms": [],
+      "genome_accession": "AP029247"
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Hodarchaeia",
+      "species": "Candidatus Margulisarchaeum peptidophila",
+      "synonyms": [],
+      "genome_accession": "AP029002"
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Odinarchaeaceae",
+      "species": "Candidatus Odinarchaeum yellowstonii",
+      "synonyms": [
+        "Odinarchaeum yellowstonii"
+      ],
+      "genome_accession": "CP091871"
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Heimdallarchaeaceae",
+      "species": "Candidatus Heimdallarchaeum endolithica",
+      "synonyms": [],
+      "genome_accession": "CP084167"
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Asgardarchaeota Stem",
+      "family": "Heimdallarchaeaceae",
+      "species": "Candidatus Heimdallarchaeum aukensis",
+      "synonyms": [],
+      "genome_accession": "CP084166"
+    },
+    {
+      "tip_code": "D:T025",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Dictyosteliaceae",
+      "species": "Dictyostelium discoideum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Dictyosteliaceae",
+      "species": "Dictyostelium purpureum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Dictyosteliaceae",
+      "species": "Heterostelium album",
+      "synonyms": [
+        "Heterostelium album",
+        "Polysphondylium album"
+      ]
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Cavenderiaceae",
+      "species": "Cavenderia fasciculata",
+      "synonyms": [
+        "Cavenderia fasciculata",
+        "Dictyostelium fasciculatum"
+      ]
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Acanthamoebidae",
+      "species": "Acanthamoeba castellanii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Vahlkampfiidae",
+      "species": "Naegleria gruberi",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Euglenaceae",
+      "species": "Euglena gracilis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Discoba & Amoebozoa",
+      "family": "Apusomonadidae",
+      "species": "Thecamonas trahens",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Saccharomycetaceae",
+      "species": "Saccharomyces cerevisiae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Schizosaccharomycetaceae",
+      "species": "Schizosaccharomyces pombe",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Sordariaceae",
+      "species": "Neurospora crassa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Aspergillaceae",
+      "species": "Aspergillus nidulans",
+      "synonyms": [
+        "Aspergillus nidulans",
+        "Emericella nidulans"
+      ]
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Ustilaginaceae",
+      "species": "Ustilago maydis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Psathyrellaceae",
+      "species": "Coprinopsis cinerea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Hypocreaceae",
+      "species": "Trichoderma reesei",
+      "synonyms": [
+        "Trichoderma reesei",
+        "Hypocrea jecorina"
+      ]
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Salpingoecidae",
+      "species": "Salpingoeca rosetta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Capsasporidae",
+      "species": "Capsaspora owczarzaki",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Edwardsiidae",
+      "species": "Nematostella vectensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T043",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Hydridae",
+      "species": "Hydra vulgaris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T044",
+      "sector_code": "[E] Opisthokonta Crown",
+      "family": "Cyprinidae",
+      "species": "Danio rerio",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Cyanidioschyzonaceae",
+      "species": "Cyanidioschyzon merolae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Gigartinaceae",
+      "species": "Chondrus crispus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Galdieriaceae",
+      "species": "Galdieria sulphuraria",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Bathycoccaceae",
+      "species": "Ostreococcus tauri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Volvocaceae",
+      "species": "Volvox carteri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Funariaceae",
+      "species": "Physcomitrium patens",
+      "synonyms": [
+        "Physcomitrium patens",
+        "Physcomitrella patens"
+      ]
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Selaginellaceae",
+      "species": "Selaginella moellendorffii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Brassicaceae",
+      "species": "Arabidopsis thaliana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Poaceae",
+      "species": "Oryza sativa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T054",
+      "sector_code": "[F] Archaeplastida Crown",
+      "family": "Poaceae",
+      "species": "Zea mays",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Perkinsidae",
+      "species": "Perkinsus marinus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Phaeodactylaceae",
+      "species": "Phaeodactylum tricornutum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Thalassiosiraceae",
+      "species": "Thalassiosira pseudonana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Monodopsidaceae",
+      "species": "Nannochloropsis gaditana",
+      "synonyms": [
+        "Nannochloropsis gaditana",
+        "Microchloropsis gaditana"
+      ]
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Peronosporaceae",
+      "species": "Phytophthora infestans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Peronosporaceae",
+      "species": "Phytophthora nicotianae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Peronosporaceae",
+      "species": "Plasmopara halstedii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Saprolegniaceae",
+      "species": "Saprolegnia parasitica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Saprolegniaceae",
+      "species": "Saprolegnia diclina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] SAR Supergroup",
+      "family": "Chlorarachniaceae",
+      "species": "Bigelowiella natans",
+      "synonyms": []
+    }
   ],
   "functional_families": [
     {
@@ -150,7 +776,7 @@
         "min_consensus_aa_identity": 0.18,
         "min_consensus_dayhoff6_sim": 0.35
       },
-      "msa_min_occ": 0.60
+      "msa_min_occ": 0.6
     },
     {
       "family_code": "FAM-02",
@@ -176,10 +802,17 @@
         "pin_species_substr": null,
         "blocked_organisms": [],
         "required_motifs": [
-          { "name": "H3-N-Tail", "pos_min": 0, "pos_max": 20, "patterns": ["ARTKQ"] }
+          {
+            "name": "H3-N-Tail",
+            "pos_min": 0,
+            "pos_max": 20,
+            "patterns": [
+              "ARTKQ"
+            ]
+          }
         ],
         "min_anchor_aa_kmer_sim": 0.25,
-        "min_row_coverage": 0.50,
+        "min_row_coverage": 0.5,
         "min_consensus_aa_identity": 0.25,
         "min_consensus_dayhoff6_sim": 0.45
       },
@@ -240,15 +873,29 @@
         "pin_species_substr": "musculus",
         "blocked_organisms": [],
         "required_motifs": [
-          { "name": "Walker-A-Ploop", "pos_min": 8, "pos_max": 38, "patterns": ["GDGGTGKT"] },
-          { "name": "Switch-II", "pos_min": 50, "pos_max": 88, "patterns": ["DTAGQE"] }
+          {
+            "name": "Walker-A-Ploop",
+            "pos_min": 8,
+            "pos_max": 38,
+            "patterns": [
+              "GDGGTGKT"
+            ]
+          },
+          {
+            "name": "Switch-II",
+            "pos_min": 50,
+            "pos_max": 88,
+            "patterns": [
+              "DTAGQE"
+            ]
+          }
         ],
         "min_anchor_aa_kmer_sim": 0.25,
         "min_row_coverage": 0.55,
-        "min_consensus_aa_identity": 0.30,
-        "min_consensus_dayhoff6_sim": 0.50
+        "min_consensus_aa_identity": 0.3,
+        "min_consensus_dayhoff6_sim": 0.5
       },
-      "msa_min_occ": 0.70
+      "msa_min_occ": 0.7
     }
   ],
   "pdb_template": {
@@ -271,233 +918,294 @@
       "Asp65-Thr66-Ala67-Gly68-Gln69-Glu70 (Switch II Catalytic Glutamine Hydrolysis Loop)",
       "Asn122-Lys123-Val124-Asp125 (G4 Guanine Ring Recognition Pocket)"
     ],
-    "srs1_range": [16, 44],
-    "fg_lid_range": [172, 210],
-    "i_helix_range": [63, 78],
-    "cys_loop_range": [120, 128],
-    "l_helix_range": [148, 165]
+    "srs1_range": [
+      16,
+      44
+    ],
+    "fg_lid_range": [
+      172,
+      210
+    ],
+    "i_helix_range": [
+      63,
+      78
+    ],
+    "cys_loop_range": [
+      120,
+      128
+    ],
+    "l_helix_range": [
+      148,
+      165
+    ]
   },
   "skyline_cohorts": [
     {
       "cohort_code": "R1",
-      "axis_group": "Single-Species Nuclear Coding vs. Archaeal 16S (R1-R6)",
-      "region_label": "Budding Yeast Saccharomyces cerevisiae ACT1/TEF1",
-      "clade_lineage": "Opisthokonta Saccharomycetaceae",
-      "locus_name": "Nuclear ACT1/TEF1 (4Ne Diploid)",
+      "axis_group": "Single-Species Nuclear Coding vs. Archaeal/Algal SSU rRNA (R1-R6)",
+      "region_label": "Basidiomycete Cryptococcus neoformans Nuclear TEF1",
+      "clade_lineage": "Opisthokonta Cryptococcaceae",
+      "locus_name": "Nuclear TEF1/EF1A (4Ne)",
       "locus_tag": "univ_ef1a",
-      "ploidy_scalar": 4.0,
+      "ploidy_scalar": 4,
       "mu_rate": 0.0042,
       "source_id": "NUC32-R1",
-      "locality": "Global Fermentation / Laboratory / Strain Cohorts",
-      "cache_key": "nuc_pop_r1_sce_v1",
-      "query": "\"Saccharomyces cerevisiae\"[Organism] AND (ACT1[Gene] OR TEF1[Gene] OR TEF2[Gene] OR EEF1A[Gene] OR \"elongation factor 1\"[Title] OR actin[Title]) AND 500:2500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Clinical & Environmental Isolates",
+      "cache_key": "nuc_pop_r1_cneo_ef1a_v3",
+      "query": "\"Cryptococcus neoformans\"[Organism] AND (TEF1[Gene] OR EF1[Gene] OR \"translation elongation factor 1-alpha\"[Title] OR \"elongation factor 1-alpha\"[Title] OR \"elongation factor 1 alpha\"[Title]) AND 450:2200[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
-      "min_bp": 500,
-      "max_bp": 2500
+      "min_bp": 450,
+      "max_bp": 2200
     },
     {
       "cohort_code": "R2",
-      "axis_group": "Single-Species Nuclear Coding vs. Archaeal 16S (R1-R6)",
-      "region_label": "Archaeplastida Oryza sativa Nuclear EF1A",
-      "clade_lineage": "Archaeplastida Poaceae",
-      "locus_name": "Nuclear EF1A (4Ne Diploid)",
+      "axis_group": "Single-Species Nuclear Coding vs. Archaeal/Algal SSU rRNA (R1-R6)",
+      "region_label": "Ascomycete Fusarium oxysporum Nuclear TEF1",
+      "clade_lineage": "Opisthokonta Hypocreaceae",
+      "locus_name": "Nuclear TEF1/EF1A (4Ne)",
       "locus_tag": "univ_ef1a",
-      "ploidy_scalar": 4.0,
-      "mu_rate": 0.0045,
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0044,
       "source_id": "NUC32-R2",
-      "locality": "Global Landrace / Agricultural Cultivars",
-      "cache_key": "nuc_pop_r2_ory_v1",
-      "query": "\"Oryza sativa\"[Organism] AND (EF1A[Gene] OR OsEF1A[Gene] OR \"elongation factor 1-alpha\"[Title] OR \"elongation factor 1 alpha\"[Title] OR actin[Title]) AND 500:2500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Rhizosphere & Soil Saprotrophs",
+      "cache_key": "nuc_pop_r2_foxy_ef1a_v3",
+      "query": "\"Fusarium oxysporum\"[Organism] AND (\"translation elongation factor 1-alpha\"[Title] OR \"elongation factor 1-alpha\"[Title]) AND 450:1500[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
-      "min_bp": 500,
-      "max_bp": 2500
+      "min_bp": 450,
+      "max_bp": 1500
     },
     {
       "cohort_code": "R3",
-      "axis_group": "Single-Species Nuclear Coding vs. Archaeal 16S (R1-R6)",
-      "region_label": "Metazoan Drosophila melanogaster Nuclear eEF1alpha1",
-      "clade_lineage": "Opisthokonta Drosophilidae",
-      "locus_name": "Nuclear eEF1alpha1 (4Ne Diploid)",
+      "axis_group": "Single-Species Nuclear Coding vs. Archaeal/Algal SSU rRNA (R1-R6)",
+      "region_label": "Excavate Giardia intestinalis Nuclear ef1a",
+      "clade_lineage": "Metamonada Hexamitidae",
+      "locus_name": "Nuclear ef1a (4Ne)",
       "locus_tag": "univ_ef1a",
-      "ploidy_scalar": 4.0,
-      "mu_rate": 0.0052,
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0048,
       "source_id": "NUC32-R3",
-      "locality": "Global Population Genetics Cohorts",
-      "cache_key": "nuc_pop_r3_dme_v1",
-      "query": "\"Drosophila melanogaster\"[Organism] AND (eEF1alpha1[Gene] OR \"elongation factor 1\"[Title]) AND 500:2500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Cosmopolitan Assemblage Reference Isolates",
+      "cache_key": "nuc_pop_r3_gint_ef1a_v3",
+      "query": "\"Giardia intestinalis\"[Organism] AND (\"elongation factor 1-alpha\"[Title] OR \"elongation factor 1 alpha\"[Title] OR ef1a[Gene]) AND 400:2200[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title]",
       "fallback_query": "",
-      "min_bp": 500,
-      "max_bp": 2500
+      "min_bp": 400,
+      "max_bp": 2200
     },
     {
       "cohort_code": "R4",
-      "axis_group": "Single-Species Nuclear Coding vs. Archaeal 16S (R1-R6)",
+      "axis_group": "Single-Species Nuclear Coding vs. Archaeal/Algal SSU rRNA (R1-R6)",
       "region_label": "Vertebrate Danio rerio Nuclear eef1a1l1",
       "clade_lineage": "Opisthokonta Cyprinidae",
-      "locus_name": "Nuclear eef1a1l1 (4Ne Diploid)",
+      "locus_name": "Nuclear eef1a1l1 (4Ne)",
       "locus_tag": "univ_ef1a",
-      "ploidy_scalar": 4.0,
-      "mu_rate": 0.0040,
+      "ploidy_scalar": 4,
+      "mu_rate": 0.004,
       "source_id": "NUC32-R4",
       "locality": "Freshwater Wild & Reference Lineages",
-      "cache_key": "nuc_pop_r4_dre_v1",
-      "query": "\"Danio rerio\"[Organism] AND (eef1a1l1[Gene] OR \"elongation factor 1-alpha\"[Title]) AND 500:2500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "cache_key": "nuc_pop_r4_dre_ef1a_v3",
+      "query": "\"Danio rerio\"[Organism] AND (eef1a1l1[Gene] OR \"elongation factor 1-alpha\"[Title]) AND 500:2500[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
       "min_bp": 500,
       "max_bp": 2500
     },
     {
       "cohort_code": "R5",
-      "axis_group": "Single-Species Nuclear Coding vs. Archaeal 16S (R1-R6)",
+      "axis_group": "Single-Species Nuclear Coding vs. Archaeal/Algal SSU rRNA (R1-R6)",
       "region_label": "Haloarchaeon Haloferax volcanii Archaeal 16S rRNA",
       "clade_lineage": "Euryarchaeota Halobacteriaceae",
-      "locus_name": "Archaeal 16S rRNA (1Ne Haploid)",
+      "locus_name": "Archaeal 16S rRNA (1Ne)",
       "locus_tag": "univ_ssu",
       "ploidy_scalar": 0.999,
       "mu_rate": 0.0014,
       "source_id": "NUC32-R5",
       "locality": "Hypersaline Marine & Sabkha Strains",
-      "cache_key": "nuc_pop_r5_hal_v1",
-      "query": "\"Haloferax volcanii\"[Organism] AND (\"16S ribosomal RNA\"[Title] OR \"16S rRNA\"[Title]) AND 400:2000[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "cache_key": "nuc_pop_r5_hal_16s_v3",
+      "query": "\"Haloferax volcanii\"[Organism] AND (\"16S ribosomal RNA\"[Title] OR \"16S rRNA\"[Title]) AND 500:1800[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title]",
       "fallback_query": "",
-      "min_bp": 400,
-      "max_bp": 2000
+      "min_bp": 500,
+      "max_bp": 1800
     },
     {
       "cohort_code": "R6",
-      "axis_group": "Single-Species Nuclear Coding vs. Archaeal 16S (R1-R6)",
-      "region_label": "Chlorophyte Chlamydomonas reinhardtii SSU rRNA",
+      "axis_group": "Single-Species Nuclear Coding vs. Archaeal/Algal SSU rRNA (R1-R6)",
+      "region_label": "Chlorophyte Chlamydomonas reinhardtii Nuclear 18S rRNA",
       "clade_lineage": "Archaeplastida Chlamydomonadaceae",
-      "locus_name": "Nuclear 18S rRNA (4Ne Haploid/Diploid)",
+      "locus_name": "Nuclear 18S rRNA (4Ne)",
       "locus_tag": "univ_ssu",
-      "ploidy_scalar": 4.0,
+      "ploidy_scalar": 4,
       "mu_rate": 0.0018,
       "source_id": "NUC32-R6",
       "locality": "Freshwater & Soil Algal Isolates",
-      "cache_key": "nuc_pop_r6_cre_v1",
-      "query": "\"Chlamydomonas reinhardtii\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title] OR \"18S rRNA\"[Title]) AND 500:2200[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "cache_key": "nuc_pop_r6_cre_18s_v3",
+      "query": "\"Chlamydomonas reinhardtii\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"18S rRNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 700:2000[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT chloroplast[Title] NOT plastid[Title] NOT mitochondri*[Title] NOT \"16S\"[Title]",
       "fallback_query": "",
-      "min_bp": 500,
-      "max_bp": 2200
+      "min_bp": 700,
+      "max_bp": 2000
     },
     {
       "cohort_code": "L1",
-      "axis_group": "Multi-Locus Contrast: Coding RNAP II vs. 18S rRNA (L1-L6)",
-      "region_label": "Saccharomyces cerevisiae Nuclear RPB2 Polymerase",
-      "clade_lineage": "Opisthokonta Saccharomycetaceae",
+      "axis_group": "Multi-Locus Contrast: Coding RNAP II & ACT1 vs. 18S rRNA (L1-L6)",
+      "region_label": "Fusarium oxysporum Nuclear RPB2 Polymerase",
+      "clade_lineage": "Opisthokonta Hypocreaceae",
       "locus_name": "Nuclear RPB2 (Coding)",
       "locus_tag": "univ_rpb2",
-      "ploidy_scalar": 4.0,
+      "ploidy_scalar": 4,
       "mu_rate": 0.0046,
       "source_id": "NUC32-L1",
-      "locality": "Global Fermentation / Environmental Isolates",
-      "cache_key": "nuc_pop_l1_sce_rpb2_v1",
-      "query": "\"Saccharomyces cerevisiae\"[Organism] AND (RPB2[Gene] OR \"RNA polymerase II\"[Title]) AND 500:4500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Soil & Rhizosphere Isolates",
+      "cache_key": "nuc_pop_l1_foxy_rpb2_v3",
+      "query": "\"Fusarium oxysporum\"[Organism] AND (\"RNA polymerase II second largest\"[Title] OR \"RPB2\"[Title] OR \"rpb2\"[Title]) AND 600:2500[SLEN] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT RPB1[Title]",
       "fallback_query": "",
-      "min_bp": 500,
-      "max_bp": 4500
+      "min_bp": 600,
+      "max_bp": 2500
     },
     {
       "cohort_code": "L2",
-      "axis_group": "Multi-Locus Contrast: Coding RNAP II vs. 18S rRNA (L1-L6)",
-      "region_label": "Saccharomyces cerevisiae Slow-Clock 18S rRNA",
+      "axis_group": "Multi-Locus Contrast: Coding RNAP II & ACT1 vs. 18S rRNA (L1-L6)",
+      "region_label": "Saccharomyces cerevisiae Slow-Clock Nuclear rDNA",
       "clade_lineage": "Structural Ribosomal RNA",
-      "locus_name": "18S rRNA (Katoh E-INS-i)",
+      "locus_name": "18S/SSU rDNA (Katoh E-INS-i)",
       "locus_tag": "univ_ssu",
-      "ploidy_scalar": 4.0,
+      "ploidy_scalar": 4,
       "mu_rate": 0.0012,
       "source_id": "NUC32-L2",
-      "locality": "Global Fermentation / Environmental Isolates",
-      "cache_key": "nuc_pop_l2_sce_18s_v1",
-      "query": "\"Saccharomyces cerevisiae\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 600:2400[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Fermentation & Wild Woodland Isolates",
+      "cache_key": "nuc_pop_l2_sce_18s_v4",
+      "query": "\"Saccharomyces cerevisiae\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title] OR \"18S rRNA\"[Title]) AND 600:2200[SLEN] AND biomol_genomic[PROP] NOT srcdb_pdb[PROP] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
       "min_bp": 600,
-      "max_bp": 2400
+      "max_bp": 2200
     },
     {
       "cohort_code": "L3",
-      "axis_group": "Multi-Locus Contrast: Coding RNAP II vs. 18S rRNA (L1-L6)",
-      "region_label": "Drosophila melanogaster Nuclear RpII140 (RPB2)",
-      "clade_lineage": "Opisthokonta Drosophilidae",
+      "axis_group": "Multi-Locus Contrast: Coding RNAP II & ACT1 vs. 18S rRNA (L1-L6)",
+      "region_label": "Cryptococcus neoformans Nuclear RPB2 Polymerase",
+      "clade_lineage": "Opisthokonta Cryptococcaceae",
       "locus_name": "Nuclear RPB2 (Coding)",
       "locus_tag": "univ_rpb2",
-      "ploidy_scalar": 4.0,
-      "mu_rate": 0.0054,
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0048,
       "source_id": "NUC32-L3",
-      "locality": "Global Population Genetics Cohorts",
-      "cache_key": "nuc_pop_l3_dme_rpb2_v1",
-      "query": "\"Drosophila melanogaster\"[Organism] AND (RpII140[Gene] OR \"RNA polymerase II\"[Title]) AND 500:5000[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Environmental & Reference Lineages",
+      "cache_key": "nuc_pop_l3_cneo_rpb2_v3",
+      "query": "\"Cryptococcus neoformans\"[Organism] AND (RPB2[Gene] OR \"RPB2\"[Title] OR \"RNA polymerase II second largest\"[Title]) AND 500:2500[SLEN] NOT srcdb_pdb[PROP] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT RPB1[Title]",
       "fallback_query": "",
       "min_bp": 500,
-      "max_bp": 5000
+      "max_bp": 2500
     },
     {
       "cohort_code": "L4",
-      "axis_group": "Multi-Locus Contrast: Coding RNAP II vs. 18S rRNA (L1-L6)",
-      "region_label": "Archaeplastida Oryza sativa Slow-Clock 18S rRNA",
+      "axis_group": "Multi-Locus Contrast: Coding RNAP II & ACT1 vs. 18S rRNA (L1-L6)",
+      "region_label": "Archaeplastida Oryza sativa Slow-Clock Nuclear rDNA",
       "clade_lineage": "Structural Ribosomal RNA",
-      "locus_name": "18S rRNA (Katoh E-INS-i)",
+      "locus_name": "18S/SSU rDNA (Katoh E-INS-i)",
       "locus_tag": "univ_ssu",
-      "ploidy_scalar": 4.0,
+      "ploidy_scalar": 4,
       "mu_rate": 0.0013,
       "source_id": "NUC32-L4",
-      "locality": "Global Rice Cultivars & Wild Accessions",
-      "cache_key": "nuc_pop_l4_ory_18s_v1",
-      "query": "\"Oryza sativa\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 600:2400[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Rice Landraces & Wild Accessions",
+      "cache_key": "nuc_pop_l4_ory_18s_v4",
+      "query": "\"Oryza sativa\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title] OR \"18S rRNA\"[Title]) AND 600:2200[SLEN] NOT srcdb_pdb[PROP] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT chloroplast[Title] NOT plastid[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
       "min_bp": 600,
-      "max_bp": 2400
+      "max_bp": 2200
     },
     {
       "cohort_code": "L5",
-      "axis_group": "Multi-Locus Contrast: Coding RNAP II vs. 18S rRNA (L1-L6)",
+      "axis_group": "Multi-Locus Contrast: Coding RNAP II & ACT1 vs. 18S rRNA (L1-L6)",
       "region_label": "Ciliate Paramecium tetraurelia Nuclear 18S rRNA",
       "clade_lineage": "SAR Alveolata Structural rRNA",
       "locus_name": "18S rRNA (Katoh E-INS-i)",
       "locus_tag": "univ_ssu",
-      "ploidy_scalar": 4.0,
+      "ploidy_scalar": 4,
       "mu_rate": 0.0016,
       "source_id": "NUC32-L5",
       "locality": "Cosmopolitan Freshwater Ciliate Isolates",
-      "cache_key": "nuc_pop_l5_pte_18s_v1",
-      "query": "\"Paramecium tetraurelia\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 500:2200[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "cache_key": "nuc_pop_l5_pte_18s_v4",
+      "query": "\"Paramecium tetraurelia\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title] OR \"18S rRNA\"[Title]) AND 500:2200[SLEN] NOT srcdb_pdb[PROP] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
       "min_bp": 500,
       "max_bp": 2200
     },
     {
       "cohort_code": "L6",
-      "axis_group": "Multi-Locus Contrast: Coding RNAP II vs. 18S rRNA (L1-L6)",
-      "region_label": "Amoebozoan Dictyostelium discoideum Cytoskeletal/rRNA Core",
-      "clade_lineage": "Amoebozoa Dictyosteliaceae",
-      "locus_name": "Nuclear Coding/rRNA Core",
+      "axis_group": "Multi-Locus Contrast: Coding RNAP II & ACT1 vs. 18S rRNA (L1-L6)",
+      "region_label": "Saccharomyces cerevisiae Nuclear ACT1 Actin",
+      "clade_lineage": "Opisthokonta Saccharomycetaceae",
+      "locus_name": "Nuclear ACT1 (Coding)",
       "locus_tag": "univ_ef1a",
-      "ploidy_scalar": 4.0,
-      "mu_rate": 0.0044,
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0041,
       "source_id": "NUC32-L6",
-      "locality": "Temperate Forest Soil Social Amoebae",
-      "cache_key": "nuc_pop_l6_ddi_v1",
-      "query": "\"Dictyostelium discoideum\"[Organism] AND (actin[Title] OR \"elongation factor\"[Title] OR \"17S ribosomal\"[Title]) AND 500:2500[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title]",
+      "locality": "Global Fermentation & Wild Woodland Isolates",
+      "cache_key": "nuc_pop_l6_sce_act1_v4",
+      "query": "\"Saccharomyces cerevisiae\"[Organism] AND (ACT1[Gene] OR \"actin\"[Title]) AND 450:2200[SLEN] NOT srcdb_pdb[PROP] NOT wgs[PROP] NOT \"whole genome shotgun\"[Title] NOT UNVERIFIED[Title] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT \"actin-related\"[Title] NOT ARP[Title] NOT mitochondri*[Title]",
       "fallback_query": "",
-      "min_bp": 500,
-      "max_bp": 2500
+      "min_bp": 450,
+      "max_bp": 2200
     }
   ],
   "skyline_epochs": [
-    { "label": "Epoch 1: Late Pleistocene Refugia", "age_max_ka": 120.0, "age_min_ka": 45.0, "period_label": "120-45 ka (MIS 5-3)", "ecological_context": "Ancestral soil, freshwater & marine strain structure" },
-    { "label": "Epoch 2: LGM Contraction", "age_max_ka": 45.0, "age_min_ka": 15.0, "period_label": "45-15 ka (LGM)", "ecological_context": "Pleistocene glacial cooling & range fragmentation" },
-    { "label": "Epoch 3: Early Holocene Transition", "age_max_ka": 15.0, "age_min_ka": 7.0, "period_label": "15-7 ka (Holocene)", "ecological_context": "Post-glacial aquatic & rhizosphere expansion" },
-    { "label": "Epoch 4: Early Agrarian Divergence", "age_max_ka": 7.0, "age_min_ka": 1.2, "period_label": "7.0-1.2 ka", "ecological_context": "Domestication & fermentation niche radiation" },
-    { "label": "Epoch 5: Pre-Industrial Dispersal", "age_max_ka": 1.2, "age_min_ka": 0.08, "period_label": "1.2-0.08 ka", "ecological_context": "Trans-oceanic culture & crop dispersal" },
-    { "label": "Epoch 6: Modern Model Scaling", "age_max_ka": 0.08, "age_min_ka": 0.0, "period_label": "Modern", "ecological_context": "Cosmopolitan reference, agricultural & environmental populations" }
+    {
+      "label": "Epoch 1: Late Pleistocene Refugia",
+      "age_max_ka": 120,
+      "age_min_ka": 45,
+      "period_label": "120-45 ka (MIS 5-3)",
+      "ecological_context": "Ancestral soil, freshwater & marine strain structure"
+    },
+    {
+      "label": "Epoch 2: LGM Contraction",
+      "age_max_ka": 45,
+      "age_min_ka": 15,
+      "period_label": "45-15 ka (LGM)",
+      "ecological_context": "Pleistocene glacial cooling & range fragmentation"
+    },
+    {
+      "label": "Epoch 3: Early Holocene Transition",
+      "age_max_ka": 15,
+      "age_min_ka": 7,
+      "period_label": "15-7 ka (Holocene)",
+      "ecological_context": "Post-glacial aquatic & rhizosphere expansion"
+    },
+    {
+      "label": "Epoch 4: Early Agrarian Divergence",
+      "age_max_ka": 7,
+      "age_min_ka": 1.2,
+      "period_label": "7.0-1.2 ka",
+      "ecological_context": "Domestication & fermentation niche radiation"
+    },
+    {
+      "label": "Epoch 5: Pre-Industrial Dispersal",
+      "age_max_ka": 1.2,
+      "age_min_ka": 0.08,
+      "period_label": "1.2-0.08 ka",
+      "ecological_context": "Trans-oceanic culture & crop dispersal"
+    },
+    {
+      "label": "Epoch 6: Modern Model Scaling",
+      "age_max_ka": 0.08,
+      "age_min_ka": 0,
+      "period_label": "Modern",
+      "ecological_context": "Cosmopolitan reference, agricultural & environmental populations"
+    }
   ],
   "supp_s2_cohort_code": "L5",
   "haplotype_panels": [
     {
       "panel_id": "Archaea-Eukarya Elongation Factor (EF1A/tuf)",
       "fasta_filename": "cohort_ef1a_haplotypes.fasta",
-      "cohort_indices": [0, 1, 2],
-      "slot_prefixes": ["A:", "B:", "C:", "D:", "E:"],
+      "cohort_indices": [
+        0,
+        1,
+        2
+      ],
+      "slot_prefixes": [
+        "A:",
+        "B:",
+        "C:",
+        "D:",
+        "E:"
+      ],
       "locus_tag": "univ_ef1a",
       "label_suffix": "EF1A",
       "min_occ": 0.65
@@ -505,8 +1213,16 @@
     {
       "panel_id": "RNA Polymerase II Subunit B (RPB2/rpoB)",
       "fasta_filename": "cohort_rpb2_haplotypes.fasta",
-      "cohort_indices": [6, 8],
-      "slot_prefixes": ["C:", "E:", "F:", "G:"],
+      "cohort_indices": [
+        6,
+        8
+      ],
+      "slot_prefixes": [
+        "C:",
+        "E:",
+        "F:",
+        "G:"
+      ],
       "locus_tag": "univ_rpb2",
       "label_suffix": "RPB2",
       "min_occ": 0.65
@@ -518,9 +1234,9 @@
       "clade_name": "Archaeal Root (Euryarchaeota [A] vs. TACK-Asgard-Eukarya [B]-[G])",
       "sector_code": "[A]-[G]",
       "fossil_or_biogeo_anchor": "Paleoarchean methanogen/halophile divergence (Betts 2018; Moody 2024)",
-      "target_age_ma": 3520.0,
-      "ci_min_ma": 3240.0,
-      "ci_max_ma": 3900.0,
+      "target_age_ma": 3520,
+      "ci_min_ma": 3240,
+      "ci_max_ma": 3900,
       "trophic_guild": "Anaerobic methanogens & halophiles",
       "key_enzymes_or_loci": "RPB1/RPB2 / EF1A / EF2 / eIF5B / Sec61A / SSU-LSU",
       "ecosystem_role": "Root split separating Euryarchaeota outgroups from TACK-Asgard-Eukarya",
@@ -531,9 +1247,9 @@
       "clade_name": "TACK-Asgard-Eukarya Split (TACK [B] vs. Asgard+Eukarya [C]-[G])",
       "sector_code": "[B]-[G]",
       "fossil_or_biogeo_anchor": "Archean-Paleoproterozoic Proteoarchaeota split (Eme 2023)",
-      "target_age_ma": 3050.0,
-      "ci_min_ma": 2700.0,
-      "ci_max_ma": 3400.0,
+      "target_age_ma": 3050,
+      "ci_min_ma": 2700,
+      "ci_max_ma": 3400,
       "trophic_guild": "Thermoacidophiles, ammonia oxidizers & Asgard stem",
       "key_enzymes_or_loci": "RPB1/RPB2 / RAD51 / CCT / RPL2 / RPL3 / RPS3",
       "ecosystem_role": "Origin of thermosome chaperonins and archaeal Cdv/ESCRT cell division",
@@ -544,9 +1260,9 @@
       "clade_name": "Asgard-FECA Nuclear Stem (Asgardarchaeota [C] vs. Eukarya [D]-[G])",
       "sector_code": "[C]-[G]",
       "fossil_or_biogeo_anchor": "Great Oxidation / Paleoproterozoic Grypania & Tappania horizon (Betts 2018)",
-      "target_age_ma": 2620.0,
-      "ci_min_ma": 2200.0,
-      "ci_max_ma": 3050.0,
+      "target_age_ma": 2620,
+      "ci_min_ma": 2200,
+      "ci_max_ma": 3050,
       "trophic_guild": "Syntrophic Heimdall/Hod/Loki-lineage archaea vs. proto-eukaryotes",
       "key_enzymes_or_loci": "ESCRT-III/VPS4 / Sec61A / FEN1 / PCNA / ThrRS",
       "ecosystem_role": "Origin of actin-scaffolded membrane protrusions and ESP machinery preceding the nucleus",
@@ -557,9 +1273,9 @@
       "clade_name": "LECA Crown Radiation (Discoba/Amoebozoa [D] vs. [E]-[G])",
       "sector_code": "[D]-[G]",
       "fossil_or_biogeo_anchor": "Paleo-Mesoproterozoic Shuiyousphaeridium / LECA crown (Parfrey 2011; Betts 2018)",
-      "target_age_ma": 1950.0,
-      "ci_min_ma": 1650.0,
-      "ci_max_ma": 2250.0,
+      "target_age_ma": 1950,
+      "ci_min_ma": 1650,
+      "ci_max_ma": 2250,
       "trophic_guild": "Compartmentalized heterotrophic & phagocytic eukaryotes",
       "key_enzymes_or_loci": "RAN / RPB2 / H3 / VPS4 / eIF5B / 18S-28S",
       "ecosystem_role": "Establishment of closed nuclear envelope, NPC Ran-GTPase gradient & spliceosome",
@@ -567,41 +1283,63 @@
     },
     {
       "node_id": "Node V",
-      "clade_name": "Discoba & Amoebozoa Crown Divergence ([D] Dictyostelia / Amoebozoa)",
+      "clade_name": "Dictyostelia Crown ([D] Amoebozoa Social Amoebae)",
       "sector_code": "[D]",
-      "fossil_or_biogeo_anchor": "Mesoproterozoic Testate/Amoebozoan radiation",
-      "target_age_ma": 1350.0,
-      "ci_min_ma": 1050.0,
-      "ci_max_ma": 1700.0,
-      "trophic_guild": "Phagocytic social amoebae & flagellate protists",
+      "tip_prefixes": [
+        "D_T025",
+        "D_T026",
+        "D_T027",
+        "D_T028"
+      ],
+      "fossil_or_biogeo_anchor": "Neoproterozoic-Phanerozoic testate & dictyostelid amoebozoan radiation (Parfrey 2011)",
+      "target_age_ma": 720,
+      "ci_min_ma": 540,
+      "ci_max_ma": 1150,
+      "trophic_guild": "Phagocytic soil social amoebae (Dictyostelia)",
       "key_enzymes_or_loci": "EF1A / RPB1 / VMA1 / PCNA / 18S rRNA",
-      "ecosystem_role": "Intragroup diversification across free-living amoeboid and discoban lineages",
+      "ecosystem_role": "Multicellular sorocarp aggregation and phagocytic bacterivory in terrestrial/benthic substrates",
       "sector_idx": 3
     },
     {
       "node_id": "Node VI",
-      "clade_name": "Opisthokonta Crown Radiation ([E] Fungi vs. Holozoa)",
+      "clade_name": "Holomycota / Dikarya Fungi Crown ([E] Ascomycota vs. Basidiomycota)",
       "sector_code": "[E]",
-      "fossil_or_biogeo_anchor": "Proterozoic fungal/holozoan split (Ourasphaira giraldae >=1,000 Ma; Betts 2018)",
-      "target_age_ma": 1350.0,
-      "ci_min_ma": 1050.0,
-      "ci_max_ma": 1650.0,
-      "trophic_guild": "Chitinous absorptive Fungi, unicellular Holozoa & Metazoa",
+      "tip_prefixes": [
+        "E_T033",
+        "E_T034",
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T039"
+      ],
+      "fossil_or_biogeo_anchor": "Proterozoic chitinous fungal microfossils (Ourasphaira giraldae ~890-1,010 Ma; Betts 2018)",
+      "target_age_ma": 980,
+      "ci_min_ma": 650,
+      "ci_max_ma": 1350,
+      "trophic_guild": "Chitinous absorptive Ascomycota & Basidiomycota",
       "key_enzymes_or_loci": "RPB2 / EF1A / eIF5B / FEN1 / RPL2-RPL3",
-      "ecosystem_role": "Divergence of chitinous Fungi and choanoflagellate/metazoan Holozoa",
+      "ecosystem_role": "Closed mitotic nuclear division and osmotrophic biopolymer decomposition across Dikarya",
       "sector_idx": 4
     },
     {
       "node_id": "Node VII",
-      "clade_name": "Archaeplastida Crown ([F] Rhodophyta vs. Viridiplantae)",
+      "clade_name": "Embryophyta Land Plant Crown ([F] Bryophyta vs. Tracheophyta)",
       "sector_code": "[F]",
-      "fossil_or_biogeo_anchor": "Bangiomorpha pubescens min 1,047 Ma & Proterozoic archaeplastid cysts",
-      "target_age_ma": 1420.0,
-      "ci_min_ma": 1047.0,
-      "ci_max_ma": 1750.0,
-      "trophic_guild": "Primary-plastid red algae, green algae & embryophyte land plants",
+      "tip_prefixes": [
+        "F_T050",
+        "F_T051",
+        "F_T052",
+        "F_T053",
+        "F_T054"
+      ],
+      "fossil_or_biogeo_anchor": "Mid-Ordovician cryptospores & early vascular embryophytes (Betts 2018)",
+      "target_age_ma": 485,
+      "ci_min_ma": 450,
+      "ci_max_ma": 560,
+      "trophic_guild": "Terrestrial bryophytes, lycophytes & angiosperms",
       "key_enzymes_or_loci": "RPB2 / RPB1 / EF2 / V-ATPase / 18S-28S",
-      "ecosystem_role": "Primary plastid endosymbiosis radiation across red algae and green plants",
+      "ecosystem_role": "Terrestrialization of primary-plastid Archaeplastida with open plant mitosis",
       "sector_idx": 5
     },
     {
@@ -609,9 +1347,9 @@
       "clade_name": "SAR Supergroup Crown Radiation ([G] Alveolata-Stramenopiles-Rhizaria)",
       "sector_code": "[G]",
       "fossil_or_biogeo_anchor": "Late Mesoproterozoic-Tonian vase-shaped microfossils & stramenopiles",
-      "target_age_ma": 1120.0,
-      "ci_min_ma": 810.0,
-      "ci_max_ma": 1450.0,
+      "target_age_ma": 1120,
+      "ci_min_ma": 810,
+      "ci_max_ma": 1450,
       "trophic_guild": "Binucleate ciliates, silicified diatoms & oomycete heterotrophs",
       "key_enzymes_or_loci": "EF1A / RPB2 / RAD51 / ThrRS / 18S rRNA",
       "ecosystem_role": "Nuclear dimorphism in ciliates and secondary plastid retention across SAR",
@@ -619,94 +1357,424 @@
     }
   ],
   "abba_baba_contrasts": [
-    { "quartet_id": "ABBA-1", "p1_tip": "C_T023", "p2_tip": "E_T033", "p3_tip": "B_T010", "outgroup_tip": "A_T001", "interpretation": "Heimdallarchaeia/Opisthokonta vs. TACK shared archaeal core signature" },
-    { "quartet_id": "ABBA-2", "p1_tip": "C_T018", "p2_tip": "C_T023", "p3_tip": "F_T052", "outgroup_tip": "A_T004", "interpretation": "Heimdallarchaeia vs. Lokiarchaeia proximity to crown Eukaryota" },
-    { "quartet_id": "ABBA-3", "p1_tip": "E_T033", "p2_tip": "E_T044", "p3_tip": "D_T025", "outgroup_tip": "C_T017", "interpretation": "Opisthokonta (Fungi/Metazoa) vs. Amoebozoa/Amorphea LECA backbone sharing" },
-    { "quartet_id": "ABBA-4", "p1_tip": "F_T052", "p2_tip": "G_T055", "p3_tip": "D_T030", "outgroup_tip": "B_T009", "interpretation": "Diaphoretickes (Archaeplastida/SAR) vs. Discoba early-branching sharing" }
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "C_T023",
+      "p2_tip": "E_T033",
+      "p3_tip": "B_T010",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Heimdallarchaeia/Opisthokonta vs. TACK shared archaeal core signature"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "C_T018",
+      "p2_tip": "C_T023",
+      "p3_tip": "F_T052",
+      "outgroup_tip": "A_T004",
+      "interpretation": "Heimdallarchaeia vs. Lokiarchaeia proximity to crown Eukaryota"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "E_T033",
+      "p2_tip": "E_T044",
+      "p3_tip": "D_T025",
+      "outgroup_tip": "C_T017",
+      "interpretation": "Opisthokonta (Fungi/Metazoa) vs. Amoebozoa/Amorphea LECA backbone sharing"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "F_T052",
+      "p2_tip": "G_T055",
+      "p3_tip": "D_T030",
+      "outgroup_tip": "B_T009",
+      "interpretation": "Diaphoretickes (Archaeplastida/SAR) vs. Discoba early-branching sharing"
+    }
   ],
-  "tags": ["RuNIE", "Origin of Nucleus", "Asgardarchaeota", "Heimdallarchaeia", "LECA", "ESCRT-III", "Ran GTPase", "1BYU", "RPB2", "Histone H3"],
-  "genetic_loci_summary": ["RPB2/rpoB", "RPB1/rpoA1", "EF1A/tuf", "EF2/fusA", "VMA1/atpA", "VMA2/atpB", "RAD51/radA", "CCT/Thermosome", "eIF5B/infB", "Sec61A/SecY", "RPL2/uL2", "RPL3/uL3", "RPS3/uS3", "FEN1/RAD27", "PCNA/pol30", "ThrRS/TARS", "16S/18S SSU", "23S/28S LSU", "VPS4", "H3", "RAN/GSP1"],
+  "tags": [
+    "RuNIE",
+    "Origin of Nucleus",
+    "Asgardarchaeota",
+    "Heimdallarchaeia",
+    "LECA",
+    "ESCRT-III",
+    "Ran GTPase",
+    "1BYU",
+    "RPB2",
+    "Histone H3"
+  ],
+  "genetic_loci_summary": [
+    "RPB2/rpoB",
+    "RPB1/rpoA1",
+    "EF1A/tuf",
+    "EF2/fusA",
+    "VMA1/atpA",
+    "VMA2/atpB",
+    "RAD51/radA",
+    "CCT/Thermosome",
+    "eIF5B/infB",
+    "Sec61A/SecY",
+    "RPL2/uL2",
+    "RPL3/uL3",
+    "RPS3/uS3",
+    "FEN1/RAD27",
+    "PCNA/pol30",
+    "ThrRS/TARS",
+    "16S/18S SSU",
+    "23S/28S LSU",
+    "VPS4",
+    "H3",
+    "RAN/GSP1"
+  ],
   "references": [
-    { "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs / Zenodo. DOI: 10.5281/zenodo.23969275", "url": "https://doi.org/10.5281/zenodo.23969275" },
-    { "text": "Zaremba-Niedzwiedzka, K., Caceres, E. F., Saw, J. H., et al. (2017). Asgard archaea illuminate the origin of eukaryotic cellular complexity. Nature, 541(7637), 353-358. DOI: 10.1038/nature21031", "url": "https://doi.org/10.1038/nature21031" },
-    { "text": "Spang, A., Saw, J. H., Jorgensen, S. L., et al. (2015). Complex archaea that bridge the gap between prokaryotes and eukaryotes. Nature, 521(7551), 173-179. DOI: 10.1038/nature14447", "url": "https://doi.org/10.1038/nature14447" },
-    { "text": "Eme, L., Tamarit, D., Caceres, E. F., et al. (2023). Inference and reconstruction of the heimdallarchaeial ancestry of eukaryotes. Nature, 618(7967), 992-999. DOI: 10.1038/s41586-023-06186-2", "url": "https://doi.org/10.1038/s41586-023-06186-2" },
-    { "text": "Imachi, H., Nobu, M. K., Nakahara, N., et al. (2020). Isolation of an archaeon at the prokaryote-eukaryote interface. Nature, 577(7791), 519-525. DOI: 10.1038/s41586-019-1916-6", "url": "https://doi.org/10.1038/s41586-019-1916-6" },
-    { "text": "Rodrigues-Oliveira, T., Wollweber, F., Ponce-Toledo, R. I., et al. (2023). Actin cytoskeleton and complex cell architecture in an Asgard archaeon. Nature, 613(7943), 332-339. DOI: 10.1038/s41586-022-05550-y", "url": "https://doi.org/10.1038/s41586-022-05550-y" },
-    { "text": "Martin, W., & Koonin, E. V. (2006). Introns and the origin of nucleus-cytosol compartmentalization. Nature, 440(7080), 41-45. DOI: 10.1038/nature04531", "url": "https://doi.org/10.1038/nature04531" },
-    { "text": "Devos, D., Dokudovskaya, S., Alber, F., et al. (2004). Components of coated vesicles and nuclear pore complexes share a common molecular architecture. PLoS Biology, 2(12), e380. DOI: 10.1371/journal.pbio.0020380", "url": "https://doi.org/10.1371/journal.pbio.0020380" },
-    { "text": "Mans, B. J., Anantharaman, V., Aravind, L., & Koonin, E. V. (2004). Comparative genomics, evolution and origins of the nuclear envelope and nuclear pore complex. Cell Cycle, 3(12), 1612-1637. DOI: 10.4161/cc.3.12.1316", "url": "https://doi.org/10.4161/cc.3.12.1316" },
-    { "text": "Baum, D. A., & Baum, B. (2014). An inside-out origin for the eukaryotic cell. BMC Biology, 12, 76. DOI: 10.1186/s12915-014-0076-2", "url": "https://doi.org/10.1186/s12915-014-0076-2" },
-    { "text": "Scheffzek, K., Klebe, C., Fritz-Wolf, K., Kabsch, W., & Wittinghofer, A. (1995). Crystal structure of the nuclear Ras-related protein Ran in its GDP-bound form. Nature, 374(6520), 378-381. DOI: 10.1038/374378a0", "url": "https://doi.org/10.1038/374378a0" },
-    { "text": "Betts, H. C., Puttick, M. N., Clark, J. W., et al. (2018). Integrated genomic and fossil evidence illuminates life's early evolution and eukaryote origin. Nature Ecology & Evolution, 2(10), 1556-1562. DOI: 10.1038/s41559-018-0644-x", "url": "https://doi.org/10.1038/s41559-018-0644-x" },
-    { "text": "Moody, E. R. R., Alvarez-Carretero, S., Mahendrarajah, T. A., et al. (2024). The nature of the last universal common ancestor and its impact on the early Earth system. Nature Ecology & Evolution, 8, 1654-1666. DOI: 10.1038/s41559-024-02461-1", "url": "https://doi.org/10.1038/s41559-024-02461-1" },
-    { "text": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589. DOI: 10.1038/nmeth.4285", "url": "https://doi.org/10.1038/nmeth.4285" },
-    { "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., et al. (2020). IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530-1534. DOI: 10.1093/molbev/msaa015", "url": "https://doi.org/10.1093/molbev/msaa015" },
-    { "text": "To, T. H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068", "url": "https://doi.org/10.1093/sysbio/syv068" },
-    { "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(1), 153. DOI: 10.1186/s12859-018-2129-y", "url": "https://doi.org/10.1186/s12859-018-2129-y" },
-    { "text": "Yang, Z. (2007). PAML 4: phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088", "url": "https://doi.org/10.1093/molbev/msm088" },
-    { "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239-2252. DOI: 10.1093/molbev/msr048", "url": "https://doi.org/10.1093/molbev/msr048" },
-    { "text": "Vetter, I. R., Nowak, C., Nishimoto, T., Kuhlmann, J., & Wittinghofer, A. (1999). Structure of a Ran-binding domain complexed with Ran bound to a GTP analogue. Nature, 398(6722), 39-46. DOI: 10.1038/17969", "url": "https://doi.org/10.1038/17969" },
-    { "text": "Henneman, B., van Emmerik, C., van Ingen, H., & Dame, R. T. (2018). Structure and function of archaeal histones. PLoS Genetics, 14(9), e1007582. DOI: 10.1371/journal.pgen.1007582", "url": "https://doi.org/10.1371/journal.pgen.1007582" },
-    { "text": "Wollweber, F., Xu, J., Ponce-Toledo, R. I., et al. (2025). Microtubules in Asgard archaea and evolution of eukaryotic cytoskeleton. Cell, 188(9), 2451-2464. DOI: 10.1016/j.cell.2025.02.027", "url": "https://doi.org/10.1016/j.cell.2025.02.027" }
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Zaremba-Niedzwiedzka, K., Caceres, E. F., Saw, J. H., et al. (2017). Asgard archaea illuminate the origin of eukaryotic cellular complexity. Nature, 541(7637), 353-358. DOI: 10.1038/nature21031",
+      "url": "https://doi.org/10.1038/nature21031"
+    },
+    {
+      "text": "Spang, A., Saw, J. H., Jorgensen, S. L., et al. (2015). Complex archaea that bridge the gap between prokaryotes and eukaryotes. Nature, 521(7551), 173-179. DOI: 10.1038/nature14447",
+      "url": "https://doi.org/10.1038/nature14447"
+    },
+    {
+      "text": "Eme, L., Tamarit, D., Caceres, E. F., et al. (2023). Inference and reconstruction of the heimdallarchaeial ancestry of eukaryotes. Nature, 618(7967), 992-999. DOI: 10.1038/s41586-023-06186-2",
+      "url": "https://doi.org/10.1038/s41586-023-06186-2"
+    },
+    {
+      "text": "Imachi, H., Nobu, M. K., Nakahara, N., et al. (2020). Isolation of an archaeon at the prokaryote-eukaryote interface. Nature, 577(7791), 519-525. DOI: 10.1038/s41586-019-1916-6",
+      "url": "https://doi.org/10.1038/s41586-019-1916-6"
+    },
+    {
+      "text": "Rodrigues-Oliveira, T., Wollweber, F., Ponce-Toledo, R. I., et al. (2023). Actin cytoskeleton and complex cell architecture in an Asgard archaeon. Nature, 613(7943), 332-339. DOI: 10.1038/s41586-022-05550-y",
+      "url": "https://doi.org/10.1038/s41586-022-05550-y"
+    },
+    {
+      "text": "Martin, W., & Koonin, E. V. (2006). Introns and the origin of nucleus-cytosol compartmentalization. Nature, 440(7080), 41-45. DOI: 10.1038/nature04531",
+      "url": "https://doi.org/10.1038/nature04531"
+    },
+    {
+      "text": "Devos, D., Dokudovskaya, S., Alber, F., et al. (2004). Components of coated vesicles and nuclear pore complexes share a common molecular architecture. PLoS Biology, 2(12), e380. DOI: 10.1371/journal.pbio.0020380",
+      "url": "https://doi.org/10.1371/journal.pbio.0020380"
+    },
+    {
+      "text": "Mans, B. J., Anantharaman, V., Aravind, L., & Koonin, E. V. (2004). Comparative genomics, evolution and origins of the nuclear envelope and nuclear pore complex. Cell Cycle, 3(12), 1612-1637. DOI: 10.4161/cc.3.12.1316",
+      "url": "https://doi.org/10.4161/cc.3.12.1316"
+    },
+    {
+      "text": "Baum, D. A., & Baum, B. (2014). An inside-out origin for the eukaryotic cell. BMC Biology, 12, 76. DOI: 10.1186/s12915-014-0076-2",
+      "url": "https://doi.org/10.1186/s12915-014-0076-2"
+    },
+    {
+      "text": "Scheffzek, K., Klebe, C., Fritz-Wolf, K., Kabsch, W., & Wittinghofer, A. (1995). Crystal structure of the nuclear Ras-related protein Ran in its GDP-bound form. Nature, 374(6520), 378-381. DOI: 10.1038/374378a0",
+      "url": "https://doi.org/10.1038/374378a0"
+    },
+    {
+      "text": "Betts, H. C., Puttick, M. N., Clark, J. W., et al. (2018). Integrated genomic and fossil evidence illuminates life's early evolution and eukaryote origin. Nature Ecology & Evolution, 2(10), 1556-1562. DOI: 10.1038/s41559-018-0644-x",
+      "url": "https://doi.org/10.1038/s41559-018-0644-x"
+    },
+    {
+      "text": "Moody, E. R. R., Alvarez-Carretero, S., Mahendrarajah, T. A., et al. (2024). The nature of the last universal common ancestor and its impact on the early Earth system. Nature Ecology & Evolution, 8, 1654-1666. DOI: 10.1038/s41559-024-02461-1",
+      "url": "https://doi.org/10.1038/s41559-024-02461-1"
+    },
+    {
+      "text": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589. DOI: 10.1038/nmeth.4285",
+      "url": "https://doi.org/10.1038/nmeth.4285"
+    },
+    {
+      "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., et al. (2020). IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530-1534. DOI: 10.1093/molbev/msaa015",
+      "url": "https://doi.org/10.1093/molbev/msaa015"
+    },
+    {
+      "text": "To, T. H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068",
+      "url": "https://doi.org/10.1093/sysbio/syv068"
+    },
+    {
+      "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(1), 153. DOI: 10.1186/s12859-018-2129-y",
+      "url": "https://doi.org/10.1186/s12859-018-2129-y"
+    },
+    {
+      "text": "Yang, Z. (2007). PAML 4: phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088",
+      "url": "https://doi.org/10.1093/molbev/msm088"
+    },
+    {
+      "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239-2252. DOI: 10.1093/molbev/msr048",
+      "url": "https://doi.org/10.1093/molbev/msr048"
+    },
+    {
+      "text": "Vetter, I. R., Nowak, C., Nishimoto, T., Kuhlmann, J., & Wittinghofer, A. (1999). Structure of a Ran-binding domain complexed with Ran bound to a GTP analogue. Nature, 398(6722), 39-46. DOI: 10.1038/17969",
+      "url": "https://doi.org/10.1038/17969"
+    },
+    {
+      "text": "Henneman, B., van Emmerik, C., van Ingen, H., & Dame, R. T. (2018). Structure and function of archaeal histones. PLoS Genetics, 14(9), e1007582. DOI: 10.1371/journal.pgen.1007582",
+      "url": "https://doi.org/10.1371/journal.pgen.1007582"
+    },
+    {
+      "text": "Wollweber, F., Xu, J., Ponce-Toledo, R. I., et al. (2025). Microtubules in Asgard archaea and evolution of eukaryotic cytoskeleton. Cell, 188(9), 2451-2464. DOI: 10.1016/j.cell.2025.02.027",
+      "url": "https://doi.org/10.1016/j.cell.2025.02.027"
+    },
+    {
+      "text": "Williams, T. A., Cox, C. J., Foster, P. G., Szollosi, G. J., & Embley, T. M. (2019). Phylogenomics provides robust support for a two-domains tree of life. Nature Ecology & Evolution, 4, 138-147. DOI: 10.1038/s41559-019-1040-x",
+      "url": "https://doi.org/10.1038/s41559-019-1040-x"
+    },
+    {
+      "text": "Parfrey, L. W., Lahr, D. J. G., Knoll, A. H., & Katz, L. A. (2011). Estimating the timing of early eukaryotic diversification with multigene molecular clocks. Proceedings of the National Academy of Sciences USA, 108(33), 13624-13629. DOI: 10.1073/pnas.1110633108",
+      "url": "https://doi.org/10.1073/pnas.1110633108"
+    },
+    {
+      "text": "Javaux, E. J., Knoll, A. H., & Walter, M. R. (2001). Morphological and ecological complexity in early eukaryotic ecosystems. Nature, 412(6842), 66-69. DOI: 10.1038/35083562",
+      "url": "https://doi.org/10.1038/35083562"
+    },
+    {
+      "text": "Gibson, T. M., Shih, P. M., Cumming, V. M., Fischer, W. W., Crockford, P. W., Hodgskiss, M. S. W., et al. (2017). Precise age of Bangiomorpha pubescens dates the origin of eukaryotic photosynthesis. Geology, 46(2), 135-138. DOI: 10.1130/g39829.1",
+      "url": "https://doi.org/10.1130/g39829.1"
+    },
+    {
+      "text": "Lyons, T. W., Reinhard, C. T., & Planavsky, N. J. (2014). The rise of oxygen in Earth's early ocean and atmosphere. Nature, 506(7488), 307-315. DOI: 10.1038/nature13068",
+      "url": "https://doi.org/10.1038/nature13068"
+    }
   ],
   "figure_theme": {
-    "sec_crown_ages": [1820.0, 1650.0, 1480.0, 1320.0, 1120.0, 860.0, 1020.0],
-    "backbone_node_ages": [1460.0, 1750.0, 2050.0, 2440.0, 2940.0, 3520.0],
-    "fig1_max_ma": 3900.0,
-    "fig1_eras": [
-      ["Paleo-Mesoarchean", 3900.0, 2800.0, "#f1f5f9"],
-      ["Neoarchean", 2800.0, 2500.0, "#f8fafc"],
-      ["Paleoprot.", 2500.0, 1600.0, "#f1f5f9"],
-      ["Mesoprot.", 1600.0, 1000.0, "#f8fafc"],
-      ["Neo-Phanerozoic", 1000.0, 0.0, "#f1f5f9"]
+    "sec_crown_ages": [
+      1820,
+      1650,
+      1480,
+      1320,
+      1120,
+      860,
+      1020
     ],
-    "fig1_ticks": [3800, 3200, 2600, 2000, 1400, 800, 0],
-    "fig1_node_y_slots": [4.5, 12.0, 20.0, 28.0, 31.0, 38.5, 49.0, 58.5],
+    "backbone_node_ages": [
+      1460,
+      1750,
+      2050,
+      2440,
+      2940,
+      3520
+    ],
+    "fig1_max_ma": 3900,
+    "fig1_eras": [
+      [
+        "Paleo-Mesoarchean",
+        3900,
+        2800,
+        "#f1f5f9"
+      ],
+      [
+        "Neoarchean",
+        2800,
+        2500,
+        "#f8fafc"
+      ],
+      [
+        "Paleoprot.",
+        2500,
+        1600,
+        "#f1f5f9"
+      ],
+      [
+        "Mesoprot.",
+        1600,
+        1000,
+        "#f8fafc"
+      ],
+      [
+        "Neo-Phanerozoic",
+        1000,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      3800,
+      3200,
+      2600,
+      2000,
+      1400,
+      800,
+      0
+    ],
+    "fig1_node_y_slots": [
+      4.5,
+      12,
+      20,
+      28,
+      31,
+      38.5,
+      49,
+      58.5
+    ],
     "fig1_clade_cards": [
-      ["[A]", 0, 7, "Euryarchaeota Outgroups (n=8)", "Haloferax volcanii, Methanosarcina mazei, Methanococcus, Archaeoglobus", "Rooted archaeal outgroups encoding archaeal RNAP, EF1A & thermosome complexes"],
-      ["[B]", 8, 15, "TACK Proteoarchaeota (n=8)", "Saccharolobus solfataricus, Sulfolobus, Pyrobaculum, Nitrosopumilus, Korarchaeum", "Hyperthermophilic/ammonia-oxidizing TACK sister clade carrying Cdv/ESCRT & histones"],
-      ["[C]", 16, 23, "Asgardarchaeota Stem (n=8)", "Promethearchaeum syntrophicum, Lokiarchaeum, Flexarchaeum, Heimdallarchaeum, Odinarchaeum", "Syntrophic prokaryotic-eukaryotic interface encoding ESCRT-III, VPS4 & eukaryotic-like ESPs"],
-      ["[D]", 24, 31, "Discoba & Amoebozoa (n=8)", "Dictyostelium discoideum, Acanthamoeba castellanii, Naegleria gruberi, Euglena gracilis", "Early-branching phagocytic & amoeboid LECA lineages with complete NPCs & chromatin"],
-      ["[E]", 32, 43, "Opisthokonta Crown (n=12)", "Saccharomyces cerevisiae, Neurospora, Salpingoeca rosetta, Hydra vulgaris, Danio rerio", "Fungi, unicellular Holozoa & Metazoa diversifying closed-to-open mitotic Ran gradients"],
-      ["[F]", 44, 53, "Archaeplastida Crown (n=10)", "Cyanidioschyzon, Chondrus, Physcomitrium patens, Arabidopsis thaliana, Oryza sativa, Zea mays", "Primary plastid-bearing red algae, mosses & land plants with nuclear chromatin compartmentalization"],
-      ["[G]", 54, 63, "SAR Supergroup (n=10)", "Perkinsus marinus, Phaeodactylum, Thalassiosira, Phytophthora infestans, Saprolegnia, Bigelowiella", "Alveolate protists, silica diatoms, oomycetes & rhizarian chlorarachniophytes"]
+      [
+        "[A]",
+        0,
+        7,
+        "Euryarchaeota Outgroups (n=8)",
+        "Haloferax volcanii, Methanosarcina mazei, Methanococcus, Archaeoglobus",
+        "Rooted archaeal outgroups encoding archaeal RNAP, EF1A & thermosome complexes"
+      ],
+      [
+        "[B]",
+        8,
+        15,
+        "TACK Proteoarchaeota (n=8)",
+        "Saccharolobus solfataricus, Sulfolobus, Pyrobaculum, Nitrosopumilus, Korarchaeum",
+        "Hyperthermophilic/ammonia-oxidizing TACK sister clade carrying Cdv/ESCRT & histones"
+      ],
+      [
+        "[C]",
+        16,
+        23,
+        "Asgardarchaeota Stem (n=8)",
+        "Promethearchaeum syntrophicum, Lokiarchaeum, Flexarchaeum, Heimdallarchaeum, Odinarchaeum",
+        "Syntrophic prokaryotic-eukaryotic interface encoding ESCRT-III, VPS4 & eukaryotic-like ESPs"
+      ],
+      [
+        "[D]",
+        24,
+        31,
+        "Discoba & Amoebozoa (n=8)",
+        "Dictyostelium discoideum, Acanthamoeba castellanii, Naegleria gruberi, Euglena gracilis",
+        "Early-branching phagocytic & amoeboid LECA lineages with complete NPCs & chromatin"
+      ],
+      [
+        "[E]",
+        32,
+        43,
+        "Opisthokonta Crown (n=12)",
+        "Saccharomyces cerevisiae, Neurospora, Salpingoeca rosetta, Hydra vulgaris, Danio rerio",
+        "Fungi, unicellular Holozoa & Metazoa diversifying closed-to-open mitotic Ran gradients"
+      ],
+      [
+        "[F]",
+        44,
+        53,
+        "Archaeplastida Crown (n=10)",
+        "Cyanidioschyzon, Chondrus, Physcomitrium patens, Arabidopsis thaliana, Oryza sativa, Zea mays",
+        "Primary plastid-bearing red algae, mosses & land plants with nuclear chromatin compartmentalization"
+      ],
+      [
+        "[G]",
+        54,
+        63,
+        "SAR Supergroup (n=10)",
+        "Perkinsus marinus, Phaeodactylum, Thalassiosira, Phytophthora infestans, Saprolegnia, Bigelowiella",
+        "Alveolate protists, silica diatoms, oomycetes & rhizarian chlorarachniophytes"
+      ]
     ],
     "fig1_web_svg": "euk-nucleus-fig1-vertical-chronogram.svg",
     "fig1_title": "Archean-to-Neoproterozoic Calibrated Chronogram Across Asgardarchaeota and Crown Eukaryota (Nodes I-VIII)",
     "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) across dynamically coverage-gated Euryarchaeota [A], TACK [B], Asgardarchaeota [C], and eukaryotic supergroups ([D]-[G]) uniting 18 universal translational, transcriptional, replication, and translocation loci.",
     "fig2_sec_ranges": [
-      ["[A]", 0, 7, "Euryarchaeota Outgroups (n=8)", ""],
-      ["[B]", 8, 15, "TACK Archaea (n=8)", ""],
-      ["[C]", 16, 23, "Asgardarchaeota Stem (n=8)", "5,3"],
-      ["[D]", 24, 31, "Discoba & Amoebozoa (n=8)", ""],
-      ["[E]", 32, 43, "Opisthokonta Crown (n=12)", "8,4"],
-      ["[F]", 44, 53, "Archaeplastida Crown (n=10)", "5,3"],
-      ["[G]", 54, 63, "SAR Supergroup (n=10)", ""]
+      [
+        "[A]",
+        0,
+        7,
+        "Euryarchaeota Outgroups (n=8)",
+        ""
+      ],
+      [
+        "[B]",
+        8,
+        15,
+        "TACK Archaea (n=8)",
+        ""
+      ],
+      [
+        "[C]",
+        16,
+        23,
+        "Asgardarchaeota Stem (n=8)",
+        "5,3"
+      ],
+      [
+        "[D]",
+        24,
+        31,
+        "Discoba & Amoebozoa (n=8)",
+        ""
+      ],
+      [
+        "[E]",
+        32,
+        43,
+        "Opisthokonta Crown (n=12)",
+        "8,4"
+      ],
+      [
+        "[F]",
+        44,
+        53,
+        "Archaeplastida Crown (n=10)",
+        "5,3"
+      ],
+      [
+        "[G]",
+        54,
+        63,
+        "SAR Supergroup (n=10)",
+        ""
+      ]
     ],
     "fig2_web_svg": "euk-nucleus-fig2-circular-phylogram.svg",
     "fig2_title": "Circular Patristic Phylogram Across Asgardarchaeota, TACK Archaea, and Eukaryotic Supergroups",
     "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked proportional partitioned ModelTest (RY3) displaying Euryarchaeota outgroups [A], TACK [B], Asgardarchaeota [C], and LECA crown clades [D]-[G].",
     "fig3_sec_tip_anchors": [
-      ["Node I", "A:T001", 0],
-      ["Node II", "B:T010", 1],
-      ["Node III", "C:T023", 2],
-      ["Node IV", "D:T025", 3],
-      ["Node V", "D:T025", 4],
-      ["Node VI", "E:T033", 5],
-      ["Node VII", "F:T052", 6],
-      ["Node VIII", "G:T055", 7]
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T010",
+        1
+      ],
+      [
+        "Node III",
+        "C:T023",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T025",
+        3
+      ],
+      [
+        "Node V",
+        "D:T025",
+        4
+      ],
+      [
+        "Node VI",
+        "E:T033",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T052",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T055",
+        7
+      ]
     ],
-    "fig3_abba_arc_tips": ["C:T023", "E:T033"],
+    "fig3_abba_arc_tips": [
+      "C:T023",
+      "E:T033"
+    ],
     "fig3_web_svg": "euk-nucleus-fig3-quartet-coalescent-species-tree.svg",
     "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree & Deep-Signal Contrasts Across Archaea and Eukarya",
     "fig3_caption": "Complete 64-species bifurcating multi-locus quartet coalescent species tree across universal coding and SSU/LSU rRNA loci with CU branch lengths and Patterson's D asymmetry tests.",
     "fig4a_web_svg": "euk-nucleus-fig4a-regional-skyline-matrix.svg",
-    "fig4a_title": "Single-Species Nuclear EF1A/ACT1 & Archaeal 16S Coalescent Skyline Matrix (Cohorts R1-R6)",
-    "fig4a_caption": "Six single-species Bayesian coalescent skylines (25,000 MCMC generations) across Saccharomyces cerevisiae, Oryza sativa, Drosophila melanogaster, Danio rerio, Haloferax volcanii, and Chlamydomonas reinhardtii.",
+    "fig4a_title": "Single-Species Nuclear EF1A & Archaeal/Algal SSU rRNA Coalescent Skyline Matrix (Cohorts R1-R6)",
+    "fig4a_caption": "Six single-species Bayesian coalescent skylines (25,000 MCMC generations) across Cryptococcus neoformans (TEF1), Fusarium oxysporum (TEF1), Giardia intestinalis (ef1a), Danio rerio (eef1a1l1), Haloferax volcanii (16S rRNA), and Chlamydomonas reinhardtii (18S rRNA).",
     "fig4b_web_svg": "euk-nucleus-fig4b-multilocus-skyline-matrix.svg",
-    "fig4b_title": "Eukaryotic Multi-Locus Contrast: Coding RNAP II RPB2 vs. Slow-Clock 18S rRNA (Cohorts L1-L6)",
-    "fig4b_caption": "Six single-species skylines contrasting protein-coding RNA polymerase II RPB2 (L1, L3) and cytoskeletal/elongation loci (L6) against structurally buffered Katoh E-INS-i 18S rRNA helices (L2, L4, L5).",
+    "fig4b_title": "Eukaryotic Multi-Locus Contrast: Coding RNAP II RPB2 & ACT1 vs. Slow-Clock 18S rRNA (Cohorts L1-L6)",
+    "fig4b_caption": "Six single-species skylines contrasting protein-coding RNA polymerase II RPB2 (Fusarium oxysporum L1, Cryptococcus neoformans L3) and cytoskeletal actin ACT1 (Saccharomyces cerevisiae L6) against structurally buffered Katoh E-INS-i nuclear 18S rRNA helices (S. cerevisiae L2, Oryza sativa L4, Paramecium tetraurelia L5).",
     "fig5_short_fam_titles": [
       "ESCRT-III AAA+ ATPase Switch (VPS4)",
       "Nucleosomal Core Histone H3 (HHT1)",
@@ -754,11 +1822,36 @@
     "abstract_context": "Understanding how the eukaryotic nucleus emerged from archaeal ancestors requires resolving deep archaeal-eukaryotic relationships alongside the evolutionary conservation of nuclear transport, chromatin, and membrane-remodeling machinery.",
     "executive_summary_lead": "traces the origin of the eukaryotic nucleus from Asgardarchaeota to crown eukaryotes",
     "discussion_paragraphs": [
-      "Integrating 18 universal transcriptional (RPB1, RPB2), translational (EF1A, EF2, eIF5B, uL2/RPL2, uL3/RPL3, uS3/RPS3, ThrRS, SSU/LSU rRNA), replication and repair (RAD51/radA, FEN1, PCNA), translocation (Sec61A/SecY), ATPase (VMA1, VMA2), and chaperonin (CCT/thermosome) orthologs under per-locus BIC ModelTest with third-codon RY3 recoding reduces cross-domain GC and thermophilic compositional heterogeneity between extremophilic archaea and eukaryotic supergroups by 83.6%. Within the partitioned supermatrix phylogeny, Asgardarchaeota forms the sister clade to crown Eukaryota at 100% UFBoot2 support, with dynamic >=65% coverage gating retaining 52 species across all seven taxonomic sectors and eliminating internal chronogram inversions and polytomies; 18-locus Quartet MSC further reconciles all 64 taxa to recover strictly monophyletic Opisthokonta (12/12 species) while highlighting genuine concatenation-vs-coalescent discordance around deep Amorphea branching.",
-      "Comparative structural and selection analyses across VPS4, Histone H3, RNAP II RPB2, and Ran GTPase are consistent with a stepwise model of nuclear compartmentalization rather than an abrupt single innovation. Pre-existing archaeal endomembrane-remodeling VPS4/ESCRT-III ATPases, basic DNA-packaging proteins, and multisubunit RNAP complexes provided the molecular chassis upon which eukaryotic chromatin remodeling, spliceosomal intron shielding, and Ran-GDP/GTP gated nuclear pore transport (1BYU) became entrenched prior to the radiation of Discoba, Amoebozoa, Opisthokonta, Archaeplastida, and SAR.",
-      "Because this purely dry-lab phylogenomic and structural synthesis relies on public NCBI RefSeq/GenBank and RCSB PDB records audited through Dual-Pass Blinded checks and Quartet MSC reconciliation, Paleoproterozoic-to-Mesoproterozoic node age bounds remain conditional on deep substitution saturation across Archean archaeal branches and taxon availability among uncultivated Asgardarchaeota lineages."
+      "**Two-Domain Phylogenomics and Cross-Domain Compositional Bias.** Reconstructing relationships across Archaea and Eukaryota requires disentangling genuine phylogenetic signal from convergent nucleotide and amino-acid composition driven by thermal adaptation and genomic GC drift [4, 23]. Across our 64-taxon dataset, edge-linked per-locus rate partitioning [14, 15] combined with third-codon purine–pyrimidine recoding eliminated 83.6% of cross-domain compositional heterogeneity (reducing RCFV from 0.1440 unrecoded and 0.1558 unfiltered to 0.0236) and yielded a +8,013.3 log-likelihood improvement over unpartitioned concatenation [1]. Under both partitioned maximum likelihood and 18-locus quartet coalescent reconciliation (Q = 0.73, mean local posterior probability = 0.81) [17], Asgardarchaeota is recovered as the monophyletic sister lineage to crown Eukaryota nested alongside TACK Proteoarchaeota relative to Euryarchaeota outgroups, corroborating two-domain eocyte and Asgard topologies over classical three-domain rooting [2–4, 23]. Quartet concordance and four-taxon Patterson's *D* contrasts [19] further indicate that while core eukaryotic clades such as Opisthokonta, Embryophyta, Dictyostelia, and SAR are robustly supported, deep internodes separating Discoba, Amoebozoa, Obazoa, and Diaphoretickes retain substantial gene-tree conflict consistent with rapid Paleoproterozoic diversification and ancestral incomplete lineage sorting [4, 24].",
+      "**Geological Context of the FECA-to-LECA Stem Interval.** Our relaxed-clock chronology [16] places the divergence between Asgardarchaeota and the First Eukaryotic Common Ancestor (FECA) stem in the Neoarchean at 2.93 Ga (95% HPD: 2.57–3.20 Ga) and the crown radiation of extant eukaryotic supergroups (LECA) in the Paleoproterozoic at 1.85 Ga (95% HPD: 1.59–2.11 Ga), followed by Mesoproterozoic–Phanerozoic diversification across major clades including SAR (1.40 Ga), Dikarya Fungi (1.35 Ga), Dictyostelia (1.10 Ga), and Embryophyta (0.56 Ga) [12, 13, 24]. These intervals align closely with multigene molecular-clock syntheses placing LECA between ~1.9 and 1.6 Ga [12, 24] and predating diagnostic Mesoproterozoic eukaryotic microfossils, including ornamented organic-walled acritarchs (*Shuiyousphaeridium*, *Tappania*) at ~1.65–1.45 Ga [25] and multicellular red algae (*Bangiomorpha pubescens*) dated to 1.047 Ga [26]. Crucially, the ~1.08-billion-year stem separating FECA from LECA spans Earth's Paleoproterozoic Great Oxidation Event (~2.43–2.22 Ga) [27]. As rising surface oxygenation restructured marine and benthic redox gradients [27], syntrophic metabolic consortia between anaerobic, H<sub>2</sub>-evolving Asgard archaea—analogous to cultured *Promethearchaeum syntrophicum* [5]—and facultatively aerobic alphaproteobacteria would have experienced strong ecological pressure for intimate membrane contact, metabolic channeling, and eventual mitochondrial endosymbiosis [4, 5, 10].",
+      "**Stepwise Assembly of the Nuclear Envelope, Chromatin, and Ran-Gated Transport.** Codon substitution models [18] and structural homology threading across VPS4, Histone H3, RPB2, and RAN support a modular, stepwise assembly of the nuclear compartment rather than a single saltational invention [8–10]. Prokaryotic precursors for three of these systems already existed in Asgard and TACK archaea: Cdv/ESCRT-III polymers coupled to VPS4 AAA+ ATPases mediated membrane scission and extracellular protrusion dynamics [2, 6]; minimal archaeal histones wrapped DNA into hypernucleosomal arrays lacking extended epigenetic tails [21]; and multisubunit archaeal RNA polymerases shared homologous catalytic clefts with eukaryotic RNAP I–III [9]. Under either endomembrane-invagination models—in which COPII/NPC-like β-propeller/α-solenoid protocoatomers curved internal endomembranes around chromatin [8, 9]—or \"inside-out\" models—in which expanding extracellular archaeal blebs engulfed ectosymbiotic mitochondria and fused via ESCRT-III/VPS4 scission [5, 6, 10]—the proliferation of alphaproteobacterial group II introns into host genomes would have imposed acute selection for a physical barrier preventing ribosomes from translating unspliced transcripts [7].",
+      "**Frozen Functional Constraint Prior to Crown Radiation.** Once established in LECA, the molecular machinery of nuclear compartmentalization became locked under stringent purifying selection across all extant eukaryotic supergroups [9, 18]. Notably, core nucleosomal Histone H3 (M0 dN/dS = 0.031; 97.0% of sites at ω<sub>0</sub> = 0.019) [21] and the Ran transport GTPase (M0 dN/dS = 0.031; 93.6% of sites at ω<sub>0</sub> = 0.019) [11, 20] exhibit even tighter evolutionary constraint than the catalytic cleft of RNAP II RPB2 (dN/dS = 0.085) or the VPS4 disassembly ATPase (dN/dS = 0.101), with zero positively selected active-site codons across any of the four families. Structural superposition of eukaryotic RAN orthologs onto the 2.15 Å GDP-bound crystal structure (PDB 1BYU; TM-score = 0.978, Cα RMSD = 0.94 Å) [11] confirms complete invariance of the Walker A phosphate-binding P-loop (GDGGTGKT), the Switch II catalytic glutamine motif (DTAGQE), the NKVD guanine-recognition pocket, and the 2.32 Å octahedral Thr24 Oγ1–Mg<sup>2+</sup> coordination bond [11, 20]. Because a single Ran-GTPase switch simultaneously governs karyopherin cargo import/export during interphase and spindle assembly and nuclear-envelope reassembly after mitosis, compensatory drift within its nucleotide-binding pocket is strongly deleterious [9, 20].",
+      "**Intraspecific Baselines and Study Limitations.** Pairing deep phylogenomic inference with single-species coalescent analyses across representative archaeal and eukaryotic lineages illustrates how structural conservation at universal ribosomal, polymerase, and elongation-factor loci persists across broad variation in effective population size, ploidy, and reproductive mode [1]. Several limitations nevertheless bound these conclusions. First, our supermatrix focuses on 18 universal informational and core cellular markers to maintain cross-domain orthology, whereas finer resolution of the exact sister lineage within Heimdallarchaeia or Hodarchaeales benefits from broader sampling of Asgard-enriched accessory proteomes and uncultivated deep-sediment metagenomes [4, 6, 22]. Second, Archean and Paleoproterozoic relaxed-clock intervals remain inherently sensitive to deep branch-length saturation and the placement of maximum paleobiological calibration bounds [12, 13, 16]. Finally, static homology threading onto monomeric Ran-GDP (1BYU) captures active-site conservation [11] but does not directly model macromolecular conformational transitions across intact ~100 MDa Nuclear Pore Complexes or RanBP1/RCC1 co-complexes [8, 20]."
     ],
     "latex_intro": "Origin of the eukaryotic nucleus traced across Euryarchaeota, TACK Archaea, Asgardarchaeota, and four major eukaryotic supergroups via universal informational markers, VPS4/H3/RPB2/RAN codon selection, and 1BYU Ran-GDP structural threading.",
-    "seed_base": 20261152
+    "seed_base": 20261152,
+    "abstract_override": "The emergence of the membrane-bound nucleus—separating spliceosomal pre-mRNA processing and histone-packaged chromosomes from cytoplasmic translation—marks the foundational cellular transition from archaea to the Last Eukaryotic Common Ancestor (LECA). Although comparative genomics implicates Asgardarchaeota as the closest prokaryotic relatives of eukaryotes, extreme GC and thermophilic composition biases across billion-year branches continue to challenge deep archaeal–eukaryotic topology and divergence timing. Here, we analyze an 18-locus universal informational and core cellular supermatrix (26,387 aligned base pairs) across 64 archaeal and eukaryotic species spanning Euryarchaeota, TACK Proteoarchaeota, Asgardarchaeota, Discoba, Amoebozoa, Opisthokonta, Archaeplastida, and SAR, integrating per-locus model selection, third-codon purine–pyrimidine (RY) recoding, multispecies coalescent reconciliation across 5,880,795 gene-tree quartets, codon selection modeling, and 3D structural alignment. Partitioned modeling and RY recoding reduced cross-domain compositional heterogeneity by 83.6% (RCFV = 0.0236) and improved log-likelihood by +8,013.3 units over unpartitioned concatenation, recovering Asgardarchaeota as sister to crown Eukaryota with 95.1% mean bootstrap support across 52 completeness-gated taxa and strong gene-tree concordance across all 64 species (Q = 0.73). Relaxed-clock dating places the Asgard–eukaryote divergence in the Neoarchean at 2.93 Ga (95% HPD: 2.57–3.20 Ga) and the LECA crown radiation in the Paleoproterozoic at 1.85 Ga (95% HPD: 1.59–2.11 Ga), framing an extended stem interval spanning the Great Oxidation Event. Across 47 eukaryotic orthologs of VPS4, Histone H3, RPB2, and RAN, codon models reveal intense purifying selection (dN/dS = 0.031–0.101), while structural threading onto GDP-bound Ran (PDB 1BYU; TM-score = 0.978, RMSD = 0.94 Å) demonstrates invariant active-site geometry entrenching directional nucleocytoplasmic transport prior to crown supergroup diversification.",
+    "section1_paragraphs": [
+      "The origin of the eukaryotic nucleus represents one of the most consequential organizational transitions in the history of life [7, 9]. Unlike prokaryotic cells, in which nascent transcripts are translated co-transcriptionally by ribosomes directly on exposed chromosomes, eukaryotic cells enclose linear, nucleosome-compacted chromosomes within a double-membrane nuclear envelope perforated by octagonal Nuclear Pore Complexes (NPCs) [8, 9, 21]. This spatial barrier decouples DNA-directed RNA polymerase II transcription and spliceosomal intron excision in the nucleoplasm from 80S ribosomal translation in the cytosol—preventing premature translation of unspliced pre-mRNAs after group II intron proliferation while enabling complex post-transcriptional regulation [7]. Directional traffic of ribonucleoproteins, histones, and polymerases across the nuclear envelope depends on a steep chemical gradient of the small Ras-superfamily GTPase Ran, maintained between chromatin-tethered guanine nucleotide exchange factors (RCC1) inside the nucleus and GTPase-activating proteins (RanGAP) on cytoplasmic pore filaments [9, 11, 20].",
+      "Over the past decade, metagenomic assemblies and syntrophic enrichments of Asgardarchaeota—including *Promethearchaeum syntrophicum*, *Candidatus* Lokiarchaeum, Odinarchaeia, Hodarchaeales, and Heimdallarchaeia—have reshaped two-domain models of eukaryogenesis [2–6, 23]. Asgard genomes encode an extensive repertoire of eukaryotic signature proteins (ESPs), including profilin-regulated actin filaments, tubulin homologs, ubiquitin-modifier pathways, and ESCRT-III/VPS4 membrane-scission ATPases capable of supporting branched extracellular protrusions and vesicle remodeling before the acquisition of a closed nuclear envelope [2, 3, 6, 22]. Resolving the exact phylogenetic and temporal bridge between extremophilic archaea and mesophilic eukaryotes nevertheless remains technically demanding: hyperthermophilic TACK and Euryarchaeota lineages exhibit strong purine-loading and GC-biased substitution regimes that induce long-branch attraction and artificial root placements under homogeneous substitution matrices, while uneven gene retention and ancient incomplete lineage sorting obscure early supergroup splits [4, 14, 23].",
+      "To evaluate the phylogenetic topology, geological timing, and molecular constraints governing nuclear emergence, we combined an 18-locus universal informational and core cellular dataset across 64 archaeal and eukaryotic species with functional evolutionary analyses of the nuclear compartment itself [1, 12–19]. Specifically, we paired partitioned third-codon RY phylogenomics [14, 15], multi-locus quartet coalescent species-tree inference [17], four-taxon allele-sharing tests [19], and fossil-calibrated relaxed-clock dating [12, 16, 24] with codon-level selection models [18] across four core functional pillars of nuclear biology: the ESCRT-III membrane-remodeling ATPase VPS4 [2, 6], octameric nucleosomal Histone H3 [21], the RNA polymerase II catalytic subunit RPB2 [7, 9], and the nuclear transport switch RAN/GSP1 mapped directly onto crystallographic coordinates of GDP-bound Ran (PDB 1BYU) [11, 20], alongside intraspecific coalescent baselines across model archaeal and eukaryotic taxa."
+    ],
+    "section2_paragraphs": [
+      "Across all 64 archaeal and eukaryotic target taxa, automated sequence curation and homology screening assembled an 18-partition supermatrix totaling 26,387 aligned nucleotide columns (23,975 parsimony-informative RY3 sites) spanning transcriptional subunits (*RPB1/rpoA1*, *RPB2/rpoB*), translation factors and universal ribosomal proteins (*EF1A/tuf*, *EF2/fusA*, *eIF5B/infB*, *uL2/RPL2*, *uL3/RPL3*, *uS3/RPS3*, *ThrRS*), DNA replication and repair enzymes (*RAD51/radA*, *FEN1*, *PCNA*), ER/plasma-membrane translocons (*Sec61A/SecY*), V/A-type rotary ATPases (*VMA1*, *VMA2*), group II chaperonins (*CCT*/thermosome), and structural SSU/LSU rRNAs [1, 4, 23]. Applying per-locus Bayesian Information Criterion (BIC) model selection [14, 15] with edge-linked proportional partition rates and third-codon purine–pyrimidine (RY3) recoding reduced relative composition frequency variability by 83.6%—from RCFV = 0.1440 under unrecoded 4-state nucleotides and 0.1558 in unfiltered controls to RCFV = 0.0236—and improved model fit by Δln L = +8,013.34 units (ln L = −834,670.53 vs. −842,683.86 unpartitioned; ΔBIC = −14,265.4) across the 52 taxa meeting the ≥65% locus-completeness threshold [1, 14]. Mean ultrafast bootstrap support rose from 84.0% for single-locus SSU rRNA and 89.5% in unfiltered 64-taxon concatenations to 95.1% under partitioned RY3 inference (**Figures 1 & 2**; **Tables 3A, 3C & 3D**).",
+      "In the partitioned maximum-likelihood phylogeny, Euryarchaeota outgroups (`[A]`) root a monophyletic TACK + Asgard + Eukaryota clade (100% UFBoot2), within which TACK Proteoarchaeota (`[B]`) diverges sister to a monophyletic Asgardarchaeota + Eukaryota clade (100% UFBoot2) and crown Eukaryota (`[D]`–`[G]`) is separated from Asgardarchaeota (`[C]`) by a long, strongly supported stem branch (100% UFBoot2) [2–4, 23]. Constrained least-squares relaxed-clock dating (`TimeTreeLSD2`) [16] with parametric rate-and-Poisson bootstrap intervals places the Euryarchaeota root (**Node I**) in the Paleoarchean at 3,240.0 Ma (95% HPD: 3,097.8–3,487.5 Ma), the TACK–Asgard–Eukaryota divergence (**Node II**) at 3,083.4 Ma (2,820.9–3,337.7 Ma), the Asgard–FECA nuclear stem divergence (**Node III**) in the Neoarchean at 2,932.6 Ma (2,572.9–3,195.0 Ma), and the LECA crown radiation (**Node IV**) in the Paleoproterozoic at 1,853.6 Ma (1,594.4–2,113.6 Ma), followed by Mesoproterozoic–Phanerozoic crown radiations across SAR (**Node VIII**, 1,396.2 Ma), Dikarya Fungi (**Node VI**, 1,350.0 Ma), Dictyostelia (**Node V**, 1,095.6 Ma), and Embryophyta land plants (**Node VII**, 560.0 Ma) (**Figure 1**; **Table 2A**) [12, 13, 24–26]."
+    ],
+    "section3_paragraphs": [
+      "Because concatenated supermatrices exclude taxa below the 65% completeness threshold and can be misled by anomalous gene trees in rapid deep radiations, we inferred individual maximum-likelihood gene trees across all 18 universal partitions and reconciled all 64 archaeal and eukaryotic species under the Quartet Multispecies Coalescent (`runie-quartet-coalescent`) [1, 17]. Across 5,880,795 evaluated four-taxon gene-tree quartets, the species tree satisfied 4,295,693 quartets, yielding a normalized quartet concordance score of Q = 0.7305 under RY3 recoding (mean local posterior probability LPP = 0.8135) compared with Q = 0.4535 in unaligned zero-star negative controls (**Figure 3**; **Figure 6**; **Table 3A**).",
+      "Quartet decomposition confirms overwhelming multi-locus concordance for the primary domain and supergroup splits—including the archaeal root (q1 = 0.903, LPP = 1.00), TACK vs. Asgard + Eukarya (q1 = 0.779, LPP = 1.00), and the Asgard–LECA stem separating Asgardarchaeota from crown eukaryotes (q1 = 0.916, LPP = 1.00; 1.78 coalescent units)—while recovering all 12 Opisthokonta species (`[E]`) as a single monophyletic clade (**Table 2B**) [4, 17, 23]. Conversely, short internal branches (~0.02–0.15 CU) and elevated alternative quartet weights (~0.30–0.33) among early-diverging Discoba, Amoebozoa, and Diaphoretickes reflect genuine ancient incomplete lineage sorting during LECA supergroup divergence [24], whereas four-taxon Patterson's *D* contrasts (`ABBA-1` to `ABBA-4`, |Z| ≤ 1.38) detect symmetric background site sharing rather than recent cross-domain horizontal chimerism (**Table 2B**) [19]."
+    ],
+    "section4_paragraphs": [
+      "To test how selective pressures acted on the structural components that physically construct and operate the eukaryotic nucleus, we fitted 61-state Goldman–Yang codon substitution models (M0, M1a, M2a) [18] across 47 curated RefSeq mRNA orthologs spanning four nuclear-origin protein families (**Figure 5A–B**; **Table 4A**). Every family exhibited strong purifying constraint with zero positively selected codons (Bayes Empirical Bayes Pr ≥ 0.95 = 0 across all families; M2a vs. M1a LRT = 0.00): the ESCRT-III membrane-remodeling AAA+ ATPase VPS4 (`FAM-01`; N = 13, 355 codons, M0 dN/dS = 0.1006, κ = 1.83) [2, 6], core nucleosomal Histone H3 (`FAM-02`; N = 12, 136 codons, M0 dN/dS = 0.0309, κ = 2.09) [21], the RNA polymerase II catalytic subunit RPB2 (`FAM-03`; N = 10, 480 core codons, M0 dN/dS = 0.0853, κ = 1.56) [7, 9], and the nuclear transport GTPase RAN/GSP1 (`FAM-04`; N = 12, 206 codons, M0 dN/dS = 0.0314, κ = 1.91) [11, 20].",
+      "Three-dimensional homology threading of eukaryotic RAN (`Mus musculus` NM_009391, 216 aa; 99.0% sequence identity across 202 aligned residues) onto the 2.15 Å crystal structure of mammalian Ran-GDP (PDB `1BYU` Chain A) [11] yielded near-identical backbone geometry (Kabsch Cα RMSD = 0.94 Å, TM-score = 0.9782) around a 594.9 Å³ nucleotide-binding pocket (estimated GDP affinity −6.95 kcal/mol; **Figure 5D**). Complete sequence invariance across eukaryotic supergroups locks the Walker A phosphate-binding P-loop (`GDGGTGKT`, residues 17–24), the Switch II catalytic glutamine motif (`DTAGQE`, residues 66–71), the `NKVD` guanine-specificity loop (residues 122–125), and the 2.32 Å octahedral coordination bond between Thr24 Oγ1 and `MG A 221`—preserving the conformational nucleotide switch required for karyopherin cargo import and export across Nuclear Pore Complexes [8, 9, 11, 20]."
+    ],
+    "section5_paragraphs": [
+      "To benchmark how these conserved informational and cytoskeletal markers behave at the population level within extant archaeal and eukaryotic species, we reconstructed 12 single-species Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in) strictly separated by species and homologous locus (**Figures 4A & 4B**; **Table 4B**) [1]. Axis A (`R1`–`R6`) contrasts diploid eukaryotic translation elongation factor `EF1A` cohorts in *Cryptococcus neoformans* (`R1`), *Fusarium oxysporum* (`R2`), *Giardia intestinalis* (`R3`), and *Danio rerio* (`R4`) against haploid archaeal 16S rRNA in *Haloferax volcanii* (`R5`) and nuclear 18S rRNA in *Chlamydomonas reinhardtii* (`R6`). Axis B (`L1`–`L6`) pairs single-copy coding RNA polymerase II `RPB2` (*F. oxysporum* `L1`, *C. neoformans* `L3`) and actin `ACT1` (*Saccharomyces cerevisiae* `L6`) directly against secondary-structure-guided (`mafft-native` E-INS-i) nuclear 18S rRNA skylines in *S. cerevisiae* (`L2`), *Oryza sativa* (`L4`), and *Paramecium tetraurelia* (`L5`).",
+      "Across homologous coding and ribosomal alignments, gap-consistent site-frequency summaries recover realistic intraspecific nucleotide diversity and neutral-to-purifying Tajima's *D* regimes, while minimum-spanning and TCS haplotype networks (`Stage 3C`; **Figures 7A & 7B**; **Table 4C**) partition *EF1A/tuf* (`Panel A`) and *RPB2/rpoB* (`Panel B`) alleles into discrete species-resolved clusters separated by explicit interspecific mutational bridges without edge crossings [1]."
+    ],
+    "section6_intro": "Quantitative sequence-hygiene logs, fossil-calibrated divergence estimates with quartet concordance metrics, clade recovery and four-taxon ABBA–BABA tests, 4-regime and 32-chain substitution model comparisons, per-locus BIC rate multipliers, Goldman–Yang codon selection parameters, and single-species coalescent skyline summaries are compiled in **Tables 1–4C** below [1, 14–19]."
   }
 }

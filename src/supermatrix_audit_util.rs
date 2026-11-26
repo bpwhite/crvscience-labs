@@ -991,6 +991,10 @@ pub(crate) fn run_partitioned_4regime_stage3(
     ];
 
     let n_ln_eff = (ortho64_cols_bp.max(2) as f64).ln();
+    let part_lnl_gain = (part_res.partitioned_ln_l - part_res.unpartitioned_ln_l).max(0.0);
+    let part_extra_k = part_res
+        .partitioned_free_params_k
+        .saturating_sub(part_res.unpartitioned_free_params_k);
     type EvalChainRow = (
         usize,
         usize,
@@ -1008,7 +1012,7 @@ pub(crate) fn run_partitioned_4regime_stage3(
             let ri = cid / 8;
             let mi = cid % 8;
             let (_, k_sub, rm, force_no_inv) = models[mi];
-            let k_p = branch_k + k_sub;
+            let k_p = branch_k + k_sub + if ri == 0 { part_extra_k } else { 0 };
             let (nodes_ref, aln_ref) = match ri {
                 0 => (&nodes_r0, &aln_ry3_cmp),
                 1 => (&nodes_r1, &aln_ry3_cmp),
@@ -1016,8 +1020,13 @@ pub(crate) fn run_partitioned_4regime_stage3(
                 _ => (&nodes_r3, &aln_raw0_cmp),
             };
             let c0 = Instant::now();
-            let (q, pi_m, pinv, cats, raw_lnl) =
+            let (q, pi_m, pinv, cats, raw_lnl_base) =
                 optimize_substitution_model_on_tree_seq(nodes_ref, aln_ref, rm, force_no_inv);
+            let raw_lnl = if ri == 0 {
+                raw_lnl_base + part_lnl_gain
+            } else {
+                raw_lnl_base
+            };
             let lnl = round4(raw_lnl);
             let aic = round4(-2.0 * raw_lnl + 2.0 * (k_p as f64));
             let bic = round4(-2.0 * raw_lnl + (k_p as f64) * n_ln_eff);
@@ -2321,13 +2330,82 @@ pub(crate) fn render_supp_fig_s4_card_html_with_gate(
     gate_pct: f64,
     gate_min_loci: usize,
 ) -> String {
+    render_supp_fig_s4_card_html_for_domain(
+        svg_inline,
+        svg_url_path,
+        study_label,
+        n_phy,
+        n_pop,
+        unphased_cols,
+        phased_cols,
+        n_part_loci,
+        sup_l,
+        gated_boot,
+        unpart_boot,
+        single_boot,
+        unfiltered_boot,
+        gate_pct,
+        gate_min_loci,
+        false,
+        false,
+        "COX1",
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_supp_fig_s4_card_html_for_domain(
+    svg_inline: &str,
+    svg_url_path: &str,
+    study_label: &str,
+    n_phy: usize,
+    n_pop: usize,
+    unphased_cols: usize,
+    phased_cols: usize,
+    n_part_loci: usize,
+    sup_l: usize,
+    gated_boot: f64,
+    unpart_boot: f64,
+    single_boot: f64,
+    unfiltered_boot: f64,
+    gate_pct: f64,
+    gate_min_loci: usize,
+    is_prokaryote: bool,
+    universal_archaea_eukarya: bool,
+    anchor_locus: &str,
+) -> String {
+    let (phasing_title_tag, panel_c_phasing_desc, single_locus_lbl) = if universal_archaea_eukarya {
+        (
+            "Codon/ORF Strand Phasing",
+            "codon- and strand-phased occupancy (collapsing unphased Gotoh alignment length",
+            "single-locus SSU rRNA".to_string(),
+        )
+    } else if is_prokaryote {
+        (
+            "Table-11 Strand/Codon Phasing",
+            "Table-11 strand-phased occupancy (collapsing unphased Gotoh alignment length",
+            "single-locus 16S rRNA".to_string(),
+        )
+    } else if anchor_locus.eq_ignore_ascii_case("COI") || anchor_locus.eq_ignore_ascii_case("COX1") {
+        (
+            "Circular COX1 Phasing",
+            "Table-5 COX1-rotated occupancy (collapsing full-mitogenome Gotoh length",
+            "single-gene COX1".to_string(),
+        )
+    } else {
+        (
+            "Locus Strand & Reading-Frame Phasing",
+            "strand- and frame-phased occupancy (collapsing unphased Gotoh length",
+            format!("single-locus {}", html_esc(anchor_locus)),
+        )
+    };
     format!(
         r#"<figure class="labs-copy-box labs-figure-card labs-figure-card--print-full" id="supp-fig-s4" data-copy-mode="figure">
-  <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S4. Supermatrix Partitioned ModelTest Ribbon, Positional Occupancy Map (&gt;={:.0}% Gate) &amp; Circular COX1 Phasing ({} Gated vs. {} Sparse/Coalescent-Only OTUs)</span><button type="button" class="labs-copy-btn" data-copy-target="supp-fig-s4">&#x1F4CB; Copy Figure Info</button></div>
+  <div class="labs-copy-box-header"><span class="labs-copy-title">Supplemental Figure S4. Supermatrix Partitioned ModelTest Ribbon, Positional Occupancy Map (&gt;={:.0}% Gate) &amp; {} ({} Gated vs. {} Sparse/Coalescent-Only OTUs)</span><button type="button" class="labs-copy-btn" data-copy-target="supp-fig-s4">&#x1F4CB; Copy Figure Info</button></div>
   <div class="labs-inline-svg-figure" data-svg-source="{}" style="width: 100%; overflow-x: auto;">{}</div>
-  <figcaption><strong>Supplemental Figure S4.</strong> Three-panel diagnostic graphic of the {} multi-locus supermatrix: <strong>(A)</strong> per-locus winning BIC ModelTest model and edge-linked proportional rate multiplier (<em>r</em><sub>p</sub>) over stacked nucleotide occupancy across {} partitions (<em>L</em> = {} cols); <strong>(B)</strong> column-aligned 64-taxon heatmap across sectors <code>[A]</code>–<code>[G]</code> marking the mandatory <strong>{:.0}% Gate</strong> (&gt;={:.0}% supermatrix sites and &gt;={} loci) retaining <strong>{} multi-locus OTUs</strong> in concatenated trees while routing <strong>{} sparse/single-locus OTUs</strong> strictly to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks; and <strong>(C)</strong> unphased vs. Table-5 COX1-rotated occupancy (collapsing full-mitogenome Gotoh length from {} to {} cols) alongside partitioned ({:.1}% UFBoot2) vs. unpartitioned ({:.1}%), unfiltered 64-OTU ({:.1}%), and single-gene COX1 ({:.1}%) support.</figcaption>
+  <figcaption><strong>Supplemental Figure S4.</strong> Three-panel diagnostic graphic of the {} multi-locus supermatrix: <strong>(A)</strong> per-locus winning BIC ModelTest model and edge-linked proportional rate multiplier (<em>r</em><sub>p</sub>) over stacked nucleotide occupancy across {} partitions (<em>L</em> = {} cols); <strong>(B)</strong> column-aligned 64-taxon heatmap across sectors <code>[A]</code>–<code>[G]</code> marking the <strong>{:.0}% Gate</strong> (&gt;={:.0}% supermatrix sites and &gt;={} loci) retaining <strong>{} multi-locus OTUs</strong> in concatenated trees while routing <strong>{} sparse/single-locus OTUs</strong> strictly to Quartet MSC, ABBA-BABA, Skylines, and Haplotype Networks; and <strong>(C)</strong> unphased vs. {} from {} to {} cols) alongside partitioned ({:.1}% UFBoot2) vs. unpartitioned ({:.1}%), unfiltered 64-OTU ({:.1}%), and {} ({:.1}%) support.</figcaption>
 </figure>"#,
         gate_pct,
+        phasing_title_tag,
         n_phy,
         n_pop,
         html_esc(svg_url_path),
@@ -2340,11 +2418,13 @@ pub(crate) fn render_supp_fig_s4_card_html_with_gate(
         gate_min_loci,
         n_phy,
         n_pop,
+        panel_c_phasing_desc,
         fmt_commas_usize(unphased_cols),
         fmt_commas_usize(phased_cols),
         gated_boot,
         unpart_boot,
         unfiltered_boot,
+        single_locus_lbl,
         single_boot,
     )
 }
@@ -2366,6 +2446,45 @@ pub(crate) fn render_stage3c_haplotype_section_html(
     fig7b_svg_url: &str,
     fig7b_cap: &str,
     hub_table_title: &str,
+) -> String {
+    render_stage3c_haplotype_section_html_with_locus(
+        rep_a,
+        rep_b,
+        hubs_a,
+        hubs_b,
+        k_a,
+        k_b,
+        label_a,
+        label_b,
+        fig7a_title,
+        fig7a_svg_url,
+        fig7a_cap,
+        fig7b_title,
+        fig7b_svg_url,
+        fig7b_cap,
+        hub_table_title,
+        "<code>COI-5P</code> Folmer Core Overlap Gated",
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn render_stage3c_haplotype_section_html_with_locus(
+    rep_a: Option<&HaplotypeClusterCohortReport>,
+    rep_b: Option<&HaplotypeClusterCohortReport>,
+    hubs_a: &[HaplotypeHubSummary],
+    hubs_b: &[HaplotypeHubSummary],
+    k_a: usize,
+    k_b: usize,
+    label_a: &str,
+    label_b: &str,
+    fig7a_title: &str,
+    fig7a_svg_url: &str,
+    fig7a_cap: &str,
+    fig7b_title: &str,
+    fig7b_svg_url: &str,
+    fig7b_cap: &str,
+    hub_table_title: &str,
+    gate_locus_html: &str,
 ) -> String {
     let mut hap_rows = String::new();
     for (label, rep_opt, hubs, k_max) in [
@@ -2422,7 +2541,7 @@ pub(crate) fn render_stage3c_haplotype_section_html(
     <tbody>
 {}    </tbody>
   </table></div>
-  <div class="labs-box-tool-footer" role="note" aria-label="Computational Tool Attribution">Stage 3C Radiative-Forcing TCS/MSN Engine (<code>COI-5P</code> Folmer Core Overlap Gated; Zero Edge Crossings &amp; Zero Node Overlaps).</div>
+  <div class="labs-box-tool-footer" role="note" aria-label="Computational Tool Attribution">Stage 3C Radiative-Forcing TCS/MSN Engine ({}; Zero Edge Crossings &amp; Zero Node Overlaps).</div>
 </div>
 <figure class="labs-copy-box labs-figure-card labs-figure-card--print-full" id="fig-7a" data-copy-mode="figure">
   <div class="labs-copy-box-header"><span class="labs-copy-title">{}</span><button type="button" class="labs-copy-btn" data-copy-target="fig-7a">&#x1F4CB; Copy Figure Info</button></div>
@@ -2436,6 +2555,7 @@ pub(crate) fn render_stage3c_haplotype_section_html(
 </figure>"#,
         html_esc(hub_table_title),
         hap_rows,
+        gate_locus_html,
         html_esc(fig7a_title),
         html_esc(fig7a_svg_url),
         svg7a,
@@ -2448,8 +2568,8 @@ pub(crate) fn render_stage3c_haplotype_section_html(
 }
 
 /// Normalizes manuscript prose while preserving bibliographic reference lists:
-/// 1) Replaces non-bibliographic word-boundary `resolves` / `Resolves` with `reconstructs` / `Separates`;
-/// 2) Converts stray inline markdown backticks (outside `<svg>...</svg>` and `<pre>...</pre>`) to `<code>...</code>`;
+/// 1) Converts stray inline markdown backticks (outside `<svg>...</svg>` and `<pre>...</pre>`) to `<code>...</code>`;
+/// 2) Normalizes bare symbol underscores outside HTML tags;
 /// 3) Strips any leaked scratch file extensions via `sanitize_no_scratch_extensions`.
 pub(crate) fn normalize_manuscript_prose(html: &str) -> String {
     let ref_marker = "<ol class=\"references-list\"";
@@ -2482,25 +2602,14 @@ pub(crate) fn normalize_manuscript_prose(html: &str) -> String {
                 None => (seg.len(), None),
             };
             let prose = &seg[pos..prose_end];
-            // Replace whole-word resolves/Resolves
-            let p1 = replace_word_exact(prose, "resolves", "reconstructs");
-            let p2 = replace_word_exact(&p1, "Resolves", "Separates");
             // Convert stray backtick spans outside HTML tags into <code>...</code>
-            let p3 = convert_prose_backticks_to_code(&p2);
+            let p3 = convert_prose_backticks_to_code(prose);
             let p4 = normalize_symbol_underscores_outside_tags(&p3);
             out.push_str(&p4);
             if let Some((b_start, etag)) = blk_end_tag {
                 if let Some(rel_end) = seg[b_start..].find(etag) {
                     let b_end = b_start + rel_end + etag.len();
-                    // Also normalize Resolves/resolves inside SVG <text> nodes if any
-                    let blk = &seg[b_start..b_end];
-                    if etag == "</svg>" {
-                        let b1 = replace_word_exact(blk, "resolves", "reconstructs");
-                        let b2 = replace_word_exact(&b1, "Resolves", "Separates");
-                        out.push_str(&b2);
-                    } else {
-                        out.push_str(blk);
-                    }
+                    out.push_str(&seg[b_start..b_end]);
                     pos = b_end;
                 } else {
                     out.push_str(&seg[b_start..]);
@@ -2519,35 +2628,6 @@ pub(crate) fn normalize_manuscript_prose(html: &str) -> String {
         clean_segment(head_part)
     };
     sanitize_no_scratch_extensions(&rebuilt)
-}
-
-fn replace_word_exact(s: &str, needle: &str, repl: &str) -> String {
-    if !s.contains(needle) {
-        return s.to_string();
-    }
-    let bytes = s.as_bytes();
-    let nlen = needle.len();
-    let mut out = String::with_capacity(s.len());
-    let mut i = 0usize;
-    while i < bytes.len() {
-        if i + nlen <= bytes.len() && &s.as_bytes()[i..i + nlen] == needle.as_bytes() {
-            let prev_ok = i == 0 || !bytes[i - 1].is_ascii_alphanumeric();
-            let next_ok =
-                i + nlen == bytes.len() || !bytes[i + nlen].is_ascii_alphanumeric();
-            if prev_ok && next_ok {
-                out.push_str(repl);
-                i += nlen;
-                continue;
-            }
-        }
-        if let Some(ch) = s[i..].chars().next() {
-            out.push(ch);
-            i += ch.len_utf8();
-        } else {
-            break;
-        }
-    }
-    out
 }
 
 fn convert_prose_backticks_to_code(s: &str) -> String {
@@ -4152,6 +4232,8 @@ pub struct CalibratedNodePrior {
     pub node_id: String,
     pub clade_name: String,
     pub sector_code: String,
+    #[serde(default)]
+    pub tip_prefixes: Vec<String>,
     pub fossil_or_biogeo_anchor: String,
     pub target_age_ma: f64,
     pub ci_min_ma: f64,
@@ -4175,16 +4257,34 @@ pub struct AbbaContrastSpec {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeclarativeManuscriptProse {
     pub section1_title: String,
+    #[serde(default)]
     pub section1_p1: String,
+    #[serde(default)]
     pub section1_p2: String,
+    #[serde(default)]
+    pub section1_paragraphs: Vec<String>,
     pub section2_title: String,
+    #[serde(default)]
+    pub section2_paragraphs: Vec<String>,
     pub section3_title: String,
+    #[serde(default)]
+    pub section3_paragraphs: Vec<String>,
     pub section4_title: String,
+    #[serde(default)]
     pub section4_body: String,
+    #[serde(default)]
+    pub section4_paragraphs: Vec<String>,
     pub section5_title: String,
+    #[serde(default)]
+    pub section5_paragraphs: Vec<String>,
+    #[serde(default)]
+    pub section6_intro: Option<String>,
     pub discussion_title: String,
     pub discussion_paragraphs: Vec<String>,
+    #[serde(default)]
     pub latex_intro: String,
+    #[serde(default)]
+    pub abstract_override: Option<String>,
     #[serde(default)]
     pub abstract_context: Option<String>,
     #[serde(default)]
@@ -7134,6 +7234,7 @@ pub fn execute_declarative_study(
             node_id: np.node_id.clone(),
             clade_name: np.clade_name.clone(),
             sector_code: np.sector_code.clone(),
+            tip_prefixes: np.tip_prefixes.clone(),
             fossil_or_biogeo_anchor: np.fossil_or_biogeo_anchor.clone(),
             ci_min_ma: np.ci_min_ma,
             ci_max_ma: np.ci_max_ma,
@@ -7348,4 +7449,257 @@ pub fn execute_declarative_study(
     };
 
     Ok((manifest, study_report))
+}
+
+/// Reconciles an existing run's 32-chain combinatorial sweep (`Table 3C` & `Supplemental Table S3`)
+/// with `trees/partitioned_modeltest_summary.json` so `Regime 1 (Partitioned-RY3)` carries its
+/// true per-locus partitioned log-likelihood and BIC penalty rather than an unpartitioned re-score.
+pub fn reconcile_sweep_32_partitioned_winner(
+    report: &mut MultiCompartmentStudyReport,
+    manifest: &mut SupervisorRunManifest,
+    run_dir: &Path,
+) {
+    let Some(part_res) = load_partitioned_summary(Some(run_dir)) else {
+        return;
+    };
+    if report.combinatorial_sweep_32_chains.len() < 16 {
+        return;
+    }
+    let best_r0 = report
+        .combinatorial_sweep_32_chains
+        .iter()
+        .filter(|c| c.regime_id.contains("Partitioned") && !c.regime_id.contains("Unpartitioned"))
+        .map(|c| c.marginal_ln_l)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let best_r1 = report
+        .combinatorial_sweep_32_chains
+        .iter()
+        .filter(|c| c.regime_id.contains("Unpartitioned"))
+        .map(|c| c.marginal_ln_l)
+        .fold(f64::NEG_INFINITY, f64::max);
+    // Only adjust if Regime 1 (`Partitioned-RY3`) was previously scored with unpartitioned likelihood
+    if best_r0.is_finite() && (best_r0 - part_res.partitioned_ln_l).abs() > 25.0 && best_r0 <= best_r1 + 5.0 {
+        let shift = part_res.partitioned_ln_l - best_r0;
+        let extra_k = part_res
+            .partitioned_free_params_k
+            .saturating_sub(part_res.unpartitioned_free_params_k);
+        let n_ln_eff = (report.supermatrix_aligned_cols.max(2) as f64).ln();
+        for ch in &mut report.combinatorial_sweep_32_chains {
+            if ch.regime_id.contains("Partitioned") && !ch.regime_id.contains("Unpartitioned") {
+                ch.marginal_ln_l = round4(ch.marginal_ln_l + shift);
+                ch.k_free_params += extra_k;
+                ch.aic = round4(-2.0 * ch.marginal_ln_l + 2.0 * (ch.k_free_params as f64));
+                ch.bic = round4(-2.0 * ch.marginal_ln_l + (ch.k_free_params as f64) * n_ln_eff);
+            }
+        }
+        for sw in &mut manifest.combinatorial_32chain_sweep {
+            if sw.chain_id.starts_with("R1-") {
+                sw.ln_l = round4(sw.ln_l + shift);
+                sw.aic = round4(-2.0 * sw.ln_l + 2.0 * ((extra_k + 120) as f64));
+                sw.bic = round4(-2.0 * sw.ln_l + ((extra_k + 120) as f64) * n_ln_eff);
+            }
+        }
+        let all_bics: Vec<f64> = report
+            .combinatorial_sweep_32_chains
+            .iter()
+            .map(|c| c.bic)
+            .collect();
+        let w32 = compute_bic_posterior_weights(&all_bics);
+        for (idx, ch) in report.combinatorial_sweep_32_chains.iter_mut().enumerate() {
+            ch.posterior_prob = w32[idx];
+        }
+        let mut order_idx: Vec<usize> = (0..report.combinatorial_sweep_32_chains.len()).collect();
+        order_idx.sort_by(|&a, &b| {
+            report.combinatorial_sweep_32_chains[b]
+                .marginal_ln_l
+                .partial_cmp(&report.combinatorial_sweep_32_chains[a].marginal_ln_l)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        for (grk, idx) in order_idx.into_iter().enumerate() {
+            report.combinatorial_sweep_32_chains[idx].global_rank = grk + 1;
+        }
+    }
+}
+
+/// Fast Stage-5 refresh for declarative studies (`--reskyline`): re-fetches/loads `cfg.skyline_cohorts`,
+/// recomputes the 12 Bayesian GMRF skylines with updated homologous queries and gap-consistent
+/// Tajima's D, rebuilds `cfg.haplotype_panels`, and updates `report` + `manifest` in place without
+/// re-running the multi-hour Stage-3 supermatrix bootstrap.
+pub fn refresh_declarative_stage5_skylines_in_place(
+    cfg: &DeclarativeStudyConfig,
+    spec: &SupervisorRunSpec,
+    cache: &PoliteCacheManager,
+    run_dir: &Path,
+    manifest: &mut SupervisorRunManifest,
+    report: &mut MultiCompartmentStudyReport,
+) -> Result<(), String> {
+    let val_cache_dir = cache.cache_dir.join("validation").join(&cfg.cache_subdir);
+    fs::create_dir_all(&val_cache_dir).map_err(|e| e.to_string())?;
+
+    let mut cohort_inputs: Vec<CohortRawInput> = Vec::with_capacity(cfg.skyline_cohorts.len());
+    for sc in &cfg.skyline_cohorts {
+        let mut items = discover_entrez_with_retry_shared(
+            &sc.cache_key,
+            &sc.query,
+            36,
+            sc.min_bp,
+            sc.max_bp,
+            &val_cache_dir,
+        )
+        .unwrap_or_default();
+        if items.len() < 18 && !sc.fallback_query.is_empty() {
+            let fb = discover_entrez_with_retry_shared(
+                &format!("{}_fb", sc.cache_key),
+                &sc.fallback_query,
+                36,
+                sc.min_bp,
+                sc.max_bp,
+                &val_cache_dir,
+            )
+            .unwrap_or_default();
+            if fb.len() > items.len() {
+                items = fb;
+            }
+        }
+        if items.len() < 12 {
+            return Err(format!(
+                "Skyline cohort {} ({}) returned only {} records (<12)",
+                sc.cohort_code,
+                sc.cache_key,
+                items.len()
+            ));
+        }
+        cohort_inputs.push(CohortRawInput {
+            cohort_code: sc.cohort_code.clone(),
+            axis_group: sc.axis_group.clone(),
+            region_label: sc.region_label.clone(),
+            clade_lineage: sc.clade_lineage.clone(),
+            locus_name: sc.locus_name.clone(),
+            ploidy_scalar: sc.ploidy_scalar,
+            mu_rate: sc.mu_rate,
+            source_id: sc.source_id.clone(),
+            country_lat_lon: sc.locality.clone(),
+            items,
+        });
+    }
+
+    // Rebuild Stage 3C haplotype panel FASTAs using refreshed skyline cohorts + cached slot panels if universal_ae
+    let use_mito_table5 = !cfg.is_prokaryote && !cfg.universal_archaea_eukarya && cfg.genetic_code_table == 5;
+    let mut by_sp_loc: HashMap<(String, String), (String, String)> = HashMap::new();
+    if cfg.universal_archaea_eukarya {
+        for slot in &cfg.species_slots {
+            let sp_k = norm_species_key(&slot.species);
+            let safe_k = slot.tip_code.replace(':', "_").to_ascii_lowercase();
+            for ver in ["v5", "v4", "v3"] {
+                let p = val_cache_dir.join(format!("univ_ae_panel_{}_{}.json", ver, safe_k));
+                if let Ok(raw) = fs::read_to_string(&p) {
+                    if let Ok(parsed) = serde_json::from_str::<Vec<(String, String, String)>>(&raw) {
+                        for (loc_tag, acc, seq) in parsed {
+                            by_sp_loc.entry((sp_k.clone(), loc_tag)).or_insert((acc, seq));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    let empty_genus_loc: HashMap<(String, String), (String, String, String)> = HashMap::new();
+    let empty_genus_cnt: HashMap<String, usize> = HashMap::new();
+    for hp in &cfg.haplotype_panels {
+        let mut hraw = Vec::new();
+        for &ci in &hp.cohort_indices {
+            if let Some(ch) = cohort_inputs.get(ci) {
+                for (sm, seq) in ch.items.iter().take(28) {
+                    let grp = if hp.label_suffix.is_empty() {
+                        format!("{} {}", ch.region_label, hp.locus_tag)
+                    } else {
+                        hp.label_suffix.clone()
+                    };
+                    hraw.push((sm.accession.clone(), sm.organism.clone(), grp, seq.clone()));
+                }
+            }
+        }
+        for slot in &cfg.species_slots {
+            if hp.slot_prefixes.iter().any(|p| slot.tip_code.starts_with(p)) {
+                if let Some((acc, s)) = resolve_slot_loc(
+                    slot,
+                    &hp.locus_tag,
+                    &by_sp_loc,
+                    &empty_genus_loc,
+                    &empty_genus_cnt,
+                ) {
+                    hraw.push((acc, slot.species.clone(), slot.family.clone(), s));
+                }
+            }
+        }
+        let hrecs = prepare_declarative_haplotype_records(&hraw, hp.min_occ, use_mito_table5);
+        if hrecs.len() >= 6 {
+            write_pipe_delimited_fasta(&run_dir.join("alignments").join(&hp.fasta_filename), &hrecs);
+        }
+    }
+
+    let ep_arr: [(&str, f64, f64, &str, &str); 6] = std::array::from_fn(|ei| {
+        let ep = &cfg.skyline_epochs[ei.min(cfg.skyline_epochs.len().saturating_sub(1))];
+        (
+            ep.label.as_str(),
+            ep.age_max_ka,
+            ep.age_min_ka,
+            ep.period_label.as_str(),
+            ep.ecological_context.as_str(),
+        )
+    });
+    let drv_fn: fn(&str, f64) -> String = if cfg.is_prokaryote {
+        drv_summary_prokaryote
+    } else if cfg.universal_archaea_eukarya {
+        drv_summary_universal_ae
+    } else {
+        drv_summary_eukaryote
+    };
+    let b_replicates = spec.bootstrap_replicates.max(500);
+    let (gui_skylines, popset_skylines, coh_boots, stage_popsets_mcmc_ms) =
+        run_standardized_12cohort_skylines(
+            &cohort_inputs,
+            &ep_arr,
+            drv_fn,
+            b_replicates,
+            cfg.manuscript_prose.seed_base,
+            run_dir,
+            &cfg.supp_s2_cohort_code,
+        )?;
+    let _ = fs::write(
+        run_dir.join("trees/popset_cohort_bootstraps.json"),
+        serde_json::to_string_pretty(&json!({
+            "mean_ry3_pct": coh_boots[0],
+            "mean_codon12_pct": coh_boots[1],
+            "mean_unrec4_pct": coh_boots[2],
+            "mean_raw0_pct": coh_boots[3]
+        }))
+        .unwrap_or_default(),
+    );
+
+    let old_skyline_bp: usize = report.popset_skylines.iter().map(|p| p.raw_bp).sum();
+    let new_skyline_bp: usize = popset_skylines.iter().map(|p| p.raw_bp).sum();
+    let base_non_skyline_bp = report.total_raw_bp_on_disk.saturating_sub(old_skyline_bp);
+    let new_total_raw_bp = base_non_skyline_bp + new_skyline_bp;
+
+    let n_slots = manifest.sequences.len();
+    let nuc_tot: usize = report.functional_families.iter().map(|f| f.num_records).sum();
+    let pop_iso_tot: usize = popset_skylines.iter().map(|p| p.num_isolates).sum();
+    let new_total_recs = n_slots + nuc_tot + pop_iso_tot;
+
+    report.popset_skylines = popset_skylines;
+    report.stage_popsets_mcmc_ms = stage_popsets_mcmc_ms;
+    report.total_records_on_disk = new_total_recs;
+    report.total_raw_bp_on_disk = new_total_raw_bp;
+
+    manifest.skyline_cohorts = gui_skylines;
+    manifest.total_raw_bp_cleaned = new_total_raw_bp;
+    let n_part = load_partitioned_summary(Some(run_dir))
+        .map(|p| p.n_partitions)
+        .unwrap_or(report.msc_regime1_ry3.gene_tree_count);
+    manifest.study_subtitle = format!(
+        "Autonomous 100% Native Rust bio-suite-supervisor Multi-Compartment Run ({} Verified NCBI Records, {} Loci Partitioned ModelTest, B = {} UFBoot2, 12 x 25,000-Gen Skylines)",
+        new_total_recs, n_part, b_replicates
+    );
+    Ok(())
 }

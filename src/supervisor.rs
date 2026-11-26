@@ -3446,6 +3446,8 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
     let mut spec = SupervisorRunSpec::default();
     let mut runs_root = PathBuf::from("runs");
     let mut launch_gui = false;
+    let mut redate_timetree = false;
+    let mut reskyline_cohorts = false;
     let mut gui_snapshot_png: Option<PathBuf> = None;
     let mut subcmd = "run".to_string();
 
@@ -3462,6 +3464,12 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             }
             "--gui" => {
                 launch_gui = true;
+            }
+            "--redate" => {
+                redate_timetree = true;
+            }
+            "--reskyline" => {
+                reskyline_cohorts = true;
             }
             "--gui-snapshot-png" => {
                 if let Some(v) = args.get(i + 1) {
@@ -3776,7 +3784,84 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                     let cfg = crate::supermatrix_audit_util::DeclarativeStudyConfig::load(
                         Path::new(cfg_path),
                     )?;
-                    run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
+                    crate::supermatrix_audit_util::reconcile_sweep_32_partitioned_winner(
+                        &mut rep,
+                        &mut m,
+                        &run_dir,
+                    );
+                    if reskyline_cohorts {
+                        crate::supermatrix_audit_util::refresh_declarative_stage5_skylines_in_place(
+                            &cfg,
+                            &spec,
+                            cache,
+                            &run_dir,
+                            &mut m,
+                            &mut rep,
+                        )?;
+                        run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
+                    }
+                    if redate_timetree {
+                        let pm_path = run_dir.join("trees/partitioned_modeltest_summary.json");
+                        let pm_txt = fs::read_to_string(&pm_path)
+                            .map_err(|e| format!("Failed reading {} for --redate: {}", pm_path.display(), e))?;
+                        let part_res: crate::partitioned_modeltest::PartitionedSupermatrixMlResult =
+                            serde_json::from_str(&pm_txt).map_err(|e| e.to_string())?;
+                        let phy_labels: Vec<String> = cfg
+                            .species_slots
+                            .iter()
+                            .enumerate()
+                            .filter(|(idx, _)| {
+                                m.sequences
+                                    .get(*idx)
+                                    .is_some_and(|s| s.included_in_cleaned_cohort)
+                            })
+                            .map(|(_, s)| s.tip_code.replace(':', "_"))
+                            .collect();
+                        let full_mask_phy: u64 = if phy_labels.len() >= 64 {
+                            u64::MAX
+                        } else {
+                            (1u64 << phy_labels.len()) - 1
+                        };
+                        let cal_specs: Vec<crate::empirical_inference_util::EmpiricalCalibrationSpec> = cfg
+                            .calibrated_nodes
+                            .iter()
+                            .map(|np| crate::empirical_inference_util::EmpiricalCalibrationSpec {
+                                node_id: np.node_id.clone(),
+                                clade_name: np.clade_name.clone(),
+                                sector_code: np.sector_code.clone(),
+                                tip_prefixes: np.tip_prefixes.clone(),
+                                fossil_or_biogeo_anchor: np.fossil_or_biogeo_anchor.clone(),
+                                ci_min_ma: np.ci_min_ma,
+                                ci_max_ma: np.ci_max_ma,
+                                trophic_guild: np.trophic_guild.clone(),
+                                key_enzymes_or_loci: np.key_enzymes_or_loci.clone(),
+                                ecosystem_role: np.ecosystem_role.clone(),
+                            })
+                            .collect();
+                        let lsd2_out = crate::empirical_inference_util::solve_empirical_lsd2_from_ml_tree(
+                            &part_res.partitioned_metrics.newick_tree,
+                            &phy_labels,
+                            full_mask_phy,
+                            &part_res.partitioned_bootstrap.split_support_pct_by_mask,
+                            &rep.msc_regime1_ry3,
+                            &cal_specs,
+                            rep.supermatrix_aligned_cols,
+                            cfg.manuscript_prose.seed_base,
+                        )?;
+                        m.calibrated_nodes = lsd2_out.calibrated_nodes.clone();
+                        rep.calibrated_nodes = lsd2_out.calibrated_nodes;
+                        rep.solved_timetree_newick = lsd2_out.timetree_newick;
+                        for cn in &m.calibrated_nodes {
+                            if cn.age_ma > 0.0 {
+                                eprintln!(
+                                    "[bio-suite-supervisor --redate] {}: {:.2} Ma [{:.2}–{:.2}]",
+                                    cn.node_id, cn.age_ma, cn.ci_min_ma, cn.ci_max_ma
+                                );
+                            }
+                        }
+                    } else if !reskyline_cohorts {
+                        run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
+                    }
                     crate::supervisor_figures::generate_declarative_locked_figures(
                         &mut m,
                         &rep,
@@ -3791,6 +3876,12 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         &ws_root,
                         &run_dir,
                     )?;
+                    if let Ok(rep_json) = serde_json::to_string_pretty(&rep) {
+                        let _ = fs::write(&rep_path, rep_json);
+                    }
+                    if let Ok(man_json) = serde_json::to_string_pretty(&m) {
+                        let _ = fs::write(&existing_manifest_path, man_json);
+                    }
                 } else if is_basal_metazoa_study_target(None, &m.run_id) {
                     crate::supervisor_basal_metazoa_figures::generate_basal_metazoa_locked_figures(
                         &mut m,

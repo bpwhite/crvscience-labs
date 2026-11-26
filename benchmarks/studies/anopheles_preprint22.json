@@ -771,20 +771,29 @@
       "family_title": "Innate Immune Thioester-Containing Protein 1 (TEP1 / Complement)",
       "physiological_role": "Antiparasitic hemolymph thioester opsonization of Plasmodium ookinetes across Anopheles vectors",
       "gene_symbol": "TEP1",
-      "source": "entrez_nuccore",
-      "queries": [
-        "Anopheles[Organism] AND (\"thioester-containing protein 1\"[Title] OR TEP1[Title] OR \"thioester-containing protein\"[Title]) AND 1200:5000[SLEN] AND mRNA[Filter] NOT partial[Title]"
+      "source": "pinned_accessions",
+      "queries": [],
+      "fallback_queries": [],
+      "pinned_accessions": [
+        "XM_085036159.1",
+        "XM_083302247.1",
+        "XM_061659851.1",
+        "XM_058317030.1",
+        "XM_058260240.1",
+        "XM_058200532.1",
+        "XM_053817886.1",
+        "XM_053810639.1",
+        "XM_053039684.1",
+        "XM_053017294.1",
+        "XM_085036150.1",
+        "XM_085036149.1"
       ],
-      "fallback_queries": [
-        "Culicidae[Organism] AND (\"thioester-containing protein\"[Title] OR TEP1[Title]) AND 1200:5000[SLEN] AND mRNA[Filter] NOT partial[Title]"
-      ],
-      "pinned_accessions": [],
       "ortholog_config": {
-        "cache_key": "anoph_fam02_tep1_v2",
+        "cache_key": "anoph_fam02_tep1_v3",
         "genetic_code_table": 1,
         "preserve_frame0": false,
         "min_bp": 1100,
-        "max_bp": 5200,
+        "max_bp": 6000,
         "max_domain_bp": null,
         "min_aa_len": 340,
         "max_internal_stops": 0,

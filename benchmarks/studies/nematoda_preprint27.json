@@ -8,9 +8,9 @@
   "preprint_label": "PREPRINT-27",
   "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24223794",
-  "remediation_note": "Version 3.0.0 re-executed Stage 1-5 under generalized declarative bio-suite-supervisor + bio-suite-seqnet codon QC: (1) strict title classification separated the 28 short 28S/18S rRNA fallback accessions from the 36 complete mitogenomes so zero ribosomal sequences entered the COX1 (S3) codon alignment; (2) Stage 4 functional families were de-mixed into single-family full-length non-EST cohorts (FAM-01 GH5 beta-1,4-endoglucanase, FAM-02 CRT1 calreticulin, FAM-03 Hsp70, FAM-04 C. elegans P450) preserving conserved CYP I-helix and Cys-loop residues on 1TQN; (3) Skyline Cohorts L2 and L5 (Supp S2) were scoped cleanly to single-subunit LSU 28S D2-D3 rDNA.",
+  "remediation_note": "Version 4.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, symmetric HPD shortcuts, static skyline epoch labels, and fixed substitution-rate constants) with internal-partition chunk parallelization, empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary; retains prior v3.0.0 COX1 title classification, single-family non-EST ortholog, and LSU 28S D2-D3 scoping fixes.",
   "telemetry_filename": "nematoda-agricultural-pests-native-biosuite.json",
-  "companion_label": "Lab Discovery",
+  "companion_label": "Lab Discovery #140",
   "title": "Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes: Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Skylines",
   "subtitle_prefix": "100% Native Rust Phylum Nematoda Partitioned ModelTest Phylogenomics",
   "category": "Nematology, Plant-Parasitic Phylogenomics & Population Genetics",
@@ -1726,7 +1726,7 @@
     "fig5_caption": "Translated Universal Standard Code 1 amino-acid motif alignments across 48 Nematoda non-EST NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Caenorhabditis elegans cyp-31A2 structure threaded on 1TQN (2.05 A) with HEM A 508 and Cys442-Sg thiolate coordination.",
     "fig6_web_svg": "nematoda-pests-fig6-runie-pipeline-architecture.svg",
     "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Combinatorial Model Comparison Across Pipeline A & Pipeline B (Nematoda)",
-    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Nematoda supermatrix) and Pipeline B (12 agricultural pest nematode coalescent cohorts, N = 432).",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Nematoda supermatrix) and Pipeline B (12 agricultural pest nematode coalescent cohorts).",
     "fig6_clade_label": "Phylum Nematoda",
     "fig6_p450_label": "cyp-31A2 / HGT GH5 / CRT1 / hsp-70",
     "fig6_its_label": "Meloidogyne & Heterodera 28S rDNA",
@@ -1744,7 +1744,7 @@
   "manuscript_prose": {
     "section1_title": "Convergent Origins of Stylet Plant Parasitism, HGT Cellulases & Pest Diversification Across Phylum Nematoda",
     "section1_p1": "Plant-parasitic nematodes (Phylum Nematoda) inflict major global crop losses across staple grains, legumes, solanaceous tubers, perennial orchards, and forestry biomes. Herbivory on living plants arose independently across Clade I Dorylaimia virus vectors (Longidoridae, Trichodoridae), Clade IVa Aphelenchoidea (Bursaphelenchus xylophilus, Aphelenchoides besseyi), and the Clade IVb Tylenchomorpha radiation (Criconematidae, Tylenchulidae, Anguinidae, Hoplolaimidae, Pratylenchidae, Heteroderidae, Meloidogynidae) rooted on Chromadorea bacteriovore and entomopathogenic outgroups.",
-    "section1_p2": "In v3.0.0, all 64 stratified Nematoda OTUs route through generalized bio-suite-seqnet with strict GenBank FASTA title classification separating complete mitogenomes from short 28S/18S rRNA submissions, ensuring pure COX1 codon frames under Invertebrate Mitochondrial Code 5 while auditing four homogeneous Universal Standard Code 1 nuclear functional families (GH5, CRT1, hsp-70, and P450).",
+    "section1_p2": "In v4.0.0, all 64 stratified Nematoda OTUs route through generalized bio-suite-seqnet with strict GenBank FASTA title classification separating complete mitogenomes from short 28S/18S rRNA submissions, ensuring pure COX1 codon frames under Invertebrate Mitochondrial Code 5 while auditing four homogeneous Universal Standard Code 1 nuclear functional families (GH5, CRT1, hsp-70, and P450).",
     "section2_title": "Per-Locus BIC ModelTest, RY3 Compositional Collapse & Calibrated Phylum Nematoda Clock",
     "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA Hybridization & 32-Chain RuNIE Audit",
     "section4_title": "HGT Cellulase, Calreticulin Effector, Hsp70 & Cytochrome P450 Selection (1TQN)",
@@ -1758,7 +1758,7 @@
     ],
     "abstract_context": "Understanding how plant parasitism evolved repeatedly across nematodes requires resolving deep phylum-level relationships alongside the conservation of horizontally acquired cellulases, stylet effectors, and detoxification enzymes.",
     "executive_summary_lead": "traces plant-parasitism, HGT cellulases, and demography across pest nematodes",
-    "latex_intro": "Plant-parasitic and free-living nematodes across Phylum Nematoda span Chromadorea outgroups [A] through Clade I virus vectors [B], Aphelenchoidea [C], and sedentary cyst/root-knot parasites [D]-[G] in Version 3.0.0.",
+    "latex_intro": "Plant-parasitic and free-living nematodes across Phylum Nematoda span Chromadorea outgroups [A] through Clade I virus vectors [B], Aphelenchoidea [C], and sedentary cyst/root-knot parasites [D]-[G] in Version 4.0.0.",
     "seed_base": 20261127
   }
 }

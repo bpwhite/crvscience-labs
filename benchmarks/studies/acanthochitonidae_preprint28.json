@@ -8,9 +8,9 @@
   "preprint_label": "PREPRINT-28",
   "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24263607",
-  "remediation_note": "Version 3.0.0 remediates PREPRINT-28 v2.0.0 through the generalized declarative bio-suite pipeline: (1) replaced truncated Stage 4 FAM-04 CYP3A records (previously 1/12 I-helix, 0/12 Cys-loop) with 14 verified full-length Mollusca/Polyplacophora CYP3A mRNAs retaining 12/12 conserved I-helix and FxxGxxxCxG Cys-loop heme-thiolate motifs threaded onto PDB 1TQN, and ordered soma/heavy Ferritins ahead of oocyte Ferritins in FAM-01; (2) isolated Cohort L6 to single-compartment Chitonida 16S rRNA (acantho_pop_l6_16s_v3) purging cached Liolophura CYP3A contamination and converged all 12 skylines at minESS >= 200 and maxRhat <= 1.05; (3) disambiguated F:T044 (Acanthochitona sp. Adriatic) and G:T060 (Acanthochitona sp. IWP); and (4) activated acanthochitonidae_preprint28_design.json clade recovery evaluation plus metadata hygiene.",
+  "remediation_note": "Version 4.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, symmetric HPD shortcuts, static skyline epoch labels, and fixed substitution-rate constants) with internal-partition chunk parallelization, empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary; retains prior v3.0.0 full-length CYP3A, L6 16S rRNA isolation, and clade design fixes.",
   "telemetry_filename": "acanthochitonidae-native-biosuite.json",
-  "companion_label": "Lab Discovery",
+  "companion_label": "Lab Discovery #142",
   "title": "Global Phylogenomics, Biomineralization Selection, Coalescent Skylines, and Haplotype Cluster Networks Across Acanthochitonidae and Polyplacophora",
   "subtitle_prefix": "100% Native Rust Dual-Pass Partitioned ModelTest Phylogenomics, Biomineralization Selection & Coalescent Skylines",
   "category": "Marine Phylogenomics, Biomineralization & Haplotype Networks",
@@ -1742,7 +1742,7 @@
     ],
     "fig3_web_svg": "acanthochitonidae-fig3-quartet-coalescent-species-tree.svg",
     "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree, 61-Split q1 Parity & ABBA-BABA Tests",
-    "fig3_caption": "Complete 64-species bifurcating quartet coalescent species tree across 18 loci and 11,436,768 quartets with empirical CU branch lengths, 61-split q1 concordance, and NW Pacific ABBA-BABA introgression tests.",
+    "fig3_caption": "Complete 64-species bifurcating multi-locus quartet coalescent species tree with empirical CU branch lengths, 61-split q1 concordance, and NW Pacific ABBA-BABA introgression tests.",
     "fig4a_web_svg": "acanthochitonidae-fig4a-regional-skyline-matrix.svg",
     "fig4a_title": "Cross-Regional COX1 Bayesian Coalescent Skyline Matrix Across Acanthochitonidae & Polyplacophora (Cohorts R1-R6; N = 216)",
     "fig4a_caption": "Six regional mtDNA COX1 coalescent skylines (25,000 MCMC generations) across NW Pacific Acanthochitona + JTMD rafters, A. rubrolineata, Atlantic/Med A. crinita/fascicularis, Pan-American A. avicula/hirudiniformis, Chitonina, and Mopalioidea.",
@@ -1768,7 +1768,7 @@
     "fig5_caption": "Translated amino-acid motif alignments across 48 Polyplacophora NCBI single-subfamily orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D chiton CYP3A structure threaded on 1TQN (2.05 A) with Fe3+-Protoporphyrin IX and Cys442-Sg axial thiolate ligand.",
     "fig6_web_svg": "acanthochitonidae-fig6-runie-pipeline-architecture.svg",
     "fig6_title": "Dual Empirical RuNIE Pipeline Architectures, Full-Length Alignments & 4-Rank Combinatorial Model Comparison Across Pipeline A (Supermatrix) & Pipeline B (12 Skyline Cohorts)",
-    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Polyplacophora supermatrix + 31 full mitogenomes) and Pipeline B (12 coalescent skyline cohorts, N = 432).",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains and side-by-side 4-rank model comparison across Pipeline A (64-taxon Polyplacophora supermatrix + 31 full mitogenomes) and Pipeline B (12 coalescent skyline cohorts).",
     "fig6_clade_label": "Class Polyplacophora (Acanthochitonidae)",
     "fig6_p450_label": "CYP3A / Magnetite Ferritin / alpha-CA",
     "fig6_its_label": "Acanthochitona & Cryptoplacoidea 18S/28S/ITS1 rDNA",
@@ -1786,7 +1786,7 @@
   "manuscript_prose": {
     "section1_title": "Convergent Valve Burial, 18-Tuft Spicule Armor & Trans-Oceanic Rafting Across Acanthochitonidae and Polyplacophora",
     "section1_p1": "Polyplacophoran mollusks (chitons) pair eight articulated aragonite shell valves with a muscular spicule-armored girdle, magnetite-capped radular teeth capable of scraping coralline rock, and innervated sensory esthetes including image-forming shell eyes in Chitonidae. Within Suborder Acanthochitonina, dorsal valve reduction and full epithelial valve burial evolved independently in Giant Gumboot Chiton Cryptochiton stelleri (Mopalioidea) and in Australasian/New Zealand Cryptoconchus lineages (Cryptoplacoidea).",
-    "section1_p2": "In v3.0.0, all 64 Polyplacophora OTUs ([A]-[G]) with disambiguated Adriatic (F:T044) and Indo-West Pacific (G:T060) Acanthochitona slots execute through the generalized declarative bio-suite-supervisor pipeline with Edge-Linked Partitioned ModelTest vs. Unpartitioned ML estimator parity, acanthochitonidae_preprint28_design.json clade recovery validation, single-compartment Chitonida 16S rRNA in Cohort L6 (acantho_pop_l6_16s_v3), and full-length CYP3A orthologs preserving 12/12 I-helix and Cys-loop heme-thiolate geometry on PDB 1TQN.",
+    "section1_p2": "In v4.0.0, all 64 Polyplacophora OTUs ([A]-[G]) with disambiguated Adriatic (F:T044) and Indo-West Pacific (G:T060) Acanthochitona slots execute through the generalized declarative bio-suite-supervisor pipeline with Edge-Linked Partitioned ModelTest vs. Unpartitioned ML estimator parity, acanthochitonidae_preprint28_design.json clade recovery validation, single-compartment Chitonida 16S rRNA in Cohort L6 (acantho_pop_l6_16s_v3), and full-length CYP3A orthologs preserving 12/12 I-helix and Cys-loop heme-thiolate geometry on PDB 1TQN.",
     "section2_title": "Autonomous Hygiene, >=80% Supermatrix Coverage Gate, Mitogenome Phasing & Chronology",
     "section3_title": "64-Species Quartet Multispecies Coalescent Tree, ABBA-BABA & 32-Chain RuNIE Audit",
     "section4_title": "61-State Codon Selection on Magnetite Radula Ferritins, Aragonite Spicule alpha-CA, HSPA12 & 1TQN CYP3A",
@@ -1800,7 +1800,7 @@
     ],
     "abstract_context": "Reconstructing the global radiation of acanthochitonid chitons requires resolving deep polyplacophoran relationships alongside the molecular evolution of magnetite biomineralization and shell-plate internalization.",
     "executive_summary_lead": "traces the global radiation and biomineralization evolution of acanthochitonid chitons",
-    "latex_intro": "Sixty-four Polyplacophora taxa spanning Lepidopleurida outgroups [A], Chitonina [B], Mopalioidea [C], Cryptoplacidae [D], basal Acanthochitonidae [E], Atlanto-American Acanthochitona [F], and NW/Indo-West Pacific Acanthochitona [G] are evaluated across 17 loci and 4 biomineralization/detoxification families in Version 3.0.0.",
+    "latex_intro": "Sixty-four Polyplacophora taxa spanning Lepidopleurida outgroups [A], Chitonina [B], Mopalioidea [C], Cryptoplacidae [D], basal Acanthochitonidae [E], Atlanto-American Acanthochitona [F], and NW/Indo-West Pacific Acanthochitona [G] are evaluated across 17 loci and 4 biomineralization/detoxification families in Version 4.0.0.",
     "seed_base": 20261128
   }
 }

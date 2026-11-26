@@ -8,7 +8,7 @@
   "preprint_label": "PREPRINT-26",
   "preprint_version": "5.0.0",
   "concept_doi": "10.5281/zenodo.24116968",
-  "remediation_note": "Version 4.0.0 remediates PREPRINT-26 v3.0.0 through the generalized declarative bio-suite pipeline: (1) split mixed Stage 4 nuclear sets into four homogeneous single-family Code-1 panels purged of laccases, vitellogenins/Notum, Hsp60/Hsp90/Toll, and mitochondrial Clan-M CYP44 (retaining pure GH9 endoglucanases, JHE/FE4 carboxylesterases, Hsp70 ATPase chaperones, and 12/12 I-helix + Cys-loop Clan-4 CYP4G15/CYP4C monooxygenases); (2) restored unphased complete mitogenome controls in Regime 4 Raw-0Beaker eliminating the v3.0.0 bootstrap inversion; (3) upgraded L2 and L5 ribosomal cohorts to strictly single-subunit 16S LSU rRNA; and (4) enforced disable-wiki-links and metadata hygiene guards.",
+  "remediation_note": "Version 5.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, static skyline epoch labels, and fixed substitution-rate constants) with internal-partition chunk parallelization, empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary; retains prior v4.0.0 homogeneous nuclear single-family, unphased Raw0 mitogenome control, and 16S LSU rRNA fixes.",
   "telemetry_filename": "isoptera-global-radiation-native-biosuite.json",
   "companion_label": "Lab Discovery #138",
   "title": "Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines",
@@ -1764,7 +1764,7 @@
     "fig5_caption": "Translated Universal Standard Code 1 amino-acid motif alignments across 48 single-family Isoptera NCBI CDS orthologs, Goldman-Yang dN/dS, 32-chain RuNIE sweep, and 3D Zootermopsis nevadensis CYP4G15 structure threaded on 1TQN (2.05 A) with HEM A 508 and Cys442-Sg thiolate coordination.",
     "fig6_web_svg": "isoptera-global-fig6-runie-pipeline-architecture.svg",
     "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Combinatorial Model Comparison Across Pipeline A & Pipeline B (Isoptera)",
-    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and Raw0 unphased control (4th), alongside Pipeline B (12 skylines, N = 432).",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned Concatenated ML (2nd), Unrecoded-4 (3rd), and Raw0 unphased control (4th), alongside Pipeline B (12 single-species coalescent skylines).",
     "fig6_clade_label": "Blattodea & Isoptera",
     "fig6_p450_label": "CYP4G15 / GH9 / JHE / Hsp70",
     "fig6_its_label": "Odontotermes & Reticulitermes 16S rRNA",
@@ -1782,7 +1782,7 @@
   "manuscript_prose": {
     "section1_title": "1. Comparative Scope Across Blattodea Outgroups, Relictual Termites & Higher Termitidae",
     "section1_p1": "Termites (Blattodea: Isoptera) evolved obligate eusociality, soldier morphology, endogenous wood-cellulose hydrolysis, and fungal agriculture across 238 million years of Mesozoic and Cenozoic radiation from Cryptocercus wood-roach ancestors through basal Mastotermitidae, Archotermopsidae, Kalotermitidae, subterranean Rhinotermitidae (Coptotermes, Reticulitermes, Heterotermes), and higher Termitidae (Macrotermitinae, Apicotermitinae, Termitinae, Cubitermitinae, Nasutitermitinae, Syntermitinae).",
-    "section1_p2": "In Version 4.0.0, all 64 stratified Blattodea and Isoptera slots ([A]-[G]) run through the generalized declarative bio-suite pipeline, pairing Invertebrate Mitochondrial Code 5 organelle locus phasing and authentic unphased mitogenome Raw-0Beaker controls with Universal Standard Code 1 single-family GH9, JHE, Hsp70, and Clan-4 CYP4G15/CYP4C selection tests.",
+    "section1_p2": "In Version 5.0.0, all 64 stratified Blattodea and Isoptera slots ([A]-[G]) run through the generalized declarative bio-suite pipeline, pairing Invertebrate Mitochondrial Code 5 organelle locus phasing and authentic unphased mitogenome Raw-0Beaker controls with Universal Standard Code 1 single-family GH9, JHE, Hsp70, and Clan-4 CYP4G15/CYP4C selection tests.",
     "section2_title": "2. Per-Locus BIC ModelTest, Edge-Linked Proportional Partitioning & >=80% Supermatrix Gate",
     "section3_title": "3. 64-Species Multispecies Coalescent Species Tree, ABBA-BABA & 32-Chain RuNIE Audit",
     "section4_title": "4. Homogeneous Lignocellulase, Endocrine, Chaperone & Clan-4 P450 Selection (GH9, JHE, Hsp70 & CYP4G15 on 1TQN)",
@@ -1796,7 +1796,7 @@
     ],
     "abstract_context": "Resolving the evolutionary transition from wood-feeding cockroaches to eusocial termites requires separating deep blattodean phylogeny from compositional saturation while tracking endogenous lignocellulase and detoxification evolution.",
     "executive_summary_lead": "traces the global radiation and lignocellulase evolution of eusocial termites",
-    "latex_intro": "Blattodea and Isoptera lineages span Xylophagodea wood-roach outgroups [A] through Nasutitermitinae [G], analyzed under Genetic Codes 5 and 1 in Version 4.0.0.",
+    "latex_intro": "Blattodea and Isoptera lineages span Xylophagodea wood-roach outgroups [A] through Nasutitermitinae [G], analyzed under Genetic Codes 5 and 1 in Version 5.0.0.",
     "seed_base": 20261126
   }
 }

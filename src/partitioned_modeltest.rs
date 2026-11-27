@@ -13,11 +13,12 @@ use crate::tree_builder::{
     canonical_split_concordance_and_rf, compact_weighted_alignment,
     compress_alignment_and_estimate_rates, detect_binary_ry_columns,
     evaluate_pattern_range_weighted_lnl, evaluate_site_pattern_lnls, evaluate_tree_log_likelihood,
-    extract_canonical_splits_from_ml_nodes, finalize_tree_metrics, format_ml_newick,
-    infer_native_ml_tree_with_bootstrap, map_columns_to_patterns,
-    optimize_substitution_model_on_tree_parallel, run_inside_outside_pulley_pass,
-    solve_native_ml_tree_with_fit, CompressedAlignment, MlBootstrapReport, MlTreeNode,
-    PhyloRunModel, SingleTreeRunMetrics, SITE_PATTERN_CHUNK_SIZE,
+    evaluate_tree_log_likelihood_seq, extract_canonical_splits_from_ml_nodes,
+    finalize_tree_metrics, format_ml_newick, infer_native_ml_tree_with_bootstrap,
+    map_columns_to_patterns, optimize_substitution_model_on_tree_parallel,
+    parse_newick_to_ml_nodes, run_inside_outside_pulley_pass, solve_native_ml_tree_with_fit,
+    CompressedAlignment, MlBootstrapReport, MlTreeNode, PhyloRunModel, SingleTreeRunMetrics,
+    SITE_PATTERN_CHUNK_SIZE,
 };
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -871,101 +872,290 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
     let (mut part_exact_lnl, mut nni_eval, mut nni_acc) =
         optimize_partitioned_topology_and_branches(&mut part_nodes, &mut fitted_parts, n_taxa);
 
-    // Step D: Stratified Within-Locus Partitioned UFBoot2 + Self-Consistency Gate
+    // Step D: Seo (2008) Two-Stage Multilocus (GENESITE) Partitioned UFBoot2 + Self-Consistency Gate
+    let partitioned_bootstrap = run_partitioned_genesite_ufboot_stage(
+        &mut part_nodes,
+        &mut fitted_parts,
+        &mut part_exact_lnl,
+        &mut nni_eval,
+        &mut nni_acc,
+        raw_aligned_strings,
+        labels,
+        &full_aln,
+        &is_binary_col,
+        &full_col_to_pat,
+        best_unpart_rm,
+        &guide_fit.q,
+        &guide_fit.pi,
+        guide_fit.pinv,
+        &guide_fit.rate_cats,
+        true,
+        b_replicates,
+        seed,
+        t0,
+    )?;
+
+    // Final exact parameter counts and information criteria
+    let n_partitions = fitted_parts.len();
+    let sum_k_subst: usize = fitted_parts.iter().map(|p| p.winning_k_subst).sum();
+    let unrooted_branches = 2 * n_taxa.saturating_sub(3);
+    let partitioned_free_params_k = unrooted_branches + n_partitions.saturating_sub(1) + sum_k_subst;
+    let partitioned_ln_l = round4(part_exact_lnl);
+    let partitioned_aic = round4(-2.0 * partitioned_ln_l + 2.0 * (partitioned_free_params_k as f64));
+    let partitioned_bic = round4(-2.0 * partitioned_ln_l + (partitioned_free_params_k as f64) * ln_sites);
+
+    let total_dur_ms = round4(t0.elapsed().as_secs_f64() * 1000.0);
+    let mut part_metrics = finalize_tree_metrics(
+        "Native Rust Edge-Linked Partitioned ML",
+        best_unpart_rm,
+        n_taxa,
+        total_sites,
+        total_dur_ms,
+        &part_nodes,
+        partitioned_ln_l,
+        nni_eval,
+        nni_acc,
+    );
+    let root_id = part_nodes.len().saturating_sub(1);
+    part_metrics.run_model_code = format!("Partitioned ({}-Locus BIC)", n_partitions);
+    part_metrics.free_parameters_k = partitioned_free_params_k;
+    part_metrics.aic = partitioned_aic;
+    part_metrics.bic = partitioned_bic;
+    part_metrics.mean_branch_support_pct = partitioned_bootstrap.mean_split_support_pct;
+    part_metrics.newick_tree = format!("{};", format_ml_newick(&part_nodes, root_id));
+
+    let unpartitioned_free_params_k = unpart_metrics.free_parameters_k;
+    let unpartitioned_ln_l = unpart_metrics.ln_l;
+    let unpartitioned_aic = unpart_metrics.aic;
+    let unpartitioned_bic = unpart_metrics.bic;
+    let per_locus_models: Vec<PerLocusModelTestSummary> =
+        fitted_parts.into_iter().map(|p| p.summary).collect();
+
+    Ok(PartitionedSupermatrixMlResult {
+        per_locus_models,
+        n_taxa,
+        n_partitions,
+        total_sites,
+        partitioned_free_params_k,
+        partitioned_ln_l,
+        partitioned_aic,
+        partitioned_bic,
+        unpartitioned_best_model: best_unpart_code,
+        unpartitioned_free_params_k,
+        unpartitioned_ln_l,
+        unpartitioned_aic,
+        unpartitioned_bic,
+        delta_ln_l_partitioned_minus_unpartitioned: round4(partitioned_ln_l - unpartitioned_ln_l),
+        delta_bic_partitioned_minus_unpartitioned: round4(partitioned_bic - unpartitioned_bic),
+        partitioned_metrics: part_metrics,
+        partitioned_bootstrap,
+        unpartitioned_metrics: unpart_metrics,
+        unpartitioned_bootstrap: unpart_boot,
+        total_duration_ms: total_dur_ms,
+    })
+}
+
+fn eval_partitioned_lnl_seq(nodes: &[MlTreeNode], parts: &[FittedPartition]) -> f64 {
+    parts
+        .iter()
+        .map(|p| {
+            evaluate_tree_log_likelihood_seq(
+                nodes,
+                &p.aln,
+                &p.q,
+                &p.pi,
+                p.pinv,
+                &p.rate_cats,
+                p.rate_r,
+            )
+        })
+        .sum()
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_partitioned_genesite_ufboot_stage(
+    part_nodes: &mut Vec<MlTreeNode>,
+    fitted_parts: &mut [FittedPartition],
+    part_exact_lnl: &mut f64,
+    nni_eval: &mut usize,
+    nni_acc: &mut usize,
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    full_aln: &CompressedAlignment,
+    is_binary_col: &[bool],
+    full_col_to_pat: &[usize],
+    best_unpart_rm: PhyloRunModel,
+    guide_q: &[[f64; 4]; 4],
+    guide_pi: &[f64; 4],
+    guide_pinv: f64,
+    guide_cats: &[(f64, f64)],
+    allow_topology_promotion: bool,
+    b_replicates: usize,
+    seed: u64,
+    t0: Instant,
+) -> Result<MlBootstrapReport, String> {
+    let n_taxa = labels.len();
+    let total_sites = raw_aligned_strings.first().map(|s| s.len()).unwrap_or(0);
     let n_pats_full = full_aln.patterns.len();
-    let (init_q_full, init_pi_full) = build_rate_matrix_q_for_run_model(best_unpart_rm, &full_aln);
+    let (init_q_full, init_pi_full) = build_rate_matrix_q_for_run_model(best_unpart_rm, full_aln);
     let (init_pinv_full, init_cats_full) =
         build_rate_cats_from_params(best_unpart_rm, 0.30, 0.0, 0.68, 0.06);
 
     let binary_ry_columns_detected = is_binary_col.iter().filter(|&&b| b).count();
     let four_state_columns_detected = is_binary_col.len().saturating_sub(binary_ry_columns_detected);
 
+    let root_init = part_nodes.len().saturating_sub(1);
+    let mut ref_int_edges = Vec::with_capacity(n_taxa);
+    collect_partitioned_internal_edges(root_init, part_nodes, n_taxa, &mut ref_int_edges);
+    let (_, orig_ref_split_set) = extract_canonical_splits_from_ml_nodes(part_nodes, n_taxa);
+
+    let use_genesite = fitted_parts.len() >= 3;
     let m_explore = if b_replicates == 0 {
         0usize
-    } else if total_sites > 3_000 {
-        b_replicates.clamp(28, 36)
     } else {
-        b_replicates.clamp(32, 44)
+        (2 * ref_int_edges.len() + 24).clamp(36, 156)
     };
 
-    let explored_trees: Vec<Vec<MlTreeNode>> = (0..m_explore)
+    // Explore candidate topologies strictly on out-of-sample GENESITE bootstrap alignments (zero w^0 pre-seeding)
+    let explored_trees: Vec<(Vec<MlTreeNode>, bool)> = (0..m_explore)
         .into_par_iter()
         .map(|m| {
             let mut rng = DeterministicLcg64::new(splitmix64(seed ^ 0x5041_5254_u64 ^ (m as u64 + 1)));
+            let n_p = fitted_parts.len();
+            let mut locus_mult = vec![1usize; n_p];
+            if use_genesite {
+                locus_mult.fill(0);
+                for _ in 0..n_p {
+                    let pick = rng.gen_range_usize(n_p);
+                    locus_mult[pick] += 1;
+                }
+            }
             let mut col_w = vec![0u16; total_sites];
             let mut pat_w = vec![0.0f64; n_pats_full];
-            for p in &fitted_parts {
+            for (pi, p) in fitted_parts.iter().enumerate() {
+                let mult = locus_mult[pi];
+                if mult == 0 {
+                    continue;
+                }
                 let s0 = p.input.start_col_1based.saturating_sub(1).min(total_sites);
                 let l_p = p.aln.n_sites.max(1);
-                for _ in 0..l_p {
+                let n_draws = mult * l_p;
+                for _ in 0..n_draws {
                     let off = rng.gen_range_usize(l_p);
                     let c = (s0 + off).min(total_sites.saturating_sub(1));
                     col_w[c] = col_w[c].saturating_add(1);
                     pat_w[full_col_to_pat[c]] += 1.0;
                 }
             }
-            if m % 4 == 0 {
-                let aln_rep = compact_weighted_alignment(&full_aln, &pat_w);
-                let cands = build_weighted_bionj_pool(
-                    raw_aligned_strings,
-                    labels,
-                    best_unpart_rm,
-                    None,
-                    Some(&col_w),
-                    &is_binary_col,
-                    &[0, 1, 2],
-                );
-                let mut best_n = part_nodes.clone();
-                let mut best_l = f64::NEG_INFINITY;
-                for (_, mut cn) in cands {
-                    let mut ev = 0usize;
-                    let mut acc = 0usize;
-                    let lnl = run_inside_outside_pulley_pass(
-                        &mut cn,
-                        n_taxa,
-                        &aln_rep,
-                        &init_q_full,
-                        &init_pi_full,
-                        init_pinv_full,
-                        &init_cats_full,
-                        true,
-                        &mut ev,
-                        &mut acc,
-                    );
-                    if lnl > best_l || best_l.is_infinite() {
-                        best_l = lnl;
-                        best_n = cn;
+
+            if m < 2 * ref_int_edges.len() {
+                let (u, side, child_id, sib_id) = ref_int_edges[m / 2];
+                let swap_mode = (m % 2) as u8;
+                let mut cand = part_nodes.clone();
+                if let (Some(a_id), Some(b_id)) = (cand[child_id].left, cand[child_id].right) {
+                    if swap_mode == 0 {
+                        cand[child_id].right = Some(sib_id);
+                        if side == 0 {
+                            cand[u].right = Some(b_id);
+                        } else {
+                            cand[u].left = Some(b_id);
+                        }
+                    } else {
+                        cand[child_id].left = Some(sib_id);
+                        if side == 0 {
+                            cand[u].right = Some(a_id);
+                        } else {
+                            cand[u].left = Some(a_id);
+                        }
+                    }
+                    if is_valid_binary_tree(cand.len().saturating_sub(1), &cand, n_taxa) {
+                        return (cand, false);
                     }
                 }
-                best_n
+                (part_nodes.clone(), false)
             } else {
-                let aln_rep = compact_weighted_alignment(&full_aln, &pat_w);
-                let n_swaps = match m % 3 {
-                    0 => 2usize,
-                    1 => 5usize,
-                    _ => 9usize,
-                };
-                let mut cand = apply_stochastic_nni_perturbation(&part_nodes, n_taxa, n_swaps, &mut rng);
-                let mut ev = 0usize;
-                for _ in 0..2 {
+                let g = m - 2 * ref_int_edges.len();
+                if g < 8 {
+                    let aln_rep = compact_weighted_alignment(full_aln, &pat_w);
+                    let mut cand = if g == 0 {
+                        part_nodes.clone()
+                    } else {
+                        apply_stochastic_nni_perturbation(part_nodes, n_taxa, g % 4 + 1, &mut rng)
+                    };
+                    let mut ev = 0usize;
                     let mut acc = 0usize;
                     run_inside_outside_pulley_pass(
                         &mut cand,
                         n_taxa,
                         &aln_rep,
-                        &guide_fit.q,
-                        &guide_fit.pi,
-                        guide_fit.pinv,
-                        &guide_fit.rate_cats,
+                        guide_q,
+                        guide_pi,
+                        guide_pinv,
+                        guide_cats,
                         true,
                         &mut ev,
                         &mut acc,
                     );
-                    if acc == 0 {
-                        break;
+                    (cand, g > 0)
+                } else if g < 16 {
+                    let aln_rep = compact_weighted_alignment(full_aln, &pat_w);
+                    let cands = build_weighted_bionj_pool(
+                        raw_aligned_strings,
+                        labels,
+                        best_unpart_rm,
+                        None,
+                        Some(&col_w),
+                        is_binary_col,
+                        &[0, 1, 2],
+                    );
+                    let mut best_n = part_nodes.clone();
+                    let mut best_l = f64::NEG_INFINITY;
+                    for (_, mut cn) in cands {
+                        let mut ev = 0usize;
+                        let mut acc = 0usize;
+                        let lnl = run_inside_outside_pulley_pass(
+                            &mut cn,
+                            n_taxa,
+                            &aln_rep,
+                            &init_q_full,
+                            &init_pi_full,
+                            init_pinv_full,
+                            &init_cats_full,
+                            true,
+                            &mut ev,
+                            &mut acc,
+                        );
+                        if lnl > best_l || best_l.is_infinite() {
+                            best_l = lnl;
+                            best_n = cn;
+                        }
                     }
+                    (best_n, true)
+                } else {
+                    let aln_rep = compact_weighted_alignment(full_aln, &pat_w);
+                    let n_swaps = 2 + (g % 5) * 2;
+                    let mut cand = apply_stochastic_nni_perturbation(part_nodes, n_taxa, n_swaps, &mut rng);
+                    let mut ev = 0usize;
+                    for _ in 0..2 {
+                        let mut acc = 0usize;
+                        run_inside_outside_pulley_pass(
+                            &mut cand,
+                            n_taxa,
+                            &aln_rep,
+                            guide_q,
+                            guide_pi,
+                            guide_pinv,
+                            guide_cats,
+                            true,
+                            &mut ev,
+                            &mut acc,
+                        );
+                        if acc == 0 {
+                            break;
+                        }
+                    }
+                    (cand, true)
                 }
-                cand
             }
         })
         .collect();
@@ -977,36 +1167,63 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
         exact_lnl: f64,
     }
 
-    let mut seen_topologies: HashSet<BTreeSet<Vec<u64>>> = HashSet::with_capacity(m_explore + 1);
-    let mut unique_trees: Vec<(Vec<MlTreeNode>, BTreeSet<Vec<u64>>)> = Vec::with_capacity(m_explore);
-    let (_, part_init_splits) = extract_canonical_splits_from_ml_nodes(&part_nodes, n_taxa);
-    seen_topologies.insert(part_init_splits.clone());
-    unique_trees.push((part_nodes.clone(), part_init_splits));
-    for cand in explored_trees {
+    let mut seen_topologies: HashSet<BTreeSet<Vec<u64>>> = HashSet::with_capacity(m_explore);
+    let mut unique_trees: Vec<(Vec<MlTreeNode>, BTreeSet<Vec<u64>>, bool)> = Vec::with_capacity(m_explore);
+    for (cand, from_guide) in explored_trees {
         let (_, sp) = extract_canonical_splits_from_ml_nodes(&cand, n_taxa);
         if seen_topologies.insert(sp.clone()) {
-            unique_trees.push((cand, sp));
+            unique_trees.push((cand, sp, from_guide));
         }
     }
 
     let inner_par = unique_trees.len() < rayon::current_num_threads();
     let bank: Vec<PartBootCand> = unique_trees
         .into_par_iter()
-        .map(|(mut nodes, splits)| {
-            let mut ev_b = 0usize;
-            let mut acc_b = 0usize;
-            run_inside_outside_pulley_pass(
-                &mut nodes,
-                n_taxa,
-                &full_aln,
-                &guide_fit.q,
-                &guide_fit.pi,
-                guide_fit.pinv,
-                &guide_fit.rate_cats,
-                false,
-                &mut ev_b,
-                &mut acc_b,
-            );
+        .map(|(mut nodes, splits, from_guide)| {
+            if from_guide {
+                let mut ev_b = 0usize;
+                let mut acc_b = 0usize;
+                run_inside_outside_pulley_pass(
+                    &mut nodes,
+                    n_taxa,
+                    full_aln,
+                    guide_q,
+                    guide_pi,
+                    guide_pinv,
+                    guide_cats,
+                    false,
+                    &mut ev_b,
+                    &mut acc_b,
+                );
+            }
+            // Optimize any rearranged internal edges directly under partitioned likelihood so candidate
+            // topologies compete on equal footing with part_nodes without unpartitioned branch-length bias
+            let (cand_split_entries, _) = extract_canonical_splits_from_ml_nodes(&nodes, n_taxa);
+            let novel_edges: Vec<usize> = cand_split_entries
+                .into_iter()
+                .filter(|(sp, _)| !orig_ref_split_set.contains(sp))
+                .flat_map(|(_, nids)| nids)
+                .collect();
+            if !novel_edges.is_empty() && novel_edges.len() <= 3 {
+                let mut cur_l = eval_partitioned_lnl_seq(&nodes, fitted_parts);
+                for ei in novel_edges {
+                    if ei < nodes.len().saturating_sub(1) {
+                        let b0 = nodes[ei].branch_len.clamp(1e-5, 2.5);
+                        let mut best_b = b0;
+                        let mut best_l = cur_l;
+                        for &mult in &[0.38_f64, 1.65_f64] {
+                            nodes[ei].branch_len = (b0 * mult).clamp(1e-5, 3.5);
+                            let l = eval_partitioned_lnl_seq(&nodes, fitted_parts);
+                            if l > best_l {
+                                best_l = l;
+                                best_b = nodes[ei].branch_len;
+                            }
+                        }
+                        nodes[ei].branch_len = best_b;
+                        cur_l = best_l;
+                    }
+                }
+            }
             let score_part = |p: &FittedPartition| {
                 evaluate_site_pattern_lnls(
                     &nodes,
@@ -1043,21 +1260,22 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
         })
         .collect();
 
-    if let Some(best_c) = bank
-        .iter()
-        .max_by(|a, b| a.exact_lnl.partial_cmp(&b.exact_lnl).unwrap_or(std::cmp::Ordering::Equal))
-    {
-        if best_c.exact_lnl.is_finite() && best_c.exact_lnl > part_exact_lnl + 1e-4 {
-            part_nodes = best_c.nodes.clone();
-            // Polish rates after topology promotion
-            normalize_partition_rates_and_branches(&mut part_nodes, &mut fitted_parts);
-            part_exact_lnl = eval_partitioned_lnl(&part_nodes, &fitted_parts);
+    if allow_topology_promotion {
+        if let Some(best_c) = bank
+            .iter()
+            .max_by(|a, b| a.exact_lnl.partial_cmp(&b.exact_lnl).unwrap_or(std::cmp::Ordering::Equal))
+        {
+            if best_c.exact_lnl.is_finite() && best_c.exact_lnl > *part_exact_lnl + 1e-4 {
+                *part_nodes = best_c.nodes.clone();
+                normalize_partition_rates_and_branches(part_nodes, fitted_parts);
+                *part_exact_lnl = eval_partitioned_lnl(part_nodes, fitted_parts);
+            }
         }
     }
 
     // Identity-replicate & partitioned NNI stationarity self-consistency gate
     let mut id_nodes = part_nodes.clone();
-    let mut id_lnl = part_exact_lnl;
+    let mut id_lnl = *part_exact_lnl;
     let id_root = id_nodes.len().saturating_sub(1);
     let mut id_edges = Vec::with_capacity(n_taxa);
     collect_partitioned_internal_edges(id_root, &id_nodes, n_taxa, &mut id_edges);
@@ -1069,27 +1287,27 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
             sid,
             n_taxa,
             &mut id_nodes,
-            &fitted_parts,
+            fitted_parts,
             &mut id_lnl,
-            &mut nni_eval,
+            nni_eval,
         ) {
-            nni_acc += 1;
+            *nni_acc += 1;
         }
     }
     let (mut ref_split_entries, ref_split_set) =
-        extract_canonical_splits_from_ml_nodes(&part_nodes, n_taxa);
+        extract_canonical_splits_from_ml_nodes(part_nodes, n_taxa);
     let (_, id_split_set) = extract_canonical_splits_from_ml_nodes(&id_nodes, n_taxa);
     let (identity_replicate_rf_distance, identity_replicate_concordance_pct) =
         canonical_split_concordance_and_rf(&ref_split_set, &id_split_set);
-    let st_gain = (id_lnl - part_exact_lnl).max(0.0);
-    let lnl_deficit_nats = (id_lnl - part_exact_lnl).max(0.0);
+    let st_gain = (id_lnl - *part_exact_lnl).max(0.0);
+    let lnl_deficit_nats = (id_lnl - *part_exact_lnl).max(0.0);
     let max_allowed_deficit = ((total_sites as f64) * 0.03).max(8.0);
     let estimator_self_consistent = lnl_deficit_nats <= max_allowed_deficit
         && (identity_replicate_concordance_pct >= 85.0 || st_gain <= 2.0);
-    if id_lnl > part_exact_lnl + 1e-4 {
-        part_nodes = id_nodes;
-        part_exact_lnl = id_lnl;
-        ref_split_entries = extract_canonical_splits_from_ml_nodes(&part_nodes, n_taxa).0;
+    if allow_topology_promotion && id_lnl > *part_exact_lnl + 1e-4 {
+        *part_nodes = id_nodes;
+        *part_exact_lnl = id_lnl;
+        ref_split_entries = extract_canonical_splits_from_ml_nodes(part_nodes, n_taxa).0;
     }
     if ref_split_entries.len() >= 3 && !estimator_self_consistent {
         return Err(format!(
@@ -1098,7 +1316,7 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
         ));
     }
 
-    // Stratified within-locus RELL UFBoot2 scoring across 0..b_replicates
+    // Seo (2008) Two-Stage GENESITE RELL UFBoot2 scoring across 0..b_replicates
     let n_splits = ref_split_entries.len();
     let (mean_split_support_pct, min_split_support_pct, max_split_support_pct, split_support_pct_by_mask) =
         if b_replicates == 0 || n_splits == 0 {
@@ -1113,12 +1331,26 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
                 .into_par_iter()
                 .map(|rep| {
                     let mut rng = DeterministicLcg64::new(splitmix64(seed ^ 0x5245_4C4C_u64 ^ (rep as u64 + 1)));
+                    let n_p = fitted_parts.len();
+                    let mut locus_draws = vec![1usize; n_p];
+                    if use_genesite {
+                        locus_draws.fill(0);
+                        for _ in 0..n_p {
+                            locus_draws[rng.gen_range_usize(n_p)] += 1;
+                        }
+                    }
                     let pat_w_by_p: Vec<Vec<f64>> = fitted_parts
                         .iter()
-                        .map(|p| {
+                        .enumerate()
+                        .map(|(pi, p)| {
+                            let mult = locus_draws[pi];
                             let l_p = p.aln.n_sites.max(1);
                             let mut pw = vec![0.0f64; p.aln.patterns.len()];
-                            for _ in 0..l_p {
+                            if mult == 0 {
+                                return pw;
+                            }
+                            let n_draws = mult * l_p;
+                            for _ in 0..n_draws {
                                 let col = rng.gen_range_usize(l_p);
                                 let pat_i = p.col_to_pat.get(col).copied().unwrap_or(0);
                                 if pat_i < pw.len() {
@@ -1191,38 +1423,15 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
             )
         };
 
-    // Final exact parameter counts and information criteria
     let n_partitions = fitted_parts.len();
-    let sum_k_subst: usize = fitted_parts.iter().map(|p| p.winning_k_subst).sum();
-    let unrooted_branches = 2 * n_taxa.saturating_sub(3);
-    let partitioned_free_params_k = unrooted_branches + n_partitions.saturating_sub(1) + sum_k_subst;
-    let partitioned_ln_l = round4(part_exact_lnl);
-    let partitioned_aic = round4(-2.0 * partitioned_ln_l + 2.0 * (partitioned_free_params_k as f64));
-    let partitioned_bic = round4(-2.0 * partitioned_ln_l + (partitioned_free_params_k as f64) * ln_sites);
-
-    let total_dur_ms = round4(t0.elapsed().as_secs_f64() * 1000.0);
-    let mut part_metrics = finalize_tree_metrics(
-        "Native Rust Edge-Linked Partitioned ML",
-        best_unpart_rm,
-        n_taxa,
-        total_sites,
-        total_dur_ms,
-        &part_nodes,
-        partitioned_ln_l,
-        nni_eval,
-        nni_acc,
-    );
-    let root_id = part_nodes.len().saturating_sub(1);
-    part_metrics.run_model_code = format!("Partitioned ({}-Locus BIC)", n_partitions);
-    part_metrics.free_parameters_k = partitioned_free_params_k;
-    part_metrics.aic = partitioned_aic;
-    part_metrics.bic = partitioned_bic;
-    part_metrics.mean_branch_support_pct = mean_split_support_pct;
-    part_metrics.newick_tree = format!("{};", format_ml_newick(&part_nodes, root_id));
-
-    let partitioned_bootstrap = MlBootstrapReport {
+    let dur_ms = round4(t0.elapsed().as_secs_f64() * 1000.0);
+    Ok(MlBootstrapReport {
         b_replicates,
-        estimator_model_code: format!("Edge-Linked Partitioned ({} Loci)", n_partitions),
+        estimator_model_code: if use_genesite {
+            format!("Edge-Linked Partitioned GENESITE ({} Loci)", n_partitions)
+        } else {
+            format!("Edge-Linked Partitioned ({} Loci)", n_partitions)
+        },
         binary_ry_columns_detected,
         four_state_columns_detected,
         nontrivial_reference_splits: n_splits,
@@ -1232,39 +1441,190 @@ pub fn infer_partitioned_supermatrix_ml_with_bootstrap(
         identity_replicate_concordance_pct,
         identity_replicate_rf_distance,
         estimator_self_consistent,
-        duration_ms: total_dur_ms,
+        duration_ms: dur_ms,
         split_support_pct_by_mask,
+    })
+}
+
+/// Fast Stage-D-only `GENESITE` partitioned `UFBoot2` refresh on an already-solved
+/// `PartitionedSupermatrixMlResult`. Reconstructs the exact solved `part_nodes` topology and branch
+/// lengths from `part_res.partitioned_metrics.newick_tree`, refits only the 1 winning substitution
+/// model per locus in parallel, and executes Seo (2008) two-stage multilocus `GENESITE` `UFBoot2`
+/// without re-running the 144-model Step B `ModelTest` sweep.
+pub fn refresh_partitioned_genesite_bootstrap_in_place(
+    part_res: &mut PartitionedSupermatrixMlResult,
+    raw_aligned_strings: &[String],
+    labels: &[String],
+    b_replicates: usize,
+    seed: u64,
+) -> Result<(), String> {
+    let t0 = Instant::now();
+    let n_taxa = labels.len();
+    if n_taxa < 4 || raw_aligned_strings.len() != n_taxa {
+        return Err(format!(
+            "refresh_partitioned_genesite_bootstrap_in_place: taxon mismatch (labels={}, seqs={})",
+            n_taxa,
+            raw_aligned_strings.len()
+        ));
+    }
+    let total_sites = raw_aligned_strings.first().map(|s| s.len()).unwrap_or(0);
+    let full_aln = compress_alignment_and_estimate_rates(raw_aligned_strings);
+    let is_binary_col = detect_binary_ry_columns(raw_aligned_strings);
+    let full_col_to_pat = map_columns_to_patterns(raw_aligned_strings, &full_aln);
+
+    let mut part_nodes = parse_newick_to_ml_nodes(&part_res.partitioned_metrics.newick_tree, labels)
+        .ok_or_else(|| {
+            "Failed to parse solved partitioned_metrics.newick_tree into MlTreeNode vector".to_string()
+        })?;
+
+    let best_unpart_rm = CANDIDATE_MODELS
+        .iter()
+        .find(|(code, _, _, _)| *code == part_res.unpartitioned_best_model)
+        .map(|&(_, _, rm, _)| {
+            if part_res.unpartitioned_best_model == "GTR+F+G4" {
+                PhyloRunModel::GtrInvGamma4Full
+            } else {
+                rm
+            }
+        })
+        .unwrap_or(PhyloRunModel::GtrInvGamma4Full);
+    let unpart_no_inv = part_res.unpartitioned_best_model == "GTR+F+G4"
+        || part_res.unpartitioned_best_model == "K80+G4"
+        || part_res.unpartitioned_best_model == "JC"
+        || part_res.unpartitioned_best_model == "GTR+F+R2";
+    let (guide_q, guide_pi) = build_rate_matrix_q_for_run_model(best_unpart_rm, &full_aln);
+    let guide_rate_rm = if unpart_no_inv && matches!(best_unpart_rm, PhyloRunModel::GtrInvGamma4Full) {
+        PhyloRunModel::K80Gamma4
+    } else {
+        best_unpart_rm
+    };
+    let (guide_pinv, guide_cats) = build_rate_cats_from_params(
+        guide_rate_rm,
+        0.75,
+        if unpart_no_inv { 0.0 } else { 0.15 },
+        0.68,
+        0.08,
+    );
+
+    let parse_alpha = |s: &str| -> f64 {
+        if let Some(pos) = s.find("a=") {
+            s[pos + 2..]
+                .trim_end_matches(')')
+                .split([',', ')', ';', ' '])
+                .next()
+                .and_then(|v| v.parse::<f64>().ok())
+                .unwrap_or(0.85)
+                .clamp(0.08, 9.99)
+        } else {
+            0.85
+        }
     };
 
-    let unpartitioned_free_params_k = unpart_metrics.free_parameters_k;
-    let unpartitioned_ln_l = unpart_metrics.ln_l;
-    let unpartitioned_aic = unpart_metrics.aic;
-    let unpartitioned_bic = unpart_metrics.bic;
-    let per_locus_models: Vec<PerLocusModelTestSummary> =
-        fitted_parts.into_iter().map(|p| p.summary).collect();
+    let part_nodes_ref = part_nodes.clone();
+    let mut fitted_parts: Vec<FittedPartition> = part_res
+        .per_locus_models
+        .par_iter()
+        .map(|lm| {
+            let s0 = lm.start_col_1based.saturating_sub(1).min(total_sites);
+            let e0 = lm.end_col_1based.min(total_sites).max(s0);
+            let len_bp = e0.saturating_sub(s0).max(1);
+            let seqs_p: Vec<String> = raw_aligned_strings
+                .iter()
+                .map(|row| {
+                    let bytes = row.as_bytes();
+                    if e0 <= bytes.len() {
+                        String::from_utf8_lossy(&bytes[s0..e0]).into_owned()
+                    } else {
+                        "-".repeat(len_bp)
+                    }
+                })
+                .collect();
+            let aln_p = compress_alignment_and_estimate_rates(&seqs_p);
+            let col_to_pat = map_columns_to_patterns(&seqs_p, &aln_p);
+            let (mcode, k_sub, rm, force_no_inv) = CANDIDATE_MODELS
+                .iter()
+                .copied()
+                .find(|(c, _, _, _)| *c == lm.winning_model_code)
+                .unwrap_or(("GTR+F+I+G4", 10, PhyloRunModel::GtrInvGamma4Full, false));
+            let r_p = lm.proportional_rate_r.clamp(0.05, 6.0);
+            let (q_opt, pi_opt) = build_rate_matrix_q_for_run_model(rm, &aln_p);
+            let rate_rm = if force_no_inv && matches!(rm, PhyloRunModel::GtrInvGamma4Full) {
+                PhyloRunModel::K80Gamma4
+            } else {
+                rm
+            };
+            let alpha_p = parse_alpha(&lm.gamma_or_freerate_summary);
+            let pinv_in = if force_no_inv { 0.0 } else { lm.pinv.clamp(0.0, 0.85) };
+            let (pinv_opt, cats_opt) =
+                build_rate_cats_from_params(rate_rm, alpha_p, pinv_in, 0.68, 0.08);
+            let lnl_p = evaluate_tree_log_likelihood_seq(
+                &part_nodes_ref,
+                &aln_p,
+                &q_opt,
+                &pi_opt,
+                pinv_opt,
+                &cats_opt,
+                r_p,
+            );
+            FittedPartition {
+                input: PartitionLocusInput {
+                    locus_name: lm.locus_name.clone(),
+                    locus_class: lm.locus_class.clone(),
+                    protein_coding: lm.alphabet_mode.contains("RY3"),
+                    is_nuclear: lm.locus_class.to_ascii_lowercase().contains("nuc"),
+                    start_col_1based: lm.start_col_1based,
+                    end_col_1based: lm.end_col_1based,
+                },
+                _seqs: seqs_p,
+                aln: aln_p,
+                col_to_pat,
+                _winning_code: mcode.to_string(),
+                winning_k_subst: k_sub,
+                _winning_rm: rm,
+                _winning_force_no_inv: force_no_inv,
+                q: q_opt,
+                pi: pi_opt,
+                pinv: pinv_opt,
+                rate_cats: cats_opt,
+                rate_r: r_p,
+                locus_ln_l: round4(lnl_p),
+                summary: lm.clone(),
+            }
+        })
+        .collect();
 
-    Ok(PartitionedSupermatrixMlResult {
-        per_locus_models,
-        n_taxa,
-        n_partitions,
-        total_sites,
-        partitioned_free_params_k,
-        partitioned_ln_l,
-        partitioned_aic,
-        partitioned_bic,
-        unpartitioned_best_model: best_unpart_code,
-        unpartitioned_free_params_k,
-        unpartitioned_ln_l,
-        unpartitioned_aic,
-        unpartitioned_bic,
-        delta_ln_l_partitioned_minus_unpartitioned: round4(partitioned_ln_l - unpartitioned_ln_l),
-        delta_bic_partitioned_minus_unpartitioned: round4(partitioned_bic - unpartitioned_bic),
-        partitioned_metrics: part_metrics,
-        partitioned_bootstrap,
-        unpartitioned_metrics: unpart_metrics,
-        unpartitioned_bootstrap: unpart_boot,
-        total_duration_ms: total_dur_ms,
-    })
+    let mut part_exact_lnl = eval_partitioned_lnl(&part_nodes, &fitted_parts);
+    let mut nni_eval = part_res.partitioned_metrics.nni_moves_evaluated;
+    let mut nni_acc = part_res.partitioned_metrics.nni_moves_accepted;
+
+    let partitioned_bootstrap = run_partitioned_genesite_ufboot_stage(
+        &mut part_nodes,
+        &mut fitted_parts,
+        &mut part_exact_lnl,
+        &mut nni_eval,
+        &mut nni_acc,
+        raw_aligned_strings,
+        labels,
+        &full_aln,
+        &is_binary_col,
+        &full_col_to_pat,
+        best_unpart_rm,
+        &guide_q,
+        &guide_pi,
+        guide_pinv,
+        &guide_cats,
+        false,
+        b_replicates,
+        seed,
+        t0,
+    )?;
+
+    let root_id = part_nodes.len().saturating_sub(1);
+    part_res.partitioned_metrics.mean_branch_support_pct =
+        partitioned_bootstrap.mean_split_support_pct;
+    part_res.partitioned_metrics.newick_tree = format!("{};", format_ml_newick(&part_nodes, root_id));
+    part_res.partitioned_bootstrap = partitioned_bootstrap;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1432,9 +1792,7 @@ mod tests {
 
     #[test]
     fn test_internal_partition_parallel_matches_sequential_and_speeds_up_skewed_loci() {
-        use crate::tree_builder::{
-            evaluate_tree_log_likelihood_seq, optimize_substitution_model_on_tree_seq,
-        };
+        use crate::tree_builder::optimize_substitution_model_on_tree_seq;
 
         let n_taxa = 24usize;
         let lengths = [1800usize, 240, 240, 240, 240, 240];

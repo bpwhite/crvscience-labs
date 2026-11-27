@@ -286,7 +286,10 @@ pub fn align_sequences_mafft_native_with_config(
         return ("none".to_string(), Vec::new(), empty_tel);
     }
 
-    // Clean input sequences (strip pre-existing gaps/whitespace, uppercase)
+    // Auto-detect amino-acid vs. nucleotide input before stripping/normalizing characters
+    let is_protein = is_protein_records(records);
+
+    // Clean input sequences (strip pre-existing gaps/whitespace, uppercase; convert U->T only for nucleotides)
     let raw_seqs: Vec<Vec<u8>> = records
         .iter()
         .map(|r| {
@@ -295,7 +298,7 @@ pub fn align_sequences_mafft_native_with_config(
                 .filter(|&b| b != b'-' && !b.is_ascii_whitespace())
                 .map(|b| {
                     let u = b.to_ascii_uppercase();
-                    if u == b'U' {
+                    if !is_protein && u == b'U' {
                         b'T'
                     } else {
                         u
@@ -338,26 +341,30 @@ pub fn align_sequences_mafft_native_with_config(
     // STAGE 1: Strand Polarity Normalization (`--adjustdirection`) & Domain Scan
     // -------------------------------------------------------------------------
     let t_s1 = Instant::now();
-    let (norm_seqs, revcomp_flags) = if config.adjust_direction {
+    let (norm_seqs, revcomp_flags) = if config.adjust_direction && !is_protein {
         normalize_strand_polarity_mafft(&raw_seqs)
     } else {
         (raw_seqs, vec![false; n])
     };
     let revcomp_count = revcomp_flags.iter().filter(|&&f| f).count();
 
-    // Scan for nuclear rDNA `18S–ITS1–5.8S–ITS2–28S` structural domain boundaries
-    let its_bounds: Vec<RdnaItsDomainBounds> = norm_seqs
-        .iter()
-        .map(|s| detect_rdna_its_domain_boundaries(s))
-        .collect();
+    // Scan for nuclear rDNA `18S–ITS1–5.8S–ITS2–28S` structural domain boundaries (nucleotide only)
+    let its_bounds: Vec<RdnaItsDomainBounds> = if is_protein {
+        vec![RdnaItsDomainBounds::default(); n]
+    } else {
+        norm_seqs
+            .iter()
+            .map(|s| detect_rdna_its_domain_boundaries(s))
+            .collect()
+    };
     let anchor_58s_count = its_bounds.iter().filter(|b| b.has_58s_core).count();
-    let is_its_cistron = anchor_58s_count * 2 >= n && anchor_58s_count >= 2;
+    let is_its_cistron = !is_protein && anchor_58s_count * 2 >= n && anchor_58s_count >= 2;
 
     // Scan for Eukaryotic 18S SSU rRNA Universal Core (U3/U5/U6/U7) expansion-segment boundaries,
     // Gnathostome Homeobox + (GCN)_n repeat + 5'/3' UTR boundaries, or Endosymbiotic RbcS cTP + mature core boundaries
-    let euk18s_zones = detect_cohort_euk18s_zones(&norm_seqs);
-    let homeobox_zones = detect_cohort_homeobox_zones(&norm_seqs);
-    let rbcs_zones = detect_cohort_rbcs_zones(&norm_seqs);
+    let euk18s_zones = if is_protein { None } else { detect_cohort_euk18s_zones(&norm_seqs) };
+    let homeobox_zones = if is_protein { None } else { detect_cohort_homeobox_zones(&norm_seqs) };
+    let rbcs_zones = if is_protein { None } else { detect_cohort_rbcs_zones(&norm_seqs) };
     let has_multi_island_zones =
         euk18s_zones.is_some() || homeobox_zones.is_some() || rbcs_zones.is_some();
 
@@ -386,7 +393,7 @@ pub fn align_sequences_mafft_native_with_config(
     //   - Gnathostome `HOXD13`: 3-zone `5' UTR + (GCN)_n Poly-Ala | 240-bp Homeobox | 3' UTR`
     //   - Embryophyta `RbcS`: 3-zone `5' UTR + Disordered cTP | 279-bp Mature Core | 3' UTR`
     // -------------------------------------------------------------------------
-    let all_have_58s = anchor_58s_count == n;
+    let all_have_58s = !is_protein && anchor_58s_count == n;
     let (
         final_matrix,
         fft_anchors_total,
@@ -439,15 +446,16 @@ pub fn align_sequences_mafft_native_with_config(
             t_s1,
         )
     } else {
-        align_single_domain_mafft(
+        align_single_domain_mafft_with_alphabet(
             &norm_seqs,
             resolved_strategy,
             config.max_iterations,
             config.use_transitive_consistency,
-            config.use_secondary_structure_weights,
+            config.use_secondary_structure_weights && !is_protein,
             true,
             true,
             false,
+            is_protein,
             t_s1,
         )
     };
@@ -471,20 +479,24 @@ pub fn align_sequences_mafft_native_with_config(
     } else {
         anchor_58s_count
     };
+    let mat_label = if is_protein { "BLOSUM62" } else { "DNA200" };
     let method_str = if is_its_cistron && all_have_58s {
         format!(
-            "bio-suite native Rust MAFFT-mimetic v4 ({} / E-INS-i 5.8S-Anchored + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, DNA200)",
-            resolved_strategy.code_label()
+            "bio-suite native Rust MAFFT-mimetic v4 ({} / E-INS-i 5.8S-Anchored + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, {})",
+            resolved_strategy.code_label(),
+            mat_label
         )
     } else if has_multi_island_zones {
         format!(
-            "bio-suite native Rust MAFFT-mimetic v4 ({} Multi-Island Domain-Locked + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, DNA200)",
-            resolved_strategy.code_label()
+            "bio-suite native Rust MAFFT-mimetic v4 ({} Multi-Island Domain-Locked + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, {})",
+            resolved_strategy.code_label(),
+            mat_label
         )
     } else {
         format!(
-            "bio-suite native Rust MAFFT-mimetic v4 ({} FFT Phase + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, DNA200)",
-            resolved_strategy.code_label()
+            "bio-suite native Rust MAFFT-mimetic v4 ({} FFT Phase + Local hat3 Consistency + 2-Tree UPGMA Profile DP + Iterative Refinement, {})",
+            resolved_strategy.code_label(),
+            mat_label
         )
     };
 
@@ -1123,6 +1135,14 @@ pub fn find_fft_homologous_anchors(
     seq_a: &[u8],
     seq_b: &[u8],
 ) -> Vec<(usize, usize, usize, i32)> {
+    find_fft_homologous_anchors_mode(seq_a, seq_b, false)
+}
+
+pub fn find_fft_homologous_anchors_mode(
+    seq_a: &[u8],
+    seq_b: &[u8],
+    is_protein: bool,
+) -> Vec<(usize, usize, usize, i32)> {
     let la = seq_a.len();
     let lb = seq_b.len();
     if la < 20 || lb < 20 {
@@ -1133,32 +1153,53 @@ pub fn find_fft_homologous_anchors(
     let mut sum_corr_re = vec![0.0f64; n_fft];
     let mut sum_corr_im = vec![0.0f64; n_fft];
 
-    let bases = [b'A', b'C', b'G', b'T'];
     let mut fa_re = vec![0.0f64; n_fft];
     let mut fa_im = vec![0.0f64; n_fft];
     let mut fb_re = vec![0.0f64; n_fft];
     let mut fb_im = vec![0.0f64; n_fft];
 
-    for &base in &bases {
-        fa_re.fill(0.0);
-        fa_im.fill(0.0);
-        fb_re.fill(0.0);
-        fb_im.fill(0.0);
-
-        for (i, &b) in seq_a.iter().enumerate() {
-            fa_re[i] = if b == base { 0.75 } else { -0.25 };
+    if is_protein {
+        for ch in 0u8..6u8 {
+            fa_re.fill(0.0);
+            fa_im.fill(0.0);
+            fb_re.fill(0.0);
+            fb_im.fill(0.0);
+            for (i, &b) in seq_a.iter().enumerate() {
+                fa_re[i] = if dayhoff6_channel(b) == ch { 0.8333 } else { -0.1667 };
+            }
+            for (j, &b) in seq_b.iter().enumerate() {
+                fb_re[j] = if dayhoff6_channel(b) == ch { 0.8333 } else { -0.1667 };
+            }
+            fft_radix2_in_place(&mut fa_re, &mut fa_im, false);
+            fft_radix2_in_place(&mut fb_re, &mut fb_im, false);
+            for k in 0..n_fft {
+                sum_corr_re[k] += fa_re[k] * fb_re[k] + fa_im[k] * fb_im[k];
+                sum_corr_im[k] += fa_im[k] * fb_re[k] - fa_re[k] * fb_im[k];
+            }
         }
-        for (j, &b) in seq_b.iter().enumerate() {
-            fb_re[j] = if b == base { 0.75 } else { -0.25 };
-        }
+    } else {
+        let bases = [b'A', b'C', b'G', b'T'];
+        for &base in &bases {
+            fa_re.fill(0.0);
+            fa_im.fill(0.0);
+            fb_re.fill(0.0);
+            fb_im.fill(0.0);
 
-        fft_radix2_in_place(&mut fa_re, &mut fa_im, false);
-        fft_radix2_in_place(&mut fb_re, &mut fb_im, false);
+            for (i, &b) in seq_a.iter().enumerate() {
+                fa_re[i] = if b == base { 0.75 } else { -0.25 };
+            }
+            for (j, &b) in seq_b.iter().enumerate() {
+                fb_re[j] = if b == base { 0.75 } else { -0.25 };
+            }
 
-        // Multiply FA(k) * conj(FB(k))
-        for k in 0..n_fft {
-            sum_corr_re[k] += fa_re[k] * fb_re[k] + fa_im[k] * fb_im[k];
-            sum_corr_im[k] += fa_im[k] * fb_re[k] - fa_re[k] * fb_im[k];
+            fft_radix2_in_place(&mut fa_re, &mut fa_im, false);
+            fft_radix2_in_place(&mut fb_re, &mut fb_im, false);
+
+            // Multiply FA(k) * conj(FB(k))
+            for k in 0..n_fft {
+                sum_corr_re[k] += fa_re[k] * fb_re[k] + fa_im[k] * fb_im[k];
+                sum_corr_im[k] += fa_im[k] * fb_re[k] - fa_re[k] * fb_im[k];
+            }
         }
     }
 
@@ -1188,7 +1229,7 @@ pub fn find_fft_homologous_anchors(
     // Select top peak lags with Z >= 2.2
     lags.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     let mut candidate_segments: Vec<(usize, usize, usize, i32)> = Vec::new();
-    let win = 16usize;
+    let win = if is_protein { 12usize } else { 16usize };
 
     for &(lag, val) in lags.iter().take(6) {
         if (val - mean) / sd < 2.2 {
@@ -1208,12 +1249,18 @@ pub fn find_fft_homologous_anchors(
             for off in 0..win {
                 let ba = seq_a[start_a + k + off];
                 let bb = seq_b[start_b + k + off];
-                sc += dna200_pair_score(ba, bb);
-                if ba == bb {
+                let ps = residue_pair_score(ba, bb, is_protein);
+                sc += ps;
+                if ba == bb || (is_protein && ps > 0) {
                     matches += 1;
                 }
             }
-            if matches >= 11 && sc >= 700 {
+            let pass = if is_protein {
+                matches >= 7 && sc >= 360
+            } else {
+                matches >= 11 && sc >= 700
+            };
+            if pass {
                 let w = ((sc as usize) / win).clamp(80, 420) as i32;
                 candidate_segments.push((start_a + k, start_b + k, win, w));
                 k += win / 2;
@@ -1280,6 +1327,108 @@ pub fn is_transition(a: u8, b: u8) -> bool {
     )
 }
 
+/// Standard 20-amino-acid ordering `A R N D C Q E G H I L K M F P S T W Y V`.
+const BLOSUM62_MAT: [[i8; 20]; 20] = [
+    [ 4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0], // A
+    [-1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2, -1, -3, -2, -1, -1, -3, -2, -3], // R
+    [-2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0, -2, -3, -2,  1,  0, -4, -2, -3], // N
+    [-2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1, -3, -3, -1,  0, -1, -4, -3, -3], // D
+    [ 0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1], // C
+    [-1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,  0, -3, -1,  0, -1, -2, -1, -2], // Q
+    [-1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1, -2, -3, -1,  0, -1, -3, -2, -2], // E
+    [ 0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2, -3, -3, -2,  0, -2, -2, -3, -3], // G
+    [-2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1, -2, -1, -2, -1, -2, -2,  2, -3], // H
+    [-1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,  1,  0, -3, -2, -1, -3, -1,  3], // I
+    [-1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,  2,  0, -3, -2, -1, -2, -1,  1], // L
+    [-1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5, -1, -3, -1,  0, -1, -3, -2, -2], // K
+    [-1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,  5,  0, -2, -1, -1, -1, -1,  1], // M
+    [-2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,  0,  6, -4, -2, -2,  1,  3, -1], // F
+    [-1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4,  7, -1, -1, -4, -3, -2], // P
+    [ 1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0, -1, -2, -1,  4,  1, -3, -2, -2], // S
+    [ 0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  1,  5, -2, -2,  0], // T
+    [-3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1,  1, -4, -3, -2, 11,  2, -3], // W
+    [-2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2, -1,  3, -3, -2, -2,  2,  7, -1], // Y
+    [ 0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,  1, -1, -2, -2,  0, -3, -1,  4], // V
+];
+
+#[inline]
+fn aa20_index(b: u8) -> Option<usize> {
+    match b.to_ascii_uppercase() {
+        b'A' => Some(0),
+        b'R' => Some(1),
+        b'N' => Some(2),
+        b'D' => Some(3),
+        b'C' => Some(4),
+        b'Q' => Some(5),
+        b'E' => Some(6),
+        b'G' => Some(7),
+        b'H' => Some(8),
+        b'I' => Some(9),
+        b'L' => Some(10),
+        b'K' => Some(11),
+        b'M' => Some(12),
+        b'F' => Some(13),
+        b'P' => Some(14),
+        b'S' => Some(15),
+        b'T' => Some(16),
+        b'W' => Some(17),
+        b'Y' => Some(18),
+        b'V' => Some(19),
+        _ => None,
+    }
+}
+
+#[inline]
+fn dayhoff6_channel(b: u8) -> u8 {
+    match b.to_ascii_uppercase() {
+        b'A' | b'G' | b'P' | b'S' | b'T' => 0,
+        b'D' | b'E' | b'N' | b'Q' => 1,
+        b'H' | b'K' | b'R' => 2,
+        b'I' | b'L' | b'M' | b'V' => 3,
+        b'F' | b'W' | b'Y' => 4,
+        b'C' => 5,
+        _ => 6,
+    }
+}
+
+fn is_protein_records(records: &[FastaRecord]) -> bool {
+    let mut alpha = 0usize;
+    let mut aa_only = 0usize;
+    for r in records {
+        for b in r.sequence.bytes() {
+            let u = b.to_ascii_uppercase();
+            if u.is_ascii_uppercase() {
+                alpha += 1;
+                if matches!(
+                    u,
+                    b'D' | b'E' | b'F' | b'H' | b'I' | b'K' | b'L' | b'M' | b'P' | b'Q' | b'R' | b'S' | b'V' | b'W' | b'Y'
+                ) {
+                    aa_only += 1;
+                }
+            }
+        }
+    }
+    alpha >= 20 && aa_only * 12 >= alpha
+}
+
+#[inline]
+pub fn blosum62_pair_score(a: u8, b: u8) -> i32 {
+    match (aa20_index(a), aa20_index(b)) {
+        (Some(ia), Some(ib)) => (BLOSUM62_MAT[ia][ib] as i32) * 22,
+        _ if a == b && a != b'X' && a != b'*' => 44,
+        _ => -22,
+    }
+}
+
+#[inline]
+fn residue_pair_score(a: u8, b: u8, is_protein: bool) -> i32 {
+    if is_protein {
+        blosum62_pair_score(a, b)
+    } else {
+        dna200_pair_score(a, b)
+    }
+}
+
 /// MAFFT `DNA200` (`Kimura 200`, Ti/Tv = 2.0) pairwise residue score scaled by 100.
 #[inline]
 pub fn dna200_pair_score(a: u8, b: u8) -> i32 {
@@ -1303,6 +1452,7 @@ fn compute_local_pair_hat3_matches(
     use_rna_stem_bonus: bool,
     stem_prop_a: &[i32],
     stem_prop_b: &[i32],
+    is_protein: bool,
 ) -> (f64, Vec<(usize, usize, i32)>, usize) {
     let la = seq_a.len();
     let lb = seq_b.len();
@@ -1311,15 +1461,19 @@ fn compute_local_pair_hat3_matches(
     }
 
     // 1. FFT homologous anchors (`FFT-NS`)
-    let fft_anchors = find_fft_homologous_anchors(seq_a, seq_b);
+    let fft_anchors = find_fft_homologous_anchors_mode(seq_a, seq_b, is_protein);
     let fft_count = fft_anchors.len();
 
     // 2. If sequences are very long (> 1,400 bp), use anchor-seeded banded local extraction;
-    //    for ITS / rRNA amplicons (<= 1,400 bp), run exact Smith-Waterman + semi-global local tract extraction.
+    //    for ITS / rRNA / protein amplicons (<= 1,800 cols), run exact Smith-Waterman + local tract extraction.
     let mut matches: Vec<(usize, usize, i32)> = Vec::new();
     for &(pa, pb, wlen, w) in &fft_anchors {
         for off in 0..wlen {
-            if pa + off < la && pb + off < lb && seq_a[pa + off] == seq_b[pb + off] {
+            if pa + off < la
+                && pb + off < lb
+                && (seq_a[pa + off] == seq_b[pb + off]
+                    || (is_protein && blosum62_pair_score(seq_a[pa + off], seq_b[pb + off]) > 0))
+            {
                 matches.push((pa + off, pb + off, w));
             }
         }
@@ -1329,9 +1483,10 @@ fn compute_local_pair_hat3_matches(
         let sw_tracts = extract_smith_waterman_local_tracts(
             seq_a,
             seq_b,
-            use_rna_stem_bonus,
+            use_rna_stem_bonus && !is_protein,
             stem_prop_a,
             stem_prop_b,
+            is_protein,
         );
         for (pa, pb, w) in sw_tracts {
             matches.push((pa, pb, w));
@@ -1342,14 +1497,19 @@ fn compute_local_pair_hat3_matches(
     let min_l = la.min(lb).max(1) as f64;
     let unique_covered = {
         let mut cov_a = vec![false; la];
-        let mut id_cnt = 0usize;
+        let mut id_cnt = 0.0f64;
         for &(pa, pb, _) in &matches {
-            if pa < la && pb < lb && !cov_a[pa] && seq_a[pa] == seq_b[pb] {
-                cov_a[pa] = true;
-                id_cnt += 1;
+            if pa < la && pb < lb && !cov_a[pa] {
+                if seq_a[pa] == seq_b[pb] {
+                    cov_a[pa] = true;
+                    id_cnt += 1.0;
+                } else if is_protein && blosum62_pair_score(seq_a[pa], seq_b[pb]) > 0 {
+                    cov_a[pa] = true;
+                    id_cnt += 0.65;
+                }
             }
         }
-        id_cnt as f64
+        id_cnt
     };
     let sim = (unique_covered / min_l).clamp(0.0, 1.0);
 
@@ -1365,6 +1525,7 @@ fn extract_smith_waterman_local_tracts(
     use_rna_stem_bonus: bool,
     stem_a: &[i32],
     stem_b: &[i32],
+    is_protein: bool,
 ) -> Vec<(usize, usize, i32)> {
     let n = a.len();
     let m = b.len();
@@ -1372,8 +1533,9 @@ fn extract_smith_waterman_local_tracts(
         return Vec::new();
     }
 
-    const GAP_OPEN: i32 = -220;
-    const GAP_EXT: i32 = -12;
+    let gap_open: i32 = if is_protein { -240 } else { -220 };
+    let gap_ext: i32 = if is_protein { -20 } else { -12 };
+    let peak_floor: i32 = if is_protein { 420 } else { 680 };
 
     let cols = m + 1;
     let total = (n + 1) * cols;
@@ -1398,17 +1560,17 @@ fn extract_smith_waterman_local_tracts(
             let idx = row + j;
             let bj = b[j - 1];
 
-            let e_open = h[prev + j] + GAP_OPEN;
-            let e_ext = e[prev + j] + GAP_EXT;
+            let e_open = h[prev + j] + gap_open;
+            let e_ext = e[prev + j] + gap_ext;
             let e_val = e_open.max(e_ext);
             e[idx] = e_val;
 
-            let f_open = h[row + j - 1] + GAP_OPEN;
-            let f_ext = f[row + j - 1] + GAP_EXT;
+            let f_open = h[row + j - 1] + gap_open;
+            let f_ext = f[row + j - 1] + gap_ext;
             let f_val = f_open.max(f_ext);
             f[idx] = f_val;
 
-            let mut sub = dna200_pair_score(ai, bj);
+            let mut sub = residue_pair_score(ai, bj, is_protein);
             if use_rna_stem_bonus {
                 let sb = stem_b.get(j - 1).copied().unwrap_or(0);
                 if sa > 0 && sb > 0 && (ai == bj || is_transition(ai, bj)) {
@@ -1434,7 +1596,7 @@ fn extract_smith_waterman_local_tracts(
             h[idx] = best;
             trace[idx] = tr;
 
-            if best >= 680 && tr == 1 {
+            if best >= peak_floor && tr == 1 {
                 peaks.push((best, i, j));
             }
         }
@@ -1450,6 +1612,8 @@ fn extract_smith_waterman_local_tracts(
     let mut used_a = vec![false; n];
     let mut used_b = vec![false; m];
     let mut tracts: Vec<(usize, usize, i32)> = Vec::new();
+    let min_path = if is_protein { 6 } else { 8 };
+    let min_run = if is_protein { 5 } else { 6 };
 
     for &(peak_sc, end_i, end_j) in peaks.iter().take(64) {
         if used_a[end_i - 1] || used_b[end_j - 1] {
@@ -1483,12 +1647,12 @@ fn extract_smith_waterman_local_tracts(
             }
         }
 
-        if path.len() < 8 {
+        if path.len() < min_path {
             continue;
         }
         path.reverse();
 
-        // Filter contiguous gap-free sub-runs of length >= 6 within the local path
+        // Filter contiguous gap-free sub-runs within the local path
         // so only genuine homologous blocks get stored in `hat3`
         let mut run_start = 0usize;
         while run_start < path.len() {
@@ -1500,20 +1664,31 @@ fn extract_smith_waterman_local_tracts(
                 run_end += 1;
             }
             let run_len = run_end - run_start;
-            if run_len >= 6 {
+            if run_len >= min_run {
                 let mut exact = 0usize;
-                let mut ti = 0usize;
+                let mut cons_sub = 0usize;
+                let mut run_sc = 0i32;
                 for &(pa, pb) in &path[run_start..run_end] {
+                    let ps = residue_pair_score(a[pa], b[pb], is_protein);
+                    run_sc += ps;
                     if a[pa] == b[pb] {
                         exact += 1;
+                    } else if is_protein {
+                        if ps > 0 {
+                            cons_sub += 1;
+                        }
                     } else if is_transition(a[pa], b[pb]) {
-                        ti += 1;
+                        cons_sub += 1;
                     }
                 }
-                // Require strong local identity (`(exact * 2 + ti) >= run_len * 13 / 10`, i.e. >= 65% weighted id)
-                if exact * 2 + ti >= (run_len * 13) / 10 {
+                let ok = if is_protein {
+                    run_sc >= (run_len as i32) * 32 && (exact + cons_sub) * 2 >= run_len
+                } else {
+                    exact * 2 + cons_sub >= (run_len * 13) / 10
+                };
+                if ok {
                     let base_w = ((peak_sc / 8).clamp(110, 480)
-                        + ((exact * 180) / run_len.max(1)) as i32)
+                        + (((exact * 2 + cons_sub) * 95) / run_len.max(1)) as i32)
                         .min(600);
                     for &(pa, pb) in &path[run_start..run_end] {
                         used_a[pa] = true;
@@ -1584,13 +1759,14 @@ fn build_hat3_and_distance_matrix(
     seqs: &[Vec<u8>],
     use_transitive: bool,
     use_rna_stem: bool,
+    is_protein: bool,
 ) -> (SparseHat3ConsistencyMatrix, Vec<Vec<f64>>, usize) {
     let n = seqs.len();
     let lens: Vec<usize> = seqs.iter().map(|s| s.len()).collect();
     let mut hat3 = SparseHat3ConsistencyMatrix::new(&lens);
     let mut dist_mat = vec![vec![0.0f64; n]; n];
 
-    let stem_props: Vec<Vec<i32>> = if use_rna_stem {
+    let stem_props: Vec<Vec<i32>> = if use_rna_stem && !is_protein {
         seqs.par_iter()
             .map(|s| compute_local_stem_propensity(s))
             .collect()
@@ -1598,7 +1774,16 @@ fn build_hat3_and_distance_matrix(
         vec![Vec::new(); n]
     };
 
-    let kmer_sets: Vec<Vec<u16>> = seqs.iter().map(|s| extract_6mer_multiset(s)).collect();
+    let kmer_sets: Vec<Vec<u16>> = seqs
+        .iter()
+        .map(|s| {
+            if is_protein {
+                extract_protein_d6_4mer_multiset(s)
+            } else {
+                extract_6mer_multiset(s)
+            }
+        })
+        .collect();
 
     // Parallelize all-pairs `(a, b)` local Smith-Waterman + FFT anchor computation
     let pair_coords: Vec<(usize, usize)> = (0..n)
@@ -1611,9 +1796,10 @@ fn build_hat3_and_distance_matrix(
             let (local_sim, tracts, fft_cnt) = compute_local_pair_hat3_matches(
                 &seqs[a],
                 &seqs[b],
-                use_rna_stem,
+                use_rna_stem && !is_protein,
                 &stem_props[a],
                 &stem_props[b],
+                is_protein,
             );
             let kmer_sim = shared_6mer_similarity(&kmer_sets[a], &kmer_sets[b]);
             let combined_sim = (0.65 * local_sim + 0.35 * kmer_sim).clamp(0.0, 1.0);
@@ -1822,7 +2008,7 @@ pub fn build_mafft_guide_tree_and_weights(
 }
 
 /// Recompute pairwise evolutionary distances from an aligned sequence matrix (`FFT-NS-2` tree refinement).
-fn compute_aligned_distance_matrix(aligned_matrix: &[Vec<u8>]) -> Vec<Vec<f64>> {
+fn compute_aligned_distance_matrix(aligned_matrix: &[Vec<u8>], is_protein: bool) -> Vec<Vec<f64>> {
     let n = aligned_matrix.len();
     let mut dist = vec![vec![0.0f64; n]; n];
     for a in 0..n {
@@ -1840,7 +2026,13 @@ fn compute_aligned_distance_matrix(aligned_matrix: &[Vec<u8>]) -> Vec<Vec<f64>> 
                 if ba != b'-' && bb != b'-' {
                     compared += 1;
                     if ba != bb {
-                        if is_transition(ba, bb) {
+                        if is_protein {
+                            if blosum62_pair_score(ba, bb) > 0 {
+                                diff_ti += 1;
+                            } else {
+                                diff_tv += 1;
+                            }
+                        } else if is_transition(ba, bb) {
                             diff_ti += 1;
                         } else {
                             diff_tv += 1;
@@ -1851,7 +2043,11 @@ fn compute_aligned_distance_matrix(aligned_matrix: &[Vec<u8>]) -> Vec<Vec<f64>> 
                 }
             }
             let d = if compared >= 12 {
-                let p_sub = (diff_ti as f64 + 1.5 * diff_tv as f64) / (compared as f64);
+                let p_sub = if is_protein {
+                    (0.5 * diff_ti as f64 + 1.0 * diff_tv as f64) / (compared as f64)
+                } else {
+                    (diff_ti as f64 + 1.5 * diff_tv as f64) / (compared as f64)
+                };
                 let p_gap = (internal_gaps as f64) / ((compared + internal_gaps).max(1) as f64);
                 (0.82 * p_sub + 0.18 * p_gap).clamp(0.0001, 0.9999)
             } else {
@@ -1913,6 +2109,7 @@ fn align_profiles_gotoh_mafft(
     free_leading_gaps: bool,
     free_trailing_gaps: bool,
     is_conserved_core_zone: bool,
+    is_protein: bool,
 ) -> AlignmentProfile {
     let la = prof_a.num_cols();
     let lb = prof_b.num_cols();
@@ -1963,54 +2160,75 @@ fn align_profiles_gotoh_mafft(
     let norm_wa: Vec<f64> = wa.iter().map(|&w| w / sum_wa).collect();
     let norm_wb: Vec<f64> = wb.iter().map(|&w| w / sum_wb).collect();
 
-    // Precompute per-column nucleotide frequencies `[A, C, G, T]` and gap fractions `gap_a[c]`, `gap_b[d]`
+    // Precompute per-column residue frequencies (`[A, C, G, T]` or 20-state AA) and gap fractions
     let mut freq_a = vec![[0.0f64; 4]; la];
+    let mut aa_freq_a = if is_protein { vec![[0.0f64; 20]; la] } else { Vec::new() };
     let mut gap_a = vec![0.0f64; la];
     for c in 0..la {
         let mut g = 0.0f64;
         for (mi, row) in prof_a.rows.iter().enumerate() {
             let w = norm_wa[mi];
-            match row[c] {
-                b'A' => freq_a[c][0] += w,
-                b'C' => freq_a[c][1] += w,
-                b'G' => freq_a[c][2] += w,
-                b'T' => freq_a[c][3] += w,
-                b'-' => g += w,
-                _ => {}
+            let ch = row[c];
+            if ch == b'-' {
+                g += w;
+            } else if is_protein {
+                if let Some(ai) = aa20_index(ch) {
+                    aa_freq_a[c][ai] += w;
+                }
+            } else {
+                match ch {
+                    b'A' => freq_a[c][0] += w,
+                    b'C' => freq_a[c][1] += w,
+                    b'G' => freq_a[c][2] += w,
+                    b'T' => freq_a[c][3] += w,
+                    _ => {}
+                }
             }
         }
         gap_a[c] = g.clamp(0.0, 1.0);
     }
 
     let mut freq_b = vec![[0.0f64; 4]; lb];
+    let mut aa_freq_b = if is_protein { vec![[0.0f64; 20]; lb] } else { Vec::new() };
     let mut gap_b = vec![0.0f64; lb];
     for d in 0..lb {
         let mut g = 0.0f64;
         for (mj, row) in prof_b.rows.iter().enumerate() {
             let w = norm_wb[mj];
-            match row[d] {
-                b'A' => freq_b[d][0] += w,
-                b'C' => freq_b[d][1] += w,
-                b'G' => freq_b[d][2] += w,
-                b'T' => freq_b[d][3] += w,
-                b'-' => g += w,
-                _ => {}
+            let ch = row[d];
+            if ch == b'-' {
+                g += w;
+            } else if is_protein {
+                if let Some(bi) = aa20_index(ch) {
+                    aa_freq_b[d][bi] += w;
+                }
+            } else {
+                match ch {
+                    b'A' => freq_b[d][0] += w,
+                    b'C' => freq_b[d][1] += w,
+                    b'G' => freq_b[d][2] += w,
+                    b'T' => freq_b[d][3] += w,
+                    _ => {}
+                }
             }
         }
         gap_b[d] = g.clamp(0.0, 1.0);
     }
 
-    // Position-specific gap-opening penalties (`op = 1.53` in MAFFT `tbfast.exe`, scaled to integer DP units):
-    // In conserved rDNA core subunits (`5.8S`), gap open is boosted (`-640`) so internal gaps are prevented;
-    // in spacer zones (`ITS1`, `ITS2`, `16S V-loops`), gap open is `-410` modulated by `(1 - 0.55 * gap_frac)`
-    // so gaps cleanly coalesce at existing gap boundaries, with near-zero gap extension (`-6` per column,
-    // matching MAFFT's `-0.00` to `-0.02` extension penalty).
     let base_gap_open: f64 = if is_conserved_core_zone {
         -680.0
+    } else if is_protein {
+        -420.0
     } else {
         -460.0
     };
-    let gap_ext: i32 = if is_conserved_core_zone { -28 } else { -12 };
+    let gap_ext: i32 = if is_conserved_core_zone {
+        -28
+    } else if is_protein {
+        -18
+    } else {
+        -12
+    };
 
     let open_pen_a: Vec<i32> = (0..la)
         .map(|c| {
@@ -2176,10 +2394,27 @@ fn align_profiles_gotoh_mafft(
 
             // 3. Update M[i, j] (align col A[i-1] with col B[j-1])
             let mut wsp = 0.0f64;
-            for x in 0..4 {
-                if fa[x] > 0.0 {
-                    for y in 0..4 {
-                        wsp += fa[x] * fb[y] * DNA200_MAT[x][y];
+            if is_protein {
+                let afa = &aa_freq_a[i - 1];
+                let afb = &aa_freq_b[j - 1];
+                for x in 0..20 {
+                    if afa[x] > 0.0 {
+                        let row_m = &BLOSUM62_MAT[x];
+                        let mut acc = 0.0f64;
+                        for y in 0..20 {
+                            if afb[y] > 0.0 {
+                                acc += afb[y] * (row_m[y] as f64);
+                            }
+                        }
+                        wsp += afa[x] * acc * 22.0;
+                    }
+                }
+            } else {
+                for x in 0..4 {
+                    if fa[x] > 0.0 {
+                        for y in 0..4 {
+                            wsp += fa[x] * fb[y] * DNA200_MAT[x][y];
+                        }
                     }
                 }
             }
@@ -2358,6 +2593,7 @@ fn execute_progressive_guide_tree_alignment(
     free_leading_gaps: bool,
     free_trailing_gaps: bool,
     is_conserved_core_zone: bool,
+    is_protein: bool,
 ) -> AlignmentProfile {
     let n = seqs.len();
     let mut sub_profiles: Vec<AlignmentProfile> = (0..n)
@@ -2386,6 +2622,7 @@ fn execute_progressive_guide_tree_alignment(
             free_leading_gaps,
             free_trailing_gaps,
             is_conserved_core_zone,
+            is_protein,
         );
         sub_profiles.push(merged);
     }
@@ -2423,6 +2660,7 @@ fn canonicalize_profile_member_order(prof: &mut AlignmentProfile, n: usize) {
 
 /// Compute the global `WSP + hat3 Consistency - AffineGap` objective score of `prof`
 /// (`dvtditr.exe` objective criterion in MAFFT `L-INS-i` / `FFT-NS-i`).
+#[allow(clippy::too_many_arguments)]
 fn evaluate_profile_objective_score(
     prof: &AlignmentProfile,
     hat3: &SparseHat3ConsistencyMatrix,
@@ -2430,6 +2668,7 @@ fn evaluate_profile_objective_score(
     free_leading_gaps: bool,
     free_trailing_gaps: bool,
     is_conserved_core_zone: bool,
+    is_protein: bool,
 ) -> f64 {
     let n = prof.rows.len();
     let l = prof.num_cols();
@@ -2460,7 +2699,7 @@ fn evaluate_profile_objective_score(
                 let wb = seq_weights[seq_b];
                 let w_pair = wa * wb;
 
-                let sub = dna200_pair_score(ba, bb) as f64;
+                let sub = residue_pair_score(ba, bb, is_protein) as f64;
                 let cons = hat3.get_weight(seq_a, seq_b, pos_a, pos_b) as f64;
                 total_score += w_pair * (sub + 0.85 * cons);
             }
@@ -2468,8 +2707,20 @@ fn evaluate_profile_objective_score(
     }
 
     // 2. Pairwise affine gap penalty across internal (non-overhang) gaps
-    let gap_open_pen = if is_conserved_core_zone { 660.0 } else { 410.0 };
-    let gap_ext_pen = if is_conserved_core_zone { 24.0 } else { 6.0 };
+    let gap_open_pen = if is_conserved_core_zone {
+        660.0
+    } else if is_protein {
+        400.0
+    } else {
+        410.0
+    };
+    let gap_ext_pen = if is_conserved_core_zone {
+        24.0
+    } else if is_protein {
+        16.0
+    } else {
+        6.0
+    };
 
     for i in 0..n {
         let row = &prof.rows[i];
@@ -2549,6 +2800,7 @@ fn refine_alignment_iteratively(
     free_leading_gaps: bool,
     free_trailing_gaps: bool,
     is_conserved_core_zone: bool,
+    is_protein: bool,
 ) -> (AlignmentProfile, usize, usize, f64, f64) {
     let n = prof.rows.len();
     let init_score = evaluate_profile_objective_score(
@@ -2558,9 +2810,10 @@ fn refine_alignment_iteratively(
         free_leading_gaps,
         free_trailing_gaps,
         is_conserved_core_zone,
+        is_protein,
     );
     if n <= 2 || max_iterations == 0 {
-        compact_complementary_gap_columns(&mut prof, hat3, is_conserved_core_zone);
+        compact_complementary_gap_columns(&mut prof, hat3, is_conserved_core_zone, is_protein);
         let final_sc = evaluate_profile_objective_score(
             &prof,
             hat3,
@@ -2568,6 +2821,7 @@ fn refine_alignment_iteratively(
             free_leading_gaps,
             free_trailing_gaps,
             is_conserved_core_zone,
+            is_protein,
         );
         return (prof, 0, 0, init_score, final_sc.max(init_score));
     }
@@ -2611,6 +2865,7 @@ fn refine_alignment_iteratively(
                 free_leading_gaps,
                 free_trailing_gaps,
                 is_conserved_core_zone,
+                is_protein,
             );
             canonicalize_profile_member_order(&mut candidate, n);
 
@@ -2621,6 +2876,7 @@ fn refine_alignment_iteratively(
                 free_leading_gaps,
                 free_trailing_gaps,
                 is_conserved_core_zone,
+                is_protein,
             );
             if cand_score > current_score + 1.0 {
                 current_score = cand_score;
@@ -2634,7 +2890,7 @@ fn refine_alignment_iteratively(
         }
     }
 
-    compact_complementary_gap_columns(&mut prof, hat3, is_conserved_core_zone);
+    compact_complementary_gap_columns(&mut prof, hat3, is_conserved_core_zone, is_protein);
     let final_score = evaluate_profile_objective_score(
         &prof,
         hat3,
@@ -2642,6 +2898,7 @@ fn refine_alignment_iteratively(
         free_leading_gaps,
         free_trailing_gaps,
         is_conserved_core_zone,
+        is_protein,
     )
     .max(current_score);
 
@@ -2655,6 +2912,7 @@ fn compact_complementary_gap_columns(
     prof: &mut AlignmentProfile,
     hat3: &SparseHat3ConsistencyMatrix,
     is_conserved_core_zone: bool,
+    is_protein: bool,
 ) {
     let n = prof.rows.len();
     if n == 0 {
@@ -2693,7 +2951,7 @@ fn compact_complementary_gap_columns(
                         continue;
                     }
                     let pj = prof.orig_pos[j][c].or(prof.orig_pos[j][c + 1]).unwrap_or(0) as usize;
-                    merge_score += dna200_pair_score(bi, bj)
+                    merge_score += residue_pair_score(bi, bj, is_protein)
                         + hat3.get_weight(prof.members[i], prof.members[j], pi, pj);
                 }
             }
@@ -2734,6 +2992,43 @@ fn compact_complementary_gap_columns(
 #[allow(clippy::too_many_arguments)]
 fn align_single_domain_mafft(
     seqs: &[Vec<u8>],
+    strategy: MafftNativeStrategy,
+    max_iterations: usize,
+    use_transitive_consistency: bool,
+    use_secondary_structure_weights: bool,
+    free_leading_gaps: bool,
+    free_trailing_gaps: bool,
+    is_conserved_core_zone: bool,
+    t_stage_start: Instant,
+) -> (
+    Vec<Vec<u8>>,
+    usize,
+    usize,
+    usize,
+    usize,
+    f64,
+    f64,
+    f64,
+    f64,
+    f64,
+) {
+    align_single_domain_mafft_with_alphabet(
+        seqs,
+        strategy,
+        max_iterations,
+        use_transitive_consistency,
+        use_secondary_structure_weights,
+        free_leading_gaps,
+        free_trailing_gaps,
+        is_conserved_core_zone,
+        false,
+        t_stage_start,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn align_single_domain_mafft_with_alphabet(
+    seqs: &[Vec<u8>],
     _strategy: MafftNativeStrategy,
     max_iterations: usize,
     use_transitive_consistency: bool,
@@ -2741,6 +3036,7 @@ fn align_single_domain_mafft(
     free_leading_gaps: bool,
     free_trailing_gaps: bool,
     is_conserved_core_zone: bool,
+    is_protein: bool,
     t_stage_start: Instant,
 ) -> (
     Vec<Vec<u8>>,
@@ -2780,6 +3076,7 @@ fn align_single_domain_mafft(
             false,
             false,
             true,
+            is_protein,
         );
         let rows = std::mem::take(&mut prof.rows);
         return (rows, n, n * min_len, 0, 0, sc, sc, s12_ms, 0.01, 0.0);
@@ -2790,6 +3087,7 @@ fn align_single_domain_mafft(
         seqs,
         use_transitive_consistency,
         use_secondary_structure_weights,
+        is_protein,
     );
     let hat3_links = hat3.total_links;
     let s12_ms = t_stage_start.elapsed().as_secs_f64() * 1000.0;
@@ -2805,9 +3103,10 @@ fn align_single_domain_mafft(
         free_leading_gaps,
         free_trailing_gaps,
         is_conserved_core_zone,
+        is_protein,
     );
 
-    let dist_mat_2 = compute_aligned_distance_matrix(&pass1_prof.rows);
+    let dist_mat_2 = compute_aligned_distance_matrix(&pass1_prof.rows, is_protein);
     let (guide_tree_2, weights_2) = build_mafft_guide_tree_and_weights(&dist_mat_2);
     let pass2_prof = execute_progressive_guide_tree_alignment(
         seqs,
@@ -2817,6 +3116,7 @@ fn align_single_domain_mafft(
         free_leading_gaps,
         free_trailing_gaps,
         is_conserved_core_zone,
+        is_protein,
     );
     let s34_ms = t_prog.elapsed().as_secs_f64() * 1000.0;
 
@@ -2831,6 +3131,7 @@ fn align_single_domain_mafft(
         free_leading_gaps,
         free_trailing_gaps,
         is_conserved_core_zone,
+        is_protein,
     );
     let s5_ms = t_iter.elapsed().as_secs_f64() * 1000.0;
 
@@ -3242,6 +3543,29 @@ fn align_partitioned_multi_zone_mafft(
 // 6-MER TUPLE DISTANCE HELPERS (KATOH ET AL. 2002)
 // ============================================================================
 
+fn extract_protein_d6_4mer_multiset(seq: &[u8]) -> Vec<u16> {
+    let mut counts = vec![0u16; 4096];
+    if seq.len() < 4 {
+        return counts;
+    }
+    for win in seq.windows(4) {
+        let mut code = 0usize;
+        let mut valid = true;
+        for &b in win {
+            let d = dayhoff6_channel(b) as usize;
+            if d >= 6 {
+                valid = false;
+                break;
+            }
+            code = code * 6 + d;
+        }
+        if valid && code < 4096 {
+            counts[code] = counts[code].saturating_add(1);
+        }
+    }
+    counts
+}
+
 fn extract_6mer_multiset(seq: &[u8]) -> Vec<u16> {
     let mut counts = vec![0u16; 4096];
     if seq.len() < 6 {
@@ -3492,6 +3816,48 @@ mod tests {
         assert_eq!(&seq_a[bounds.core_58s_start..bounds.core_58s_start + 8], b"AAAACTTT");
         assert_eq!(bounds.core_58s_end - bounds.core_58s_start, 159);
         assert_eq!(&seq_a[bounds.its2_end..bounds.its2_end + 8], b"TTGACCTC");
+    }
+
+    #[test]
+    fn test_protein_blosum62_alignment_registers_motifs() {
+        let recs: Vec<FastaRecord> = [
+            ("HOMO", "MAAQGEPQVQFKLVLVGDGGTGKTTFVKRHLTGEFEKKYVATLGVEVHPLVFHTNRGPIKFNVWDTAGQEKFG"),
+            ("DANIO", "MAENEPQVQFKLVLVGDGGTGKTTFVKRHLTGEFEKKYVATLGVEVHPLVFHTNRGAIKYNVWDTAGQEKFG"),
+            ("ORYZA", "MALPNQQTVDYPSFKLVIVGDGGTGKTTFVKRHLTGEFEKKYEPTIGVEVHPLDFFTNCGKIRFYCWDTAGQEKFG"),
+            ("YEAST", "MSAPAANGEVPTFKLVLVGDGGTGKTTFVKRHLTGEFEKKYIATIGVEVHPLSFYTNFGEIKFDVWDTAGQEKFG"),
+        ]
+        .iter()
+        .map(|(id, s)| FastaRecord {
+            id: id.to_string(),
+            accession: id.to_string(),
+            taxon: id.to_string(),
+            common_name: String::new(),
+            family: String::new(),
+            gene: "RAN".to_string(),
+            description: String::new(),
+            sequence: s.to_string(),
+            cached_from_disk: true,
+        })
+        .collect();
+        let cfg = MafftNativeConfig {
+            strategy: MafftNativeStrategy::LInsI,
+            max_iterations: 12,
+            adjust_direction: false,
+            use_transitive_consistency: true,
+            use_secondary_structure_weights: false,
+        };
+        let (method, aln, _) = align_sequences_mafft_native_with_config(&recs, &cfg);
+        assert!(method.contains("BLOSUM62"), "expected BLOSUM62 mode, got {method}");
+        let p0 = aln[0].aligned_seq.find("GDGGTGKT").expect("HOMO motif");
+        for row in &aln[1..] {
+            assert_eq!(
+                row.aligned_seq.find("GDGGTGKT"),
+                Some(p0),
+                "GDGGTGKT misaligned in {}: {}",
+                row.id,
+                row.aligned_seq
+            );
+        }
     }
 }
 

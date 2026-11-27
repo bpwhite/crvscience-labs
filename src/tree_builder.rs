@@ -3578,8 +3578,8 @@ fn run_native_ml_tree_builder(
 
 pub(crate) fn format_ml_newick(nodes: &[MlTreeNode], idx: usize) -> String {
     let nd = &nodes[idx];
-    if let Some(lbl) = &nd.label {
-        format!("{}:{:.5}", lbl, nd.branch_len)
+    if nd.left.is_none() && nd.right.is_none() {
+        format!("{}:{:.5}", nd.label.as_deref().unwrap_or(""), nd.branch_len)
     } else {
         let l_str = nd.left.map(|c| format_ml_newick(nodes, c)).unwrap_or_default();
         let r_str = nd.right.map(|c| format_ml_newick(nodes, c)).unwrap_or_default();
@@ -5490,7 +5490,7 @@ pub(crate) fn parse_newick_to_ml_nodes(newick: &str, labels: &[String]) -> Optio
             let nid = nodes.len();
             nodes.push(MlTreeNode {
                 _id: nid,
-                label: if lbl.is_empty() { None } else { Some(lbl.to_string()) },
+                label: None,
                 left: Some(child_ids[0]),
                 right: Some(child_ids[1]),
                 branch_len: bl,

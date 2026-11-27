@@ -443,10 +443,10 @@ pub(crate) fn align_and_trim_codon_core_with_min_aa(
         return (Vec::new(), Vec::new(), 0, t0.elapsed().as_millis().max(1));
     }
     let aa_mafft_cfg = MafftNativeConfig {
-        strategy: MafftNativeStrategy::FftNsI,
-        max_iterations: 2,
+        strategy: MafftNativeStrategy::LInsI,
+        max_iterations: 12,
         adjust_direction: false,
-        use_transitive_consistency: false,
+        use_transitive_consistency: true,
         use_secondary_structure_weights: false,
     };
     let (_, aln_aa, _) = align_sequences_mafft_native_with_config(&aa_recs, &aa_mafft_cfg);

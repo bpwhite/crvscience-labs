@@ -2721,11 +2721,14 @@ pub fn export_declarative_manuscript_and_staged_bundle(
         }
         let mut node_rows = String::new();
         for cn in &report.calibrated_nodes {
+            if cn.age_ma <= 0.0 {
+                continue;
+            }
             node_rows.push_str(&format!(
                 "<tr><td><strong>{}</strong></td><td>{}</td><td>{}</td><td><strong>{:.2}</strong> [{:.2}-{:.2}]</td><td>{:.1}%</td><td>{:.3} / {:.3} / {:.3}</td><td>{:.4} ({:.2} CU)</td><td>{}</td></tr>",
                 html_esc(&cn.node_id),
                 html_esc(&cn.sector_code),
-                html_esc(&truncate_ms_cell(&cn.clade_name, 56)),
+                html_esc(&cn.clade_name),
                 cn.age_ma,
                 cn.ci_min_ma,
                 cn.ci_max_ma,
@@ -2735,7 +2738,7 @@ pub fn export_declarative_manuscript_and_staged_bundle(
                 cn.quartet_q3,
                 cn.quartet_lpp,
                 cn.coalescent_units_cu,
-                html_esc(&truncate_ms_cell(&cn.key_enzymes_or_loci, 48)),
+                html_esc(&cn.key_enzymes_or_loci),
             ));
         }
         let mut bench_rows = String::new();

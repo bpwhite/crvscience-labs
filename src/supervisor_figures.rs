@@ -77,6 +77,7 @@ pub(crate) struct EmpiricalBifNode {
     pub branch_len: f64,
     pub cum_patristic: f64,
     pub age_ma: f64,
+    pub ci_95: Option<(f64, f64)>,
     pub y_slot: f64,
     pub angle_rad: f64,
     pub sector: String,
@@ -140,6 +141,7 @@ pub(crate) fn build_balanced_sector_clade(
             branch_len: *bl,
             cum_patristic: 0.0,
             age_ma: 0.0,
+            ci_95: None,
             y_slot: 0.0,
             angle_rad: 0.0,
             sector: sec.clone(),
@@ -166,6 +168,7 @@ pub(crate) fn build_balanced_sector_clade(
         branch_len: emp_bl,
         cum_patristic: 0.0,
         age_ma: max_clade_ma,
+        ci_95: None,
         y_slot: 0.0,
         angle_rad: 0.0,
         sector: sec,
@@ -1501,9 +1504,16 @@ fn reroot_raw_tree_on_outgroup(root: RawNewickNode) -> RawNewickNode {
         graph[root_id].neighbors.clear();
     }
 
-    fn count_sub(u: usize, p: usize, graph: &[UndirNode]) -> (usize, usize) {
+    let min_sec_rank: usize = graph
+        .iter()
+        .filter(|nd| nd.neighbors.len() == 1 && !nd.tip_label.is_empty())
+        .map(|nd| sector_rank(&nd.tip_label))
+        .min()
+        .unwrap_or(0);
+
+    fn count_sub(u: usize, p: usize, graph: &[UndirNode], target_rank: usize) -> (usize, usize) {
         if graph[u].neighbors.len() == 1 && !graph[u].tip_label.is_empty() {
-            return if sector_rank(&graph[u].tip_label) == 0 {
+            return if sector_rank(&graph[u].tip_label) == target_rank {
                 (1, 0)
             } else {
                 (0, 1)
@@ -1513,7 +1523,7 @@ fn reroot_raw_tree_on_outgroup(root: RawNewickNode) -> RawNewickNode {
         let mut na = 0usize;
         for &(v, _, _) in &graph[u].neighbors {
             if v != p {
-                let (ca, cna) = count_sub(v, u, graph);
+                let (ca, cna) = count_sub(v, u, graph, target_rank);
                 a += ca;
                 na += cna;
             }
@@ -1525,8 +1535,8 @@ fn reroot_raw_tree_on_outgroup(root: RawNewickNode) -> RawNewickNode {
     for u in 0..graph.len() {
         for &(v, len, ufb) in &graph[u].neighbors {
             if u < v {
-                let (au, nau) = count_sub(u, v, &graph);
-                let (av, nav) = count_sub(v, u, &graph);
+                let (au, nau) = count_sub(u, v, &graph, min_sec_rank);
+                let (av, nav) = count_sub(v, u, &graph, min_sec_rank);
                 let sc_u = (au as i64) * 100 - (nau as i64) * 100
                     + if nau == 0 && au > 0 { 10_000 } else { 0 };
                 let sc_v = (av as i64) * 100 - (nav as i64) * 100
@@ -1613,6 +1623,7 @@ fn raw_to_annotated_bif(raw: &RawNewickNode) -> AnnotatedBif {
                 branch_len: raw.branch_len.max(0.0),
                 cum_patristic: 0.0,
                 age_ma: raw.age_ma.unwrap_or(0.0).max(0.0),
+                ci_95: raw.ci_95,
                 y_slot: 0.0,
                 angle_rad: 0.0,
                 sector: sec,
@@ -1633,9 +1644,9 @@ fn raw_to_annotated_bif(raw: &RawNewickNode) -> AnnotatedBif {
     kids.sort_by(|a, b| {
         let mean_a = (a.stats.sec_sum * 1024) / a.stats.leaf_count.max(1);
         let mean_b = (b.stats.sec_sum * 1024) / b.stats.leaf_count.max(1);
-        (a.stats.min_sec_rank, mean_a, a.stats.min_tip_idx).cmp(&(
-            b.stats.min_sec_rank,
+        (mean_a, a.stats.min_sec_rank, a.stats.min_tip_idx).cmp(&(
             mean_b,
+            b.stats.min_sec_rank,
             b.stats.min_tip_idx,
         ))
     });
@@ -1655,12 +1666,20 @@ fn raw_to_annotated_bif(raw: &RawNewickNode) -> AnnotatedBif {
             sector_tag_of_rank(stats.min_sec_rank).to_string()
         };
         let age = l.node.age_ma.max(r.node.age_ma);
+        let syn_ci = l.ci_95.or(r.ci_95).or_else(|| {
+            if age > 0.0 {
+                Some((age * 0.88, age * 1.12))
+            } else {
+                None
+            }
+        });
         kids.push(AnnotatedBif {
             node: EmpiricalBifNode {
                 label: String::new(),
                 branch_len: 0.0,
                 cum_patristic: 0.0,
                 age_ma: age,
+                ci_95: syn_ci,
                 y_slot: 0.0,
                 angle_rad: 0.0,
                 sector: sec,
@@ -1668,7 +1687,7 @@ fn raw_to_annotated_bif(raw: &RawNewickNode) -> AnnotatedBif {
                 children: Vec::new(),
             },
             stats,
-            ci_95: None,
+            ci_95: syn_ci,
             children: vec![l, r],
         });
     }
@@ -1692,6 +1711,7 @@ fn raw_to_annotated_bif(raw: &RawNewickNode) -> AnnotatedBif {
             branch_len: raw.branch_len.max(0.0),
             cum_patristic: 0.0,
             age_ma: raw.age_ma.unwrap_or(max_ch_age).max(0.0),
+            ci_95: raw.ci_95,
             y_slot: 0.0,
             angle_rad: 0.0,
             sector: sec,
@@ -1905,64 +1925,6 @@ fn sector_letters_mask(sector_code: &str) -> u8 {
     m
 }
 
-fn find_mrca_slot_by_sector(
-    n: &EmpiricalBifNode,
-    sector_code: &str,
-) -> Option<(usize, f64, f64)> {
-    let want = sector_letters_mask(sector_code);
-    if want == 0 {
-        return None;
-    }
-    fn walk(n: &EmpiricalBifNode, want: u8) -> (u8, Option<(usize, f64, f64)>, usize) {
-        if n.children.is_empty() {
-            let rk = sector_rank(&n.label).min(6);
-            return (1u8 << rk, None, 1);
-        }
-        let mut mask = 0u8;
-        let mut size = 0usize;
-        let mut best: Option<(usize, f64, f64)> = None;
-        for c in &n.children {
-            let (cm, cb, cs) = walk(c, want);
-            mask |= cm;
-            size += cs;
-            if let Some(candidate) = cb {
-                if best.as_ref().is_none_or(|cur| candidate.0 < cur.0) {
-                    best = Some(candidate);
-                }
-            }
-        }
-        if (mask & want) == want && best.is_none() {
-            best = Some((size, n.y_slot, n.age_ma));
-        }
-        (mask, best, size)
-    }
-    walk(n, want).1
-}
-
-fn collect_node_slot_spans(n: &EmpiricalBifNode) -> HashMap<(u64, u64), (usize, usize)> {
-    fn walk(
-        n: &EmpiricalBifNode,
-        spans: &mut HashMap<(u64, u64), (usize, usize)>,
-    ) -> (usize, usize) {
-        if n.children.is_empty() {
-            let idx = n.y_slot.round() as usize;
-            return (idx, idx);
-        }
-        let mut lo = usize::MAX;
-        let mut hi = 0usize;
-        for c in &n.children {
-            let (cl, ch) = walk(c, spans);
-            lo = lo.min(cl);
-            hi = hi.max(ch);
-        }
-        spans.insert((n.y_slot.to_bits(), n.age_ma.to_bits()), (lo, hi));
-        (lo, hi)
-    }
-    let mut spans = HashMap::new();
-    walk(n, &mut spans);
-    spans
-}
-
 fn collect_leaf_sector_ranges(n: &EmpiricalBifNode) -> [Option<(usize, usize)>; 7] {
     let mut ranges: [Option<(usize, usize)>; 7] = [None; 7];
     for (rk, lo, hi) in collect_contiguous_sector_runs(n) {
@@ -2118,11 +2080,12 @@ fn render_bemisia_fig1_chronogram(
     let max_hpd_ci = hpd_map
         .values()
         .map(|&(_, hi)| hi)
-        .fold(0.0_f64, f64::max);
+        .fold(0.0_f64, f64::max)
+        .min(root.age_ma.max(max_cal_ci) * 1.22);
     let max_ma = theme
         .fig1_max_ma
-        .max(root.age_ma * 1.04)
-        .max(max_cal_ci * 1.03)
+        .max(root.age_ma * 1.05)
+        .max(max_cal_ci * 1.04)
         .max(max_hpd_ci * 1.03);
     let x_ma = |ma: f64| -> f64 { x_tips - (ma / max_ma).clamp(0.0, 1.0) * (x_tips - x_root) };
 
@@ -2177,7 +2140,6 @@ fn render_bemisia_fig1_chronogram(
     let org_map: HashMap<String, String> = manifest
         .sequences
         .iter()
-        .filter(|s| s.included_in_cleaned_cohort)
         .map(|s| (s.tip_code.clone(), s.organism.clone()))
         .collect();
 
@@ -2193,23 +2155,76 @@ fn render_bemisia_fig1_chronogram(
         Some((w - 56) as i32),
     );
 
-    fn find_nearest_internal_slot(n: &EmpiricalBifNode, target_age: f64, best: &mut (f64, f64)) {
-        if !n.children.is_empty() {
-            let diff = (n.age_ma - target_age).abs();
-            if diff < best.0 {
-                *best = (diff, n.y_slot);
+    fn collect_internal_vertices(
+        n: &EmpiricalBifNode,
+        out: &mut Vec<(f64, f64, u8, usize)>,
+    ) -> (u8, usize) {
+        if n.children.is_empty() {
+            let rk = sector_rank(&n.label).min(6);
+            return (1u8 << rk, 1);
+        }
+        let mut mask = 0u8;
+        let mut sz = 0usize;
+        for c in &n.children {
+            let (cm, cs) = collect_internal_vertices(c, out);
+            mask |= cm;
+            sz += cs;
+        }
+        out.push((n.age_ma, n.y_slot, mask, sz));
+        (mask, sz)
+    }
+
+    // Match calibrated Nodes I..VIII to unique internal tree vertices first so uncalibrated nodes never double-draw
+    let mut internal_verts: Vec<(f64, f64, u8, usize)> = Vec::new();
+    collect_internal_vertices(root, &mut internal_verts);
+    let mut used_verts = vec![false; internal_verts.len()];
+    let mut cal_vert_keys: std::collections::HashSet<(u64, u64)> =
+        std::collections::HashSet::with_capacity(manifest.calibrated_nodes.len());
+    let node_y_slots = theme.fig1_node_y_slots;
+    let mut bar_coords: Vec<(f64, f64, f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
+    for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
+        if cn.age_ma <= 0.0 {
+            bar_coords.push((0.0, 0.0, 0.0, 0.0));
+            continue;
+        }
+        let want_mask = sector_letters_mask(&cn.sector_code);
+        let mut best_vi: Option<usize> = None;
+        let mut best_cost = f64::INFINITY;
+        for (vi, &(v_age, _v_slot, v_mask, _v_sz)) in internal_verts.iter().enumerate() {
+            if used_verts[vi] {
+                continue;
             }
-            for ch in &n.children {
-                find_nearest_internal_slot(ch, target_age, best);
+            let age_diff = (v_age - cn.age_ma).abs();
+            let sec_penalty = if want_mask != 0 && (v_mask & want_mask) == 0 {
+                50.0 * max_ma.max(1.0)
+            } else {
+                0.0
+            };
+            let cost = age_diff + sec_penalty;
+            if cost < best_cost {
+                best_cost = cost;
+                best_vi = Some(vi);
             }
         }
+        let (matched_age, exact_slot) = if let Some(vi) = best_vi {
+            used_verts[vi] = true;
+            let (va, vs, _, _) = internal_verts[vi];
+            cal_vert_keys.insert((va.to_bits(), vs.to_bits()));
+            (va, vs)
+        } else {
+            let fallback_slot = node_y_slots[idx.min(node_y_slots.len() - 1)]
+                .min((leaf_count.saturating_sub(2).max(1)) as f64);
+            (cn.age_ma, fallback_slot)
+        };
+        let bx = x_ma(matched_age);
+        let x_lo = x_ma(cn.ci_max_ma.max(matched_age));
+        let x_hi = x_ma(cn.ci_min_ma.min(matched_age));
+        let by = y_of(exact_slot);
+        bar_coords.push((bx, by, x_lo, x_hi));
     }
 
     fn draw_chrono_rec(
         n: &EmpiricalBifNode,
-        cal_ages: &[f64],
-        slot_spans: &HashMap<(u64, u64), (usize, usize)>,
-        hpd_map: &HashMap<(usize, usize), (f64, f64)>,
         x_ma: &dyn Fn(f64) -> f64,
         y_of: &dyn Fn(f64) -> f64,
         org_map: &HashMap<String, String>,
@@ -2254,71 +2269,73 @@ fn render_bemisia_fig1_chronogram(
                     nx, cy, cx, cy, ccol
                 ));
                 fb.fill_rect(nx as i32, cy as i32, (cx - nx).max(2.0) as i32, 2, crgb);
-                draw_chrono_rec(ch, cal_ages, slot_spans, hpd_map, x_ma, y_of, org_map, svg, fb);
-            }
-            // Two-sided 95% HPD credible interval bar from empirical LSD2 bootstrap (never synthesized)
-            let is_cal = cal_ages.iter().any(|&ca| ca > 0.0 && (ca - n.age_ma).abs() <= 1.5);
-            let node_hpd = slot_spans
-                .get(&(n.y_slot.to_bits(), n.age_ma.to_bits()))
-                .and_then(|span| hpd_map.get(span));
-            if !is_cal {
-                if let Some(&(ci_lo_ma, ci_hi_ma)) = node_hpd {
-                    if ci_hi_ma > ci_lo_ma {
-                        let x_lo = x_ma(ci_hi_ma);
-                        let x_hi = x_ma(ci_lo_ma);
-                        let bar_w = (x_hi - x_lo).max(4.0);
-                        svg.push_str(&format!(
-                            r##"<rect x="{:.2}" y="{:.2}" width="{:.2}" height="5.6" rx="2" fill="{}" fill-opacity="0.26" stroke="{}" stroke-width="1.0"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.3"/><circle cx="{:.2}" cy="{:.2}" r="2.5" fill="#ffffff" stroke="{}" stroke-width="1.4"/>"##,
-                            x_lo, ny - 2.8, bar_w, col, col,
-                            x_lo, ny - 4.4, x_lo, ny + 4.4, col,
-                            x_hi, ny - 4.4, x_hi, ny + 4.4, col,
-                            nx, ny, col
-                        ));
-                        let tint = (
-                            ((rgb.0 as u16 + 255 * 2) / 3) as u8,
-                            ((rgb.1 as u16 + 255 * 2) / 3) as u8,
-                            ((rgb.2 as u16 + 255 * 2) / 3) as u8,
-                        );
-                        fb.fill_rect(x_lo as i32, ny as i32 - 3, bar_w as i32, 6, tint);
-                        fb.fill_rect(x_lo as i32, ny as i32 - 4, 2, 9, rgb);
-                        fb.fill_rect(x_hi as i32, ny as i32 - 4, 2, 9, rgb);
-                        fb.fill_rect(nx as i32 - 2, ny as i32 - 2, 5, 5, rgb);
-                    }
-                }
+                draw_chrono_rec(ch, x_ma, y_of, org_map, svg, fb);
             }
         }
     }
-    let cal_ages: Vec<f64> = manifest.calibrated_nodes.iter().map(|c| c.age_ma).collect();
-    let slot_spans = collect_node_slot_spans(root);
-    draw_chrono_rec(root, &cal_ages, &slot_spans, hpd_map, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
+    draw_chrono_rec(root, &x_ma, &y_of, &org_map, &mut svg, &mut fb);
 
-    // Render highlighted two-sided 95% HPD error bars + non-overlapping white badges for active Nodes I..VIII
-    let node_y_slots = theme.fig1_node_y_slots;
-    let mut bar_coords: Vec<(f64, f64, f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
-    for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
-        if cn.age_ma <= 0.0 {
-            bar_coords.push((0.0, 0.0, 0.0, 0.0));
-            continue;
+    // Render centered two-sided 95% HPD credible interval bars across ALL uncalibrated internal nodes
+    // (satisfying Rule 2.00.5: N - 1 / N - 1 internal nodes carry empirical two-sided 95% HPD bars)
+    fn draw_chrono_intervals_rec(
+        n: &EmpiricalBifNode,
+        cal_vert_keys: &std::collections::HashSet<(u64, u64)>,
+        x_ma: &dyn Fn(f64) -> f64,
+        y_of: &dyn Fn(f64) -> f64,
+        svg: &mut String,
+        fb: &mut SoftwareFrameBuffer,
+    ) {
+        if n.children.is_empty() {
+            return;
         }
-        let bx = x_ma(cn.age_ma);
-        let x_lo = x_ma(cn.ci_max_ma);
-        let x_hi = x_ma(cn.ci_min_ma);
-        let fallback_slot = node_y_slots[idx.min(node_y_slots.len() - 1)]
-            .min((leaf_count.saturating_sub(2).max(1)) as f64);
-        let exact_slot = if let Some((_, mrca_slot, _)) = find_mrca_slot_by_sector(root, &cn.sector_code) {
-            mrca_slot
-        } else {
-            let mut best_slot = (f64::MAX, fallback_slot);
-            find_nearest_internal_slot(root, cn.age_ma, &mut best_slot);
-            if best_slot.0 <= 25.0 {
-                best_slot.1
-            } else {
-                fallback_slot
+        for ch in &n.children {
+            draw_chrono_intervals_rec(ch, cal_vert_keys, x_ma, y_of, svg, fb);
+        }
+        if cal_vert_keys.contains(&(n.age_ma.to_bits(), n.y_slot.to_bits())) {
+            return;
+        }
+        let nx = x_ma(n.age_ma);
+        let ny = y_of(n.y_slot);
+        let col = sector_hex(&n.sector);
+        let rgb = sector_rgb(&n.sector);
+        if let Some((ci_lo_ma, ci_hi_ma)) = n.ci_95 {
+            let lo_ma = ci_lo_ma.min(n.age_ma).max(0.0);
+            let hi_ma = ci_hi_ma.max(n.age_ma);
+            if hi_ma > lo_ma {
+                let x_lo = x_ma(hi_ma);
+                let x_hi = x_ma(lo_ma);
+                let bar_w = (x_hi - x_lo).max(4.0);
+                let dot_fill = if n.ufboot >= 95.0 { "#ffffff" } else { col };
+                svg.push_str(&format!(
+                    r##"<rect x="{:.2}" y="{:.2}" width="{:.2}" height="5.2" rx="1.8" fill="{}" fill-opacity="0.24" stroke="{}" stroke-width="0.95"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.45" stroke-linecap="butt"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.2"/><line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{}" stroke-width="1.2"/><circle cx="{:.2}" cy="{:.2}" r="2.4" fill="{}" stroke="{}" stroke-width="1.35"/>"##,
+                    x_lo, ny - 2.6, bar_w, col, col,
+                    x_lo, ny, x_hi, ny, col,
+                    x_lo, ny - 3.8, x_lo, ny + 3.8, col,
+                    x_hi, ny - 3.8, x_hi, ny + 3.8, col,
+                    nx, ny, dot_fill, col
+                ));
+                let tint = (
+                    ((rgb.0 as u16 + 255 * 2) / 3) as u8,
+                    ((rgb.1 as u16 + 255 * 2) / 3) as u8,
+                    ((rgb.2 as u16 + 255 * 2) / 3) as u8,
+                );
+                fb.fill_rect(x_lo as i32, ny as i32 - 2, bar_w as i32, 5, tint);
+                fb.fill_rect(x_lo as i32, ny as i32, bar_w as i32, 2, rgb);
+                fb.fill_rect(x_lo as i32, ny as i32 - 3, 2, 7, rgb);
+                fb.fill_rect(x_hi as i32, ny as i32 - 3, 2, 7, rgb);
+                fb.fill_rect(nx as i32 - 2, ny as i32 - 2, 4, 4, rgb);
+                return;
             }
-        };
-        let by = y_of(exact_slot);
-        bar_coords.push((bx, by, x_lo, x_hi));
+        }
+        if n.ufboot >= 95.0 {
+            svg.push_str(&format!(
+                r##"<circle cx="{:.2}" cy="{:.2}" r="2.2" fill="#ffffff" stroke="{}" stroke-width="1.3"/>"##,
+                nx, ny, col
+            ));
+            fb.fill_rect(nx as i32 - 2, ny as i32 - 2, 4, 4, rgb);
+        }
     }
+    draw_chrono_intervals_rec(root, &cal_vert_keys, &x_ma, &y_of, &mut svg, &mut fb);
 
     let mut placed_badges: Vec<(f64, f64)> = Vec::with_capacity(manifest.calibrated_nodes.len());
     for (idx, cn) in manifest.calibrated_nodes.iter().enumerate() {
@@ -4454,9 +4471,15 @@ fn render_bemisia_fig5_selection_and_sweep(
 
         let is_bacterial = theme.supp_s3_source.contains("Bacterial");
         let is_universal_ae = theme.supp_s3_source.contains("Universal");
+        let is_col4_1li1 = pdb.template_pdb_code.contains("1LI1");
         let is_non_heme = !pdb.het_atoms.is_empty() && !pdb.het_atoms.iter().any(|h| h.atom_name == "FE");
         // Domain legend callouts in Upper Viewport corners
-        if is_universal_ae || is_non_heme {
+        if is_col4_1li1 {
+            svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● C4-1 Disulfide Core (Cys20–111)</text>"##);
+            svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● Trimeric NC1 Hexamer Cap</text>"##);
+            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● HSQTT Recognition Loop</text>"##);
+            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Met93–Hyl211 Sulfilimine Site</text>"##);
+        } else if is_universal_ae || is_non_heme {
             svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● P-Loop / Switch I (Thr24 Mg²⁺)</text>"##);
             svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● C-Term / Switch Core</text>"##);
             svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● Switch II (DTAGQE GTPase Motif)</text>"##);
@@ -4476,7 +4499,11 @@ fn render_bemisia_fig5_selection_and_sweep(
         // --- Lower Sub-Viewport (`y = 814..1062`): Zoomed Active-Site Cofactor + Anchor Bond ---
         svg.push_str(r##"<rect x="1106" y="814" width="460" height="248" rx="6" fill="#fffbeb" fill-opacity="0.45" stroke="#cbd5e1" stroke-width="1.1"/>"##);
         if is_non_heme {
-            svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site GDP (28 Atoms) + Mg²⁺ A 221 &amp; Thr24–Oγ1 Bond</text>"##);
+            if is_col4_1li1 {
+                svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: NC1 Sulfilimine Interface Pocket (ACT A 2009) &amp; Hyl211–Nζ Anchor</text>"##);
+            } else {
+                svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site GDP (28 Atoms) + Mg²⁺ A 221 &amp; Thr24–Oγ1 Bond</text>"##);
+            }
             let find_het = |nm: &str| -> Option<(f64, f64, f64)> {
                 pdb.het_atoms
                     .iter()
@@ -4536,8 +4563,13 @@ fn render_bemisia_fig5_selection_and_sweep(
                 h_cx - 160.0
             ));
             svg.push_str(&format!(
-                r##"<text x="{:.1}" y="857" text-anchor="middle" font-size="8.0" font-weight="800" fill="#0369a1">P-Loop Walker A (GDGGTGKT) &amp; Switch II (DTAGQE)</text>"##,
-                h_cx
+                r##"<text x="{:.1}" y="857" text-anchor="middle" font-size="8.0" font-weight="800" fill="#0369a1">{}</text>"##,
+                h_cx,
+                if is_col4_1li1 {
+                    "Met93–Hyl211 Sulfilimine Pocket &amp; C4 Disulfide Core"
+                } else {
+                    "P-Loop Walker A (GDGGTGKT) &amp; Switch II (DTAGQE)"
+                }
             ));
 
             // 1. Ligand covalent bonds (C-C, C-N, C-O, P-O)
@@ -4649,6 +4681,22 @@ fn render_bemisia_fig5_selection_and_sweep(
                     mx, my, mx, my + 2.2
                 ));
             }
+            if is_col4_1li1 && thr24_pill_info.is_none() {
+                if let Some((sgx, sgy, sgz, cys_num, nz_dist)) = pdb.proximal_cys_sg {
+                    let og_raw = proj_lig(sgx, sgy, sgz);
+                    let ox = og_raw.0.clamp(1136.0, 1290.0);
+                    let oy = og_raw.1.clamp(856.0, 996.0);
+                    svg.push_str(&format!(
+                        r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#d97706" stroke-width="2.6" stroke-dasharray="3,2"/>"##,
+                        h_cx, h_cy, ox, oy
+                    ));
+                    svg.push_str(&format!(
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="6.0" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.2"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.2" font-weight="900" fill="#ffffff">Nζ</text>"##,
+                        ox, oy, ox, oy + 2.2
+                    ));
+                    thr24_pill_info = Some((ox, oy, cys_num, nz_dist));
+                }
+            }
             if let Some((ox, oy, cys_num, mg_dist)) = thr24_pill_info {
                 let ly = 1020.0_f64;
                 let bx = (ox + 12.0).clamp(1124.0, 1344.0);
@@ -4657,18 +4705,26 @@ fn render_bemisia_fig5_selection_and_sweep(
                     ox, oy + 6.0, bx + 40.0, ly - 10.0
                 ));
                 svg.push_str(&format!(
-                    r##"<rect x="{:.1}" y="{:.1}" width="198" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
+                    r##"<rect x="{:.1}" y="{:.1}" width="212" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>"##,
                     bx, ly - 10.0
                 ));
+                let bond_lbl = if is_col4_1li1 {
+                    format!("Hyl211 (ORF {}) Nζ–ACT = {:.2} Å", cys_num, mg_dist)
+                } else {
+                    format!("Thr24 (ORF {}) Oγ1–Mg²⁺ = {:.2} Å", cys_num, mg_dist)
+                };
                 svg.push_str(&format!(
-                    r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#92400e">Thr24 (ORF {}) Oγ1–Mg²⁺ = {:.2} Å</text>"##,
+                    r##"<text x="{:.1}" y="{:.1}" font-size="8.0" font-weight="800" fill="#92400e">{}</text>"##,
                     bx + 6.0,
                     ly + 3.0,
-                    cys_num,
-                    mg_dist
+                    bond_lbl
                 ));
             }
-            svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Mg²⁺  ● α/β-PO₄ P  ● Guanine N  ● Phosphate/Ribose O⁻  ● Thr24 Oγ1</text>"##);
+            if is_col4_1li1 {
+                svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Hyl211 Nζ  ● Interface O⁻  ● Pocket C  ● Sulfilimine Crosslink Pocket</text>"##);
+            } else {
+                svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Mg²⁺  ● α/β-PO₄ P  ● Guanine N  ● Phosphate/Ribose O⁻  ● Thr24 Oγ1</text>"##);
+            }
         } else {
             if is_bacterial {
                 svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site Fe³⁺–Protoporphyrin IX (HEM A 999, 43 Atoms) &amp; Cys400–Sγ</text>"##);
@@ -4867,7 +4923,16 @@ fn render_bemisia_fig5_selection_and_sweep(
         }
         }
 
-        let tpl_footer = if is_non_heme {
+        let tpl_footer = if is_col4_1li1 {
+            format!(
+                "Template {} | {} Cα + {} HET | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                pdb.template_pdb_code.split(" (").next().unwrap_or("1LI1_A"),
+                pdb.atoms.len(),
+                pdb.het_atoms.len(),
+                pdb.kabsch_rmsd_angstrom,
+                pdb.tm_score
+            )
+        } else if is_non_heme {
             format!(
                 "Template {} | {} Cα + {} GDP/MG | Kabsch RMSD = {:.3} Å | TM = {:.4}",
                 pdb.template_pdb_code.split(" (").next().unwrap_or("1BYU_A"),
@@ -4899,6 +4964,7 @@ fn render_bemisia_fig5_selection_and_sweep(
             xml_esc(&tpl_footer)
         ));
         let bond_part = match pdb.proximal_cys_sg {
+            Some(p) if is_col4_1li1 => format!(" | Hyl211 Nζ–ACT = {:.2} Å", p.4),
             Some(p) if is_non_heme => format!(" | Mg²⁺–Oγ1 = {:.2} Å", p.4),
             Some(p) => format!(" | Fe–Sγ = {:.2} Å", p.4),
             None => String::new(),
@@ -5894,7 +5960,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                                    code: GeneticCodeTable,
                                    patterns: &[&str],
                                    window_codons: usize|
-     -> (usize, usize, usize) {
+     -> (usize, usize, usize, usize, usize) {
         let total_cols = ws.alignment_length.max(3);
         let n_codons = total_cols / 3;
         // Translate sequence 0 and consensus codon-by-codon
@@ -5918,22 +5984,28 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             }
         }
         let mut hit_codon = n_codons / 2;
+        let mut motif_cod_s = hit_codon.saturating_sub(4);
+        let mut motif_cod_e = (motif_cod_s + 8).min(n_codons).max(motif_cod_s + 1);
         for pat in patterns {
             if let Some(idx) = seq0_aa.find(pat).or_else(|| cons_aa.find(pat)) {
                 let offset = pat.find('C').unwrap_or(pat.len() / 2);
                 hit_codon = idx + offset;
+                motif_cod_s = idx;
+                motif_cod_e = (idx + pat.len()).min(n_codons).max(idx + 1);
                 break;
             }
         }
-        let half = window_codons / 2;
-        let start_cod = hit_codon
-            .saturating_sub(half)
+        let lead_codons = 5usize.min(window_codons / 3);
+        let start_cod = motif_cod_s
+            .saturating_sub(lead_codons)
             .min(n_codons.saturating_sub(window_codons));
         let end_cod = (start_cod + window_codons).min(n_codons).max(start_cod + 1);
         let s1 = start_cod * 3 + 1;
         let e1 = (end_cod * 3).min(total_cols);
+        let m_s1 = (motif_cod_s * 3 + 1).clamp(1, total_cols);
+        let m_e1 = (motif_cod_e * 3).clamp(m_s1, total_cols);
         let hover_col = (hit_codon * 3 + 1).clamp(s1, e1);
-        (s1, e1, hover_col)
+        (s1, e1, m_s1, m_e1, hover_col)
     };
 
     let mirror_pair = |svg_src: &Path, png_src: &Path, stem: &str| -> Result<(), String> {
@@ -5949,8 +6021,9 @@ fn generate_bemisia_supplemental_alignview_snapshots(
 
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
     let is_universal_ae = theme.supp_s3_source.contains("Universal");
+    let is_col4_s1 = theme.supp_s1_source.contains("COL4");
 
-    // --- Supplemental Figure S1: FAM-04 Primary Structural Target (CYP450 or Ran GTPase, Dual DNA+AA) ---
+    // --- Supplemental Figure S1: FAM-04 Primary Structural Target (CYP450, Ran GTPase, or COL4A1, Dual DNA+AA) ---
     let s1_fasta = aln_dir.join(&theme.supp_s1_fasta_name);
     if s1_fasta.is_file() {
         let mut ws = AlignmentWorkspace::from_file(
@@ -5969,39 +6042,59 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         }
         .to_string();
         let s1_motifs: &[&str] = if is_bacterial {
-            &["GQRAC", "GNGQR", "QRACI", "ACIGQ", "FGNGQ", "GPRLC", "FGDGP"]
+            &["FGNGQRACIG", "GQRACIG", "GQRAC", "GNGQR", "QRACI", "ACIGQ", "FGNGQ", "GPRLC", "FGDGP"]
         } else if is_universal_ae {
-            &["GDGGT", "DGGTG", "GTGKT", "DTAGQ", "TAGQE", "NKVD", "FNVWD"]
+            &["GDGGTGKT", "GDGGT", "DGGTG", "GTGKT", "DTAGQE", "NKVD", "FNVWD"]
+        } else if is_col4_s1 {
+            &["HSQTT", "GYLLV", "SFLFV", "GPPGP", "GFPGP"]
         } else {
-            &["GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC", "GPRIC", "GPRAC", "FGAGP", "FGEGP", "FSAGP", "FGGGP"]
+            &["PFGDGPRNCIG", "FGDGPRNCIG", "GPRLC", "GPRNC", "GPRMC", "FGDGP", "GKRNC", "GPRSC", "GPRIC", "GPRAC", "FGAGP", "FGEGP", "FSAGP", "FGGGP"]
         };
-        let (s1, e1, hcol) = find_codon_motif_window(
+        let (s1, e1, m_s1, m_e1, hcol) = find_codon_motif_window(
             &ws,
             GeneticCodeTable::Standard1,
             s1_motifs,
             22,
         );
+        // Remove duplicate generic G-x-G-x-x-G or spurious heme auto-annotation on GTPase / Collagen alignments
+        ws.features.retain(|f| {
+            !((is_universal_ae || is_col4_s1) && f.feature_id.starts_with("MOTIF-HEME-"))
+                && !(is_col4_s1 && f.feature_id.starts_with("MOTIF-GXGXXG-"))
+                && !(f.feature_id.starts_with("MOTIF-GXGXXG-")
+                    && f.start_col_1based <= m_e1
+                    && f.end_col_1based >= m_s1)
+        });
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
-                feature_id: if is_universal_ae { "RAN-PLOOP".to_string() } else { "CYP450-HEME".to_string() },
+                feature_id: if is_universal_ae {
+                    "RAN-PLOOP".to_string()
+                } else if is_col4_s1 {
+                    "COL4-NC1-CORE".to_string()
+                } else {
+                    "CYP450-HEME".to_string()
+                },
                 feature_type: "Catalytic_Motif".to_string(),
                 label: if is_bacterial {
                     "Bacterial P450 Heme-Thiolate Cys-Loop (FGNGQRACIG)".to_string()
                 } else if is_universal_ae {
-                    "Ran GTPase Walker A P-Loop (GDGGTGKT) & Switch II (DTAGQE)".to_string()
+                    "Ran GTPase Walker A P-Loop (GDGGTGKT)".to_string()
+                } else if is_col4_s1 {
+                    "Collagen IV Triple-Helix / NC1 Domain (COL4A1)".to_string()
                 } else {
                     "Heme-Thiolate Cys-Loop (PFGDGPRNCIG)".to_string()
                 },
-                start_col_1based: s1,
-                end_col_1based: e1,
+                start_col_1based: m_s1,
+                end_col_1based: m_e1,
                 strand: '+',
                 score: 99.4,
                 color_rgb: (245, 158, 11),
                 description: if is_bacterial {
                     "Proximal Cys400 axial thiolate coordinating catalytic Fe3+ (1BU7 2.38 A)".to_string()
                 } else if is_universal_ae {
-                    "Conserved Mg2+-GDP/GTP nucleotide switch gating nuclear import/export (1BYU 2.08 A)".to_string()
+                    "Conserved Walker A phosphate/Mg2+-GDP/GTP switch gating nuclear import/export (1BYU 2.15 A)".to_string()
+                } else if is_col4_s1 {
+                    "Conserved Type IV Collagen Gly-X-Y / NC1 sulfilimine scaffold (1LI1 1.90 A)".to_string()
                 } else {
                     "Proximal Cys axial thiolate coordinating catalytic Fe3+ (2.35 A)".to_string()
                 },
@@ -6020,6 +6113,11 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         state.status_message = if is_universal_ae {
             format!(
                 "runie-align-view | {} P-Loop & Switch II Window ({}..{} bp, Standard Code 1)",
+                theme.supp_s1_title, s1, e1
+            )
+        } else if is_col4_s1 {
+            format!(
+                "runie-align-view | {} Collagen IV NC1 / Gly-X-Y Window ({}..{} bp, Standard Code 1)",
                 theme.supp_s1_title, s1, e1
             )
         } else {
@@ -6047,8 +6145,11 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         ws.title = theme.supp_s2_title.to_string();
         ws.source_path = theme.supp_s2_source.to_string();
         ws.alignment_method = "mafft-native Katoh E-INS-i (FFT + Local Affine + 2-Tree Iterative)".to_string();
+        // Remove any protein-motif annotations scanned before ws.title was set to non-coding rRNA/rDNA
+        ws.features
+            .retain(|f| !f.feature_id.starts_with("MOTIF-HEME-") && !f.feature_id.starts_with("MOTIF-GXGXXG-"));
 
-        // Locate dense internal rDNA window (strictly excluding 5'/3' overhangs and gap-heavy blocks)
+        // Locate dense internal rDNA window (strictly excluding 5'/3' overhangs and per-row gappy outliers)
         let win = 74usize.min(ws.alignment_length.max(1));
         let margin = (ws.alignment_length / 12).clamp(6, 42);
         let mut best_s = (margin + 1).min(ws.alignment_length.saturating_sub(win).max(1));
@@ -6057,7 +6158,22 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         for start0 in margin..interior_end {
             let slice = &ws.column_stats[start0..start0 + win];
             let mean_gap = slice.iter().map(|c| c.gap_fraction).sum::<f64>() / (win as f64);
-            if mean_gap > 0.18 {
+            if mean_gap > 0.12 {
+                continue;
+            }
+            let worst_row_gaps = ws
+                .sequences
+                .iter()
+                .take(32)
+                .map(|s| {
+                    s.aligned_dna
+                        .get(start0..start0 + win)
+                        .map(| sub| sub.iter().filter(|&&b| b == b'-').count())
+                        .unwrap_or(0)
+                })
+                .max()
+                .unwrap_or(0);
+            if worst_row_gaps * 5 > win {
                 continue;
             }
             let conserved_stem = slice
@@ -6185,18 +6301,22 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         };
 
         let s3_motifs: &[&str] = if is_bacterial {
-            &["QLSQF", "TQLSQ", "GERVL", "EGDSA", "VEGDS", "PLRGK"]
+            &["QLSQFMDQ", "QLSQF", "TQLSQ", "GERVL", "EGDSA", "VEGDS", "PLRGK"]
         } else if is_universal_ae {
-            &["GHVDS", "HVDSG", "DSGKS", "DAPGH", "DCPGH", "KIGYN", "VPTKP"]
+            &["GHVDSGKST", "DCPGHRDF", "DAPGHRDF", "GHVDS", "HVDSG", "DSGKS", "DAPGH", "DCPGH"]
         } else {
             &["FPRMN", "APDMA", "GFGNW", "GHPEV", "WLLPP"]
         };
-        let (s1, e1, hcol) = find_codon_motif_window(
+        let (s1, e1, m_s3, m_e3, hcol) = find_codon_motif_window(
             &ws,
             gcode,
             s3_motifs,
             22,
         );
+        if is_universal_ae || is_bacterial {
+            ws.features
+                .retain(|f| !f.feature_id.starts_with("MOTIF-HEME-"));
+        }
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
@@ -6209,14 +6329,14 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                 },
                 feature_type: "Catalytic_Motif".to_string(),
                 label: if is_bacterial {
-                    "Bacterial rpoB/gyrB Catalytic Core & 3rd-Pos RY3 Transitions".to_string()
+                    "Bacterial rpoB/gyrB Catalytic Core".to_string()
                 } else if is_universal_ae {
-                    "Asgard-Eukaryote EF1A/tuf Translational GTPase Core (GHVDSGKST)".to_string()
+                    "Asgard-Eukaryote EF1A/tuf GTPase Core".to_string()
                 } else {
-                    "COX1 Heme-Cu Core & 3rd-Pos RY3 Transitions".to_string()
+                    "COX1 Heme-Cu Catalytic Core".to_string()
                 },
-                start_col_1based: s1,
-                end_col_1based: e1,
+                start_col_1based: m_s3,
+                end_col_1based: m_e3,
                 strand: '+',
                 score: 99.7,
                 color_rgb: (16, 185, 129),

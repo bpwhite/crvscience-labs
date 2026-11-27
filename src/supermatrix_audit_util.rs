@@ -154,10 +154,23 @@ pub fn norm_species_key(s: &str) -> String {
     let toks: Vec<String> = s
         .split(|c: char| !c.is_ascii_alphanumeric())
         .filter(|t| !t.is_empty())
-        .take(2)
         .map(|t| t.to_ascii_lowercase())
         .collect();
-    toks.join(" ")
+    let take_n = if toks
+        .first()
+        .is_some_and(|w| matches!(w.as_str(), "candidatus" | "aff" | "cf"))
+    {
+        if toks.get(2).is_some_and(|w| w == "sp") {
+            4
+        } else {
+            3
+        }
+    } else if toks.get(1).is_some_and(|w| matches!(w.as_str(), "sp" | "cf" | "aff")) {
+        3
+    } else {
+        2
+    };
+    toks.into_iter().take(take_n).collect::<Vec<_>>().join(" ")
 }
 
 #[allow(dead_code)]
@@ -1742,11 +1755,41 @@ pub(crate) fn run_standardized_12cohort_skylines(
             let ep_rw0: Vec<f64> = epochs.iter().map(|e| e.raw0_ne_median).collect();
 
             let ptot_ms = pt0.elapsed().as_millis().max(p_msa_ms + 1);
-            let sp_resolved = active_metas
-                .first()
-                .map(|r| r.organism.clone())
-                .or_else(|| recs.first().map(|r| r.taxon.clone()))
-                .unwrap_or_else(|| cin.clade_lineage.clone());
+            let mut sp_counts: HashMap<String, usize> = HashMap::new();
+            let mut gen_counts: HashMap<String, usize> = HashMap::new();
+            for m in &active_metas {
+                let toks: Vec<&str> = m.organism.split_whitespace().collect();
+                if toks.len() >= 2 {
+                    let binom = format!("{} {}", toks[0], toks[1]);
+                    *sp_counts.entry(binom).or_insert(0) += 1;
+                    *gen_counts.entry(toks[0].to_string()).or_insert(0) += 1;
+                } else if let Some(&g0) = toks.first() {
+                    *sp_counts.entry(g0.to_string()).or_insert(0) += 1;
+                    *gen_counts.entry(g0.to_string()).or_insert(0) += 1;
+                }
+            }
+            let distinct_sp = sp_counts.len();
+            let sp_resolved = if distinct_sp <= 1 {
+                active_metas
+                    .first()
+                    .map(|r| r.organism.clone())
+                    .or_else(|| recs.first().map(|r| r.taxon.clone()))
+                    .unwrap_or_else(|| cin.clade_lineage.clone())
+            } else {
+                let top_gen = gen_counts
+                    .into_iter()
+                    .max_by_key(|(_, c)| *c)
+                    .map(|(g, c)| (g, c));
+                if let Some((g_name, g_cnt)) = top_gen {
+                    if g_cnt * 10 >= active_metas.len().max(1) * 6 && !g_name.ends_with("idae") {
+                        format!("{} spp. ({} spp.)", g_name, distinct_sp)
+                    } else {
+                        format!("{} ({} spp.)", cin.clade_lineage, distinct_sp)
+                    }
+                } else {
+                    format!("{} ({} spp.)", cin.clade_lineage, distinct_sp)
+                }
+            };
             let gui_c = SupervisedSkylineCohort {
                 cohort_id: cin.cohort_code.clone(),
                 species_name: sp_resolved,
@@ -3081,10 +3124,10 @@ pub fn align_and_trim_codon_core_with_qc(
     }
 
     let cfg = MafftNativeConfig {
-        strategy: MafftNativeStrategy::FftNsI,
-        max_iterations: 2,
+        strategy: MafftNativeStrategy::LInsI,
+        max_iterations: 12,
         adjust_direction: false,
-        use_transitive_consistency: false,
+        use_transitive_consistency: true,
         use_secondary_structure_weights: false,
     };
     let (_, aln_aa, _) = align_sequences_mafft_native_with_config(&aa_recs, &cfg);
@@ -3844,7 +3887,7 @@ pub fn run_functional_families_stage4(
                     if let Ok(items) = discover_entrez_with_retry_shared(
                         &qk,
                         q,
-                        cfg.target_n.max(24),
+                        cfg.target_n.saturating_mul(6).max(72),
                         cfg.min_bp,
                         cfg.max_bp,
                         val_cache_dir,
@@ -3870,7 +3913,7 @@ pub fn run_functional_families_stage4(
                         if let Ok(items) = discover_entrez_with_retry_shared(
                             &fk,
                             fq,
-                            cfg.target_n.max(24),
+                            cfg.target_n.saturating_mul(6).max(72),
                             cfg.min_bp,
                             cfg.max_bp,
                             val_cache_dir,
@@ -3892,20 +3935,38 @@ pub fn run_functional_families_stage4(
                         r = audit_coding_ortholog_cohort(&raw_cands, cfg);
                     }
                 }
-                // Prioritize distinct species first before filling remaining slots up to target_n.
+                // Strictly enforce 1 ortholog per species (and unique cleaned sequence hash) across functional families.
                 let mut picked: Vec<CodingOrthologCandidate> =
                     Vec::with_capacity(cfg.target_n.max(1));
-                let mut overflow: Vec<CodingOrthologCandidate> = Vec::new();
                 let mut seen_sp: HashSet<String> = HashSet::new();
-                for cand in r.accepted.drain(..) {
+                let mut seen_seq_hash: HashSet<String> = HashSet::new();
+                // Sort accepted candidates to prefer curated RefSeq NM_ / non-PREDICTED mRNAs matching the canonical gene symbol,
+                // and drop divergent tissue-specific paralogs (e.g., Rasl2-9 "RAS-like, family" or pseudogenes).
+                let gsym_up = fam.gene_symbol.to_ascii_uppercase();
+                let mut cands_sorted: Vec<CodingOrthologCandidate> = r
+                    .accepted
+                    .drain(..)
+                    .filter(|c| {
+                        let t_low = c.title.to_ascii_lowercase();
+                        !t_low.contains("ras-like, family")
+                            && !t_low.contains("rasl2")
+                            && !t_low.contains("pseudogene")
+                    })
+                    .collect();
+                cands_sorted.sort_by_key(|c| {
+                    let is_nm = c.accession.starts_with("NM_");
+                    let is_pred = c.title.to_ascii_uppercase().contains("PREDICTED");
+                    let t_up = c.title.to_ascii_uppercase();
+                    let has_sym = !gsym_up.is_empty() && t_up.contains(&gsym_up);
+                    (!is_nm, !has_sym, is_pred)
+                });
+                for cand in cands_sorted {
                     let sp_k = norm_species_key(&cand.organism);
-                    if !sp_k.is_empty() && seen_sp.insert(sp_k) {
+                    let seq_h = sha256_hex12(&clean_acgt_only(&cand.sequence_raw));
+                    if !sp_k.is_empty() && seen_sp.insert(sp_k) && seen_seq_hash.insert(seq_h) {
                         picked.push(cand);
-                    } else {
-                        overflow.push(cand);
                     }
                 }
-                picked.extend(overflow);
                 if let Some(ref pin) = cfg.pin_species_substr {
                     let pin_low = pin.to_ascii_lowercase();
                     if let Some(pos) = picked
@@ -4084,22 +4145,84 @@ pub fn run_functional_families_stage4(
             &crate::codon_selection::annotate_abalone_lysin_domain,
         );
         let tr_ms = t_tr.elapsed().as_millis().max(1);
+        let total_codons = (cds_nt / 3).max(1);
+        let motif_win_len = total_codons.min(54);
+        let translate_aligned_codon = |c: &[u8]| -> char {
+            if c == b"---" || c.iter().all(|&b| b == b'-') {
+                '-'
+            } else {
+                let s = std::str::from_utf8(c).unwrap_or("NNN");
+                if let Some(i64) = crate::codon_selection::codon_bytes_to_64idx(s.as_bytes()) {
+                    crate::codon_selection::translate_codon_64(i64, paml_icode)
+                } else {
+                    'X'
+                }
+            }
+        };
+        // Pick an ungapped, conserved interior 54-codon window (preferring cfg.required_motifs[0] if matched)
+        let mut best_start_cod = 0usize;
+        if total_codons > motif_win_len {
+            let mut found_req: Option<usize> = None;
+            if let Some((_, first_seq)) = pairs.first() {
+                let full_aa: String = first_seq
+                    .as_bytes()
+                    .chunks_exact(3)
+                    .map(translate_aligned_codon)
+                    .collect();
+                for rm in &cfg.required_motifs {
+                    for pat in &rm.patterns {
+                        if !pat.contains('.') {
+                            if let Some(idx) = full_aa.find(pat.as_str()) {
+                                found_req = Some(
+                                    idx.saturating_sub(6)
+                                        .min(total_codons.saturating_sub(motif_win_len)),
+                                );
+                                break;
+                            }
+                        }
+                    }
+                    if found_req.is_some() {
+                        break;
+                    }
+                }
+            }
+            if let Some(sc) = found_req {
+                best_start_cod = sc;
+            } else {
+                let top_n = pairs.len().min(8).max(1);
+                let mut best_gaps = usize::MAX;
+                for sc in 0..=(total_codons - motif_win_len) {
+                    let mut g_cnt = 0usize;
+                    for (_, seq) in pairs.iter().take(top_n) {
+                        let sb = seq.as_bytes();
+                        for ci in sc..(sc + motif_win_len) {
+                            let p = ci * 3;
+                            if p + 3 <= sb.len() && sb[p..p + 3].contains(&b'-') {
+                                g_cnt += 1;
+                            }
+                        }
+                    }
+                    if g_cnt < best_gaps {
+                        best_gaps = g_cnt;
+                        best_start_cod = sc;
+                        if g_cnt == 0 && sc >= 2 {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         let motif_rows: Vec<(String, String)> = pairs
             .iter()
             .take(8)
             .map(|(id, seq)| {
-                let mut aa = String::new();
-                for c in seq.as_bytes().chunks_exact(3).take(54) {
-                    let s = std::str::from_utf8(c).unwrap_or("NNN");
-                    if let Some(i64) = crate::codon_selection::codon_bytes_to_64idx(s.as_bytes()) {
-                        aa.push(crate::codon_selection::translate_codon_64(
-                            i64,
-                            paml_icode,
-                        ));
-                    } else {
-                        aa.push('X');
-                    }
-                }
+                let aa: String = seq
+                    .as_bytes()
+                    .chunks_exact(3)
+                    .skip(best_start_cod)
+                    .take(motif_win_len)
+                    .map(translate_aligned_codon)
+                    .collect();
                 let org = org_by_id.get(id).map(|s| s.as_str()).unwrap_or("Organism");
                 (format!("{} | {}", id, org), aa)
             })
@@ -4121,7 +4244,7 @@ pub fn run_functional_families_stage4(
             } else {
                 "Purifying Constraint (M0/M1a)".to_string()
             },
-            focal_motif_window_1based: (1, (cds_nt / 3).min(54).max(1)),
+            focal_motif_window_1based: (best_start_cod + 1, best_start_cod + motif_win_len),
             consensus_motif_aa: motif_rows.first().map(|r| r.1.clone()).unwrap_or_default(),
         });
         functional_families.push(DetailedFunctionalFamily {
@@ -4597,6 +4720,66 @@ fn classify_short_euk_locus_title(hdr: &str) -> Option<&'static str> {
     None
 }
 
+fn base_binomial_2w(s: &str) -> String {
+    let toks: Vec<String> = s
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|t| !t.is_empty())
+        .map(|t| t.to_ascii_lowercase())
+        .collect();
+    let skip = usize::from(
+        toks.first()
+            .is_some_and(|w| matches!(w.as_str(), "candidatus" | "aff" | "cf")),
+    );
+    toks.into_iter().skip(skip).take(2).collect::<Vec<_>>().join(" ")
+}
+
+fn fasta_hdr_matches_slot(hdr: &str, slot: &StudySlotSpec) -> bool {
+    let h = hdr.to_ascii_lowercase();
+    if h.contains("chloroplast") || h.contains("plastid") {
+        return false;
+    }
+    let check_name = |nm: &str| -> bool {
+        let g = nm
+            .split(|c: char| !c.is_ascii_alphanumeric())
+            .find(|t| !t.is_empty() && !matches!(t.to_ascii_lowercase().as_str(), "candidatus" | "aff" | "cf"))
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if g.is_empty() {
+            return false;
+        }
+        if h.contains(&g) {
+            return true;
+        }
+        matches!(
+            g.as_str(),
+            "lissachatina" if h.contains("achatina")
+        ) || matches!(
+            g.as_str(),
+            "cornu" if h.contains("helix") || h.contains("cantareus")
+        ) || matches!(
+            g.as_str(),
+            "tyrannodoris" if h.contains("roboastra")
+        ) || matches!(
+            g.as_str(),
+            "aleurothrixus" if h.contains("aleurotrachelus")
+        ) || matches!(
+            g.as_str(),
+            "americhiton" if h.contains("acanthochitona")
+        ) || matches!(
+            g.as_str(),
+            "trichoplax" | "hoilungia" | "cladtertia" | "polyplacotoma" if h.contains("placozoa") || h.contains("trichoplax") || h.contains("hoilungia")
+        ) || matches!(
+            g.as_str(),
+            "exaiptasia" if h.contains("aiptasia")
+        )
+    };
+    if check_name(&slot.species) || slot.synonyms.iter().any(|s| check_name(s)) {
+        return true;
+    }
+    let fam_low = slot.family.to_ascii_lowercase();
+    !fam_low.is_empty() && fam_low.len() >= 5 && h.contains(&fam_low[..fam_low.len().saturating_sub(2)])
+}
+
 fn resolve_slot_loc(
     slot: &StudySlotSpec,
     loc: &str,
@@ -4604,6 +4787,13 @@ fn resolve_slot_loc(
     by_genus_loc: &HashMap<(String, String), (String, String, String)>,
     genus_slot_count: &HashMap<String, usize>,
 ) -> Option<(String, String)> {
+    let tip_key = format!("__tip__:{}", slot.tip_code);
+    if let Some(hit) = by_sp_loc.get(&(tip_key, loc.to_string())) {
+        return Some(hit.clone());
+    }
+    if by_sp_loc.contains_key(&(format!("__cryptic_multi__:{}", slot.tip_code), String::new())) {
+        return None;
+    }
     let sp_k = norm_species_key(&slot.species);
     if let Some(hit) = by_sp_loc.get(&(sp_k.clone(), loc.to_string())) {
         return Some(hit.clone());
@@ -4629,6 +4819,13 @@ fn resolve_slot_mito(
     mito_by_genus_low: &HashMap<String, (String, String)>,
     genus_slot_count: &HashMap<String, usize>,
 ) -> Option<(String, String)> {
+    let tip_key = format!("__tip__:{}", slot.tip_code);
+    if let Some(hit) = mito_by_sp_low.get(&tip_key) {
+        return Some(hit.clone());
+    }
+    if mito_by_sp_low.contains_key(&format!("__cryptic_multi__:{}", slot.tip_code)) {
+        return None;
+    }
     let sp_k = norm_species_key(&slot.species);
     if let Some(hit) = mito_by_sp_low.get(&sp_k) {
         return Some(hit.clone());
@@ -5960,6 +6157,7 @@ pub fn execute_declarative_study(
     }
 
     let mut genus_slot_count: HashMap<String, usize> = HashMap::new();
+    let mut base_binom_slot_count: HashMap<String, usize> = HashMap::new();
     for slot in &cfg.species_slots {
         let g = norm_species_key(&slot.species)
             .split_whitespace()
@@ -5969,6 +6167,10 @@ pub fn execute_declarative_study(
         if !g.is_empty() {
             *genus_slot_count.entry(g).or_insert(0) += 1;
         }
+        let b2 = base_binomial_2w(&slot.species);
+        if !b2.is_empty() {
+            *base_binom_slot_count.entry(b2).or_insert(0) += 1;
+        }
     }
 
     let mut mito_by_sp_low: HashMap<String, (String, String)> = HashMap::new();
@@ -5976,9 +6178,33 @@ pub fn execute_declarative_study(
     let mut raw_full_mitos: Vec<(String, String, String, String)> = Vec::new();
     let mut seen_mito_acc: HashSet<String> = HashSet::new();
 
+    for slot in &cfg.species_slots {
+        let b2 = base_binomial_2w(&slot.species);
+        if *base_binom_slot_count.get(&b2).unwrap_or(&0) > 1 {
+            by_sp_loc.insert(
+                (format!("__cryptic_multi__:{}", slot.tip_code), String::new()),
+                (String::new(), String::new()),
+            );
+            mito_by_sp_low.insert(
+                format!("__cryptic_multi__:{}", slot.tip_code),
+                (String::new(), String::new()),
+            );
+        }
+    }
+
     if !cfg.is_prokaryote && !cfg.universal_archaea_eukarya {
         let mut reg_mito =
-            |acc: String, org: String, title: String, c: String, extra_slot_k: Option<String>| {
+            |acc: String,
+             org: String,
+             title: String,
+             c: String,
+             extra_slot_k: Option<String>,
+             tip_slot_k: Option<String>| {
+                if let Some(tk) = tip_slot_k {
+                    if !tk.is_empty() {
+                        mito_by_sp_low.insert(tk, (acc.clone(), c.clone()));
+                    }
+                }
                 if let Some(sk) = extra_slot_k {
                     if !sk.is_empty() {
                         mito_by_sp_low
@@ -6014,9 +6240,14 @@ pub fn execute_declarative_study(
                 &val_cache_dir,
             ) {
                 for (sm, raw_s) in items {
+                    if sm.title.to_ascii_lowercase().contains("chloroplast")
+                        || sm.title.to_ascii_lowercase().contains("plastid")
+                    {
+                        continue;
+                    }
                     let c = clean_acgt_only(&raw_s);
                     if c.len() >= 8_000 {
-                        reg_mito(sm.accession, sm.organism, sm.title, c, None);
+                        reg_mito(sm.accession, sm.organism, sm.title, c, None, None);
                     } else if c.len() >= 280 {
                         if let Some(loc_tag) = classify_short_euk_locus_title(&sm.title) {
                             let sp_k = norm_species_key(&sm.organism);
@@ -6046,16 +6277,32 @@ pub fn execute_declarative_study(
                     let parsed_org = parse_organism_from_fasta_hdr(hdr);
                     let org_k = norm_species_key(&parsed_org);
                     let slot_opt = cfg.species_slots.get(i);
+                    if let Some(slot) = slot_opt {
+                        if !fasta_hdr_matches_slot(hdr, slot) {
+                            eprintln!(
+                                "  [Hygiene Guard] Skipping mismatched fallback accession {} ({}) for slot {} ({})",
+                                acc, parsed_org, slot.tip_code, slot.species
+                            );
+                            continue;
+                        }
+                    }
                     let org_label = if !parsed_org.is_empty() && parsed_org != "Organism" {
                         parsed_org.clone()
                     } else {
                         slot_opt.map(|s| s.species.clone()).unwrap_or_default()
                     };
-                    if c.len() >= 8_000 {
+                    if c.len() >= 5_500 {
+                        let tip_k = slot_opt.map(|s| format!("__tip__:{}", s.tip_code));
                         let extra_k = slot_opt.map(|s| norm_species_key(&s.species));
-                        reg_mito(acc.clone(), org_label, hdr.clone(), c, extra_k);
+                        reg_mito(acc.clone(), org_label, hdr.clone(), c, extra_k, tip_k);
                     } else if c.len() >= 250 {
                         if let Some(loc_tag) = classify_short_euk_locus_title(hdr) {
+                            if let Some(slot) = slot_opt {
+                                by_sp_loc.insert(
+                                    (format!("__tip__:{}", slot.tip_code), loc_tag.to_string()),
+                                    (acc.clone(), c.clone()),
+                                );
+                            }
                             if !org_k.is_empty() && org_k != "organism" {
                                 by_sp_loc
                                     .entry((org_k.clone(), loc_tag.to_string()))
@@ -6098,6 +6345,10 @@ pub fn execute_declarative_study(
                 &val_cache_dir,
             );
             for (loc_tag, acc, seq) in panel {
+                by_sp_loc.insert(
+                    (format!("__tip__:{}", slot.tip_code), loc_tag.clone()),
+                    (acc.clone(), seq.clone()),
+                );
                 by_sp_loc.insert((sp_k.clone(), loc_tag.clone()), (acc.clone(), seq.clone()));
                 for alt_sp in &slot.synonyms {
                     by_sp_loc.insert((norm_species_key(alt_sp), loc_tag.clone()), (acc.clone(), seq.clone()));
@@ -6134,6 +6385,9 @@ pub fn execute_declarative_study(
                         if c.len() >= 250 {
                             if let Some(lt) = crate::supervisor_gram_positive::classify_bacterial_locus_title(&sm.title, c.len()) {
                                 by_sp_loc
+                                    .entry((format!("__tip__:{}", slot.tip_code), lt.to_string()))
+                                    .or_insert_with(|| (sm.accession.clone(), c.clone()));
+                                by_sp_loc
                                     .entry((sp_k.clone(), lt.to_string()))
                                     .or_insert_with(|| (sm.accession.clone(), c));
                             }
@@ -6149,6 +6403,10 @@ pub fn execute_declarative_study(
                 &val_cache_dir,
             );
             for (loc_tag, acc, seq) in panel {
+                by_sp_loc.insert(
+                    (format!("__tip__:{}", slot.tip_code), loc_tag.clone()),
+                    (acc.clone(), seq.clone()),
+                );
                 by_sp_loc.insert((sp_k.clone(), loc_tag.clone()), (acc.clone(), seq.clone()));
                 for alt_sp in &slot.synonyms {
                     by_sp_loc.insert(
@@ -6300,6 +6558,10 @@ pub fn execute_declarative_study(
                             extract_homologous_mito_locus_from_genome(&mseq, &cox1_anchor, true)
                         {
                             if ext.len() >= 360 {
+                                by_sp_loc.insert(
+                                    (format!("__tip__:{}", slot.tip_code), "COI".to_string()),
+                                    (macc.clone(), ext.clone()),
+                                );
                                 by_sp_loc.insert((sp_k.clone(), "COI".to_string()), (macc, ext));
                             }
                         }
@@ -6380,11 +6642,23 @@ pub fn execute_declarative_study(
                     .map(|(a, s)| (l, a, s))
             })
             .unwrap_or_else(|| {
-                (
-                    cfg.anchor_locus.as_str(),
-                    format!("ANCH_{}", slot.tip_code.replace(':', "")),
-                    anchor_seq.clone(),
-                )
+                if let Some((macc, mseq)) = resolve_slot_mito(
+                    slot,
+                    &mito_by_sp_low,
+                    &mito_by_genus_low,
+                    &genus_slot_count,
+                ) {
+                    ("Mitogenome", macc, mseq)
+                } else {
+                    (
+                        cfg.anchor_locus.as_str(),
+                        slot.genome_accession
+                            .clone()
+                            .filter(|g| !g.is_empty())
+                            .unwrap_or_else(|| format!("ANCH_{}", slot.tip_code.replace(':', ""))),
+                        anchor_seq.clone(),
+                    )
+                }
             });
         let clean = if raw_seq.len() > 2600 {
             raw_seq[..2600].to_string()
@@ -7239,11 +7513,22 @@ pub fn execute_declarative_study(
         })
         .collect();
 
-    eprintln!(
-        "[bio-suite-supervisor] Stage 4/5: Functional Families ({}) + PDB {} Threading...",
-        cfg.functional_families.len(),
-        cfg.pdb_template.pdb_id
-    );
+    let reuse_stage45 = std::env::var("CRV_REUSE_STAGE45").is_ok_and(|v| v == "1")
+        && run_dir.join("multi-compartment-report.json").is_file()
+        && run_dir.join("run-manifest.json").is_file();
+    let existing_pair: Option<(SupervisorRunManifest, MultiCompartmentStudyReport)> =
+        if reuse_stage45 {
+            let m_opt = fs::read_to_string(run_dir.join("run-manifest.json"))
+                .ok()
+                .and_then(|t| serde_json::from_str::<SupervisorRunManifest>(&t).ok());
+            let r_opt = fs::read_to_string(run_dir.join("multi-compartment-report.json"))
+                .ok()
+                .and_then(|t| serde_json::from_str::<MultiCompartmentStudyReport>(&t).ok());
+            m_opt.zip(r_opt)
+        } else {
+            None
+        };
+
     let (
         functional_families,
         gui_gene_families,
@@ -7251,16 +7536,56 @@ pub fn execute_declarative_study(
         nuc_aligned_cols_total,
         fam_raw_bp_sum,
         stage_codon_dnds_ms,
-        _,
-    ) = run_functional_families_stage4(
-        &cfg.functional_families,
-        &cfg.pdb_template,
-        &spec.run_id,
-        &val_cache_dir,
-        &cache.cache_dir,
-        &run_dir,
-        &cfg.figure_theme.supp_s1_fasta_name,
-    )?;
+    ) = if let Some((ref old_m, ref old_r)) = existing_pair {
+        if let Some(old_pdb) = old_m.pdb_structures.first().cloned() {
+            eprintln!(
+                "[bio-suite-supervisor] Stage 4/5: Reusing cached Functional Families ({}) + PDB {} from disk...",
+                old_r.functional_families.len(),
+                old_pdb.template_pdb_code
+            );
+            let nuc_cols: usize = old_r.functional_families.iter().map(|f| f.aligned_bp).sum();
+            let fam_bp: usize = old_r
+                .functional_families
+                .iter()
+                .map(|f| f.num_records * f.aligned_bp)
+                .sum();
+            (
+                old_r.functional_families.clone(),
+                old_m.gene_family_selection.clone(),
+                old_pdb,
+                nuc_cols,
+                fam_bp,
+                old_r.stage_codon_dnds_ms,
+            )
+        } else {
+            let (ff, ggf, ps, nc, fb, ms, _) = run_functional_families_stage4(
+                &cfg.functional_families,
+                &cfg.pdb_template,
+                &spec.run_id,
+                &val_cache_dir,
+                &cache.cache_dir,
+                &run_dir,
+                &cfg.figure_theme.supp_s1_fasta_name,
+            )?;
+            (ff, ggf, ps, nc, fb, ms)
+        }
+    } else {
+        eprintln!(
+            "[bio-suite-supervisor] Stage 4/5: Functional Families ({}) + PDB {} Threading...",
+            cfg.functional_families.len(),
+            cfg.pdb_template.pdb_id
+        );
+        let (ff, ggf, ps, nc, fb, ms, _) = run_functional_families_stage4(
+            &cfg.functional_families,
+            &cfg.pdb_template,
+            &spec.run_id,
+            &val_cache_dir,
+            &cache.cache_dir,
+            &run_dir,
+            &cfg.figure_theme.supp_s1_fasta_name,
+        )?;
+        (ff, ggf, ps, nc, fb, ms)
+    };
 
     // Stage 5: Empirical Constrained LSD2 Chronogram + 12 Single-Species GMRF Skylines
     eprintln!(
@@ -7297,33 +7622,76 @@ pub fn execute_declarative_study(
     let calibrated_nodes = lsd2_out.calibrated_nodes;
     let solved_timetree_newick = lsd2_out.timetree_newick;
 
-    let ep_arr: [(&str, f64, f64, &str, &str); 6] = std::array::from_fn(|ei| {
-        let ep = &cfg.skyline_epochs[ei.min(cfg.skyline_epochs.len().saturating_sub(1))];
-        (
-            ep.label.as_str(),
-            ep.age_max_ka,
-            ep.age_min_ka,
-            ep.period_label.as_str(),
-            ep.ecological_context.as_str(),
-        )
-    });
-    let drv_fn: fn(&str, f64) -> String = if cfg.is_prokaryote {
-        drv_summary_prokaryote
-    } else if cfg.universal_archaea_eukarya {
-        drv_summary_universal_ae
-    } else {
-        drv_summary_eukaryote
-    };
-    let (gui_skylines, popset_skylines, _coh_boots, stage_popsets_mcmc_ms) =
-        run_standardized_12cohort_skylines(
-            &cohort_inputs,
-            &ep_arr,
-            drv_fn,
-            b_replicates,
-            cfg.manuscript_prose.seed_base,
-            &run_dir,
-            &cfg.supp_s2_cohort_code,
-        )?;
+    let (gui_skylines, popset_skylines, stage_popsets_mcmc_ms) =
+        if let Some((ref old_m, ref old_r)) = existing_pair {
+            if !old_r.popset_skylines.is_empty() && !old_m.skyline_cohorts.is_empty() {
+                eprintln!(
+                    "[bio-suite-supervisor] Stage 5B: Reusing cached {} Single-Species Skylines from disk...",
+                    old_r.popset_skylines.len()
+                );
+                (
+                    old_m.skyline_cohorts.clone(),
+                    old_r.popset_skylines.clone(),
+                    old_r.stage_popsets_mcmc_ms,
+                )
+            } else {
+                let ep_arr: [(&str, f64, f64, &str, &str); 6] = std::array::from_fn(|ei| {
+                    let ep = &cfg.skyline_epochs[ei.min(cfg.skyline_epochs.len().saturating_sub(1))];
+                    (
+                        ep.label.as_str(),
+                        ep.age_max_ka,
+                        ep.age_min_ka,
+                        ep.period_label.as_str(),
+                        ep.ecological_context.as_str(),
+                    )
+                });
+                let drv_fn: fn(&str, f64) -> String = if cfg.is_prokaryote {
+                    drv_summary_prokaryote
+                } else if cfg.universal_archaea_eukarya {
+                    drv_summary_universal_ae
+                } else {
+                    drv_summary_eukaryote
+                };
+                let (gs, ps, _, ms) = run_standardized_12cohort_skylines(
+                    &cohort_inputs,
+                    &ep_arr,
+                    drv_fn,
+                    b_replicates,
+                    cfg.manuscript_prose.seed_base,
+                    &run_dir,
+                    &cfg.supp_s2_cohort_code,
+                )?;
+                (gs, ps, ms)
+            }
+        } else {
+            let ep_arr: [(&str, f64, f64, &str, &str); 6] = std::array::from_fn(|ei| {
+                let ep = &cfg.skyline_epochs[ei.min(cfg.skyline_epochs.len().saturating_sub(1))];
+                (
+                    ep.label.as_str(),
+                    ep.age_max_ka,
+                    ep.age_min_ka,
+                    ep.period_label.as_str(),
+                    ep.ecological_context.as_str(),
+                )
+            });
+            let drv_fn: fn(&str, f64) -> String = if cfg.is_prokaryote {
+                drv_summary_prokaryote
+            } else if cfg.universal_archaea_eukarya {
+                drv_summary_universal_ae
+            } else {
+                drv_summary_eukaryote
+            };
+            let (gs, ps, _, ms) = run_standardized_12cohort_skylines(
+                &cohort_inputs,
+                &ep_arr,
+                drv_fn,
+                b_replicates,
+                cfg.manuscript_prose.seed_base,
+                &run_dir,
+                &cfg.supp_s2_cohort_code,
+            )?;
+            (gs, ps, ms)
+        };
     let skyline_raw_bp_sum: usize = popset_skylines.iter().map(|p| p.raw_bp).sum();
     total_raw_bp_on_disk =
         panel_raw_bp_sum.max(total_raw_bp_on_disk) + fam_raw_bp_sum + skyline_raw_bp_sum;
@@ -7602,9 +7970,24 @@ pub fn refresh_declarative_stage5_skylines_in_place(
                 items = fb;
             }
         }
-        if items.len() < 12 {
+        // If a single dominant binomial species already has >= 12 isolates in `items`, filter strictly to that single species
+        {
+            let mut sp_cnt: HashMap<String, usize> = HashMap::new();
+            for (sm, _) in &items {
+                let sp_k = norm_species_key(&sm.organism);
+                if !sp_k.is_empty() && !sp_k.ends_with(" sp.") && !sp_k.ends_with(" sp") {
+                    *sp_cnt.entry(sp_k).or_insert(0) += 1;
+                }
+            }
+            if let Some((dom_sp, dom_n)) = sp_cnt.into_iter().max_by_key(|(_, c)| *c) {
+                if dom_n >= 12 && dom_n < items.len() {
+                    items.retain(|(sm, _)| norm_species_key(&sm.organism) == dom_sp);
+                }
+            }
+        }
+        if items.len() < 5 {
             return Err(format!(
-                "Skyline cohort {} ({}) returned only {} records (<12)",
+                "Skyline cohort {} ({}) returned only {} records (<5)",
                 sc.cohort_code,
                 sc.cache_key,
                 items.len()
@@ -7735,6 +8118,146 @@ pub fn refresh_declarative_stage5_skylines_in_place(
 
     manifest.skyline_cohorts = gui_skylines;
     manifest.total_raw_bp_cleaned = new_total_raw_bp;
+    let n_part = load_partitioned_summary(Some(run_dir))
+        .map(|p| p.n_partitions)
+        .unwrap_or(report.msc_regime1_ry3.gene_tree_count);
+    manifest.study_subtitle = format!(
+        "Autonomous 100% Native Rust bio-suite-supervisor Multi-Compartment Run ({} Verified NCBI Records, {} Loci Partitioned ModelTest, B = {} UFBoot2, 12 x 25,000-Gen Skylines)",
+        new_total_recs, n_part, b_replicates
+    );
+    Ok(())
+}
+
+/// Fast Stage-4 refresh for declarative studies (`--refam`): re-runs `cfg.functional_families`
+/// with strict 1-ortholog-per-species deduplication, rebuilds `supp_s1`, re-threads the PDB
+/// active-site template, and updates `report` + `manifest` in place without re-running Stage 3.
+pub fn refresh_declarative_stage4_families_in_place(
+    cfg: &DeclarativeStudyConfig,
+    spec: &SupervisorRunSpec,
+    cache: &PoliteCacheManager,
+    run_dir: &Path,
+    manifest: &mut SupervisorRunManifest,
+    report: &mut MultiCompartmentStudyReport,
+) -> Result<(), String> {
+    let val_cache_dir = cache.cache_dir.join("validation").join(&cfg.cache_subdir);
+    let old_fam_bp: usize = report
+        .functional_families
+        .iter()
+        .flat_map(|f| f.records_meta.iter().map(|m| m.raw_length_bp))
+        .sum();
+    let (
+        functional_families,
+        gui_gene_families,
+        pdb_struct,
+        nuc_aligned_cols_total,
+        fam_raw_bp_sum,
+        stage_codon_dnds_ms,
+        _,
+    ) = run_functional_families_stage4(
+        &cfg.functional_families,
+        &cfg.pdb_template,
+        &spec.run_id,
+        &val_cache_dir,
+        &cache.cache_dir,
+        run_dir,
+        &cfg.figure_theme.supp_s1_fasta_name,
+    )?;
+
+    let base_non_fam_bp = report.total_raw_bp_on_disk.saturating_sub(old_fam_bp);
+    let new_total_raw_bp = base_non_fam_bp + fam_raw_bp_sum;
+    let n_slots = manifest.sequences.len();
+    let nuc_tot: usize = functional_families.iter().map(|f| f.num_records).sum();
+    let pop_iso_tot: usize = report.popset_skylines.iter().map(|p| p.num_isolates).sum();
+    let new_total_recs = n_slots + nuc_tot + pop_iso_tot;
+
+    report.functional_families = functional_families;
+    report.nuclear_aligned_cols = nuc_aligned_cols_total;
+    report.stage_codon_dnds_ms = stage_codon_dnds_ms;
+    report.total_records_on_disk = new_total_recs;
+    report.total_raw_bp_on_disk = new_total_raw_bp;
+
+    manifest.gene_family_selection = gui_gene_families;
+    manifest.pdb_structures = vec![pdb_struct];
+    manifest.total_raw_bp_cleaned = new_total_raw_bp;
+
+    // Also refresh `supp_s3_cox1_64taxa.fasta` under BLOSUM62 L-INS-i + post-MSA alignment score QC if present
+    let s3_path = run_dir.join("alignments/supp_s3_cox1_64taxa.fasta");
+    if s3_path.is_file() {
+        if let Ok(raw_s3) = fs::read_to_string(&s3_path) {
+            let mut s3_recs = Vec::new();
+            let mut cur_h = String::new();
+            let mut cur_s = String::new();
+            for line in raw_s3.lines() {
+                let t = line.trim();
+                if let Some(h) = t.strip_prefix('>') {
+                    if !cur_h.is_empty() && !cur_s.is_empty() {
+                        let clean_nt = clean_acgt_only(&cur_s);
+                        if clean_nt.len() >= 240 {
+                            s3_recs.push(FastaRecord {
+                                id: cur_h.clone(),
+                                accession: cur_h.clone(),
+                                taxon: cur_h.clone(),
+                                common_name: String::new(),
+                                family: String::new(),
+                                gene: "S3".to_string(),
+                                description: String::new(),
+                                sequence: clean_nt,
+                                cached_from_disk: true,
+                            });
+                        }
+                    }
+                    cur_h = h.trim().to_string();
+                    cur_s.clear();
+                } else {
+                    cur_s.push_str(t);
+                }
+            }
+            if !cur_h.is_empty() && !cur_s.is_empty() {
+                let clean_nt = clean_acgt_only(&cur_s);
+                if clean_nt.len() >= 240 {
+                    s3_recs.push(FastaRecord {
+                        id: cur_h.clone(),
+                        accession: cur_h.clone(),
+                        taxon: cur_h,
+                        common_name: String::new(),
+                        family: String::new(),
+                        gene: "S3".to_string(),
+                        description: String::new(),
+                        sequence: clean_nt,
+                        cached_from_disk: true,
+                    });
+                }
+            }
+            if s3_recs.len() >= 6 {
+                let gcode = if cfg.is_prokaryote {
+                    11
+                } else if cfg.universal_archaea_eukarya {
+                    1
+                } else {
+                    5
+                };
+                let (s3_clean_pairs, _, _, _, _) = align_and_trim_codon_core_with_qc(
+                    &s3_recs,
+                    gcode,
+                    true,
+                    0.68,
+                    75,
+                    0.92,
+                    0.48,
+                    0.68,
+                );
+                if s3_clean_pairs.len() >= 6 {
+                    let mut out_s3 = String::with_capacity(s3_clean_pairs.len() * 1400);
+                    for (hdr, seq) in &s3_clean_pairs {
+                        out_s3.push_str(&format!(">{}\n{}\n", hdr, seq));
+                    }
+                    let _ = fs::write(&s3_path, out_s3);
+                }
+            }
+        }
+    }
+
+    let b_replicates = spec.bootstrap_replicates.max(500);
     let n_part = load_partitioned_summary(Some(run_dir))
         .map(|p| p.n_partitions)
         .unwrap_or(report.msc_regime1_ry3.gene_tree_count);

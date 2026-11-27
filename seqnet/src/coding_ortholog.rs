@@ -657,8 +657,7 @@ pub fn audit_aligned_codon_rows(
             0.0
         };
         if compared >= 20
-            && aa_id < min_consensus_aa_identity
-            && d6_sim < min_consensus_dayhoff6_sim
+            && (aa_id < min_consensus_aa_identity || d6_sim < min_consensus_dayhoff6_sim)
         {
             quarantined.push(OrthologQuarantineHit {
                 id: id.clone(),
@@ -666,11 +665,63 @@ pub fn audit_aligned_codon_rows(
                 organism: String::new(),
                 reason: "NON_HOMOLOGOUS_ALIGNED_ROW".to_string(),
                 detail: format!(
-                    "AA id {:.3} < {:.3} and Dayhoff6 sim {:.3} < {:.3}",
+                    "AA id {:.3} (min {:.3}) or Dayhoff6 sim {:.3} (min {:.3})",
                     aa_id, min_consensus_aa_identity, d6_sim, min_consensus_dayhoff6_sim
                 ),
             });
             continue;
+        }
+        // Sliding 20-codon local window homology gate to catch chimeric or locally frame-shifted tracts
+        if cols >= 32 {
+            let win = 20usize;
+            let mut local_fail: Option<(usize, f64, f64)> = None;
+            let margin = (cols / 10).min(8);
+            let hi = cols.saturating_sub(win + margin).max(margin);
+            for s0 in (margin..=hi).step_by(5) {
+                if s0 + win > cols {
+                    break;
+                }
+                let mut w_cmp = 0usize;
+                let mut w_id = 0usize;
+                let mut w_d6 = 0usize;
+                for c in s0..(s0 + win) {
+                    let r_ch = ab.get(c).copied().unwrap_or(b'-').to_ascii_uppercase();
+                    let cons_ch = consensus[c];
+                    if r_ch != b'-' && r_ch != b'?' && r_ch != b'X' && cons_ch != b'-' {
+                        w_cmp += 1;
+                        if r_ch == cons_ch {
+                            w_id += 1;
+                        }
+                        let rc = dayhoff6_class(r_ch);
+                        let cc = dayhoff6_class(cons_ch);
+                        if rc < 6 && rc == cc {
+                            w_d6 += 1;
+                        }
+                    }
+                }
+                if w_cmp >= 15 {
+                    let loc_id = w_id as f64 / w_cmp as f64;
+                    let loc_d6 = w_d6 as f64 / w_cmp as f64;
+                    let req_d6 = (min_consensus_dayhoff6_sim * 0.55).clamp(0.22, 0.35);
+                    if loc_id < 0.12 && loc_d6 < req_d6 {
+                        local_fail = Some((s0 + 1, loc_id, loc_d6));
+                        break;
+                    }
+                }
+            }
+            if let Some((col1, lid, ld6)) = local_fail {
+                quarantined.push(OrthologQuarantineHit {
+                    id: id.clone(),
+                    accession: id.clone(),
+                    organism: String::new(),
+                    reason: "LOCAL_WINDOW_MISALIGNMENT_OR_CHIMERA".to_string(),
+                    detail: format!(
+                        "20-codon window at aa {} failed local score (AA id {:.2}, Dayhoff6 {:.2})",
+                        col1, lid, ld6
+                    ),
+                });
+                continue;
+            }
         }
         kept.push(ri);
     }

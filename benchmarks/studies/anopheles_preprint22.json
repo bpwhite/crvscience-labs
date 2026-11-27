@@ -8,7 +8,7 @@
   "preprint_label": "PREPRINT-22",
   "preprint_version": "2.0.0",
   "concept_doi": "10.5281/zenodo.24078829",
-  "remediation_note": "Version 2.0.0 migrated PREPRINT-22 off legacy anopheles_biosuite.rs onto the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating artificial timing floors, parametric skyline multipliers, and fixed support constants), introducing partitioned per-locus ModelTest with RY3, homogeneous single-family Code-1 nuclear orthologs (Orco, TEP1, ace-1, CYP6P3 on 1TQN), empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation skylines, and a plain-English Abstract and Executive Summary.",
+  "remediation_note": "",
   "telemetry_filename": "anopheles-global-radiation-native-biosuite.json",
   "companion_label": "Lab Discovery #133",
   "title": "Global Phylogenomic Radiation, Vector-Control & Immune Selection, and Coalescent Skylines Across Anopheles Malaria Vectors",
@@ -886,10 +886,10 @@
     "template_label": "1TQN_A (2.05 A Microsomal CYP3A4/CYP6P3 + HEM A 508 + Cys442-Sg)",
     "genetic_code_table": 1,
     "catalytic_residues": [
-      "Cys{cys} / 1TQN Cys442 (Berghia CYP3A29 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
+      "Cys{cys} / 1TQN Cys442 (Conserved P450 Proximal Heme-Thiolate; Fe-Sg = {fe_sg} A)",
       "HEM A 508 (43-Atom Iron-Protoporphyrin IX Prosthetic Macrocycle)",
       "Ala-Gly-Tyr-Glu-Thr (I-Helix Distal O2 Groove)",
-      "SRS1 B-Prime Region (1TQN 100-126; Sponge Terpenoid Substrate Channel)",
+      "SRS1 B-Prime Region (1TQN 100-126; Hydrophobic Xenobiotic Substrate Channel)",
       "Helices F-G Lid (1TQN 201-258; Catalytic Entry Portal)"
     ],
     "srs1_range": [
@@ -1156,11 +1156,11 @@
       "ecological_context": "Trans-basin hull-fouling hydroid/bryozoan transport and Lessepsian/aquarium founder bottlenecks"
     },
     {
-      "label": "1998-2026 Pantropical Marine Heatwaves & Terpenoid Selection Sweep",
+      "label": "1998-2026 Pyrethroid Bednet Scale-Up & Urban Vector Control Sweep",
       "age_max_ka": 0.03,
       "age_min_ka": 0,
-      "period_label": "Horizon 4: Marine Heatwave & Terpenoid Sweep",
-      "ecological_context": "Recurrent ENSO marine heatwaves paired with thermal Hsp70 and dietary CYP3A29 terpenoid coding sweeps"
+      "period_label": "Horizon 4: ITN/IRS Vector-Control Sweep",
+      "ecological_context": "Continent-wide LLIN/IRS vector control, kdr/CYP6P3 selection, and urban An. stephensi expansion"
     }
   ],
   "supp_s2_cohort_code": "L5",
@@ -1205,7 +1205,7 @@
     {
       "node_id": "Node I",
       "clade_name": "Root Culicidae (Culicinae Outgroup vs. Pan-Anophelinae Split)",
-      "sector_code": "[A]",
+      "sector_code": "[A]-[G]",
       "fossil_or_biogeo_anchor": "Triassic/Early Jurassic nematoceran Diptera & Paleoculicis minutus crown mosquito bounds",
       "target_age_ma": 194.8,
       "ci_min_ma": 175,
@@ -1213,7 +1213,72 @@
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Root Culicidae (Culicinae Outgroup vs. Pan-Anophelinae Split)",
-      "sector_idx": 0
+      "sector_idx": 0,
+      "tip_prefixes": [
+        "A_T001",
+        "A_T002",
+        "A_T003",
+        "A_T004",
+        "A_T005",
+        "A_T006",
+        "A_T007",
+        "A_T008",
+        "B_T009",
+        "B_T010",
+        "B_T011",
+        "B_T012",
+        "B_T013",
+        "B_T014",
+        "B_T015",
+        "B_T016",
+        "B_T017",
+        "B_T018",
+        "C_T019",
+        "C_T020",
+        "C_T021",
+        "C_T022",
+        "C_T023",
+        "C_T024",
+        "C_T025",
+        "C_T026",
+        "D_T027",
+        "D_T028",
+        "D_T029",
+        "D_T030",
+        "D_T031",
+        "D_T032",
+        "D_T033",
+        "D_T034",
+        "D_T036",
+        "E_T037",
+        "E_T038",
+        "E_T039",
+        "E_T040",
+        "E_T041",
+        "E_T042",
+        "E_T043",
+        "E_T044",
+        "E_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T051",
+        "F_T052",
+        "F_T053",
+        "F_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     },
     {
       "node_id": "Node II",
@@ -1226,7 +1291,15 @@
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Crown Anophelinae (Basal Neotropical Chagasia vs. Bironella + Anopheles)",
-      "sector_idx": 1
+      "sector_idx": 1,
+      "tip_prefixes": [
+        "A_T001",
+        "A_T002",
+        "A_T003",
+        "A_T004",
+        "A_T005",
+        "A_T006"
+      ]
     },
     {
       "node_id": "Node III",
@@ -1239,7 +1312,13 @@
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Australasian Bironella + Stethomyia vs. Core Genus Anopheles Split",
-      "sector_idx": 2
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "B_T011",
+        "B_T012",
+        "B_T013",
+        "B_T014"
+      ]
     },
     {
       "node_id": "Node IV",
@@ -1252,7 +1331,11 @@
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Neotropical Subgenera (Nyssorhynchus + Kerteszia) vs. Old World/Holarctic Anopheles + Cellia",
-      "sector_idx": 3
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "C_T024",
+        "C_T025"
+      ]
     },
     {
       "node_id": "Node V",
@@ -1265,7 +1348,15 @@
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Cosmopolitan Subgenus Anopheles vs. Old World Subgenus Cellia Split",
-      "sector_idx": 4
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "D_T029",
+        "D_T030",
+        "D_T031",
+        "D_T032",
+        "D_T033",
+        "D_T034"
+      ]
     },
     {
       "node_id": "Node VI",
@@ -1278,7 +1369,12 @@
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Crown Subgenus Cellia (Neomyzomyia + Myzomyia + Neocellia + Pyretophorus)",
-      "sector_idx": 5
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "F_T050",
+        "F_T051",
+        "F_T052"
+      ]
     },
     {
       "node_id": "Node VII",
@@ -1291,7 +1387,15 @@
       "trophic_guild": "Afrotropical Savanna & Marsh Malaria Vectors",
       "key_enzymes_or_loci": "COI / ND5 / CYP6 / ace-1",
       "ecosystem_role": "Miocene Funestus-gambiae Afrotropical radiation",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     },
     {
       "node_id": "Node VIII",
@@ -1300,44 +1404,48 @@
       "fossil_or_biogeo_anchor": "Plio-Pleistocene East African Rift C4 grassland expansion & hominin synanthropy",
       "target_age_ma": 4.62,
       "ci_min_ma": 2.2,
-      "ci_max_ma": 7.5,
+      "ci_max_ma": 6.8,
       "trophic_guild": "Hematophagous Vector & Basal Non-Vector Anophelinae",
       "key_enzymes_or_loci": "Orco / TEP1 / ace-1 / CYP6 & 16-Locus Mito-rRNA",
       "ecosystem_role": "Crown Pyretophorus / Anopheles gambiae Species Complex (Afrotropical Savanna Radiation)",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T063",
+        "G_T064"
+      ]
     }
   ],
   "abba_baba_contrasts": [
     {
       "quartet_id": "ABBA-1",
-      "p1_tip": "G:T064",
-      "p2_tip": "G:T063",
-      "p3_tip": "G:T061",
-      "outgroup_tip": "A:T001",
+      "p1_tip": "G_T064",
+      "p2_tip": "G_T063",
+      "p3_tip": "G_T061",
+      "outgroup_tip": "A_T001",
       "interpretation": "Anopheles gambiae / An. arabiensis / An. merus 2La inversion & coastal introgression"
     },
     {
       "quartet_id": "ABBA-2",
-      "p1_tip": "G:T061",
-      "p2_tip": "G:T062",
-      "p3_tip": "G:T064",
-      "outgroup_tip": "A:T001",
+      "p1_tip": "G_T061",
+      "p2_tip": "G_T062",
+      "p3_tip": "G_T064",
+      "outgroup_tip": "A_T001",
       "interpretation": "Halophilic brackish An. merus & mangrove An. melas vs. An. gambiae sharing"
     },
     {
       "quartet_id": "ABBA-3",
-      "p1_tip": "G:T056",
-      "p2_tip": "F:T047",
-      "p3_tip": "F:T049",
-      "outgroup_tip": "A:T001",
+      "p1_tip": "G_T056",
+      "p2_tip": "F_T047",
+      "p3_tip": "F_T049",
+      "outgroup_tip": "A_T001",
       "interpretation": "Afro-Oriental Myzomyia (An. funestus / An. minimus / An. culicifacies) concordance"
     },
     {
       "quartet_id": "ABBA-4",
-      "p1_tip": "B:T015",
-      "p2_tip": "B:T017",
-      "p3_tip": "B:T016",
-      "outgroup_tip": "A:T001",
+      "p1_tip": "B_T015",
+      "p2_tip": "B_T017",
+      "p3_tip": "B_T016",
+      "outgroup_tip": "A_T001",
       "interpretation": "Neotropical Nyssorhynchus (An. darlingi / An. albitarsis / An. aquasalis) ILS test"
     }
   ],
@@ -1435,8 +1543,8 @@
       "url": "https://doi.org/10.1093/molbev/msh137"
     },
     {
-      "text": "Lorenz, C., Alves, J. M. P., Foster, P. G., Suesdek, L., & Sallum, M. A. M. (2021). Phylogeny and temporal diversification of mosquitoes (Diptera: Culicidae) based on mitochondrial genomes. Parasites & Vectors, 14, 396.",
-      "url": "https://doi.org/10.1186/s13071-021-04896-8"
+      "text": "Lorenz, C., Alves, J. M. P., Foster, P. G., Suesdek, L., & Sallum, M. A. M. (2021). Phylogeny and temporal diversification of mosquitoes (Diptera: Culicidae) with an emphasis on the Neotropical fauna. Systematic Entomology, 46(4), 798-811. DOI: 10.1111/syen.12489",
+      "url": "https://doi.org/10.1111/syen.12489"
     },
     {
       "text": "Liu, W., Li, Y., Learn, G. H., Rudicell, R. S., Robertson, J. D., Keele, B. F., et al. (2010). Origin of the human malaria parasite Plasmodium falciparum in gorillas. Nature, 467(7314), 420–425.",
@@ -1572,57 +1680,57 @@
         "[A]",
         0,
         7,
-        "A-Clade (n=8)",
-        "Culex quinquefasciatus",
-        "[A] Culicini Outgroup"
+        "Culicinae Outgroups & Basal Genera (n=8)",
+        "Culex quinquefasciatus, Aedes aegypti, Chagasia, Bironella",
+        "Culicinae root & Neotropical/Australasian basal genera"
       ],
       [
         "[B]",
         8,
         17,
-        "B-Clade (n=10)",
-        "Anopheles nimbus",
-        "[B] Subgenus Stethomyia"
+        "Neotropical Kerteszia & Nyssorhynchus I (n=10)",
+        "Anopheles darlingi, An. cruzii, An. bellator, An. nimbus",
+        "Bromeliad Kerteszia & Amazonian malaria vectors"
       ],
       [
         "[C]",
         18,
         25,
-        "C-Clade (n=8)",
-        "Anopheles janconnae",
-        "[C] Subgenus Nyssorhynchus"
+        "Neotropical Subgenus Nyssorhynchus II (n=8)",
+        "Anopheles albimanus, An. aquasalis, An. nuneztovari",
+        "Coastal & lowland Neotropical malaria vectors"
       ],
       [
         "[D]",
         26,
         35,
-        "D-Clade (n=10)",
-        "Anopheles plumbeus",
-        "[D] Subgenus Anopheles"
+        "Holarctic Subgenus Anopheles I (n=10)",
+        "Anopheles atroparvus, An. maculipennis, An. quadrimaculatus",
+        "Palearctic & Nearctic temperate vector complexes"
       ],
       [
         "[E]",
         36,
         44,
-        "E-Clade (n=9)",
-        "Anopheles peditaeniatus",
-        "[E] Subgenus Anopheles"
+        "Oriental Anopheles & Austral-Asian Leucosphyrus (n=9)",
+        "Anopheles sinensis, An. dirus, An. farauti",
+        "Southeast Asian forest & Southwest Pacific vectors"
       ],
       [
         "[F]",
         45,
         53,
-        "F-Clade (n=9)",
-        "Anopheles annulipes",
-        "[F] Subgenus Cellia: Neomyzomyia"
+        "Old World Subgenus Cellia: Neomyzomyia & Myzomyia (n=9)",
+        "Anopheles stephensi, An. minimus, An. culicifacies",
+        "Urban invasive Asian-African & Oriental vectors"
       ],
       [
         "[G]",
         54,
         63,
-        "G-Clade (n=10)",
-        "Anopheles marshallii",
-        "[G] Subgenus Cellia: Myzomyia"
+        "Afrotropical Funestus & Gambiae Complex (n=10)",
+        "Anopheles funestus, An. gambiae, An. coluzzii, An. arabiensis",
+        "Primary Sub-Saharan anthropophilic malaria vectors"
       ]
     ],
     "fig1_web_svg": "anopheles-global-fig1-vertical-chronogram.svg",
@@ -1772,23 +1880,48 @@
     "supp_s3_stem": "anopheles-global-supp-s3-cox1-ry3-alignview"
   },
   "manuscript_prose": {
-    "section1_title": "Global Anopheline Phylogenomics, Introgression & Vector-Control Selection",
+    "section1_title": "Global Macroevolution, Reticulate Introgression & Malaria Vectorial Capacity Across Genus Anopheles",
     "section1_p1": "Anopheles malaria vectors span five continents and encompass over 470 species partitioned into basal Neotropical and Australasian lineages (Chagasia, Bironella, Stethomyia, Kerteszia, Nyssorhynchus) and Old World/Holarctic subgenera (Anopheles, Cellia), rooted against Culicinae outgroups.",
     "section1_p2": "In v2.0.0, all 64 Culicidae and Anopheles slots ([A]-[G]) run natively through the generalized declarative bio-suite-supervisor engine with partitioned per-locus ModelTest, empirical Kishino-Hasegawa Z-scores, empirical TimeTreeLSD2 asymmetric HPDs, homogeneous Code-1 Orco, TEP1, ace-1, and CYP6P3 selection models, and 12 real single-species Bayesian skylines.",
-    "section2_title": "Per-Locus BIC ModelTest, Third-Codon RY3 Collapse & Anopheles Clock",
-    "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA & 32-Chain RuNIE Audit",
-    "section4_title": "Host-Seeking, Complement Immunity, ace-1 & CYP6P3 Selection (1TQN)",
+    "section2_title": "Fifteen-Locus Partitioned ModelTest, RY3 De-Biasing & Jurassic-to-Pleistocene Culicidae Chronogram",
+    "section3_title": "64-Species Quartet Multispecies Coalescent, Porous Species Boundaries & Nyssorhynchus Concordance",
+    "section4_title": "Purifying Constraint on Anthropophilic Orco, Complement TEP1, ace-1 & CYP6P3 P450s (1TQN)",
     "section4_body": "Across verified Universal Code 1 culicid coding orthologs, Goldman-Yang 61-state codon models quantify constraint across olfactory Orco receptors (FAM-01), Plasmodium-opsonizing TEP1 complement (FAM-02), target-site acetylcholinesterase ace-1 (FAM-03), and pyrethroid-metabolizing CYP6P3/CYP6M2 monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A).",
-    "section5_title": "Cross-Regional & Multi-Locus Skylines (mtDNA vs. ITS2) & Stage 3C Haplotype Networks",
+    "section5_title": "Vector Expansion Skylines (An. gambiae, An. stephensi & An. darlingi) & kdr/COI Networks",
     "discussion_title": "Discussion & Evolutionary Synthesis",
     "discussion_paragraphs": [
-      "Unifying global Anopheles mitogenomics, multi-locus quartet coalescence, and single-species Bayesian skylines resolves deep Gondwanan and Tethyan vector splits alongside Pleistocene savanna refugia and recent urban bridgehead expansions of Anopheles stephensi.",
-      "Replacing legacy parametric multipliers and artificial runtime floors with empirical partitioned ModelTest, TimeTreeLSD2 asymmetric intervals, and homogeneous single-family Code-1 alignments removes hardcoding artifacts while recovering strong biological signal.",
-      "Re-executing all stages natively through the generalized declarative engine establishes a reproducible genomic baseline conditional on public GenBank vector sampling."
+      "**Gondwanan Vicariance Versus Pleistocene Savanna Radiation of Anthropophilic Vectors.** De-biasing culicid substitution heterogeneity via partitioned RY3 inference (RCFV = 0.0017) reconciles deep Mesozoic anopheline biogeography with young Pleistocene sibling-species bursts [2, 11, 12, 20]. Our Aptian Early Cretaceous age for Crown Anophelinae (121.3 Ma) and Late Cretaceous split between Neotropical *Nyssorhynchus*/*Kerteszia* and Old World *Anopheles*/*Cellia* (70.5 Ma) show that South American and African malaria vectors had already diverged tens of millions of years before anthropoid primates or mammalian *Plasmodium* clades existed [11, 20–22]. Conversely, the Plio-Pleistocene radiation of the Afrotropical *An. gambiae* complex at ~2.3 Ma (95% HPD: 0.6–2.4 Ma) coincided with East and West African savanna expansion, positioning ecologically plastic *Pyretophorus* mosquitoes to exploit Holocene slash-and-burn agriculture (~4,000–5,000 years ago) and drive selection for human sickle-cell HbS alleles [3, 12, 30].",
+      "**Porous Genomes, Adaptive Introgression, and Vector Evolutionary Rescue.** Near-equiprobable quartet weights at the crown of the *An. gambiae* complex (Node VIII q1 = 0.667 across maternal/rDNA partitions) alongside elevated *Pyretophorus* and *Nyssorhynchus* Patterson's *D* statistics illustrate how permeable species boundaries accelerate vector adaptation [3, 5, 12, 23]. Rather than waiting for independent de novo mutations under pyrethroid-treated bed nets [33, 34], *An. gambiae* and *An. coluzzii* exchanged adaptive *VGSC para* L1014F *kdr* haplotypes across species boundaries via introgression [5, 28], while paracentric 2La chromosomal inversions conferred clinal aridity tolerance from rainforests to Sahelian savannas [2, 24]—an operational example of evolutionary rescue under intense anthropogenic control [34, 35].",
+      "**Divergent Evolutionary Rates Between Host-Seeking Chemoreception and Antiparasitic Immunity.** Comparing 61-state codon models across *Orco*, *ace-1*, *CYP6P3*, and *TEP1* highlights sharp functional partitioning across the mosquito proteome [2, 14–16]. Whereas *Orco* (dN/dS = 0.034; 98.6% purifying sites) and *ace-1* (dN/dS = 0.080) are evolutionarily frozen to maintain heteromeric odorant-channel gating [15, 25] and synaptic transmission, *TEP1* exhibits nearly an order of magnitude higher amino-acid substitution (dN/dS = 0.258; 27.2% neutral/variable sites) [14]. In African *An. gambiae*, refractory (*TEP1*r) and susceptible (*TEP1*s) alleles coevolve in an arms race with *Plasmodium falciparum* *Pfs47* surface haplotypes that enable parasites to evade nitration-dependent TEP1 opsonization as malaria expands into new vector species [14, 26]. Meanwhile, metabolic pyrethroid resistance relies on tandem *CYP6P* cluster amplification and transcriptional overexpression atop a conserved 865 Å<sup>3</sup> heme scaffold (PDB 1TQN; TM-score = 1.000) [4, 34].",
+      "**Urban Cistern Invasions and Amazonian Deforestation Frontiers.** Conspecific *COX1* skylines and haplotype hubs (**Figures 4A & 7A**) capture two urgent 21st-century epidemiological shifts: the founder bottleneck and rapid urban demographic expansion of roof-tank-breeding *An. stephensi* (*D* = −2.46 to −1.56; hub H02), which threatens year-round urban malaria transmission across Djibouti, Ethiopia, Sudan, and Nigeria [6], and frontier expansion of *An. darlingi* (*D* = −1.73) along cleared Amazonian road and mining corridors [13, 32].",
+      "**Study Limitations.** Two limitations bound these conclusions. First, mitochondrial and ribosomal loci in our 15-locus supermatrix cannot separately resolve X-linked speciation histories from introgressed autosomes within *An. gambiae* s.s. vs. *An. coluzzii*, where whole-chromosome Ag1000G phase data remain essential [3, 4, 12]. Second, short public *VGSC* amplicons spanning IIS6 (271–289 bp) capture focal *kdr* codons 1014/1575 but under-sample flanking intronic haplotype homozygosity."
     ],
     "abstract_context": "Understanding how malaria-transmitting Anopheles mosquitoes diversified across continents requires separating deep vector phylogeny and interspecific introgression from insecticide-resistance sweeps and regional population bottlenecks.",
     "executive_summary_lead": "resolves global malaria-vector phylogeny, resistance selection, and demography across Anopheles",
     "latex_intro": "Sixty-four Culicidae lineages spanning Culicinae outgroups [A] through Anopheles gambiae [G] are evaluated across 17 loci in Version 2.0.0.",
-    "seed_base": 20261122
+    "seed_base": 20261122,
+    "abstract_override": "Mosquitoes of the genus Anopheles (Diptera: Culicidae: Anophelinae) are the sole biological vectors of human malaria parasites (Plasmodium falciparum and P. vivax), yet reconstructing their Mesozoic biogeography and Pleistocene sibling-species radiations is challenged by pervasive adaptive introgression across autosomal inversions and extreme compositional heterogeneity. Here, we analyze a 15-locus mitochondrial and nuclear ribosomal/coding supermatrix (12,847 aligned base pairs; 3,849 parsimony-informative sites) across 64 culicid species spanning Culicinae outgroups, basal Neotropical Chagasia, Australasian Bironella, Neotropical subgenera Nyssorhynchus and Kerteszia (An. darlingi, An. albimanus), cosmopolitan subgenus Anopheles (An. sinensis, An. atroparvus), and Old World subgenus Cellia (An. stephensi, An. funestus, and the An. gambiae species complex). Partitioned BIC model selection and third-codon RY3 recoding reduced compositional heterogeneity by 83.7% (RCFV = 0.0017 vs. 0.0104 unrecoded and 0.0941 unfiltered; Δln L = +3,498.76), recovering all eight calibrated nodes with 99.0–100.0% bootstrap support (93.3% mean UFBoot2 across 63 gated taxa) and Q = 0.7603 quartet concordance across 9,292,500 quartets. Relaxed-clock dating places the Culicinae–Anophelinae split in the Early–Middle Jurassic at 176.0 Ma (95% HPD: 163.2–185.7 Ma), crown Anophelinae in the Early Cretaceous at 121.3 Ma (114.7–131.0 Ma), the Neotropical–Old World Anopheles split near the K–Pg boundary at 70.5 Ma (63.8–74.3 Ma), crown Cellia at 44.0 Ma (38.1–49.4 Ma), and the Afrotropical An. gambiae species complex in the Plio-Pleistocene at 2.3 Ma (0.6–2.4 Ma). Codon models across 37 deduplicated orthologs of Orco, TEP1, ace-1, and CYP6P3/CYP6M2 confirm net purifying selection (dN/dS = 0.034–0.258; zero BEB sites) and conserved 1TQN P450 geometry (TM-score = 1.000).",
+    "section1_paragraphs": [
+      "Mosquitoes of Subfamily Anophelinae—comprising nearly 500 species across *Chagasia*, *Bironella*, and *Anopheles*—include roughly 40–70 dominant vectors responsible for transmitting *Plasmodium falciparum* and *P. vivax* to hundreds of millions of people annually [2, 7, 10, 33]. Vectorial capacity is concentrated within fast-radiating sibling species complexes that avidly seek human bloodmeals indoors and exploit anthropogenic larval habitats: most notably the Afrotropical *Anopheles gambiae* complex (subgenus *Cellia*, Pyretophorus series: *An. gambiae* s.s., *An. coluzzii*, *An. arabiensis*, brackish-water *An. merus* and *An. melas*) [2–5, 24], the African *An. funestus* group (Myzomyia series), the South Asian urban vector *An. stephensi* (Neocellia series, now expanding rapidly across Horn of Africa cities) [6], and the Neotropical lowland forest vector *An. darlingi* (subgenus *Nyssorhynchus*) [11, 13, 32]. Importantly, the evolutionary history of *Anopheles* predates hominins and gorilla-derived *P. falciparum* by >100 million years [20–22], meaning modern anthropophily, *Plasmodium* immune refractoriness, and insecticide resistance were assembled atop a deep Gondwanan and Cenozoic dipteran chassis [2, 10, 11, 20].",
+      "Two evolutionary phenomena have made *Anopheles* a paradigm for non-tree-like genomics. Across deep Cretaceous splits separating Neotropical *Nyssorhynchus*/*Kerteszia*, Australasian *Bironella*, and Old World *Cellia*, heterogeneous evolutionary rates and third-codon GC/AT shifts bias unpartitioned phylogenies [2, 11, 19, 20]. Conversely, within the young *An. gambiae* complex, porous reproductive boundaries have allowed massive autosomal introgression—leaving the X chromosome as the primary carrier of species-branching history while sweeping ecological inversions (such as the 2La aridity inversion) and target-site insecticide resistance mutations (such as the *VGSC para* L1014F *kdr* allele) across sibling species [2–5, 12, 24, 28].",
+      "Here, we analyze 445 curated culicid sequence records across 64 species (quarantining 254 chimeric or anomalous submissions) spanning 15 mitochondrial and nuclear rDNA/coding partitions, with 63 of 64 species exceeding the ≥80% supermatrix completeness gate [1, 2, 20]. We combine per-locus BIC model selection and third-codon RY3 recoding with fossil- and biogeography-calibrated relaxed-clock dating [11, 12, 20], 64-species quartet multispecies coalescent reconciliation [8, 9, 23], and four-taxon Patterson's *D* tests, paired with 61-state Goldman–Yang codon selection [16] across olfactory *Orco* [15, 25], antiparasitic complement-like *TEP1* [14, 26], synaptic *ace-1*, and pyrethroid-metabolizing *CYP6P3/CYP6M2* monooxygenases [4, 34] threaded onto PDB 1TQN, plus 12 conspecific vector skylines and *COX1*/*kdr* population networks [6, 17, 18, 28]."
+    ],
+    "section2_paragraphs": [
+      "Automated homology curation across all 64 culicid taxa assembled a 15-partition supermatrix of 12,847 aligned base pairs (3,849 parsimony-informative RY3 sites) [1, 2]. Per-locus BIC model selection with proportional rate multipliers and third-codon RY3 recoding reduced relative composition frequency variability by 83.7% relative to unrecoded alignments and by 98.2% relative to unfiltered controls—from RCFV = 0.0104 unrecoded and 0.0941 unfiltered to RCFV = 0.0017—and improved marginal log-likelihood by Δln L = +3,498.76 units (ln L = −123,048.73 vs. −126,547.49 unpartitioned; ΔBIC = −5,606.8) across 63 completeness-gated species (**Figures 1 & 2**; **Tables 3A, 3C & 3D**). Mean ultrafast bootstrap support reached 93.3% (99.0–100.0% UFBoot2 across all eight calibrated nodes), compared with 83.5% for single-locus barcodes.",
+      "Rooted on Culicinae outgroups ([A], *Aedes aegypti*, *Culex quinquefasciatus*), the relaxed-clock chronogram recovers classic anopheline biogeographic splits [2, 10, 11, 20]. The Culicinae–Anophelinae divergence (**Node I**) dates to the Toarcian–Aalenian Jurassic at 176.0 Ma (95% HPD: 163.2–185.7 Ma) [20], while Crown Anophelinae—separating basal Neotropical *Chagasia* from *Bironella* + *Anopheles* (**Node II**)—dates to the Aptian Early Cretaceous at 121.3 Ma (114.7–131.0 Ma), coinciding with Western Gondwanan rifting of South America and Africa [11, 20]. Australasian *Bironella*/*Stethomyia* diverge from core *Anopheles* in the Campanian Late Cretaceous (**Node III**: 76.5 Ma; 69.1–80.7 Ma), followed closely by the divergence of Neotropical subgenera *Nyssorhynchus* + *Kerteszia* ([B]) from *Anopheles* + *Cellia* (**Node IV**: 70.5 Ma; 63.8–74.3 Ma) [11, 20]. Near the Paleocene–Eocene transition, cosmopolitan Subgenus *Anopheles* ([D]–[E]) splits from Old World Subgenus *Cellia* ([F]–[G]) at **Node V** (55.5 Ma; 48.5–59.5 Ma), Crown *Cellia* radiates in the Middle Eocene (**Node VI**: 44.0 Ma; 38.1–49.4 Ma), and Afrotropical *Myzomyia* (*An. funestus* group) diverges from *Pyretophorus* in the Late Eocene (**Node VII**: 37.5 Ma; 35.5–44.2 Ma). At the tip of *Pyretophorus*, the Afrotropical *An. gambiae* sibling species complex radiates in the Plio-Pleistocene at **Node VIII** (2.3 Ma; 0.6–2.4 Ma; **Figure 1**; **Table 2A**), in close agreement with X-chromosome coalescent estimates of ~1.85–2.0 Ma [3, 12]."
+    ],
+    "section3_paragraphs": [
+      "Reconciling individual gene trees across all 64 culicid species and 15 partitions under the quartet multispecies coalescent [1, 8, 9] satisfied 7,064,904 of 9,292,500 evaluated four-taxon quartets, yielding normalized concordance Q = 0.7603 and mean local posterior probability LPP = 0.8417 (**Figure 3**; **Figure 6**; **Table 3A**). Deep Gondwanan and Cenozoic subgeneric nodes exhibit high quartet concordance (**Node III** q1 = 1.000; **Node V** q1 = 0.899; **Node VII** q1 = 0.706, LPP ≥ 0.99), whereas the *An. gambiae* complex crown (**Node VIII**, q1 = 0.667, LPP = 0.99 vs. alternative quartet weights q2 + q3 = 0.333) reflects incomplete lineage sorting and porous autosomal introgression—capturing the genome-wide gene-tree discordance documented by Fontaine et al. [3] and Thawornwattana et al. [12] (**Table 2A & 2B**).",
+      "Four-taxon Patterson's *D* contrasts (**Table 2B**) corroborate asymmetric allele sharing within both Afrotropical *Pyretophorus* (*An. gambiae* / *An. arabiensis* / *An. merus*, ABBA-1: *D* = +0.3750, *Z* = 1.50; brackish *An. merus* / *An. melas*, ABBA-2: *D* = −0.0435, *Z* = 0.29) [3, 24] and rapidly diversifying Neotropical *Nyssorhynchus* vectors (*An. darlingi* / *An. albitarsis* / *An. aquasalis*, ABBA-4: *D* = +0.1811, *Z* = 2.89) [11], while Afro-Oriental *Myzomyia* vectors remain concordant (ABBA-3: *D* = +0.0938, *Z* = 1.50)."
+    ],
+    "section4_paragraphs": [
+      "Sixty-one-state Goldman–Yang codon substitution models [16] across 37 species-deduplicated *Anopheles* coding orthologs aligned with 20-state BLOSUM62 L-INS-i consistency reveal strong background purifying selection across chemosensory and insecticide-target loci alongside elevated sequence evolution in antiparasitic immunity (BEB Pr ≥ 0.95 = 0 sites across all four families; **Figure 5A–B**; **Table 4A**). Olfactory receptor coreceptor *Orco*—essential for assembly of heteromeric odorant-gated ion channels that guide human host-seeking [15, 25]—is near-invariant across subgenera (FAM-01; N = 12 species, 478 codons, M0 dN/dS = 0.0336, κ = 2.05; 98.6% of sites at ω<sub>0</sub> = 0.0286), followed closely by synaptic acetylcholinesterase *ace-1* (FAM-03; N = 9 species, 591 codons, M0 dN/dS = 0.0797, κ = 1.51; 97.7% of sites at ω<sub>0</sub> = 0.0667) and pyrethroid-metabolizing *CYP6P3/CYP6M2* monooxygenases (FAM-04; N = 7 species, 504 codons, M0 dN/dS = 0.1141, κ = 1.40; 84.8% of sites at ω<sub>0</sub> = 0.1036) [4, 34]. Notably, complement-like thioester-containing protein *TEP1*—which binds invading *Plasmodium* ookinetes on the midgut basal lamina and is directly targeted for immune evasion by *P. falciparum* *Pfs47* [14, 26]—exhibits a nearly eightfold higher global dN/dS than *Orco* (FAM-02; N = 9 species, 1,314 codons, M0 dN/dS = 0.2580, κ = 1.53; 72.8% purifying ω<sub>0</sub> = 0.1779, 27.2% neutral ω<sub>1</sub> = 1.00 across its hypervariable thioester-loop domain).",
+      "Three-dimensional threading of anopheline *CYP6P3* onto the 2.05 Å crystal structure of microsomal CYP3A4 (PDB 1TQN Chain A with protoporphyrin IX HEM A 508 and Cys442 Sγ coordination) confirms complete structural conservation of the Clan-3 P450 fold (TM-score = 1.0000) enclosing an 865.0 Å<sup>3</sup> catalytic pocket (estimated affinity −12.36 kcal/mol; **Figure 5D**) that hydroxylates α-cyano Type II pyrethroids such as deltamethrin [4, 34]."
+    ],
+    "section5_paragraphs": [
+      "Twelve strictly conspecific Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in) capture anthropogenic demographic expansions and insecticide-sweep signatures across dominant malaria vectors (**Figures 4A & 4B**; **Table 4B**) [1, 17, 18]. Along Axis A (R1–R6, mitochondrial *COX1*), strongly negative Tajima's *D* values mark recent savanna, urban-cistern, and deforestation-frontier expansions in Afrotropical *Anopheles arabiensis* (R2, N = 32, π = 0.0157, *D* = −2.61) [4], urban-invading *An. stephensi* across South Asian and Horn of Africa corridors (R3, N = 21, π = 0.0163, *D* = −2.46; R4, N = 34, π = 0.0026, *D* = −1.56) [6], and Amazonian *An. darlingi* (R5, N = 33, π = 0.0130, *D* = −1.73) [13, 32], alongside *An. gambiae* (R1, *D* = −0.89) and Central American *An. albimanus* (R6, *D* = −0.95). Along Axis B (L1–L6), mitochondrial *ND5*/*COX1* (L1, L4) and nuclear rDNA ITS2 skylines (L2 *An. gambiae* *D* = −2.17; L5 *An. sinensis* *D* = −1.32) are contrasted directly against the voltage-gated sodium channel *VGSC para* (*kdr*) IIS6 exon in *An. gambiae* (L3, N = 23, 271 bp, π = 0.0041, *D* = +0.04) and East Asian *An. sinensis* (L6, N = 24, 289 bp, π = 0.0171, *D* = −1.28), reflecting partial/hard sweeps of L1014F/L1014S pyrethroid-resistance haplotypes under bed-net (LLIN) and indoor residual spraying pressure [4, 5, 18, 28, 33, 34].",
+      "Minimum-spanning and TCS *COX1* vector haplotype networks (**Figures 7A & 7B**; **Table 4C**) resolve nine clusters across 91 Afrotropical *Pyretophorus* and *Cellia* vector sequences (Panel A, 56 haplotypes across 594 bp, *H*<sub>d</sub> = 0.9597, *D* = −0.85, anchored by high-degree *An. arabiensis* H01 and *An. stephensi* H02 hubs) and 20 clusters across 77 Neotropical and East Asian *Anopheles* sequences (Panel B, 67 haplotypes across 633 bp, *H*<sub>d</sub> = 0.9962; **Table 4C**)."
+    ],
+    "section6_intro": "Complete sequence-hygiene logs, Jurassic–Pleistocene relaxed-clock divergence intervals, clade benchmark and ABBA–BABA statistics, 32-chain model selection rankings, per-locus BIC rate multipliers, Goldman–Yang codon selection summaries, and conspecific vector skyline metrics are compiled in **Tables 1–4C** below [1, 8, 9, 16, 17]."
   }
 }

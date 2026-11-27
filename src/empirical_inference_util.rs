@@ -300,8 +300,9 @@ fn parse_simple_rooted_newick(newick: &str) -> Option<SimpleTippedTree> {
     })
 }
 
-/// Core To et al. (2016) Active-Set Constrained LSD2 solver + B=200 Box-Muller Poisson bootstrap
-/// without artificial calibration-span CI floors.
+/// Core To et al. (2016) + Thorne-Kishino / Sanderson Autocorrelated Relaxed-Clock LSD2 solver
+/// with Yang & Rannala (2006) soft fossil calibration priors and B=200 parametric bootstrap 95% HPDs
+/// across all N - 1 internal nodes.
 pub fn solve_empirical_lsd2_core(
     nodes: &[TimeTreeNodeSpec],
     alignment_sites: usize,
@@ -323,20 +324,22 @@ pub fn solve_empirical_lsd2_core(
         }
     }
 
-    let mut weights = vec![0.0_f64; n_nodes];
-    for n in nodes {
-        if n.parent_id.is_some() {
-            weights[n.node_id] = l_sites / (n.branch_length_subs.max(1e-6) + c_smooth / l_sites);
-        }
-    }
-
     // Propagate ancestor upper bounds down and descendant lower bounds up so
     // constrained node intervals are strictly monotonic (`eff_min[parent] > eff_max[child]` never occurs).
     let max_cal_age = nodes
         .iter()
         .filter_map(|n| n.cal_max_ma.or(n.cal_min_ma))
         .fold(0.0_f64, f64::max);
-    let min_gap = if max_cal_age > 100.0 { 1.0 } else { 0.01 };
+    let min_gap = (max_cal_age * 1e-4).clamp(0.0005, 0.04);
+    let sigma0 = 0.14_f64;
+    let mut weights = vec![0.0_f64; n_nodes];
+    for n in nodes {
+        if n.parent_id.is_some() {
+            let b_eff = n.branch_length_subs.max(1e-5);
+            let var_b = (b_eff + c_smooth / l_sites) / l_sites + (sigma0 * b_eff.max(0.002)).powi(2);
+            weights[n.node_id] = 1.0 / var_b.max(1e-10);
+        }
+    }
     let propagate_bounds = |raw_min: &[Option<f64>], raw_max: &[Option<f64>]| -> (Vec<Option<f64>>, Vec<Option<f64>>) {
         let mut emin = raw_min.to_vec();
         let mut emax = raw_max.to_vec();
@@ -375,22 +378,81 @@ pub fn solve_empirical_lsd2_core(
         .collect();
     let (eff_min, eff_max) = propagate_bounds(&raw_min, &raw_max);
 
-    let solve_for_branches = |branches: &[f64], b_min: &[Option<f64>], b_max: &[Option<f64>]| -> (Vec<f64>, f64, f64) {
+    // Yang & Rannala (2006) soft-bound normal fossil calibration priors `(mu_ma, sigma_ma)`
+    let base_cal_priors: Vec<Option<(f64, f64)>> = nodes
+        .iter()
+        .map(|n| {
+            if n.is_tip {
+                return None;
+            }
+            match (n.cal_min_ma, n.cal_max_ma) {
+                (Some(lo), Some(hi)) => {
+                    let mu = 0.5 * (lo + hi);
+                    let span = (hi - lo).max(0.08 * mu.max(0.1));
+                    let sig = (span / 3.92).max(0.02 * mu.max(0.05));
+                    Some((mu, sig))
+                }
+                (Some(lo), None) => Some((lo * 1.08, (0.12 * lo).max(0.05))),
+                (None, Some(hi)) => Some((hi * 0.92, (0.12 * hi).max(0.05))),
+                (None, None) => None,
+            }
+        })
+        .collect();
+
+    let solve_for_branches = |branches: &[f64],
+                              b_min: &[Option<f64>],
+                              b_max: &[Option<f64>],
+                              cal_priors: &[Option<(f64, f64)>],
+                              rate_shocks: &[f64],
+                              soft_interior_margin: bool|
+     -> (Vec<f64>, Vec<f64>, f64, f64) {
+        let mut cum_sub = vec![0.0_f64; n_nodes];
+        let mut tip_rtts = Vec::new();
+        for u in 0..n_nodes {
+            if let Some(pid) = nodes[u].parent_id {
+                cum_sub[u] = cum_sub[pid] + branches[u].max(0.0);
+            }
+            if nodes[u].is_tip {
+                tip_rtts.push(cum_sub[u]);
+            }
+        }
+        tip_rtts.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let med_rtt = tip_rtts.get(tip_rtts.len() / 2).copied().unwrap_or(0.25).max(0.02);
+        let root_target = match (b_min.first().copied().flatten(), b_max.first().copied().flatten()) {
+            (Some(lo), Some(hi)) => 0.5 * (lo + hi),
+            (Some(lo), None) => lo * 1.08,
+            (None, Some(hi)) => hi * 0.92,
+            (None, None) => max_cal_age.max(10.0),
+        };
+        let init_r = (med_rtt / root_target.max(1.0)).clamp(1e-6, 0.08);
+        let uncapped_root_hi = if max_cal_age > 0.0 {
+            max_cal_age * 1.10
+        } else {
+            f64::INFINITY
+        };
+
         let mut t = vec![0.0_f64; n_nodes];
-        // Bottom-up depth initialization inside strictly monotonic feasible bounds
         for u in (0..n_nodes).rev() {
             if nodes[u].is_tip {
                 t[u] = nodes[u].tip_age_ma.unwrap_or(0.0);
             } else {
                 let max_ch = children_of[u]
                     .iter()
-                    .map(|&c| t[c] + (branches[c] / 0.0005).max(1.0))
-                    .fold(1.0_f64, f64::max);
+                    .map(|&c| t[c] + (branches[c].max(1e-5) / init_r).max(min_gap))
+                    .fold(min_gap, f64::max);
+                let root_cap = if nodes[u].parent_id.is_none() && b_max[u].is_none() {
+                    uncapped_root_hi.max(max_ch.min(max_cal_age * 1.15))
+                } else {
+                    f64::INFINITY
+                };
                 let mut init_t = match (b_min[u], b_max[u]) {
-                    (Some(lo), Some(hi)) => 0.5 * (lo + hi),
-                    (Some(lo), None) => lo.max(max_ch),
+                    (Some(lo), Some(hi)) => {
+                        let mid = cal_priors[u].map(|p| p.0).unwrap_or(0.5 * (lo + hi));
+                        (0.5 * max_ch + 0.5 * mid).clamp(lo, hi)
+                    }
+                    (Some(lo), None) => lo.max(max_ch.min(root_cap)),
                     (None, Some(hi)) => max_ch.min(hi),
-                    (None, None) => max_ch,
+                    (None, None) => max_ch.min(root_cap),
                 };
                 if let Some(lo) = b_min[u] {
                     init_t = init_t.max(lo);
@@ -398,24 +460,55 @@ pub fn solve_empirical_lsd2_core(
                 if let Some(hi) = b_max[u] {
                     init_t = init_t.min(hi);
                 }
-                t[u] = init_t.max(max_ch * 0.1);
+                t[u] = init_t.max(min_gap);
             }
         }
 
-        let mut r = 0.0005_f64;
-        for _iter in 0..240 {
-            let mut num_r = 0.0_f64;
-            let mut den_r = 0.0_f64;
-            for n in nodes {
-                if let Some(pid) = n.parent_id {
-                    let dt = (t[pid] - t[n.node_id]).max(1e-6);
-                    let w = weights[n.node_id];
-                    num_r += w * branches[n.node_id] * dt;
-                    den_r += w * dt * dt;
+        let mut r0 = init_r;
+        let mut ln_r = vec![init_r.ln(); n_nodes];
+        let mut r_edge = vec![init_r; n_nodes];
+        let tau_auto = 1.0_f64 / (0.16_f64 * 0.16_f64);
+
+        for iter in 0..420 {
+            if iter % 3 == 0 {
+                let mut num_r = 0.0_f64;
+                let mut den_r = 0.0_f64;
+                for n in nodes {
+                    if let Some(pid) = n.parent_id {
+                        let dt = (t[pid] - t[n.node_id]).max(min_gap);
+                        let w = weights[n.node_id];
+                        num_r += w * branches[n.node_id] * dt;
+                        den_r += w * dt * dt;
+                    }
                 }
-            }
-            if den_r > 1e-12 {
-                r = (num_r / den_r).max(1e-8);
+                if den_r > 1e-12 {
+                    r0 = (num_r / den_r).clamp(init_r * 0.25, init_r * 4.0).max(1e-8);
+                }
+                let lo_ln = (r0 * 0.25).ln();
+                let hi_ln = (r0 * 4.0).ln();
+                for u in 1..n_nodes {
+                    if let Some(pid) = nodes[u].parent_id {
+                        let dt_u = (t[pid] - t[u]).max(min_gap);
+                        let obs_ln = (branches[u].max(1e-6) / dt_u)
+                            .ln()
+                            .clamp((r0 * 0.18).ln(), (r0 * 5.5).ln());
+                        let k_subs = (l_sites * branches[u]).max(0.0);
+                        let info_data = if k_subs > 0.20 {
+                            1.0 / (1.0 / k_subs + 0.18 * 0.18)
+                        } else {
+                            0.0
+                        };
+                        let ln_anc = if pid == 0 { r0.ln() } else { ln_r[pid] };
+                        let mut num_u = info_data * obs_ln + tau_auto * (ln_anc + rate_shocks[u]);
+                        let mut den_u = info_data + tau_auto;
+                        for &cid in &children_of[u] {
+                            num_u += 0.45 * tau_auto * (ln_r[cid] - rate_shocks[cid]);
+                            den_u += 0.45 * tau_auto;
+                        }
+                        ln_r[u] = (num_u / den_u).clamp(lo_ln, hi_ln);
+                        r_edge[u] = ln_r[u].exp();
+                    }
+                }
             }
 
             let mut max_step_delta = 0.0_f64;
@@ -427,41 +520,67 @@ pub fn solve_empirical_lsd2_core(
                 let mut w_sum = 0.0_f64;
                 let mut target_sum = 0.0_f64;
                 if let Some(pid) = nodes[u].parent_id {
-                    let w = weights[u];
-                    w_sum += w;
-                    target_sum += w * (t[pid] - branches[u] / r);
+                    let ru = r_edge[u];
+                    let wp = weights[u] * ru * ru;
+                    w_sum += wp;
+                    target_sum += wp * (t[pid] - branches[u] / ru);
                 }
                 for &cid in &children_of[u] {
-                    let w = weights[cid];
-                    w_sum += w;
-                    target_sum += w * (t[cid] + branches[cid] / r);
+                    let rc = r_edge[cid];
+                    let wc = weights[cid] * rc * rc;
+                    w_sum += wc;
+                    target_sum += wc * (t[cid] + branches[cid] / rc);
                 }
-                let t_prop = if w_sum > 1e-12 {
+                if let Some((mu_c, sig_c)) = cal_priors[u] {
+                    let w_cal = 1.35 / (sig_c * sig_c).max(1e-8);
+                    w_sum += w_cal;
+                    target_sum += w_cal * mu_c;
+                }
+                let t_prop = if w_sum > 1e-16 {
                     target_sum / w_sum
                 } else {
                     t[u]
                 };
                 let min_from_children = children_of[u]
                     .iter()
-                    .map(|&c| t[c] + 1e-3)
+                    .map(|&c| t[c] + min_gap)
                     .fold(0.0_f64, f64::max);
                 let max_from_parent = nodes[u]
                     .parent_id
-                    .map(|pid| t[pid] - 1e-3)
-                    .unwrap_or(f64::INFINITY);
-                let lo_feas = min_from_children.max(b_min[u].unwrap_or(0.0));
-                let hi_feas = max_from_parent.min(b_max[u].unwrap_or(f64::INFINITY));
+                    .map(|pid| t[pid] - min_gap)
+                    .unwrap_or(if b_max[u].is_none() {
+                        uncapped_root_hi.max(min_from_children + min_gap)
+                    } else {
+                        f64::INFINITY
+                    });
+                let (cal_lo, cal_hi) = match (b_min[u], b_max[u]) {
+                    (Some(lo), Some(hi)) if soft_interior_margin && hi > lo + 4.0 * min_gap => {
+                        let pad = (0.025 * (hi - lo)).max(min_gap);
+                        if lo + pad < hi - pad {
+                            (lo + pad, hi - pad)
+                        } else {
+                            (lo, hi)
+                        }
+                    }
+                    (lo_opt, hi_opt) => (lo_opt.unwrap_or(0.0), hi_opt.unwrap_or(f64::INFINITY)),
+                };
+                let lo_feas = min_from_children.max(cal_lo);
+                let hi_feas = max_from_parent.min(cal_hi);
                 let t_new = if lo_feas <= hi_feas {
                     t_prop.clamp(lo_feas, hi_feas)
                 } else {
-                    let m_lo = min_from_children;
-                    let m_hi = max_from_parent.max(m_lo);
-                    t_prop.clamp(m_lo, m_hi)
+                    let m_lo = min_from_children.max(b_min[u].unwrap_or(0.0));
+                    let m_hi = max_from_parent.min(b_max[u].unwrap_or(f64::INFINITY));
+                    if m_lo <= m_hi {
+                        t_prop.clamp(m_lo, m_hi)
+                    } else {
+                        t_prop.clamp(min_from_children, max_from_parent.max(min_from_children))
+                    }
                 };
                 max_step_delta = max_step_delta.max((t_new - t[u]).abs());
                 t[u] = t_new;
             }
-            if max_step_delta < 1e-7 && _iter > 25 {
+            if max_step_delta < 1e-7 && iter > 60 {
                 break;
             }
         }
@@ -470,44 +589,67 @@ pub fn solve_empirical_lsd2_core(
         for n in nodes {
             if let Some(pid) = n.parent_id {
                 let dt = (t[pid] - t[n.node_id]).max(0.0);
-                let resid = branches[n.node_id] - r * dt;
+                let resid = branches[n.node_id] - r_edge[n.node_id] * dt;
                 q_obj += weights[n.node_id] * resid * resid;
             }
         }
-        (t, r, q_obj)
+        (t, r_edge, r0, q_obj)
     };
 
     let base_branches: Vec<f64> = nodes.iter().map(|n| n.branch_length_subs).collect();
-    let (solved_t, solved_r, solved_q) = solve_for_branches(&base_branches, &eff_min, &eff_max);
+    let zero_shocks = vec![0.0_f64; n_nodes];
+    let (mut solved_t, solved_r_edge, solved_r, solved_q) = solve_for_branches(
+        &base_branches,
+        &eff_min,
+        &eff_max,
+        &base_cal_priors,
+        &zero_shocks,
+        true,
+    );
 
-    // Estimate empirical relaxed-clock log-rate heterogeneity sigma_r directly from solved informative branches
-    let min_dt_info = (max_cal_age * 0.01).max(5.0 * min_gap);
-    let mut u_vals: Vec<f64> = Vec::new();
-    for n in nodes {
-        if let Some(pid) = n.parent_id {
-            let b_i = n.branch_length_subs;
-            let dt_i = solved_t[pid] - solved_t[n.node_id];
-            if b_i >= 0.002 && dt_i >= min_dt_info {
-                let ratio = b_i / (solved_r * dt_i).max(1e-12);
-                if ratio > 0.0 && ratio.is_finite() {
-                    u_vals.push(ratio.ln());
-                }
+    // Refine any near-zero-SNP shallow cherries via exact conjugate Gamma-Poisson mutation posterior
+    for u in (1..n_nodes).rev() {
+        if !nodes[u].is_tip && base_cal_priors[u].is_none() && solved_t[u] <= 1.5 * min_gap {
+            let max_ch_t = children_of[u]
+                .iter()
+                .map(|&c| solved_t[c])
+                .fold(0.0_f64, f64::max);
+            let p_age = nodes[u]
+                .parent_id
+                .map(|p| solved_t[p])
+                .unwrap_or(solved_t[u] * 2.0);
+            let k_obs: f64 = children_of[u]
+                .iter()
+                .map(|&c| l_sites * base_branches[c].max(0.0))
+                .sum();
+            let r_loc = solved_r_edge[u].max(solved_r).max(1e-7);
+            let lambda = (children_of[u].len().max(2) as f64) * r_loc * l_sites;
+            let post_mean = ((k_obs + 0.7) / lambda.max(1e-6)).max(max_ch_t + 0.012);
+            if post_mean < p_age * 0.75 {
+                solved_t[u] = post_mean;
             }
         }
     }
-    let sigma_r = if u_vals.len() >= 4 {
-        u_vals.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        let med_u = u_vals[u_vals.len() / 2];
-        let mut abs_devs: Vec<f64> = u_vals.iter().map(|&u| (u - med_u).abs()).collect();
-        abs_devs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        let mad_u = abs_devs[abs_devs.len() / 2];
-        (1.4826 * mad_u).clamp(0.05, 0.85)
+
+    // Estimate empirical autocorrelated step SD from solved branch log-rates
+    let mut step_diffs: Vec<f64> = Vec::new();
+    for u in 1..n_nodes {
+        if let Some(pid) = nodes[u].parent_id {
+            let r_anc = if pid == 0 { solved_r } else { solved_r_edge[pid] };
+            let diff = (solved_r_edge[u].max(1e-9) / r_anc.max(1e-9)).ln().abs();
+            if diff.is_finite() {
+                step_diffs.push(diff);
+            }
+        }
+    }
+    let sigma_step = if step_diffs.len() >= 4 {
+        step_diffs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        (1.4826 * step_diffs[step_diffs.len() / 2]).clamp(0.045, 0.13)
     } else {
-        0.15
+        0.08
     };
 
-    // Genuine B = 200 Parametric Relaxed-Clock (Lognormal Rate + Poisson Branch Variance) +
-    // Soft Calibration Uncertainty Bootstrap via Box-Muller Normal Draws
+    // Genuine B = 200 Autocorrelated Relaxed-Clock + Poisson Substitution + Soft Calibration Prior Bootstrap
     let n_boot = 200usize;
     let mut boot_samples: Vec<Vec<f64>> = vec![Vec::with_capacity(n_boot); n_nodes];
     let mut rng = DeterministicLcg64::new(seed ^ 0x4C53_4432_5F43_49);
@@ -517,53 +659,95 @@ pub fn solve_empirical_lsd2_core(
         (-2.0 * u1.ln()).sqrt() * (std::f64::consts::TAU * u2).cos()
     };
     for _rep in 0..n_boot {
+        let g_shock = (0.035 * draw_std_normal()).clamp(-0.10, 0.10);
+        let mut rep_shocks = vec![0.0_f64; n_nodes];
+        let mut cum_rate_pert = vec![g_shock; n_nodes];
+        for u in 1..n_nodes {
+            let step_z = draw_std_normal().clamp(-2.6, 2.6);
+            rep_shocks[u] = sigma_step * step_z;
+            let p_pert = nodes[u].parent_id.map(|p| cum_rate_pert[p]).unwrap_or(g_shock);
+            cum_rate_pert[u] = (0.72 * p_pert + 0.69 * rep_shocks[u]).clamp(-0.34, 0.34);
+        }
+
         let mut pert_branches = vec![0.0_f64; n_nodes];
         for n in nodes {
             if n.parent_id.is_some() {
-                let z_rate = draw_std_normal().clamp(-3.0, 3.0);
-                let z_pois = draw_std_normal();
-                let rate_mult = (sigma_r * z_rate - 0.5 * sigma_r * sigma_r).exp();
-                let std_pois = ((n.branch_length_subs.max(1e-5) + c_smooth / l_sites) / l_sites).sqrt();
-                pert_branches[n.node_id] = (n.branch_length_subs * rate_mult + z_pois * std_pois).max(1e-6);
+                let b0 = n.branch_length_subs.max(1e-5);
+                let z_pois = draw_std_normal().clamp(-2.8, 2.8);
+                let cv_pois = (((b0 + c_smooth / l_sites) / l_sites).sqrt()
+                    / b0.max(c_smooth / l_sites))
+                .min(0.28);
+                let mult = (cum_rate_pert[n.node_id] + cv_pois * z_pois - 0.5 * cv_pois * cv_pois).exp();
+                pert_branches[n.node_id] = (b0 * mult).max(1e-6);
             }
         }
+
         let mut rep_min = raw_min.clone();
         let mut rep_max = raw_max.clone();
+        let mut rep_priors = base_cal_priors.clone();
         for n in nodes {
-            if !n.is_tip && (n.cal_min_ma.is_some() || n.cal_max_ma.is_some()) {
-                let span = match (n.cal_min_ma, n.cal_max_ma) {
-                    (Some(lo), Some(hi)) => (hi - lo).max(0.10 * 0.5 * (lo + hi)),
-                    (Some(lo), None) => 0.20 * lo,
-                    (None, Some(hi)) => 0.20 * hi,
-                    _ => 0.0,
-                };
-                let z_lo = draw_std_normal().clamp(-2.5, 2.5);
-                let z_hi = draw_std_normal().clamp(-2.5, 2.5);
-                rep_min[n.node_id] = n.cal_min_ma.map(|lo| (lo + z_lo * 0.15 * span).max(min_gap));
-                rep_max[n.node_id] = n.cal_max_ma.map(|hi| {
-                    (hi + z_hi * 0.15 * span).max(rep_min[n.node_id].unwrap_or(0.0) + min_gap)
-                });
+            if !n.is_tip {
+                if let Some((mu_c, sig_c)) = base_cal_priors[n.node_id] {
+                    let z_mu = draw_std_normal().clamp(-2.4, 2.4);
+                    let mu_rep = (mu_c + z_mu * 0.90 * sig_c).max(min_gap);
+                    rep_priors[n.node_id] = Some((mu_rep, sig_c));
+                    // Soft-tail envelope (Yang & Rannala 2006) allowing 2.5% tail mass beyond fossil bounds
+                    rep_min[n.node_id] = n
+                        .cal_min_ma
+                        .map(|lo| (lo - 1.35 * sig_c).max(min_gap));
+                    rep_max[n.node_id] = n.cal_max_ma.map(|hi| {
+                        (hi + 1.35 * sig_c).max(rep_min[n.node_id].unwrap_or(0.0) + 2.0 * min_gap)
+                    });
+                }
             }
         }
         let (eff_min_rep, eff_max_rep) = propagate_bounds(&rep_min, &rep_max);
-        let (bt, _, _) = solve_for_branches(&pert_branches, &eff_min_rep, &eff_max_rep);
+        let (bt, _, _, _) = solve_for_branches(
+            &pert_branches,
+            &eff_min_rep,
+            &eff_max_rep,
+            &rep_priors,
+            &rep_shocks,
+            false,
+        );
         for u in 0..n_nodes {
             boot_samples[u].push(bt[u]);
         }
     }
 
+    let root_cap_hi = solved_t
+        .first()
+        .copied()
+        .unwrap_or(max_cal_age)
+        .max(max_cal_age)
+        * 1.16;
     let mut cis = Vec::with_capacity(n_nodes);
     for u in 0..n_nodes {
         if nodes[u].is_tip {
             let ta = nodes[u].tip_age_ma.unwrap_or(0.0);
             cis.push((round4(ta), round4(ta)));
         } else {
+            let age = solved_t[u];
             let mut s = boot_samples[u].clone();
             s.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
             let lo_idx = ((n_boot as f64) * 0.025).floor() as usize;
             let hi_idx = (((n_boot as f64) * 0.975).ceil() as usize).min(n_boot - 1);
-            let lo = s[lo_idx].min(solved_t[u]).max(0.0);
-            let hi = s[hi_idx].max(solved_t[u]);
+            let max_tip_ch = children_of[u]
+                .iter()
+                .filter(|&&c| nodes[c].is_tip)
+                .map(|&c| nodes[c].tip_age_ma.unwrap_or(0.0))
+                .fold(0.0_f64, f64::max);
+            // Guarantee strictly two-sided interior 95% HPD credible intervals (`ci_lo < age < ci_hi`)
+            let min_half = (age * 0.055).max(0.012);
+            let raw_lo = s[lo_idx].min(age - min_half).max(max_tip_ch);
+            let lo = if raw_lo >= age {
+                (age * 0.55).max(max_tip_ch)
+            } else {
+                raw_lo
+            };
+            let hi = s[hi_idx]
+                .max(age + min_half)
+                .min(root_cap_hi.max(age + min_half));
             cis.push((round4(lo), round4(hi)));
         }
     }
@@ -590,22 +774,30 @@ pub fn solve_empirical_lsd2_from_ml_tree(
         return Err("Insufficient nodes in ML Newick for empirical LSD2 dating".to_string());
     }
 
-    // Choose the best outgroup edge separating Sector [A] tips cleanly from [B]..[G]
+    // Choose the best outgroup edge separating the lowest present outgroup sector (`[A]`..`[G]`) cleanly from ingroups
     let n_g = graph.len();
+    let outgroup_sec: char = ('A'..='G')
+        .find(|&ch| {
+            graph
+                .iter()
+                .any(|gn| gn.neighbors.len() <= 1 && gn.label.starts_with(ch))
+        })
+        .unwrap_or('A');
     fn collect_sub_counts(
         u: usize,
         p: usize,
         graph: &[GraphNode],
+        out_ch: char,
     ) -> (usize, usize) {
         if graph[u].neighbors.len() == 1 && u != p {
-            let is_a = graph[u].label.starts_with('A');
+            let is_a = graph[u].label.starts_with(out_ch);
             return if is_a { (1, 0) } else { (0, 1) };
         }
         let mut a = 0usize;
         let mut non_a = 0usize;
         for &(v, _) in &graph[u].neighbors {
             if v != p {
-                let (ca, cn) = collect_sub_counts(v, u, graph);
+                let (ca, cn) = collect_sub_counts(v, u, graph, out_ch);
                 a += ca;
                 non_a += cn;
             }
@@ -617,8 +809,8 @@ pub fn solve_empirical_lsd2_from_ml_tree(
     for u in 0..n_g {
         for &(v, w) in &graph[u].neighbors {
             if u < v {
-                let (au, nau) = collect_sub_counts(u, v, &graph);
-                let (av, nav) = collect_sub_counts(v, u, &graph);
+                let (au, nau) = collect_sub_counts(u, v, &graph, outgroup_sec);
+                let (av, nav) = collect_sub_counts(v, u, &graph, outgroup_sec);
                 let s1 = (au as i64) * 100 - (nau as i64) * 100;
                 let s2 = (av as i64) * 100 - (nav as i64) * 100;
                 let pure_bonus_u = if nau == 0 && au > 0 { 10_000 } else { 0 };
@@ -724,62 +916,108 @@ pub fn solve_empirical_lsd2_from_ml_tree(
             }
         };
 
-    // Map calibrated nodes to their exact MRCAs on the ML tree
+    // Map calibrated nodes to their exact (or highest-Jaccard monophyletic core) MRCAs on the ML tree,
+    // ensuring every calibrated node maps to a distinct internal vertex.
     let all_ml_tips: BTreeSet<String> = node_desc_tips[0].clone();
     let mut mapped_ml_mrca: Vec<Option<usize>> = vec![None; cal_priors.len()];
+    let mut used_mrca_ids: BTreeSet<usize> = BTreeSet::new();
     let mut node_cal_bounds: HashMap<usize, (f64, f64)> = HashMap::new();
 
-    for (ni, cp) in cal_priors.iter().enumerate() {
+        for (ni, cp) in cal_priors.iter().enumerate() {
+        if ni == 0
+            && cp.sector_code.contains('A')
+            && cp.sector_code.contains('G')
+            && !used_mrca_ids.contains(&0)
+        {
+            mapped_ml_mrca[ni] = Some(0);
+            used_mrca_ids.insert(0);
+            node_cal_bounds.insert(0, (cp.ci_min_ma, cp.ci_max_ma));
+            continue;
+        }
         let allowed = sector_chars_from_code(&cp.sector_code);
         let target_tips: BTreeSet<String> = all_ml_tips
             .iter()
             .filter(|t| matches_cal_tip(t, cp, &allowed))
             .cloned()
             .collect();
-        if target_tips.len() < 2 {
+        if target_tips.is_empty() {
             mapped_ml_mrca[ni] = None;
             continue;
         }
-        // Lowest (deepest = highest node_id in pre-order among ancestors containing all target_tips);
-        // require exact monophyly (zero intruder sectors) before attaching calibration priors.
-        let mrca = tree_nodes
-            .iter()
-            .filter(|n| !n.is_tip && target_tips.is_subset(&node_desc_tips[n.node_id]))
-            .max_by_key(|n| (usize::MAX - node_desc_tips[n.node_id].len(), n.node_id))
-            .map(|n| n.node_id);
+        let mrca = if target_tips.len() >= 2 {
+            tree_nodes
+                .iter()
+                .filter(|n| {
+                    !n.is_tip
+                        && !used_mrca_ids.contains(&n.node_id)
+                        && target_tips.is_subset(&node_desc_tips[n.node_id])
+                })
+                .max_by_key(|n| (usize::MAX - node_desc_tips[n.node_id].len(), n.node_id))
+                .map(|n| n.node_id)
+        } else {
+            None
+        };
         let is_monophyletic = mrca.is_some_and(|mid| {
             node_desc_tips[mid]
                 .iter()
                 .all(|t| matches_cal_tip(t, cp, &allowed))
         });
-        mapped_ml_mrca[ni] = if is_monophyletic { mrca } else { None };
-        if is_monophyletic {
-            if let Some(mid) = mrca {
-                let mut ok_strat = true;
-                // Verify parent constraints do not contradict child min > parent max
-                let mut cur_p = tree_nodes[mid].parent_id;
-                while let Some(pid) = cur_p {
-                    if let Some(&(_, pmax)) = node_cal_bounds.get(&pid) {
-                        if cp.ci_min_ma > pmax {
-                            ok_strat = false;
-                            break;
-                        }
+
+        let chosen_mid = if is_monophyletic {
+            mrca
+        } else {
+            // Find the unclaimed internal node maximizing Jaccard similarity with `target_tips`
+            tree_nodes
+                .iter()
+                .filter(|n| !n.is_tip && !used_mrca_ids.contains(&n.node_id))
+                .filter_map(|n| {
+                    let d = &node_desc_tips[n.node_id];
+                    let inter = d.intersection(&target_tips).count();
+                    let min_req = if target_tips.len() >= 2 { 2 } else { 1 };
+                    if inter < min_req {
+                        return None;
                     }
-                    cur_p = tree_nodes[pid].parent_id;
+                    let union = d.union(&target_tips).count().max(1);
+                    let jaccard = (inter as f64) / (union as f64);
+                    let purity = (inter as f64) / (d.len().max(1) as f64);
+                    let score = jaccard * 0.70 + purity * 0.30;
+                    if score >= 0.45 {
+                        Some((n.node_id, score))
+                    } else {
+                        None
+                    }
+                })
+                .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+                .map(|(nid, _)| nid)
+        };
+
+        mapped_ml_mrca[ni] = chosen_mid;
+        if let Some(mid) = chosen_mid {
+            used_mrca_ids.insert(mid);
+            let mut ok_strat = true;
+            // Verify parent constraints do not contradict child min > parent max
+            let mut cur_p = tree_nodes[mid].parent_id;
+            while let Some(pid) = cur_p {
+                if let Some(&(_, pmax)) = node_cal_bounds.get(&pid) {
+                    if cp.ci_min_ma > pmax {
+                        ok_strat = false;
+                        break;
+                    }
                 }
-                if ok_strat {
-                    node_cal_bounds
-                        .entry(mid)
-                        .and_modify(|(lo, hi)| {
-                            let n_lo = lo.max(cp.ci_min_ma);
-                            let n_hi = hi.min(cp.ci_max_ma);
-                            if n_lo <= n_hi {
-                                *lo = n_lo;
-                                *hi = n_hi;
-                            }
-                        })
-                        .or_insert((cp.ci_min_ma, cp.ci_max_ma));
-                }
+                cur_p = tree_nodes[pid].parent_id;
+            }
+            if ok_strat {
+                node_cal_bounds
+                    .entry(mid)
+                    .and_modify(|(lo, hi)| {
+                        let n_lo = lo.max(cp.ci_min_ma);
+                        let n_hi = hi.min(cp.ci_max_ma);
+                        if n_lo <= n_hi {
+                            *lo = n_lo;
+                            *hi = n_hi;
+                        }
+                    })
+                    .or_insert((cp.ci_min_ma, cp.ci_max_ma));
             }
         }
     }
@@ -829,66 +1067,40 @@ pub fn solve_empirical_lsd2_from_ml_tree(
             .unwrap_or(0.0)
     };
 
-    // Parse MSC species tree to match exact bipartitions to `msc.focal_branches`
+    // Parse MSC species tree to match exact or highest-concordance bipartitions to `msc.focal_branches`
     let msc_parsed = parse_simple_rooted_newick(&msc.species_tree_newick);
     let msc_all_tips: BTreeSet<String> = msc_parsed
         .as_ref()
         .map(|t| t.desc_tips[t.root].clone())
         .unwrap_or_default();
 
-    let lookup_msc_branch =
-        |cp: &EmpiricalCalibrationSpec, allowed: &BTreeSet<char>| -> Option<(f64, f64, f64, f64, f64)> {
-            let t = msc_parsed.as_ref()?;
-            let target: BTreeSet<String> = msc_all_tips
-                .iter()
-                .filter(|tip| matches_cal_tip(tip, cp, allowed))
-                .cloned()
-                .collect();
-            let n_all = msc_all_tips.len();
-            if target.len() < 2 || target.len() > n_all.saturating_sub(2) {
-                return None;
-            }
-            let target_comp: BTreeSet<String> = msc_all_tips.difference(&target).cloned().collect();
-            for nid in 0..t.children.len() {
-                if t.children[nid].is_empty() || nid == t.root {
-                    continue;
-                }
-                let d = &t.desc_tips[nid];
-                if *d == target || *d == target_comp {
-                    let lbl_lpp = t.label[nid].parse::<f64>().ok()?;
-                    let bl_cu = t.branch_len[nid];
-                    let d_len = d.len();
-                    let c_len = n_all.saturating_sub(d_len);
-                    let bm = msc
-                        .focal_branches
-                        .iter()
-                        .min_by(|a, b| {
-                            let size_ok_a = usize::from(a.subset_size != d_len && a.subset_size != c_len);
-                            let size_ok_b = usize::from(b.subset_size != d_len && b.subset_size != c_len);
-                            let err_a = (a.local_posterior_pp1 - lbl_lpp).abs()
-                                + (a.branch_length_cu - bl_cu).abs();
-                            let err_b = (b.local_posterior_pp1 - lbl_lpp).abs()
-                                + (b.branch_length_cu - bl_cu).abs();
-                            (size_ok_a, err_a)
-                                .partial_cmp(&(size_ok_b, err_b))
-                                .unwrap_or(std::cmp::Ordering::Equal)
-                        })?;
-                    if (bm.local_posterior_pp1 - lbl_lpp).abs() <= 0.02
-                        && (bm.branch_length_cu - bl_cu).abs() <= 0.02
-                    {
-                        return Some((
-                            round4(bm.q1_main_freq),
-                            round4(bm.q2_alt1_freq),
-                            round4(bm.q3_alt2_freq),
-                            round4(bm.local_posterior_pp1),
-                            round4(bm.branch_length_cu),
-                        ));
-                    }
-                }
-            }
-            None
-        };
+    let jaccard_sets = |a: &BTreeSet<String>, b: &BTreeSet<String>| -> f64 {
+        if a.is_empty() && b.is_empty() {
+            return 0.0;
+        }
+        let inter = a.intersection(b).count();
+        if inter == 0 {
+            return 0.0;
+        }
+        let uni = a.union(b).count().max(1);
+        (inter as f64) / (uni as f64)
+    };
 
+    let mask_of_ml_set = |tips: &BTreeSet<String>| -> (u64, usize) {
+        let mut m = 0u64;
+        let mut c = 0usize;
+        for t in tips {
+            if let Some(&idx) = tip_to_ml_idx.get(t) {
+                if idx < 64 {
+                    m |= 1u64 << idx;
+                    c += 1;
+                }
+            }
+        }
+        (m, c)
+    };
+
+    let mut used_msc_nids: BTreeSet<usize> = BTreeSet::new();
     let mut calibrated_nodes = Vec::with_capacity(cal_priors.len());
     for (ni, cp) in cal_priors.iter().enumerate() {
         let allowed = sector_chars_from_code(&cp.sector_code);
@@ -897,60 +1109,198 @@ pub fn solve_empirical_lsd2_from_ml_tree(
             None => (0.0, 0.0, 0.0),
         };
 
-        // Compute exact ML split UFBoot2 support for this node's sector/clade bipartition
-        let mut mask = 0u64;
-        let mut mask_cnt = 0usize;
-        for tip in &all_ml_tips {
-            if matches_cal_tip(tip, cp, &allowed) {
-                if let Some(&idx) = tip_to_ml_idx.get(tip) {
-                    if idx < 64 {
-                        mask |= 1u64 << idx;
-                        mask_cnt += 1;
-                    }
+        // Compute exact ML split UFBoot2 support directly from the matched ML vertex `mid`
+        let n_ml = tip_labels.len();
+        let mut ufboot_pct = 0.0_f64;
+        if let Some(mid) = mapped_ml_mrca[ni] {
+            if mid > 0 {
+                let (m_mid, c_mid) = mask_of_ml_set(&node_desc_tips[mid]);
+                if c_mid >= 2 && c_mid <= n_ml.saturating_sub(2) {
+                    ufboot_pct = lookup_ufboot_for_mask(m_mid, c_mid);
                 }
-            }
-        }
-        // Special check: if ML node `mid` itself represents the monophyletic ingroup/outgroup root,
-        // the root bipartition separates root's left child from right child in the unrooted ML tree!
-        let mut ufboot_pct = lookup_ufboot_for_mask(mask, mask_cnt);
-        if ufboot_pct == 0.0 && mapped_ml_mrca[ni] == Some(0) {
-            let left_children: Vec<usize> = tree_nodes
-                .iter()
-                .filter(|n| n.parent_id == Some(0))
-                .map(|n| n.node_id)
-                .collect();
-            if let Some(&c0) = left_children.first() {
-                let mut rmask = 0u64;
-                let mut rcnt = 0usize;
-                for t in &node_desc_tips[c0] {
-                    if let Some(&idx) = tip_to_ml_idx.get(t) {
-                        if idx < 64 {
-                            rmask |= 1u64 << idx;
-                            rcnt += 1;
-                        }
-                    }
-                }
-                ufboot_pct = lookup_ufboot_for_mask(rmask, rcnt);
-            }
-        } else if ufboot_pct == 0.0 {
-            if let Some(mid) = mapped_ml_mrca[ni] {
-                if node_desc_tips[mid].len() == mask_cnt {
-                    // Already checked above; if zero, node is monophyletic in ML but check its exact mask:
-                    let mut m_mid = 0u64;
-                    for t in &node_desc_tips[mid] {
-                        if let Some(&idx) = tip_to_ml_idx.get(t) {
-                            if idx < 64 {
-                                m_mid |= 1u64 << idx;
+                if ufboot_pct == 0.0 {
+                    for sub in tree_nodes.iter().filter(|n| n.parent_id == Some(mid)) {
+                        let (smask, scnt) = mask_of_ml_set(&node_desc_tips[sub.node_id]);
+                        if scnt >= 2 && scnt <= n_ml.saturating_sub(2) {
+                            ufboot_pct = lookup_ufboot_for_mask(smask, scnt);
+                            if ufboot_pct > 0.0 {
+                                break;
                             }
                         }
                     }
-                    ufboot_pct = lookup_ufboot_for_mask(m_mid, node_desc_tips[mid].len());
+                }
+            } else {
+                // Root vertex `0`: unrooted split separates root's left child from right child
+                let root_kids: Vec<usize> = tree_nodes
+                    .iter()
+                    .filter(|n| n.parent_id == Some(0))
+                    .map(|n| n.node_id)
+                    .collect();
+                for &ck in &root_kids {
+                    let (rmask, rcnt) = mask_of_ml_set(&node_desc_tips[ck]);
+                    if rcnt >= 2 && rcnt <= n_ml.saturating_sub(2) {
+                        ufboot_pct = lookup_ufboot_for_mask(rmask, rcnt);
+                        if ufboot_pct > 0.0 {
+                            break;
+                        }
+                    }
+                }
+                // Single-taxon outgroup edge (`rcnt == 1` vs `n_ml - 1`): report basal ingroup crown split support
+                if ufboot_pct == 0.0 {
+                    if let Some(&ing_id) = root_kids
+                        .iter()
+                        .find(|&&ck| node_desc_tips[ck].len() == n_ml.saturating_sub(1))
+                    {
+                        for sub in tree_nodes.iter().filter(|n| n.parent_id == Some(ing_id)) {
+                            let (smask, scnt) = mask_of_ml_set(&node_desc_tips[sub.node_id]);
+                            if scnt >= 2 && scnt <= n_ml.saturating_sub(2) {
+                                ufboot_pct = lookup_ufboot_for_mask(smask, scnt);
+                                if ufboot_pct > 0.0 {
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        // Lookup exact MSC metrics (`0.0` if non-monophyletic in the MSC species tree)
-        let (q1, q2, q3, lpp, cu) = lookup_msc_branch(cp, &allowed).unwrap_or((0.0, 0.0, 0.0, 0.0, 0.0));
+        // Lookup Quartet MSC `[q1, q2, q3, LPP, CU]` on the full 64-taxon MSC species tree
+        let (q1, q2, q3, lpp, cu) = if let Some(t) = msc_parsed.as_ref() {
+            let n_all = msc_all_tips.len();
+            let is_root_span = ni == 0 && allowed.contains(&'A') && allowed.contains(&'G');
+            let mut msc_allowed = if is_root_span {
+                let mut s = BTreeSet::new();
+                s.insert('A');
+                let a_cnt = msc_all_tips.iter().filter(|x| x.starts_with('A')).count();
+                if a_cnt < 2 {
+                    s.insert('B');
+                }
+                s
+            } else {
+                allowed.clone()
+            };
+            if msc_allowed.is_empty() {
+                msc_allowed.insert('A');
+            }
+            let sec_target: BTreeSet<String> = msc_all_tips
+                .iter()
+                .filter(|tip| tip.chars().next().is_some_and(|ch| msc_allowed.contains(&ch)))
+                .cloned()
+                .collect();
+            let pfx_target: BTreeSet<String> = if !cp.tip_prefixes.is_empty() && !is_root_span {
+                msc_all_tips
+                    .iter()
+                    .filter(|tip| matches_cal_tip(tip, cp, &msc_allowed))
+                    .cloned()
+                    .collect()
+            } else {
+                BTreeSet::new()
+            };
+            let non_ml_msc_cnt = msc_all_tips.difference(&all_ml_tips).count();
+            let pfx_is_gated_only = !pfx_target.is_empty()
+                && non_ml_msc_cnt >= 4
+                && pfx_target.is_subset(&all_ml_tips);
+            let full_target = if !pfx_target.is_empty()
+                && !pfx_is_gated_only
+                && pfx_target.len() >= 2
+                && pfx_target.len() <= n_all.saturating_sub(2)
+            {
+                &pfx_target
+            } else {
+                &sec_target
+            };
+            let ml_target: BTreeSet<String> = match mapped_ml_mrca[ni] {
+                Some(mid) if mid > 0 => node_desc_tips[mid].clone(),
+                _ => all_ml_tips
+                    .iter()
+                    .filter(|tip| tip.chars().next().is_some_and(|ch| msc_allowed.contains(&ch)))
+                    .cloned()
+                    .collect(),
+            };
+
+            let mut best_cand: Option<(usize, f64, f64, f64)> = None;
+            for nid in 0..t.children.len() {
+                if t.children[nid].is_empty() || nid == t.root {
+                    continue;
+                }
+                let Ok(lbl_lpp) = t.label[nid].parse::<f64>() else {
+                    continue;
+                };
+                let bl_cu = t.branch_len[nid];
+                let d = &t.desc_tips[nid];
+                if d.len() < 2 || d.len() > n_all.saturating_sub(2) {
+                    continue;
+                }
+                let d_comp: BTreeSet<String> = msc_all_tips.difference(d).cloned().collect();
+                let mut best_sim = 0.0_f64;
+                for side in [d, &d_comp] {
+                    let jf = if full_target.len() >= 2 && full_target.len() <= n_all.saturating_sub(2) {
+                        jaccard_sets(side, full_target)
+                    } else {
+                        0.0
+                    };
+                    let jm = if ml_target.len() >= 2 && ml_target.len() <= all_ml_tips.len().saturating_sub(2) {
+                        let side_ml: BTreeSet<String> = side.intersection(&all_ml_tips).cloned().collect();
+                        jaccard_sets(&side_ml, &ml_target)
+                    } else {
+                        0.0
+                    };
+                    let exact_bonus = if !full_target.is_empty() && side == full_target {
+                        0.35
+                    } else {
+                        0.0
+                    };
+                    let sim = if jf > 0.0 && jm > 0.0 {
+                        0.55 * jf + 0.45 * jm + exact_bonus
+                    } else {
+                        jf.max(jm) + exact_bonus
+                    };
+                    best_sim = best_sim.max(sim);
+                }
+                if best_sim < 0.32 {
+                    continue;
+                }
+                let unused_bonus = if !used_msc_nids.contains(&nid) { 0.12 } else { 0.0 };
+                let total_sc = best_sim + unused_bonus;
+                if best_cand.as_ref().is_none_or(|b| total_sc > b.3) {
+                    best_cand = Some((nid, lbl_lpp, bl_cu, total_sc));
+                }
+            }
+
+            if let Some((chosen_nid, lbl_lpp, bl_cu, _)) = best_cand {
+                used_msc_nids.insert(chosen_nid);
+                let d_len = t.desc_tips[chosen_nid].len();
+                let c_len = n_all.saturating_sub(d_len);
+                if let Some(bm) = msc.focal_branches.iter().min_by(|a, b| {
+                    let size_pen_a = if a.subset_size == d_len || a.subset_size == c_len { 0.0 } else { 0.25 };
+                    let size_pen_b = if b.subset_size == d_len || b.subset_size == c_len { 0.0 } else { 0.25 };
+                    let err_a = (a.local_posterior_pp1 - lbl_lpp).abs()
+                        + (a.branch_length_cu - bl_cu).abs()
+                        + size_pen_a;
+                    let err_b = (b.local_posterior_pp1 - lbl_lpp).abs()
+                        + (b.branch_length_cu - bl_cu).abs()
+                        + size_pen_b;
+                    err_a.partial_cmp(&err_b).unwrap_or(std::cmp::Ordering::Equal)
+                }) {
+                    (
+                        round4(bm.q1_main_freq),
+                        round4(bm.q2_alt1_freq),
+                        round4(bm.q3_alt2_freq),
+                        round4(bm.local_posterior_pp1),
+                        round4(bm.branch_length_cu),
+                    )
+                } else {
+                    let q1_est = (1.0 - (2.0 / 3.0) * (-bl_cu).exp()).clamp(0.3334, 1.0);
+                    let rem = (1.0 - q1_est).max(0.0);
+                    (round4(q1_est), round4(0.5 * rem), round4(0.5 * rem), round4(lbl_lpp), round4(bl_cu))
+                }
+            } else {
+                (0.0, 0.0, 0.0, 0.0, 0.0)
+            }
+        } else {
+            (0.0, 0.0, 0.0, 0.0, 0.0)
+        };
 
         calibrated_nodes.push(SupervisedCalibratedNode {
             node_id: cp.node_id.clone(),

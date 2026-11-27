@@ -894,7 +894,7 @@ pub fn format_time_calibrated_newick(
                 .collect();
             if node.parent_id.is_none() {
                 format!(
-                    "({}){}[&age_ma={:.2},ci95={{{:.2},{:.2}}}];",
+                    "({}){}[&age_ma={:.4},ci95={{{:.4},{:.4}}}];",
                     child_strs.join(","),
                     node.label,
                     ages[u],
@@ -903,7 +903,7 @@ pub fn format_time_calibrated_newick(
                 )
             } else {
                 format!(
-                    "({}){}[&age_ma={:.2},ci95={{{:.2},{:.2}}}]:{:.4}",
+                    "({}){}[&age_ma={:.4},ci95={{{:.4},{:.4}}}]:{:.4}",
                     child_strs.join(","),
                     node.label,
                     ages[u],

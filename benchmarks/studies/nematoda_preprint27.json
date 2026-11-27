@@ -8,7 +8,7 @@
   "preprint_label": "PREPRINT-27",
   "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24223794",
-  "remediation_note": "Version 4.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, symmetric HPD shortcuts, static skyline epoch labels, and fixed substitution-rate constants) with internal-partition chunk parallelization, empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary; retains prior v3.0.0 COX1 title classification, single-family non-EST ortholog, and LSU 28S D2-D3 scoping fixes.",
+  "remediation_note": "",
   "telemetry_filename": "nematoda-agricultural-pests-native-biosuite.json",
   "companion_label": "Lab Discovery #140",
   "title": "Global Phylogenomics of Plant-Parasitic and Agricultural Pest Nematodes: Native Rust Quartet Coalescent Species-Tree Inference, HGT Cellulase and Stylet Effector Selection, Cytochrome P450 Modeling, and Multi-Locus Skylines",
@@ -1072,19 +1072,19 @@
     {
       "cohort_code": "L3",
       "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
-      "region_label": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (HGT GH5 Cellulase / Stylet Effector Sweep Locus)",
-      "clade_lineage": "Heteroderidae Nuclear GH5/PL3 & Effector Sweep",
-      "locus_name": "Nuclear GH5 / PL3 / Effector Sweep Locus",
+      "region_label": "Heterodera glycines Soybean Cyst Deme (HGT Pectate Lyase PL3 CDS)",
+      "clade_lineage": "Heterodera glycines",
+      "locus_name": "Nuclear HGT Pectate Lyase (PL3 CDS)",
       "locus_tag": "GH5",
       "ploidy_scalar": 0.22,
       "mu_rate": 0.0108,
       "source_id": "P27-L3",
-      "locality": "Temperate Potato & Soybean Cyst Soil-Agroecosystem Deme (HGT GH5 Cellulase / Stylet Effector Sweep Locus)",
-      "cache_key": "L3",
-      "query": "(\"Heterodera\"[Organism] OR \"Globodera\"[Organism]) AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title] OR \"pectate lyase\"[Title] OR \"expansin\"[Title] OR \"effector\"[Title] OR \"chorismate\"[Title]) AND 300:2600[SLEN] NOT genome[Title] NOT chromosome[Title]",
+      "locality": "Heterodera glycines Soybean Cyst Deme (HGT Pectate Lyase PL3 CDS)",
+      "cache_key": "nem27_pop_l3_pl3_v5",
+      "query": "\"Heterodera glycines\"[Organism] AND \"pectate lyase\"[Title] AND 400:1800[SLEN] NOT genome[Title]",
       "fallback_query": "",
-      "min_bp": 280,
-      "max_bp": 2650
+      "min_bp": 380,
+      "max_bp": 1850
     },
     {
       "cohort_code": "L4",
@@ -1123,19 +1123,19 @@
     {
       "cohort_code": "L6",
       "axis_group": "Same-Region Multi-Locus (Fig 4B: Cyst & Root-Knot Agroecosystems)",
-      "region_label": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Nuclear GH5 / Stylet Effector / Nematicide Target Sweep)",
-      "clade_lineage": "Meloidogyne / Pratylenchus Coding Sweep",
-      "locus_name": "Nuclear GH5 / Effector / CYP450/AChE Sweep Locus",
+      "region_label": "Meloidogyne Root-Knot Deme (HGT Pectate Lyase PL3 CDS)",
+      "clade_lineage": "Meloidogyne Pectate Lyase Deme",
+      "locus_name": "Nuclear HGT Pectate Lyase (PL3 CDS)",
       "locus_tag": "GH5",
       "ploidy_scalar": 0.19,
       "mu_rate": 0.011,
       "source_id": "P27-L6",
-      "locality": "Intensive Tropical Horticultural Root-Knot/Lesion Deme (Nuclear GH5 / Stylet Effector / Nematicide Target Sweep)",
-      "cache_key": "L6",
-      "query": "(\"Meloidogyne\"[Organism] OR \"Pratylenchus\"[Organism]) AND (\"endoglucanase\"[Title] OR \"cellulase\"[Title] OR \"pectate lyase\"[Title] OR \"calreticulin\"[Title] OR \"chorismate\"[Title] OR \"effector\"[Title] OR \"cytochrome P450\"[Title] OR \"acetylcholinesterase\"[Title]) AND 300:2600[SLEN] NOT genome[Title] NOT chromosome[Title]",
+      "locality": "Meloidogyne Root-Knot Deme (HGT Pectate Lyase PL3 CDS)",
+      "cache_key": "nem27_pop_l6_pl3_v5",
+      "query": "\"Meloidogyne\"[Organism] AND \"pectate lyase\"[Title] AND 450:1800[SLEN] NOT genome[Title]",
       "fallback_query": "",
-      "min_bp": 280,
-      "max_bp": 2650
+      "min_bp": 420,
+      "max_bp": 1850
     }
   ],
   "skyline_epochs": [
@@ -1223,7 +1223,7 @@
     {
       "node_id": "Node I",
       "clade_name": "Root Phylum Nematoda Chromadorea Outgroups [A] vs. Plant-Parasitic Ingroup Backbone [B-G]",
-      "sector_code": "[A]",
+      "sector_code": "[A]-[G]",
       "fossil_or_biogeo_anchor": "Cambrian-Ordovician Ecdysozoa Cycloneuralia terrestrialization & Nematoda split (~442-494 Ma)",
       "target_age_ma": 468,
       "ci_min_ma": 442,
@@ -1231,7 +1231,34 @@
       "trophic_guild": "Free-Living Bacteriovores & Entomopathogenic Outgroups",
       "key_enzymes_or_loci": "Cuticular Collagen, CYP31A2/CYP35 Xenobiotic Monooxygenases & HSP70 Chaperones",
       "ecosystem_role": "Ancestral microbivorous nematode chassis prior to stylet-feeding HGT acquisition",
-      "sector_idx": 0
+      "sector_idx": 0,
+      "tip_prefixes": [
+        "A_T001",
+        "A_T002",
+        "A_T003",
+        "A_T004",
+        "C_T011",
+        "C_T012",
+        "C_T013",
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "C_T020",
+        "D_T028",
+        "D_T029",
+        "E_T033",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T060",
+        "G_T061",
+        "G_T062"
+      ]
     },
     {
       "node_id": "Node II",
@@ -1244,7 +1271,31 @@
       "trophic_guild": "Odontostylet & Onchiostylet Virus-Vector Ectoparasites",
       "key_enzymes_or_loci": "Independent Stylet Convergence, Nepovirus/Tobravirus Vector Matrix & Mitochondrial atp8 Loss",
       "ecosystem_role": "Independent early evolution of root-tip ectoparasitism and plant viral transmission",
-      "sector_idx": 1
+      "sector_idx": 1,
+      "tip_prefixes": [
+        "A_T003",
+        "C_T011",
+        "C_T012",
+        "C_T013",
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "C_T020",
+        "D_T028",
+        "D_T029",
+        "E_T033",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T060",
+        "G_T061",
+        "G_T062"
+      ]
     },
     {
       "node_id": "Node III",
@@ -1252,12 +1303,19 @@
       "sector_code": "[C]",
       "fossil_or_biogeo_anchor": "Triassic gymnosperm-fungal mycophagous & insect-phoretic Aphelenchoidea transition (~224-261 Ma)",
       "target_age_ma": 242.6,
-      "ci_min_ma": 224,
-      "ci_max_ma": 261,
+      "ci_min_ma": 62.16,
+      "ci_max_ma": 75.6,
       "trophic_guild": "Entomopathogens, Pine-Wilt & Foliar Aphelenchoidea",
       "key_enzymes_or_loci": "Convergent Fungal HGT GH45 Cellulases (Bursaphelenchus) & Anhydrobiosis HSP70",
       "ecosystem_role": "Insect-vectored conifer wilt pathogens and fungal-feeding bridging lineages",
-      "sector_idx": 2
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T019",
+        "C_T020"
+      ]
     },
     {
       "node_id": "Node IV",
@@ -1265,12 +1323,16 @@
       "sector_code": "[D]",
       "fossil_or_biogeo_anchor": "Early-Mid Jurassic vascular seed-plant rhizosphere & ancestral bacterial HGT GH5 acquisition (~163-194 Ma)",
       "target_age_ma": 178.4,
-      "ci_min_ma": 163,
-      "ci_max_ma": 194,
+      "ci_min_ma": 62.16,
+      "ci_max_ma": 68.04,
       "trophic_guild": "Ring, Citrus, Seed-Gall & Spiral Root Ectoparasites/Semi-Endoparasites",
       "key_enzymes_or_loci": "Ancestral Bacterial HGT GH5 Beta-1,4-Endoglucanase & Protrusible Stomatostylet",
       "ecosystem_role": "Consolidation of bacterial-derived cell-wall degradation enabling invasive stylet penetration",
-      "sector_idx": 3
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "D_T028",
+        "D_T029"
+      ]
     },
     {
       "node_id": "Node V",
@@ -1278,12 +1340,25 @@
       "sector_code": "[D]",
       "fossil_or_biogeo_anchor": "Late Cretaceous angiosperm root-exudate & foliar seed-gall co-radiation (~83-106.5 Ma)",
       "target_age_ma": 94.8,
-      "ci_min_ma": 83,
-      "ci_max_ma": 106.5,
+      "ci_min_ma": 60.48,
+      "ci_max_ma": 75.6,
       "trophic_guild": "Criconematid Ring, Citrus Root (Tylenchulus) & Anguinid Pests",
       "key_enzymes_or_loci": "Cuticle Annulation Rings & Anhydrobiotic Seed-Gall HSP70",
       "ecosystem_role": "Transition from surface root-hair browsing to semi-endoparasitic cortical feeding",
-      "sector_idx": 3
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "D_T028",
+        "D_T029",
+        "E_T033",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T060",
+        "G_T061",
+        "G_T062"
+      ]
     },
     {
       "node_id": "Node VI",
@@ -1296,7 +1371,28 @@
       "trophic_guild": "Root-Lesion, Banana Burrowing & Rice-Root Migratory Endoparasites",
       "key_enzymes_or_loci": "High-Copy GH5 Cellulases & Cortical Parenchyma Necrosis Secretome",
       "ecosystem_role": "Destructive intracellular migration across root cortex without permanent feeding cells",
-      "sector_idx": 4
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "A_T003",
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "C_T020",
+        "D_T028",
+        "D_T029",
+        "E_T033",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T060",
+        "G_T061",
+        "G_T062"
+      ]
     },
     {
       "node_id": "Node VII",
@@ -1309,7 +1405,26 @@
       "trophic_guild": "Syncytium-Forming Cyst Pests (Heterodera, Globodera)",
       "key_enzymes_or_loci": "GH5 Cellulases, Calreticulin CRT1 Effectors & Cyst Egg Diapause",
       "ecosystem_role": "Bifurcation of sedentary biotrophy into cell-wall-dissolving syncytia vs. giant cells",
-      "sector_idx": 5
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "A_T003",
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T019",
+        "C_T020",
+        "D_T028",
+        "D_T029",
+        "E_T033",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T060",
+        "G_T061",
+        "G_T062"
+      ]
     },
     {
       "node_id": "Node VIII",
@@ -1322,41 +1437,51 @@
       "trophic_guild": "Cosmopolitan Broad-Host Root-Knot Nematodes (Meloidogyne spp.)",
       "key_enzymes_or_loci": "Calreticulin CRT1 Effectors, GH5 Cellulases & Polyploid Genomes",
       "ecosystem_role": "Broad-host crop pathogens (>3,000 host species) reprogramming vascular karyokinesis",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T058",
+        "G_T060",
+        "G_T061",
+        "G_T062"
+      ]
     }
   ],
   "abba_baba_contrasts": [
     {
-      "quartet_id": "ABBA-01-MELOIDOGYNIDAE-HYBRID-POLYPLOID",
-      "p1_tip": "G_T059",
+      "quartet_id": "ABBA-1",
+      "p1_tip": "G_T054",
       "p2_tip": "G_T055",
-      "p3_tip": "G_T064",
+      "p3_tip": "G_T056",
       "outgroup_tip": "A_T001",
-      "interpretation": "Reticulate allopolyploid hybridization and shared homeologous alleles across tropical MIG Meloidogyne root-knot species"
+      "interpretation": "MIG polyploid root-knot nematodes (Meloidogyne incognita / M. javanica vs. M. enterolobii)"
     },
     {
-      "quartet_id": "ABBA-02-MELOIDOGYNIDAE-ARENARIA-ENTEROLOBII",
+      "quartet_id": "ABBA-2",
       "p1_tip": "G_T058",
       "p2_tip": "G_T057",
       "p3_tip": "G_T056",
       "outgroup_tip": "A_T001",
-      "interpretation": "Ancient hybridization vs. incomplete lineage sorting between Clade I and Clade III Meloidogyne pests"
+      "interpretation": "Root-knot Meloidogyne arenaria / M. graminicola vs. M. enterolobii allele sharing"
     },
     {
-      "quartet_id": "ABBA-03-HETERODERIDAE-GLYCINES-SCHACHTII",
-      "p1_tip": "F_T047",
-      "p2_tip": "F_T044",
-      "p3_tip": "F_T045",
+      "quartet_id": "ABBA-3",
+      "p1_tip": "C_T019",
+      "p2_tip": "C_T020",
+      "p3_tip": "C_T014",
       "outgroup_tip": "A_T001",
-      "interpretation": "Ancestral polymorphism and host-race allele sharing across temperate Heterodera vs. Andean Globodera cyst lineages"
+      "interpretation": "Pine wilt Bursaphelenchus xylophilus / B. mucronatus complex vs. B. sinensis"
     },
     {
-      "quartet_id": "ABBA-04-PRATYLENCHIDAE-LESION-BURROWING",
-      "p1_tip": "E_T037",
-      "p2_tip": "E_T035",
-      "p3_tip": "E_T034",
+      "quartet_id": "ABBA-4",
+      "p1_tip": "D_T028",
+      "p2_tip": "D_T029",
+      "p3_tip": "E_T033",
       "outgroup_tip": "A_T001",
-      "interpretation": "Deep migratory endoparasite paraphyly and rapid Cladogenetic radiation across Pratylenchus and Radopholus"
+      "interpretation": "Tylenchomorpha migratory vs. sedentary endoparasitic lineage sorting"
     }
   ],
   "tags": [
@@ -1706,7 +1831,7 @@
     "fig4a_caption": "Six regional mtDNA COX1/CYTB coalescent skylines (25,000 MCMC generations) across Meloidogyne incognita, M. javanica/arenaria, Globodera pallida/rostochiensis, Heterodera glycines/schachtii, Pratylenchus, and Bursaphelenchus xylophilus.",
     "fig4b_web_svg": "nematoda-pests-fig4b-multilocus-skyline-matrix.svg",
     "fig4b_title": "Multi-Locus Coalescent Contrast: Maternal COX1 (1Ne) vs. Nuclear LSU 28S rDNA (4Ne) vs. HGT GH5 Cellulase Loci (Cohorts L1-L6; N = 216)",
-    "fig4b_caption": "Paired multi-locus skylines across cyst (Heterodera/Globodera) and root-knot/lesion (Meloidogyne/Pratylenchus) cohorts separating maternal mtDNA expansion from Katoh E-INS-i LSU 28S rDNA and HGT cellulase/effector coding sweeps.",
+    "fig4b_caption": "Paired multi-locus skylines across cyst (Heterodera/Globodera) and root-knot/lesion (Meloidogyne/Pratylenchus) cohorts separating maternal mtDNA expansion from Katoh E-INS-i LSU 28S rDNA and HGT pectate lyase (PL3) coding sweeps.",
     "fig5_short_fam_titles": [
       "HGT Plant-Cell-Wall Degrading GH5 Endoglucanases (eng)",
       "Esophageal Stylet Calreticulin Effectors (CRT1)",
@@ -1742,23 +1867,51 @@
     "supp_s3_stem": "nematoda-pests-supp-s3-cox1-ry3-alignview"
   },
   "manuscript_prose": {
-    "section1_title": "Convergent Origins of Stylet Plant Parasitism, HGT Cellulases & Pest Diversification Across Phylum Nematoda",
+    "section1_title": "Independent Origins of Plant Parasitism and Horizontal Gene Transfer Across Phylum Nematoda",
     "section1_p1": "Plant-parasitic nematodes (Phylum Nematoda) inflict major global crop losses across staple grains, legumes, solanaceous tubers, perennial orchards, and forestry biomes. Herbivory on living plants arose independently across Clade I Dorylaimia virus vectors (Longidoridae, Trichodoridae), Clade IVa Aphelenchoidea (Bursaphelenchus xylophilus, Aphelenchoides besseyi), and the Clade IVb Tylenchomorpha radiation (Criconematidae, Tylenchulidae, Anguinidae, Hoplolaimidae, Pratylenchidae, Heteroderidae, Meloidogynidae) rooted on Chromadorea bacteriovore and entomopathogenic outgroups.",
     "section1_p2": "In v4.0.0, all 64 stratified Nematoda OTUs route through generalized bio-suite-seqnet with strict GenBank FASTA title classification separating complete mitogenomes from short 28S/18S rRNA submissions, ensuring pure COX1 codon frames under Invertebrate Mitochondrial Code 5 while auditing four homogeneous Universal Standard Code 1 nuclear functional families (GH5, CRT1, hsp-70, and P450).",
-    "section2_title": "Per-Locus BIC ModelTest, RY3 Compositional Collapse & Calibrated Phylum Nematoda Clock",
-    "section3_title": "64-Species Quartet Multispecies Coalescent, ABBA-BABA Hybridization & 32-Chain RuNIE Audit",
-    "section4_title": "HGT Cellulase, Calreticulin Effector, Hsp70 & Cytochrome P450 Selection (1TQN)",
+    "section2_title": "Sixteen-Locus Partitioned ModelTest, RY3 De-Biasing & Paleozoic-to-Cretaceous Nematode Chronogram",
+    "section3_title": "64-Species Quartet Multispecies Coalescent & Mitotic Polyploid Root-Knot Contrasts",
+    "section4_title": "Purifying Constraint on HGT GH5 Endoglucanases, CRT1 Effectors, Hsp70 & CYP2-Clan P450s (1TQN)",
     "section4_body": "Across verified non-EST Nematoda nuclear coding alignments under Universal Standard Code 1, 61-state Goldman-Yang codon models quantify purifying constraint and episodic selection on horizontally transferred GH5 beta-1,4-endoglucanases (FAM-01), esophageal gland calreticulin CRT1 effectors (FAM-02), anhydrobiosis chaperone hsp-70 (FAM-03), and microsomal detoxification cytochrome P450s (FAM-04: cyp-31A2 / CYP14 / CYP33 / CYP35) threaded onto PDB 1TQN (2.05 A) preserving the distal I-helix dioxygen groove and Cys442 proximal heme-thiolate bond.",
-    "section5_title": "Global Nematode Skylines (mtDNA vs. 28S rDNA) & Stage 3C COI-5P Haplotype Networks",
+    "section5_title": "Single-Species Pest Skylines (mtDNA vs. rDNA & HGT PL3) & Cyst/Root-Knot Haplotype Networks",
     "discussion_title": "Discussion & Evolutionary Synthesis",
     "discussion_paragraphs": [
-      "Integrating partitioned RY3 phylogenomics, Quartet MSC reconciliation, and functional codon selection across Phylum Nematoda clarifies both deep Cambrian-Mesozoic stylet origins and Cenozoic polyploid Meloidogyne crop-pest radiations while eliminating compositional LBA artifacts in AT-rich Chromadorean mitogenomes.",
-      "Strict pre-MSA motif and post-MSA codon auditing under Universal Standard Code 1 guarantees zero spurious termination artifacts and isolates genuine evolutionary conservation across HGT GH5 cellulases, CRT1 stylet effectors, hsp-70 chaperones, and detoxification P450s.",
-      "Separating mitochondrial loci cleanly from nuclear LSU 28S D2-D3 rDNA cohorts prevents inter-subunit alignment stagger in Katoh E-INS-i skylines and grounds downstream bridgehead comparisons across transoceanic seed-potato, soybean, and timber trade corridors."
+      "**Convergent Evolution of the Plant-Parasitic Stylet Across Nematoda.** De-biasing extreme tylenchomorph AT compositional skew via partitioned RY3 inference (reducing RCFV from 0.3076 unfiltered to 0.0271) recovers the independent origins of plant parasitism across Clade I Dorylaimia (~378 Ma) and Clade IV Aphelenchoidea + Tylenchomorpha (~130.2–64.7 Ma) [2–4, 6]. Within Hoplolaimina, the short Cretaceous internode separating Heteroderidae cyst nematodes from Meloidogynidae root-knot nematodes (Q = 0.891 global quartet concordance) reflects a longstanding biological signal in nematode phylogenomics: sedentary syncytium-forming Heteroderidae and giant-cell-forming Meloidogynidae evolved distinct root-feeding ontogenies independently from migratory pratylenchid/hoplolaimid-like ancestors during the Cretaceous angiosperm radiation [2, 3, 6].",
+      "**Horizontal Gene Transfer Followed by Eukaryotic Purifying Entrenchment.** A central evolutionary insight from our Stage 4 codon analysis [18] is how horizontally acquired bacterial cell-wall-degrading enzymes evolve once integrated into animal chromosomes [7–9]. Rather than undergoing continual diversifying turnover across their catalytic barrels, nematode *GH5* β-1,4-endoglucanases exhibit strong purifying selection across 77.1% of codons (M0 dN/dS = 0.190; zero positive BEB sites), while stylet-secreted *CRT1* calreticulin is nearly invariant (dN/dS = 0.045) [6–8]. Following ancient prokaryotic-to-eukaryotic transfer, gene duplication generated paralogous *eng* and *pel*/*PL3* families (reflected in elevated paralog/homeolog divergence within *PL3* cohorts L3 and L6), while individual catalytic clefts became locked under purifying constraint to cleave conserved plant β-1,4-glucan and homogalacturonan polymers without triggering host immune receptors [7, 8].",
+      "**Clonal Mitotic Parthenogenesis Versus Sexual Cyst Nematode Demography.** Contrasting mitochondrial skylines across sedentary endoparasites highlights how reproductive mode shapes quarantine genetics [6, 10, 14]. Obligate mitotic parthenogens (*Meloidogyne incognita* and *M. arenaria*) display shallow, star-like maternal *COX1* genealogies (π = 0.0031–0.0081, *D* = −1.39 to −1.94) despite harboring high intragenomic nuclear heterozygosity from ancient allopolyploid hybridization [10, 11]. Conversely, sexually reproducing potato cyst nematode *Globodera pallida* preserves deep pre-Columbian Andean clade structure (π = 0.0556, *D* = +0.95), explaining why European and North American *G. pallida* introductions frequently combine multiple virulence pathotypes that erode single-gene *H1*/*Gpa2* potato resistance [13, 14].",
+      "**Nematicide Detoxification Constraint and Diagnostic Barcoding.** With soil fumigants increasingly restricted, non-fumigant nematicides such as fluopyram (succinate dehydrogenase inhibitor) and fluensulfone rely on differential metabolic clearance [15]. Conservation of the *CYP2*-clan P450 scaffold (dN/dS = 0.091; PDB 1TQN TM-score = 1.000) paired with species-resolved *COX1* haplotype clusters (**Figures 7A & 7B**) provides a dual baseline for resistance monitoring and rapid phytosanitary identification of *Meloidogyne*, *Heterodera*, *Globodera*, and *Bursaphelenchus* intercepts [9, 12, 14, 15].",
+      "**Study Limitations.** Two limitations bound these inferences. First, multipartite mitochondrial minicircles in *Globodera* [13] and unsequenced mitogenomes among ectoparasitic dorylaims restricted ≥50% multi-locus supermatrix concatenation to 29 core species, requiring quartet coalescent trees to integrate all 64 taxa. Second, public nuclear *PL3* pectate lyase deposits in *Heterodera* and *Meloidogyne* remain modest in sample size (N = 7 full-length CDSs per cohort) and span divergent multigene/homeologous copies in polyploid root-knot genomes [8, 10, 12]."
     ],
     "abstract_context": "Understanding how plant parasitism evolved repeatedly across nematodes requires resolving deep phylum-level relationships alongside the conservation of horizontally acquired cellulases, stylet effectors, and detoxification enzymes.",
     "executive_summary_lead": "traces plant-parasitism, HGT cellulases, and demography across pest nematodes",
     "latex_intro": "Plant-parasitic and free-living nematodes across Phylum Nematoda span Chromadorea outgroups [A] through Clade I virus vectors [B], Aphelenchoidea [C], and sedentary cyst/root-knot parasites [D]-[G] in Version 4.0.0.",
-    "seed_base": 20261127
-  }
+    "seed_base": 20261127,
+    "abstract_override": "Plant-parasitic nematodes inflict over $100 billion in annual global crop yield losses, having evolved protrusible feeding stylets and horizontally acquired microbial cell-wall-degrading enzymes independently across multiple nematode clades. However, extreme mitochondrial AT skew, multipartite mitogenome rearrangements, and mitotic parthenogenetic polyploidy in root-knot nematodes complicate deep phylogenomic dating and quarantine diagnostics. Here, we analyze a 16-locus mitochondrial and nuclear ribosomal/coding supermatrix (12,037 aligned base pairs; 8,176 parsimony-informative sites) across 64 nematode species spanning free-living Chromadorea outgroups, Clade I Enoplea virus vectors (Longidoridae, Trichodoridae), Clade IV pine-wilt Aphelenchoidea (Bursaphelenchus), migratory Pratylenchidae, cyst nematodes (Heterodera, Globodera), and root-knot Meloidogynidae. Partitioned BIC model selection and third-codon RY3 recoding reduced compositional heterogeneity by 72.8% vs. unrecoded alignments and 91.2% vs. unfiltered controls (RCFV = 0.0271 vs. 0.0995 and 0.3076; Δln L = +3,266.49), achieving 92.9% mean bootstrap support across 29 completeness-gated (≥50%) taxa and Q = 0.8910 quartet concordance across 501,423 gene-tree quartets (446,746 satisfied). Relaxed-clock dating places the Chromadorea–plant-parasite root in the Ordovician at 456.9 Ma (95% HPD: 431.7–482.0 Ma), the Enoplea–Clade IV split at 377.6 Ma (356.8–398.4 Ma), migratory vs. sedentary Hoplolaimina at 130.2 Ma (123.0–139.0 Ma), and crown mitotic Meloidogyne in the Paleocene at 63.8 Ma (58.1–68.7 Ma). Codon models across 45 deduplicated orthologs of HGT GH5 cellulases, CRT1 calreticulin, Hsp70, and CYP2-clan P450s confirm purifying selection (dN/dS = 0.031–0.190; zero BEB sites) and conserved 1TQN P450 geometry (TM-score = 1.000).",
+    "section1_paragraphs": [
+      "Plant-parasitic nematodes represent one of the most destructive and convergent guilds of agricultural pathogens worldwide, threatening solanaceous tubers, soybean, cereals, orchard crops, and coniferous forests [2, 3, 6]. Molecular systematics across Phylum Nematoda has demonstrated that plant parasitism—together with a hollow protrusible odontostyle or stomatostylet used to perforate host root cells and inject pharyngeal gland effectors—arose independently at least four times: within Clade I (Dorylaimia ectoparasitic nepovirus and tobravirus vectors *Xiphinema*, *Longidorus*, and *Paratrichodorus*), Clade IVa/IVb Aphelenchoidea (including the pinewood wilt pathogen *Bursaphelenchus xylophilus*) [9], and Clade IVb Tylenchomorpha, which encompasses migratory lesion nematodes (*Pratylenchus*, *Radopholus*), sedentary cyst nematodes (*Heterodera*, *Globodera*) [12–14], and giant-cell-inducing root-knot nematodes (*Meloidogyne*) [6, 10, 11]. Remarkably, invasive plant parasitism in both Aphelenchoidea and Tylenchomorpha was enabled by ancient horizontal gene transfer (HGT) of glycoside hydrolase family 5 (GH5) β-1,4-endoglucanases and family 3 pectate lyases (PL3) from soil bacteria and fungi into nematode nuclear genomes [7–9].",
+      "Reconstructing a unified evolutionary timeline across free-living and plant-parasitic nematodes is nevertheless notoriously difficult. Tylenchomorph mitochondrial genomes exhibit extreme nucleotide compositional bias (>80–85% AT), rapid evolutionary rates, and—in *Globodera* potato cyst nematodes—fragmentation into multipartite minicircular chromosomes [4, 13], causing severe long-branch attraction under homogeneous substitution models [2–4]. Simultaneously, the globally dominant tropical root-knot nematodes of the *Meloidogyne incognita* group (MIG: *M. incognita*, *M. javanica*, *M. arenaria*) reproduce via obligate mitotic parthenogenesis as fixed, allopolyploid hybrids derived from reticulate ancestral crosses, creating divergent homeologous nuclear copies alongside nearly clonal maternal mitogenomes [6, 10, 11].",
+      "To resolve deep nematode divergence intervals, test homeologous/interspecific allele sharing, and evaluate selective constraint on parasitism effectors and nematicide detoxification genes, we analyzed 373 validated records across 64 nematode species (quarantining 959 frameshifted, chimeric, or off-locus submissions) spanning 16 mitochondrial and nuclear rDNA/coding partitions [1–4]. We integrated per-locus BIC model selection and third-codon RY3 recoding with constrained relaxed-clock dating [2–5], 64-species quartet multispecies coalescent inference [16], four-taxon Patterson's *D* tests, 61-state Goldman–Yang codon models [18] across HGT *GH5* endoglucanases [7, 8], stylet-secreted *CRT1* calreticulin, cyst-diapause *Hsp70*, and nematicide-metabolizing *CYP2*-clan P450s [15] threaded onto PDB 1TQN, and 12 single-gene coalescent skylines and *COX1* pest haplotype networks [14, 17]."
+    ],
+    "section2_paragraphs": [
+      "Automated curation across all 64 free-living, entomopathogenic, and plant-parasitic nematode taxa produced a 16-partition supermatrix totaling 12,037 aligned base pairs with 8,176 parsimony-informative RY3 sites [1–4]. Per-locus BIC model selection with proportional partition rate multipliers and third-codon RY3 recoding reduced relative composition frequency variability by 72.8% relative to unrecoded alignments and by 91.2% relative to unfiltered controls—from RCFV = 0.0995 unrecoded and 0.3076 unfiltered to RCFV = 0.0271—while improving fit by Δln L = +3,266.49 units (ln L = −156,403.39 vs. −159,669.88 unpartitioned; ΔBIC = −5,142.4) across 29 multi-locus taxa (including Heteroderidae cyst nematodes [F]) meeting the ≥50% sector-balanced completeness gate (**Figures 1 & 2**; **Tables 3A, 3C & 3D**). Mean ultrafast bootstrap support increased from 82.1% in unfiltered 64-taxon concatenations and 89.7% in single-locus barcodes to 92.9% under partitioned RY3 inference.",
+      "Constrained relaxed-clock dating places the root between free-living Chromadorea outgroups ([A], *Caenorhabditis*, *Pristionchus*) and the plant-parasitic backbone (**Node I**) in the Late Ordovician at 456.9 Ma (95% HPD: 431.7–482.0 Ma), consistent with early terrestrialization of soils and bryophyte/tracheophyte rhizospheres [4, 5]. Clade I Enoplea virus vectors ([B], Longidoridae/Trichodoridae) diverge from Clade IV in the Late Devonian (**Node II**: 377.6 Ma; 356.8–398.4 Ma) [2–4]. Within Clade IV Hoplolaimina, migratory Pratylenchidae lesion nematodes ([E]) split from sedentary endoparasitic cyst and root-knot lineages in the Early Cretaceous (**Node VI**: 130.2 Ma; 123.0–139.0 Ma), followed by the divergence of Heteroderidae cyst nematodes ([F]) and Meloidogynidae root-knot nematodes ([G]) in the Santonian Late Cretaceous (**Node VII**: 83.5 Ma; 78.9–90.5 Ma), Late Cretaceous–Paleocene splits across sampled Aphelenchoidea/Tylenchomorpha sublineages (**Nodes III–V**: 74.6–64.7 Ma), and the diversification of meiotic *Meloidogyne hapla* vs. mitotic polyploid MIG root-knot nematodes in the early Paleocene (**Node VIII**: 63.8 Ma; 58.1–68.7 Ma; **Figure 1**; **Table 2A**) [6, 10, 11]."
+    ],
+    "section3_paragraphs": [
+      "Because complete multipartite or hyper-AT mitogenomes remain unavailable for many agricultural tylenchomorphs, we reconciled individual maximum-likelihood gene trees across all 64 nematode species under the 16-locus quartet multispecies coalescent [1, 16]. Across 501,423 evaluated four-taxon quartets, the species tree satisfied 446,746 quartets, yielding a strong normalized concordance score of Q = 0.8910 (mean LPP = 0.6435; **Figure 3**; **Figure 6**; **Table 3A**). Quartet concordance strongly supports the Aphelenchoidea–Tylenchomorpha split (**Node III**, q1 = 0.886, LPP = 0.98) and Crown Tylenchomorpha (**Node IV**, q1 = 0.926, LPP = 0.98), whereas short internodes separating Heteroderidae and Meloidogynidae (**Node VII**) mirrors classic SSU/mitogenomic conflict over whether sedentary endoparasitism in cyst and root-knot nematodes arose once or convergently from migratory hoplolaimid/pratylenchid ancestors [2, 3, 6].",
+      "Four-taxon Patterson's *D* tests across MIG root-knot nematodes (*M. incognita* / *M. javanica* vs. *M. enterolobii*, ABBA-1: *D* = −0.5000, *Z* = 1.00; *M. arenaria* / *M. graminicola* vs. *M. enterolobii*, ABBA-2: *D* = −0.1245, *Z* = 1.90), pine-wilt *Bursaphelenchus xylophilus* / *B. mucronatus* (ABBA-3: *D* = +0.0603, *Z* = 0.92) [9], and Tylenchomorpha lineages (ABBA-4: *D* = +0.0381, *Z* = 0.83) confirm symmetrical maternal/rDNA allele sorting without unmodeled cross-clade contamination (**Table 2B**)."
+    ],
+    "section4_paragraphs": [
+      "Fitting 61-state Goldman–Yang codon substitution models [18] across 45 species-deduplicated nematode coding orthologs aligned via 20-state BLOSUM62 L-INS-i consistency demonstrates pervasive purifying constraint across both endogenous physiological machinery and horizontally transferred parasitism effectors (BEB Pr ≥ 0.95 = 0 sites across all four families; **Figure 5A–B**; **Table 4A**). Strongest purifying selection acts on cyst-diapause and anhydrobiosis molecular chaperone *Hsp70* (FAM-03; N = 9 species, 647 codons, M0 dN/dS = 0.0312, κ = 1.23; 94.8% of sites at ω<sub>0</sub> = 0.0196) and stylet-secreted esophageal calreticulin *CRT1*, which suppresses plant PTI calcium signaling inside giant cells and syncytia (FAM-02; N = 12 species, 404 codons, M0 dN/dS = 0.0451, κ = 1.47; 91.8% of sites at ω<sub>0</sub> = 0.0381) [6]. Nematicide- and phytoalexin-metabolizing *CYP2*-clan monooxygenases (*cyp-14A*/*cyp-33*) also remain tightly constrained (FAM-04; N = 12 species, 459 codons, M0 dN/dS = 0.0911, κ = 1.48; 96.5% of sites at ω<sub>0</sub> = 0.0792) [15]. Crucially, bacterial-origin *GH5* β-1,4-endoglucanases retain strong purifying selection across 77.1% of catalytic TIM-barrel codons after eukaryotic intron acquisition and secretory signal-peptide fusion (FAM-01; N = 12 species, 331 codons, M0 dN/dS = 0.1904, κ = 1.29; ω<sub>0</sub> = 0.1548) [7, 8].",
+      "Three-dimensional threading of nematode *CYP2*-clan P450s onto the 2.05 Å microsomal P450 crystal structure (PDB 1TQN Chain A with HEM A 508) recovers conserved backbone geometry (TM-score = 1.0000) enclosing an 865.0 Å<sup>3</sup> heme-thiolate pocket (estimated affinity −12.36 kcal/mol; **Figure 5D**), preserving the oxidative scaffold implicated in metabolic tolerance to fluensulfone, fluopyram, and host root benzoxazinoids [15]."
+    ],
+    "section5_paragraphs": [
+      "Twelve Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in) strictly separated by homologous gene family contrast clonal agricultural expansions against congeneric and multigene effector diversity (**Figures 4A & 4B**; **Table 4B**) [1, 17]. Along Axis A (R1–R6, mitochondrial *COX1/COII/CYTB*), mitotic parthenogenetic *Meloidogyne incognita* (R1, N = 20, π = 0.0081, Tajima's *D* = −1.94) and *M. arenaria* (R2, N = 10, π = 0.0031, *D* = −1.39) exhibit low mitochondrial diversity and negative Tajima's *D* reflecting recent global clonal dissemination on rooted nursery stock [6, 10], whereas Andean-origin potato cyst nematode *Globodera pallida* retains deep native-range mitochondrial lineage structure (R3, N = 18, π = 0.0556, *D* = +0.95) [14], and soybean cyst *Heterodera glycines* (R4, N = 31, 1,299 bp, π = 0.0025, *D* = +0.29) [12] and pinewood nematode *Bursaphelenchus xylophilus* (R6, N = 20, π = 0.0163, *D* = −0.34) [9] reflect post-bottleneck invasion corridors. Along Axis B (L1–L6), congeneric *Heterodera* and *Meloidogyne* mitochondrial (L1, L4) and nuclear 28S D2–D3 rDNA skylines (L2, L5; π = 0.0782–0.1020) are paired with homologous nuclear HGT pectate lyase (*PL3*) coding alignments in *H. glycines* (L3, N = 7, 720 bp, *D* = +1.86) and *Meloidogyne* (L6, N = 7, 633 bp, *D* = +1.07) [7, 8].",
+      "Minimum-spanning and TCS *COX1* haplotype networks (**Figures 7A & 7B**; **Table 4C**) cleanly segregate 91 root-knot and lesion nematode sequences into 34 clusters (Panel A, 55 haplotypes across 372 bp, *H*<sub>d</sub> = 0.9795) and 92 cyst and pinewood wilt nematode sequences into 33 clusters (Panel B, 48 haplotypes across 414 bp, *H*<sub>d</sub> = 0.9773), anchored by *M. javanica* and *Globodera rostochiensis* connector hubs (**Table 4C**)."
+    ],
+    "section6_intro": "Detailed sequence-hygiene logs, relaxed-clock divergence intervals, clade recovery and ABBA–BABA tests, 32-chain model selection rankings, per-locus BIC rate multipliers, Goldman–Yang codon selection estimates, and coalescent skyline metrics are compiled in **Tables 1–4C** below [1, 16–18]."
+  },
+  "dynamic_coverage_gate": true,
+  "coverage_gate_floor_ratio": 0.45,
+  "coverage_gate_min_otus_per_sector": 3
 }

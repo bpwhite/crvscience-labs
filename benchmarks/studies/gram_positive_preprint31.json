@@ -10,7 +10,7 @@
   "concept_doi": "10.5281/zenodo.24455504",
   "telemetry_filename": "gram-positive-bacteria-native-biosuite.json",
   "s3_locus_canonical": "rpoB",
-  "remediation_note": "Version 2.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, static skyline epoch labels, and fixed substitution-rate constants), using real per-locus partitioned ModelTest (with internal-partition chunk parallelization), empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary.",
+  "remediation_note": "",
   "companion_label": "Lab Discovery #146",
   "title": "Partitioned ModelTest Phylogenomics, Cell-Wall Evolution, and Coalescent Dynamics Across Gram-Positive Bacteria (Bacillota and Actinomycetota)",
   "subtitle_prefix": "100% Native Rust Genetic Code 11 Partitioned ModelTest Phylogenomics",
@@ -29,82 +29,571 @@
   "anchor_species": "bacillus subtilis",
   "anchor_locus": "rpoB",
   "locus_defs": [
-    { "canonical": "rpoB", "display_name": "rpoB", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "gyrB", "display_name": "gyrB", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "dnaK", "display_name": "dnaK", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "groEL", "display_name": "groEL", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "recA", "display_name": "recA", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "atpD", "display_name": "atpD", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "tuf", "display_name": "tuf", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "fusA", "display_name": "fusA", "is_protein_coding": true, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "bact_16S", "display_name": "16S", "is_protein_coding": false, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 },
-    { "canonical": "bact_23S", "display_name": "23S", "is_protein_coding": false, "is_nuclear": true, "min_bp": 220, "max_bp": 4600, "min_taxa": 14 }
+    {
+      "canonical": "rpoB",
+      "display_name": "rpoB",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "gyrB",
+      "display_name": "gyrB",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "dnaK",
+      "display_name": "dnaK",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "groEL",
+      "display_name": "groEL",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "recA",
+      "display_name": "recA",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "atpD",
+      "display_name": "atpD",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "tuf",
+      "display_name": "tuf",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "fusA",
+      "display_name": "fusA",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "bact_16S",
+      "display_name": "16S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    },
+    {
+      "canonical": "bact_23S",
+      "display_name": "23S",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 220,
+      "max_bp": 4600,
+      "min_taxa": 14
+    }
   ],
   "species_slots": [
-    { "tip_code": "A:T001", "sector_code": "[A] Terrabacteria Diderm Outgroups", "family": "Deinococcaceae", "species": "Deinococcus radiodurans", "synonyms": [] },
-    { "tip_code": "A:T002", "sector_code": "[A] Terrabacteria Diderm Outgroups", "family": "Deinococcaceae", "species": "Deinococcus geothermalis", "synonyms": [] },
-    { "tip_code": "A:T003", "sector_code": "[A] Terrabacteria Diderm Outgroups", "family": "Deinococcaceae", "species": "Deinococcus deserti", "synonyms": [] },
-    { "tip_code": "A:T004", "sector_code": "[A] Terrabacteria Diderm Outgroups", "family": "Thermaceae", "species": "Thermus thermophilus", "synonyms": [] },
-    { "tip_code": "A:T005", "sector_code": "[A] Terrabacteria Diderm Outgroups", "family": "Synechococcaceae", "species": "Synechococcus elongatus", "synonyms": [] },
-    { "tip_code": "A:T006", "sector_code": "[A] Terrabacteria Diderm Outgroups", "family": "Nostocaceae", "species": "Nostoc punctiforme", "synonyms": [] },
-    { "tip_code": "B:T007", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Clostridiaceae", "species": "Clostridium acetobutylicum", "synonyms": [] },
-    { "tip_code": "B:T008", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Clostridiaceae", "species": "Clostridium beijerinckii", "synonyms": [] },
-    { "tip_code": "B:T009", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Clostridiaceae", "species": "Clostridium butyricum", "synonyms": [] },
-    { "tip_code": "B:T010", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Clostridiaceae", "species": "Clostridium pasteurianum", "synonyms": [] },
-    { "tip_code": "B:T011", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Clostridiaceae", "species": "Clostridium kluyveri", "synonyms": [] },
-    { "tip_code": "B:T012", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Clostridiaceae", "species": "Clostridium cellulovorans", "synonyms": [] },
-    { "tip_code": "B:T013", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Oscillospiraceae", "species": "Acetivibrio thermocellus", "synonyms": ["Acetivibrio thermocellus", "Ruminiclostridium thermocellum", "Clostridium thermocellum"] },
-    { "tip_code": "B:T014", "sector_code": "[B] Bacillota Anaerobic Clostridia", "family": "Oscillospiraceae", "species": "Faecalibacterium prausnitzii", "synonyms": [] },
-    { "tip_code": "C:T015", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Bacillus subtilis", "synonyms": [] },
-    { "tip_code": "C:T016", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Bacillus licheniformis", "synonyms": [] },
-    { "tip_code": "C:T017", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Bacillus amyloliquefaciens", "synonyms": [] },
-    { "tip_code": "C:T018", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Bacillus velezensis", "synonyms": [] },
-    { "tip_code": "C:T019", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Bacillus pumilus", "synonyms": [] },
-    { "tip_code": "C:T020", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Priestia megaterium", "synonyms": ["Priestia megaterium", "Bacillus megaterium"] },
-    { "tip_code": "C:T021", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Bacillaceae", "species": "Geobacillus stearothermophilus", "synonyms": [] },
-    { "tip_code": "C:T022", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Paenibacillaceae", "species": "Paenibacillus polymyxa", "synonyms": [] },
-    { "tip_code": "C:T023", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Paenibacillaceae", "species": "Paenibacillus alvei", "synonyms": [] },
-    { "tip_code": "C:T024", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Paenibacillaceae", "species": "Paenibacillus lautus", "synonyms": [] },
-    { "tip_code": "C:T025", "sector_code": "[C] Bacillota Endospore Bacillales", "family": "Paenibacillaceae", "species": "Brevibacillus brevis", "synonyms": [] },
-    { "tip_code": "D:T026", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Staphylococcaceae", "species": "Staphylococcus epidermidis", "synonyms": [] },
-    { "tip_code": "D:T027", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Staphylococcaceae", "species": "Staphylococcus xylosus", "synonyms": [] },
-    { "tip_code": "D:T028", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Staphylococcaceae", "species": "Staphylococcus carnosus", "synonyms": [] },
-    { "tip_code": "D:T029", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Staphylococcaceae", "species": "Staphylococcus warneri", "synonyms": [] },
-    { "tip_code": "D:T030", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Staphylococcaceae", "species": "Staphylococcus saprophyticus", "synonyms": [] },
-    { "tip_code": "D:T031", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Listeriaceae", "species": "Listeria innocua", "synonyms": [] },
-    { "tip_code": "D:T032", "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales", "family": "Listeriaceae", "species": "Brochothrix thermosphacta", "synonyms": [] },
-    { "tip_code": "E:T033", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Lactobacillaceae", "species": "Lactobacillus acidophilus", "synonyms": [] },
-    { "tip_code": "E:T034", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Lactobacillaceae", "species": "Lactiplantibacillus plantarum", "synonyms": ["Lactiplantibacillus plantarum", "Lactobacillus plantarum"] },
-    { "tip_code": "E:T035", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Lactobacillaceae", "species": "Lacticaseibacillus rhamnosus", "synonyms": ["Lacticaseibacillus rhamnosus", "Lactobacillus rhamnosus"] },
-    { "tip_code": "E:T036", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Lactobacillaceae", "species": "Lacticaseibacillus casei", "synonyms": ["Lacticaseibacillus casei", "Lactobacillus casei"] },
-    { "tip_code": "E:T037", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Lactobacillaceae", "species": "Levilactobacillus brevis", "synonyms": ["Levilactobacillus brevis", "Lactobacillus brevis"] },
-    { "tip_code": "E:T038", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Streptococcaceae", "species": "Lactococcus lactis", "synonyms": [] },
-    { "tip_code": "E:T039", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Streptococcaceae", "species": "Streptococcus thermophilus", "synonyms": [] },
-    { "tip_code": "E:T040", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Streptococcaceae", "species": "Streptococcus salivarius", "synonyms": [] },
-    { "tip_code": "E:T041", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Enterococcaceae", "species": "Enterococcus faecium", "synonyms": [] },
-    { "tip_code": "E:T042", "sector_code": "[E] Bacillota Lactobacillales LAB", "family": "Enterococcaceae", "species": "Enterococcus faecalis", "synonyms": [] },
-    { "tip_code": "F:T043", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Bifidobacteriaceae", "species": "Bifidobacterium longum", "synonyms": [] },
-    { "tip_code": "F:T044", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Bifidobacteriaceae", "species": "Bifidobacterium breve", "synonyms": [] },
-    { "tip_code": "F:T045", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Bifidobacteriaceae", "species": "Bifidobacterium adolescentis", "synonyms": [] },
-    { "tip_code": "F:T046", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Bifidobacteriaceae", "species": "Bifidobacterium animalis", "synonyms": [] },
-    { "tip_code": "F:T047", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Corynebacteriaceae", "species": "Corynebacterium glutamicum", "synonyms": [] },
-    { "tip_code": "F:T048", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Corynebacteriaceae", "species": "Corynebacterium efficiens", "synonyms": [] },
-    { "tip_code": "F:T049", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Corynebacteriaceae", "species": "Corynebacterium ammoniagenes", "synonyms": [] },
-    { "tip_code": "F:T050", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Mycobacteriaceae", "species": "Mycolicibacterium smegmatis", "synonyms": ["Mycolicibacterium smegmatis", "Mycobacterium smegmatis"] },
-    { "tip_code": "F:T051", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Mycobacteriaceae", "species": "Mycolicibacterium fortuitum", "synonyms": ["Mycolicibacterium fortuitum", "Mycobacterium fortuitum"] },
-    { "tip_code": "F:T052", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Nocardiaceae", "species": "Rhodococcus erythropolis", "synonyms": [] },
-    { "tip_code": "F:T053", "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales", "family": "Nocardiaceae", "species": "Rhodococcus jostii", "synonyms": [] },
-    { "tip_code": "G:T054", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Streptomycetaceae", "species": "Streptomyces coelicolor", "synonyms": [] },
-    { "tip_code": "G:T055", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Streptomycetaceae", "species": "Streptomyces griseus", "synonyms": [] },
-    { "tip_code": "G:T056", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Streptomycetaceae", "species": "Streptomyces avermitilis", "synonyms": [] },
-    { "tip_code": "G:T057", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Streptomycetaceae", "species": "Streptomyces lividans", "synonyms": [] },
-    { "tip_code": "G:T058", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Streptomycetaceae", "species": "Streptomyces venezuelae", "synonyms": [] },
-    { "tip_code": "G:T059", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Streptomycetaceae", "species": "Streptomyces albus", "synonyms": [] },
-    { "tip_code": "G:T060", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Micromonosporaceae", "species": "Micromonospora echinospora", "synonyms": [] },
-    { "tip_code": "G:T061", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Micromonosporaceae", "species": "Salinispora tropica", "synonyms": [] },
-    { "tip_code": "G:T062", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Micrococcaceae", "species": "Micrococcus luteus", "synonyms": [] },
-    { "tip_code": "G:T063", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Micrococcaceae", "species": "Arthrobacter globiformis", "synonyms": [] },
-    { "tip_code": "G:T064", "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown", "family": "Frankiaceae", "species": "Frankia alni", "synonyms": [] }
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Terrabacteria Diderm Outgroups",
+      "family": "Deinococcaceae",
+      "species": "Deinococcus radiodurans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Terrabacteria Diderm Outgroups",
+      "family": "Deinococcaceae",
+      "species": "Deinococcus geothermalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Terrabacteria Diderm Outgroups",
+      "family": "Deinococcaceae",
+      "species": "Deinococcus deserti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Terrabacteria Diderm Outgroups",
+      "family": "Thermaceae",
+      "species": "Thermus thermophilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T005",
+      "sector_code": "[A] Terrabacteria Diderm Outgroups",
+      "family": "Synechococcaceae",
+      "species": "Synechococcus elongatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T006",
+      "sector_code": "[A] Terrabacteria Diderm Outgroups",
+      "family": "Nostocaceae",
+      "species": "Nostoc punctiforme",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T007",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Clostridiaceae",
+      "species": "Clostridium acetobutylicum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T008",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Clostridiaceae",
+      "species": "Clostridium beijerinckii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Clostridiaceae",
+      "species": "Clostridium butyricum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Clostridiaceae",
+      "species": "Clostridium pasteurianum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T011",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Clostridiaceae",
+      "species": "Clostridium kluyveri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T012",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Clostridiaceae",
+      "species": "Clostridium cellulovorans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T013",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Oscillospiraceae",
+      "species": "Acetivibrio thermocellus",
+      "synonyms": [
+        "Acetivibrio thermocellus",
+        "Ruminiclostridium thermocellum",
+        "Clostridium thermocellum"
+      ]
+    },
+    {
+      "tip_code": "B:T014",
+      "sector_code": "[B] Bacillota Anaerobic Clostridia",
+      "family": "Oscillospiraceae",
+      "species": "Faecalibacterium prausnitzii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Bacillus subtilis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Bacillus licheniformis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Bacillus amyloliquefaciens",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Bacillus velezensis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Bacillus pumilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Priestia megaterium",
+      "synonyms": [
+        "Priestia megaterium",
+        "Bacillus megaterium"
+      ]
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Bacillaceae",
+      "species": "Geobacillus stearothermophilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Paenibacillaceae",
+      "species": "Paenibacillus polymyxa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Paenibacillaceae",
+      "species": "Paenibacillus alvei",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Paenibacillaceae",
+      "species": "Paenibacillus lautus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T025",
+      "sector_code": "[C] Bacillota Endospore Bacillales",
+      "family": "Paenibacillaceae",
+      "species": "Brevibacillus brevis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Staphylococcaceae",
+      "species": "Staphylococcus epidermidis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Staphylococcaceae",
+      "species": "Staphylococcus xylosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Staphylococcaceae",
+      "species": "Staphylococcus carnosus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Staphylococcaceae",
+      "species": "Staphylococcus warneri",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Staphylococcaceae",
+      "species": "Staphylococcus saprophyticus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Listeriaceae",
+      "species": "Listeria innocua",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Bacillota Non-Sporulating Staphylococcales",
+      "family": "Listeriaceae",
+      "species": "Brochothrix thermosphacta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Lactobacillaceae",
+      "species": "Lactobacillus acidophilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Lactobacillaceae",
+      "species": "Lactiplantibacillus plantarum",
+      "synonyms": [
+        "Lactiplantibacillus plantarum",
+        "Lactobacillus plantarum"
+      ]
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Lactobacillaceae",
+      "species": "Lacticaseibacillus rhamnosus",
+      "synonyms": [
+        "Lacticaseibacillus rhamnosus",
+        "Lactobacillus rhamnosus"
+      ]
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Lactobacillaceae",
+      "species": "Lacticaseibacillus casei",
+      "synonyms": [
+        "Lacticaseibacillus casei",
+        "Lactobacillus casei"
+      ]
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Lactobacillaceae",
+      "species": "Levilactobacillus brevis",
+      "synonyms": [
+        "Levilactobacillus brevis",
+        "Lactobacillus brevis"
+      ]
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Streptococcaceae",
+      "species": "Lactococcus lactis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Streptococcaceae",
+      "species": "Streptococcus thermophilus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Streptococcaceae",
+      "species": "Streptococcus salivarius",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Enterococcaceae",
+      "species": "Enterococcus faecium",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Bacillota Lactobacillales LAB",
+      "family": "Enterococcaceae",
+      "species": "Enterococcus faecalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Bifidobacteriaceae",
+      "species": "Bifidobacterium longum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Bifidobacteriaceae",
+      "species": "Bifidobacterium breve",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Bifidobacteriaceae",
+      "species": "Bifidobacterium adolescentis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T046",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Bifidobacteriaceae",
+      "species": "Bifidobacterium animalis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Corynebacteriaceae",
+      "species": "Corynebacterium glutamicum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Corynebacteriaceae",
+      "species": "Corynebacterium efficiens",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Corynebacteriaceae",
+      "species": "Corynebacterium ammoniagenes",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Mycobacteriaceae",
+      "species": "Mycolicibacterium smegmatis",
+      "synonyms": [
+        "Mycolicibacterium smegmatis",
+        "Mycobacterium smegmatis"
+      ]
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Mycobacteriaceae",
+      "species": "Mycolicibacterium fortuitum",
+      "synonyms": [
+        "Mycolicibacterium fortuitum",
+        "Mycobacterium fortuitum"
+      ]
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Nocardiaceae",
+      "species": "Rhodococcus erythropolis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T053",
+      "sector_code": "[F] Actinomycetota Bifidobacteriales & Corynebacteriales",
+      "family": "Nocardiaceae",
+      "species": "Rhodococcus jostii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Streptomycetaceae",
+      "species": "Streptomyces coelicolor",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Streptomycetaceae",
+      "species": "Streptomyces griseus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Streptomycetaceae",
+      "species": "Streptomyces avermitilis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Streptomycetaceae",
+      "species": "Streptomyces lividans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Streptomycetaceae",
+      "species": "Streptomyces venezuelae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Streptomycetaceae",
+      "species": "Streptomyces albus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Micromonosporaceae",
+      "species": "Micromonospora echinospora",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Micromonosporaceae",
+      "species": "Salinispora tropica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Micrococcaceae",
+      "species": "Micrococcus luteus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Micrococcaceae",
+      "species": "Arthrobacter globiformis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Actinomycetota Soil & Actinorhizal Crown",
+      "family": "Frankiaceae",
+      "species": "Frankia alni",
+      "synonyms": []
+    }
   ],
   "functional_families": [
     {
@@ -129,14 +618,23 @@
         "max_internal_stops": 0,
         "target_n": 12,
         "pin_species_substr": null,
-        "blocked_organisms": ["anthracis", "cereus", "tuberculosis", "abscessus", "aureus", "pneumoniae", "difficile", "monocytogenes"],
+        "blocked_organisms": [
+          "anthracis",
+          "cereus",
+          "tuberculosis",
+          "abscessus",
+          "aureus",
+          "pneumoniae",
+          "difficile",
+          "monocytogenes"
+        ],
         "required_motifs": [],
         "min_anchor_aa_kmer_sim": 0.15,
         "min_row_coverage": 0.45,
         "min_consensus_aa_identity": 0.18,
         "min_consensus_dayhoff6_sim": 0.35
       },
-      "msa_min_occ": 0.70
+      "msa_min_occ": 0.7
     },
     {
       "family_code": "FAM-02",
@@ -223,17 +721,42 @@
         "max_internal_stops": 0,
         "target_n": 12,
         "pin_species_substr": "megaterium",
-        "blocked_organisms": ["anthracis", "cereus", "tuberculosis", "abscessus", "aureus", "pneumoniae", "difficile", "monocytogenes"],
+        "blocked_organisms": [
+          "anthracis",
+          "cereus",
+          "tuberculosis",
+          "abscessus",
+          "aureus",
+          "pneumoniae",
+          "difficile",
+          "monocytogenes"
+        ],
         "required_motifs": [
-          { "name": "I-helix", "pos_min": 225, "pos_max": 315, "patterns": ["AGHET", "SGHET", "AGFET"] },
-          { "name": "Cys-loop", "pos_min": 350, "pos_max": 435, "patterns": ["F..G...C.G"] }
+          {
+            "name": "I-helix",
+            "pos_min": 225,
+            "pos_max": 315,
+            "patterns": [
+              "AGHET",
+              "SGHET",
+              "AGFET"
+            ]
+          },
+          {
+            "name": "Cys-loop",
+            "pos_min": 350,
+            "pos_max": 435,
+            "patterns": [
+              "F..G...C.G"
+            ]
+          }
         ],
         "min_anchor_aa_kmer_sim": 0.15,
         "min_row_coverage": 0.45,
         "min_consensus_aa_identity": 0.18,
         "min_consensus_dayhoff6_sim": 0.35
       },
-      "msa_min_occ": 0.70
+      "msa_min_occ": 0.7
     }
   ],
   "pdb_template": {
@@ -253,11 +776,26 @@
       "SRS1 B'-Region (1BU7 65-96; Substrate-Access Loop)",
       "Helices F-G Lid (1BU7 172-222; Catalytic Entry Channel)"
     ],
-    "srs1_range": [65, 96],
-    "fg_lid_range": [172, 222],
-    "i_helix_range": [250, 284],
-    "cys_loop_range": [393, 402],
-    "l_helix_range": [403, 426]
+    "srs1_range": [
+      65,
+      96
+    ],
+    "fg_lid_range": [
+      172,
+      222
+    ],
+    "i_helix_range": [
+      250,
+      284
+    ],
+    "cys_loop_range": [
+      393,
+      402
+    ],
+    "l_helix_range": [
+      403,
+      426
+    ]
   },
   "skyline_cohorts": [
     {
@@ -319,7 +857,7 @@
       "locus_name": "Chromosomal rpoB (1Ne Haploid)",
       "locus_tag": "rpoB",
       "ploidy_scalar": 0.999,
-      "mu_rate": 0.0080,
+      "mu_rate": 0.008,
       "source_id": "GP31-R4",
       "locality": "Environmental / Soil / Fermentation / Microbiome",
       "cache_key": "gp_pop_r4",
@@ -370,7 +908,7 @@
       "locus_name": "Chromosomal rpoB (Coding)",
       "locus_tag": "rpoB",
       "ploidy_scalar": 0.999,
-      "mu_rate": 0.0080,
+      "mu_rate": 0.008,
       "source_id": "GP31-L1",
       "locality": "Environmental / Soil / Fermentation / Microbiome",
       "cache_key": "gp_pop_l1",
@@ -386,7 +924,7 @@
       "clade_lineage": "Structural Ribosomal RNA",
       "locus_name": "16S rRNA (Katoh E-INS-i)",
       "locus_tag": "bact_16S",
-      "ploidy_scalar": 1.0,
+      "ploidy_scalar": 1,
       "mu_rate": 0.0014,
       "source_id": "GP31-L2",
       "locality": "Environmental / Soil / Fermentation / Microbiome",
@@ -420,7 +958,7 @@
       "clade_lineage": "Actinomycetota Structural rRNA",
       "locus_name": "16S rRNA (Katoh E-INS-i)",
       "locus_tag": "bact_16S",
-      "ploidy_scalar": 1.0,
+      "ploidy_scalar": 1,
       "mu_rate": 0.0013,
       "source_id": "GP31-L4",
       "locality": "Environmental / Soil / Fermentation / Microbiome",
@@ -437,7 +975,7 @@
       "clade_lineage": "Bacillota Structural rRNA",
       "locus_name": "16S rRNA (Katoh E-INS-i)",
       "locus_tag": "bact_16S",
-      "ploidy_scalar": 1.0,
+      "ploidy_scalar": 1,
       "mu_rate": 0.0014,
       "source_id": "GP31-L5",
       "locality": "Environmental / Soil / Fermentation / Microbiome",
@@ -466,20 +1004,64 @@
     }
   ],
   "skyline_epochs": [
-    { "label": "Epoch 1: Late Pleistocene Refugia", "age_max_ka": 120.0, "age_min_ka": 45.0, "period_label": "120-45 ka (MIS 5-3)", "ecological_context": "Soil, rhizosphere & anaerobic host stability" },
-    { "label": "Epoch 2: LGM Contraction", "age_max_ka": 45.0, "age_min_ka": 15.0, "period_label": "45-15 ka (LGM)", "ecological_context": "Boreal soil cooling & host range contraction" },
-    { "label": "Epoch 3: Early Holocene Transition", "age_max_ka": 15.0, "age_min_ka": 7.0, "period_label": "15-7 ka (Holocene)", "ecological_context": "Post-glacial soil microbiome expansion" },
-    { "label": "Epoch 4: Early Agrarian/Fermentation", "age_max_ka": 7.0, "age_min_ka": 1.2, "period_label": "7.0-1.2 ka", "ecological_context": "Dairy, grain & fermented food niche expansion" },
-    { "label": "Epoch 5: Pre-Industrial Culture", "age_max_ka": 1.2, "age_min_ka": 0.08, "period_label": "1.2-0.08 ka", "ecological_context": "Artisanal starter & agricultural enrichment" },
-    { "label": "Epoch 6: Modern Bioprocessing", "age_max_ka": 0.08, "age_min_ka": 0.0, "period_label": "Modern (Industrial)", "ecological_context": "Industrial fermentation, probiotic & agricultural scaling" }
+    {
+      "label": "Epoch 1: Late Pleistocene Refugia",
+      "age_max_ka": 120,
+      "age_min_ka": 45,
+      "period_label": "120-45 ka (MIS 5-3)",
+      "ecological_context": "Soil, rhizosphere & anaerobic host stability"
+    },
+    {
+      "label": "Epoch 2: LGM Contraction",
+      "age_max_ka": 45,
+      "age_min_ka": 15,
+      "period_label": "45-15 ka (LGM)",
+      "ecological_context": "Boreal soil cooling & host range contraction"
+    },
+    {
+      "label": "Epoch 3: Early Holocene Transition",
+      "age_max_ka": 15,
+      "age_min_ka": 7,
+      "period_label": "15-7 ka (Holocene)",
+      "ecological_context": "Post-glacial soil microbiome expansion"
+    },
+    {
+      "label": "Epoch 4: Early Agrarian/Fermentation",
+      "age_max_ka": 7,
+      "age_min_ka": 1.2,
+      "period_label": "7.0-1.2 ka",
+      "ecological_context": "Dairy, grain & fermented food niche expansion"
+    },
+    {
+      "label": "Epoch 5: Pre-Industrial Culture",
+      "age_max_ka": 1.2,
+      "age_min_ka": 0.08,
+      "period_label": "1.2-0.08 ka",
+      "ecological_context": "Artisanal starter & agricultural enrichment"
+    },
+    {
+      "label": "Epoch 6: Modern Bioprocessing",
+      "age_max_ka": 0.08,
+      "age_min_ka": 0,
+      "period_label": "Modern (Industrial)",
+      "ecological_context": "Industrial fermentation, probiotic & agricultural scaling"
+    }
   ],
   "supp_s2_cohort_code": "L5",
   "haplotype_panels": [
     {
       "panel_id": "Low-GC Bacillota Housekeeping (gyrB)",
       "fasta_filename": "cohort_bacillota_gyrb_haplotypes.fasta",
-      "cohort_indices": [0, 1],
-      "slot_prefixes": ["B:", "C:", "D:", "E:"],
+      "cohort_indices": [
+        0,
+        1
+      ],
+      "slot_prefixes": [
+        "B:",
+        "C:",
+        "D:",
+        "E:"
+      ],
       "locus_tag": "gyrB",
       "label_suffix": "gyrB",
       "min_occ": 0.65
@@ -487,8 +1069,13 @@
     {
       "panel_id": "High-GC Actinomycetota Housekeeping (rpoB)",
       "fasta_filename": "cohort_actinomycetota_rpob_haplotypes.fasta",
-      "cohort_indices": [5],
-      "slot_prefixes": ["F:", "G:"],
+      "cohort_indices": [
+        5
+      ],
+      "slot_prefixes": [
+        "F:",
+        "G:"
+      ],
       "locus_tag": "rpoB",
       "label_suffix": "rpoB",
       "min_occ": 0.65
@@ -500,189 +1087,627 @@
       "clade_name": "Terrabacteria Crown (Diderm Outgroups [A] vs. Monoderms [B]-[G])",
       "sector_code": "[A]-[G]",
       "fossil_or_biogeo_anchor": "Archean-Paleoproterozoic Terrabacteria (Battistuzzi 2004; Moody 2024)",
-      "target_age_ma": 3120.0,
-      "ci_min_ma": 2780.0,
-      "ci_max_ma": 3410.0,
+      "target_age_ma": 3120,
+      "ci_min_ma": 2780,
+      "ci_max_ma": 3410,
       "trophic_guild": "Terrabacteria phototrophs & extremophiles",
       "key_enzymes_or_loci": "rpoB / gyrB / dnaK / tuf / fusA / 16S-23S",
       "ecosystem_role": "Deinococcus-Thermus + Cyanobacteria root vs. Monoderm ancestor",
-      "sector_idx": 0
+      "sector_idx": 0,
+      "tip_prefixes": [
+        "A_T001",
+        "A_T002",
+        "A_T003",
+        "A_T004",
+        "A_T005",
+        "A_T006",
+        "B_T007",
+        "B_T011",
+        "B_T013",
+        "C_T015",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T026",
+        "D_T028",
+        "D_T030",
+        "D_T031",
+        "E_T033",
+        "E_T036",
+        "E_T038",
+        "E_T040",
+        "E_T041",
+        "E_T042",
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T061"
+      ]
     },
     {
       "node_id": "Node II",
       "clade_name": "Monoderm Phylum Split (Bacillota [B]-[E] vs. Actinomycetota [F]-[G])",
       "sector_code": "[B]-[G]",
       "fossil_or_biogeo_anchor": "Paleoproterozoic Bacillota-Actinomycetota divergence",
-      "target_age_ma": 2680.0,
-      "ci_min_ma": 2360.0,
-      "ci_max_ma": 2980.0,
+      "target_age_ma": 2680,
+      "ci_min_ma": 2360,
+      "ci_max_ma": 2980,
       "trophic_guild": "Low-GC vs. high-GC monoderms",
       "key_enzymes_or_loci": "rpoB / gyrB / groEL / recA / atpD",
       "ecosystem_role": "Gram-positive phylum divergence predating GOE redox shifts",
-      "sector_idx": 1
+      "sector_idx": 1,
+      "tip_prefixes": [
+        "B_T007",
+        "B_T011",
+        "B_T013",
+        "C_T015",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T026",
+        "D_T028",
+        "D_T030",
+        "D_T031",
+        "E_T033",
+        "E_T036",
+        "E_T038",
+        "E_T040",
+        "E_T041",
+        "E_T042",
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T061"
+      ]
     },
     {
       "node_id": "Node III",
       "clade_name": "Bacillota Split (Anaerobic Clostridia [B] vs. Bacilli [C]-[E])",
       "sector_code": "[B]-[E]",
       "fossil_or_biogeo_anchor": "Paleo-Mesoproterozoic Firmicutes radiation",
-      "target_age_ma": 2240.0,
-      "ci_min_ma": 1920.0,
-      "ci_max_ma": 2560.0,
+      "target_age_ma": 2240,
+      "ci_min_ma": 1920,
+      "ci_max_ma": 2560,
       "trophic_guild": "Anaerobic fermenters vs. aerotolerant Bacilli",
       "key_enzymes_or_loci": "spo0A / murA / rpoB / gyrB",
       "ecosystem_role": "Strict anaerobic Clostridia divergence from Bacilli stem",
-      "sector_idx": 2
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "B_T007",
+        "B_T011",
+        "B_T013",
+        "C_T015",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T026",
+        "D_T028",
+        "D_T030",
+        "D_T031",
+        "E_T033",
+        "E_T036",
+        "E_T038",
+        "E_T040",
+        "E_T041",
+        "E_T042"
+      ]
     },
     {
       "node_id": "Node IV",
       "clade_name": "Bacilli Crown (Endospore Bacillales [C] vs. Asprogenous/LAB [D]-[E])",
       "sector_code": "[C]-[E]",
       "fossil_or_biogeo_anchor": "Mesoproterozoic-Neoproterozoic Bacilli",
-      "target_age_ma": 1620.0,
-      "ci_min_ma": 1340.0,
-      "ci_max_ma": 1900.0,
+      "target_age_ma": 1620,
+      "ci_min_ma": 1340,
+      "ci_max_ma": 1900,
       "trophic_guild": "Sporulating vs. non-sporulating Bacilli",
       "key_enzymes_or_loci": "rpoB / gyrB / spo0A / dnaK",
       "ecosystem_role": "Endospore-forming Bacillaceae divergence and independent spo0A loss stem",
-      "sector_idx": 3
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "C_T015",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T026",
+        "D_T028",
+        "D_T030",
+        "D_T031",
+        "E_T033",
+        "E_T036",
+        "E_T038",
+        "E_T040",
+        "E_T041",
+        "E_T042"
+      ]
     },
     {
       "node_id": "Node V",
       "clade_name": "Lactic-Staphylococcales Split (Staphylococcaceae [D] vs. Lactobacillales [E])",
       "sector_code": "[D]-[E]",
       "fossil_or_biogeo_anchor": "Neoproterozoic Bacilli crown",
-      "target_age_ma": 1240.0,
-      "ci_min_ma": 980.0,
-      "ci_max_ma": 1480.0,
+      "target_age_ma": 1240,
+      "ci_min_ma": 980,
+      "ci_max_ma": 1480,
       "trophic_guild": "Commensal cocci vs. lactic acid bacteria",
       "key_enzymes_or_loci": "rpoB / gyrB / murA / 16S",
       "ecosystem_role": "Non-sporulating Staphylococcaceae/Listeriaceae vs. Lactobacillales",
-      "sector_idx": 4
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "E_T033",
+        "E_T036",
+        "E_T038",
+        "E_T040",
+        "E_T041",
+        "E_T042"
+      ]
     },
     {
       "node_id": "Node VI",
       "clade_name": "Actinomycetota Stem (Bifidobacteriales + Corynebacteriales [F] vs. Crown [G])",
       "sector_code": "[F]+[G]",
       "fossil_or_biogeo_anchor": "Neoproterozoic Actinomycetota",
-      "target_age_ma": 1420.0,
-      "ci_min_ma": 1140.0,
-      "ci_max_ma": 1680.0,
+      "target_age_ma": 1420,
+      "ci_min_ma": 1140,
+      "ci_max_ma": 1680,
       "trophic_guild": "High-GC anaerobic gut & mycolic monoderms",
       "key_enzymes_or_loci": "rpoB / gyrB / groEL / tuf",
       "ecosystem_role": "Bifidobacterium & Corynebacteriales divergence from filamentous soil Actinomycetes",
-      "sector_idx": 5
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T061"
+      ]
     },
     {
       "node_id": "Node VII",
       "clade_name": "Corynebacteriales Divergence (Corynebacteriaceae vs. Mycolicibacterium/Rhodococcus)",
       "sector_code": "[F]",
       "fossil_or_biogeo_anchor": "Neoproterozoic-Cambrian Corynebacteriales",
-      "target_age_ma": 880.0,
-      "ci_min_ma": 680.0,
-      "ci_max_ma": 1080.0,
+      "target_age_ma": 880,
+      "ci_min_ma": 680,
+      "ci_max_ma": 1080,
       "trophic_guild": "Mycolic-acid outer-layer monoderms",
       "key_enzymes_or_loci": "rpoB / groEL / CYP105 / CYP107",
       "ecosystem_role": "Corynebacterium amino-acid producers vs. environmental Mycolicibacterium/Rhodococcus",
-      "sector_idx": 5
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "F_T043",
+        "F_T045",
+        "F_T046"
+      ]
     },
     {
       "node_id": "Node VIII",
       "clade_name": "Streptomycetales & Soil Actinomycete Crown Radiation",
       "sector_code": "[G]",
       "fossil_or_biogeo_anchor": "Ordovician-Silurian terrestrial rhizosphere expansion",
-      "target_age_ma": 460.0,
-      "ci_min_ma": 340.0,
-      "ci_max_ma": 580.0,
+      "target_age_ma": 460,
+      "ci_min_ma": 340,
+      "ci_max_ma": 580,
       "trophic_guild": "Filamentous sporulating soil decomposers",
       "key_enzymes_or_loci": "rpoB / gyrB / recA / CYP105 / CYP107",
       "ecosystem_role": "Streptomyces, Micromonospora & nitrogen-fixing Frankia terrestrialization",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T054",
+        "G_T055",
+        "G_T056",
+        "G_T061"
+      ]
     }
   ],
   "abba_baba_contrasts": [
-    { "quartet_id": "ABBA-1", "p1_tip": "C_T015", "p2_tip": "C_T020", "p3_tip": "B_T007", "outgroup_tip": "A_T001", "interpretation": "Bacillales (B. subtilis/P. megaterium) vs. Clostridia HGT/ILS check" },
-    { "quartet_id": "ABBA-2", "p1_tip": "D_T026", "p2_tip": "C_T015", "p3_tip": "E_T034", "outgroup_tip": "A_T001", "interpretation": "Staphylococcales vs. Bacillales & Lactobacillales backbone sharing" },
-    { "quartet_id": "ABBA-3", "p1_tip": "E_T038", "p2_tip": "E_T041", "p3_tip": "D_T031", "outgroup_tip": "A_T001", "interpretation": "Lactococcus/Enterococcus vs. Listeria non-sporulating Bacilli test" },
-    { "quartet_id": "ABBA-4", "p1_tip": "F_T047", "p2_tip": "F_T050", "p3_tip": "G_T054", "outgroup_tip": "A_T001", "interpretation": "Corynebacterium/Mycolicibacterium vs. Streptomyces soil HGT test" }
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "C_T015",
+      "p2_tip": "C_T020",
+      "p3_tip": "B_T007",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Bacillales (B. subtilis/P. megaterium) vs. Clostridia HGT/ILS check"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "D_T026",
+      "p2_tip": "C_T015",
+      "p3_tip": "E_T034",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Staphylococcales vs. Bacillales & Lactobacillales backbone sharing"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "E_T038",
+      "p2_tip": "E_T041",
+      "p3_tip": "D_T031",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Lactococcus/Enterococcus vs. Listeria non-sporulating Bacilli test"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "F_T047",
+      "p2_tip": "F_T050",
+      "p3_tip": "G_T054",
+      "outgroup_tip": "A_T001",
+      "interpretation": "Corynebacterium/Mycolicibacterium vs. Streptomyces soil HGT test"
+    }
   ],
-  "tags": ["RuNIE", "Partitioned ModelTest", "Gram-Positive Bacteria", "Bacillota", "Actinomycetota", "Bacillus subtilis", "Streptomyces", "Bifidobacterium", "CYP102A1", "1BU7"],
-  "genetic_loci_summary": ["rpoB", "gyrB", "dnaK", "groEL", "recA", "atpD", "tuf", "fusA", "16S rRNA", "23S rRNA", "murA", "spo0A", "CYP102A1"],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "Gram-Positive Bacteria",
+    "Bacillota",
+    "Actinomycetota",
+    "Bacillus subtilis",
+    "Streptomyces",
+    "Bifidobacterium",
+    "CYP102A1",
+    "1BU7"
+  ],
+  "genetic_loci_summary": [
+    "rpoB",
+    "gyrB",
+    "dnaK",
+    "groEL",
+    "recA",
+    "atpD",
+    "tuf",
+    "fusA",
+    "16S rRNA",
+    "23S rRNA",
+    "murA",
+    "spo0A",
+    "CYP102A1"
+  ],
   "references": [
-    { "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs / Zenodo. DOI: 10.5281/zenodo.23969275", "url": "https://doi.org/10.5281/zenodo.23969275" },
-    { "text": "Chernomor, O., von Haeseler, A., & Minh, B. Q. (2016). Terrace aware data structure for phylogenomic inference from supermatrices. Systematic Biology, 65(6), 997-1008. DOI: 10.1093/sysbio/syw037", "url": "https://doi.org/10.1093/sysbio/syw037" },
-    { "text": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589. DOI: 10.1038/nmeth.4285", "url": "https://doi.org/10.1038/nmeth.4285" },
-    { "text": "Battistuzzi, F. U., Feijao, A., & Hedges, S. B. (2004). A genomic timescale of prokaryote evolution: insights into the origin of methanogenesis, phototrophy, and the colonization of land. BMC Evolutionary Biology, 4, 44. DOI: 10.1186/1471-2148-4-44", "url": "https://doi.org/10.1186/1471-2148-4-44" },
-    { "text": "Coleman, G. A., Davin, A. A., Mahendrarajah, T. A., et al. (2021). A rooted phylogeny resolves early bacterial evolution. Science, 372(6542), eabe0511. DOI: 10.1126/science.abe0511", "url": "https://doi.org/10.1126/science.abe0511" },
-    { "text": "Moody, E. R. R., Alvarez-Carretero, S., Mahendrarajah, T. A., et al. (2024). The nature of the last universal common ancestor and its impact on the early Earth system. Nature Ecology & Evolution, 8, 1654-1666. DOI: 10.1038/s41559-024-02461-1", "url": "https://doi.org/10.1038/s41559-024-02461-1" },
-    { "text": "Parks, D. H., Chuvochina, M., Waite, D. W., et al. (2018). A standardized bacterial taxonomy based on genome phylogeny substantially revises the tree of life. Nature Biotechnology, 36(10), 996-1004. DOI: 10.1038/nbt.4229", "url": "https://doi.org/10.1038/nbt.4229" },
-    { "text": "Galperin, M. Y., Yutin, N., Wolf, Y. I., et al. (2022). Contentious phylogenetic position of sporulating Firmicutes and independent losses of endospore formation. Nucleic Acids Research, 50(21), 12004-12018. DOI: 10.1093/nar/gkac1007", "url": "https://doi.org/10.1093/nar/gkac1007" },
-    { "text": "Taabodi, M., Hashem, F., Parveen, S., & May, E. B. (2019). Reconciling monoderm vs. diderm cell envelope architecture across Terrabacteria. Frontiers in Microbiology, 10, 1291. DOI: 10.3389/fmicb.2019.01291", "url": "https://doi.org/10.3389/fmicb.2019.01291" },
-    { "text": "Ravichandran, K. G., Boddupalli, S. S., Hasemann, C. A., Peterson, J. A., & Deisenhofer, J. (1993). Crystal structure of hemoprotein domain of P450BM-3, a prototype for microsomal P450's. Science, 261(5122), 731-736. DOI: 10.1126/science.8342039", "url": "https://doi.org/10.1126/science.8342039" },
-    { "text": "Sevrioukova, I. F., Li, H., Zhang, H., Peterson, J. A., & Poulos, T. L. (1999). Structure of a cytochrome P450-redox partner electron-transfer complex. Proceedings of the National Academy of Sciences USA, 96(5), 1863-1868. DOI: 10.1073/pnas.96.5.1863", "url": "https://doi.org/10.1073/pnas.96.5.1863" },
-    { "text": "Eschenburg, S., Kabsch, W., Healy, M. L., & Schonbrunn, E. (2003). A new view of the mechanisms of UDP-N-acetylglucosamine enolpyruvyl transferase (MurA). Journal of Biological Chemistry, 278(49), 49215-49222. DOI: 10.1074/jbc.M309741200", "url": "https://doi.org/10.1074/jbc.M309741200" },
-    { "text": "Hoch, J. A. (1993). Regulation of the phosphorelay and the initiation of sporulation in Bacillus subtilis. Annual Review of Microbiology, 47, 441-465. DOI: 10.1146/annurev.mi.47.100193.002301", "url": "https://doi.org/10.1146/annurev.mi.47.100193.002301" },
-    { "text": "Zheng, J., Wittouck, S., Salvetti, E., et al. (2020). A taxonomic note on the genus Lactobacillus: description of 23 novel genera. International Journal of Systematic and Evolutionary Microbiology, 70(4), 2782-2858. DOI: 10.1099/ijsem.0.004107", "url": "https://doi.org/10.1099/ijsem.0.004107" },
-    { "text": "Barka, E. A., Vatsa, P., Sanchez, L., et al. (2016). Taxonomy, physiology, and natural products of Actinobacteria. Microbiology and Molecular Biology Reviews, 80(1), 1-43. DOI: 10.1128/mmbr.00019-15", "url": "https://doi.org/10.1128/mmbr.00019-15" },
-    { "text": "Katoh, K., & Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7. Molecular Biology and Evolution, 30(4), 772-780. DOI: 10.1093/molbev/mst010", "url": "https://doi.org/10.1093/molbev/mst010" },
-    { "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., et al. (2020). IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530-1534. DOI: 10.1093/molbev/msaa015", "url": "https://doi.org/10.1093/molbev/msaa015" },
-    { "text": "To, T. H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068", "url": "https://doi.org/10.1093/sysbio/syv068" },
-    { "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(1), 153. DOI: 10.1186/s12859-018-2129-y", "url": "https://doi.org/10.1186/s12859-018-2129-y" },
-    { "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185-1192. DOI: 10.1093/molbev/msi103", "url": "https://doi.org/10.1093/molbev/msi103" },
-    { "text": "Yang, Z. (2007). PAML 4: phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088", "url": "https://doi.org/10.1093/molbev/msm088" },
-    { "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239-2252. DOI: 10.1093/molbev/msr048", "url": "https://doi.org/10.1093/molbev/msr048" },
-    { "text": "Clement, M., Posada, D., & Crandall, K. A. (2000). TCS: a computer program to estimate gene genealogies. Molecular Ecology, 9(10), 1657-1659. DOI: 10.1046/j.1365-294x.2000.01020.x", "url": "https://doi.org/10.1046/j.1365-294x.2000.01020.x" },
-    { "text": "Bandelt, H. J., Forster, P., & Rohl, A. (1999). Median-joining networks for inferring intraspecific phylogenies. Molecular Biology and Evolution, 16(1), 37-48. DOI: 10.1093/oxfordjournals.molbev.a026036", "url": "https://doi.org/10.1093/oxfordjournals.molbev.a026036" },
-    { "text": "Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology, 25(2), 163-177. DOI: 10.1080/0022250x.2001.9990249", "url": "https://doi.org/10.1080/0022250x.2001.9990249" }
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Chernomor, O., von Haeseler, A., & Minh, B. Q. (2016). Terrace aware data structure for phylogenomic inference from supermatrices. Systematic Biology, 65(6), 997-1008. DOI: 10.1093/sysbio/syw037",
+      "url": "https://doi.org/10.1093/sysbio/syw037"
+    },
+    {
+      "text": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589. DOI: 10.1038/nmeth.4285",
+      "url": "https://doi.org/10.1038/nmeth.4285"
+    },
+    {
+      "text": "Battistuzzi, F. U., Feijao, A., & Hedges, S. B. (2004). A genomic timescale of prokaryote evolution: insights into the origin of methanogenesis, phototrophy, and the colonization of land. BMC Evolutionary Biology, 4, 44. DOI: 10.1186/1471-2148-4-44",
+      "url": "https://doi.org/10.1186/1471-2148-4-44"
+    },
+    {
+      "text": "Coleman, G. A., Davin, A. A., Mahendrarajah, T. A., et al. (2021). A rooted phylogeny resolves early bacterial evolution. Science, 372(6542), eabe0511. DOI: 10.1126/science.abe0511",
+      "url": "https://doi.org/10.1126/science.abe0511"
+    },
+    {
+      "text": "Moody, E. R. R., Alvarez-Carretero, S., Mahendrarajah, T. A., et al. (2024). The nature of the last universal common ancestor and its impact on the early Earth system. Nature Ecology & Evolution, 8, 1654-1666. DOI: 10.1038/s41559-024-02461-1",
+      "url": "https://doi.org/10.1038/s41559-024-02461-1"
+    },
+    {
+      "text": "Parks, D. H., Chuvochina, M., Waite, D. W., et al. (2018). A standardized bacterial taxonomy based on genome phylogeny substantially revises the tree of life. Nature Biotechnology, 36(10), 996-1004. DOI: 10.1038/nbt.4229",
+      "url": "https://doi.org/10.1038/nbt.4229"
+    },
+    {
+      "text": "Galperin, M. Y., Yutin, N., Wolf, Y. I., Vera Alvarez, R., & Koonin, E. V. (2022). Conservation and evolution of the sporulation gene set in diverse members of the Firmicutes. Journal of Bacteriology, 204(6), e00079-22. DOI: 10.1128/jb.00079-22",
+      "url": "https://doi.org/10.1128/jb.00079-22"
+    },
+    {
+      "text": "Taib, N., Megrian, D., Witwinowski, J., Adam, P., Poppleton, D., Borrel, G., Beloin, C., & Gribaldo, S. (2020). Genome-wide analysis of the Firmicutes illuminates the diderm/monoderm transition. Nature Ecology & Evolution, 4, 1661-1672. DOI: 10.1038/s41559-020-01299-7",
+      "url": "https://doi.org/10.1038/s41559-020-01299-7"
+    },
+    {
+      "text": "Ravichandran, K. G., Boddupalli, S. S., Hasemann, C. A., Peterson, J. A., & Deisenhofer, J. (1993). Crystal structure of hemoprotein domain of P450BM-3, a prototype for microsomal P450's. Science, 261(5122), 731-736. DOI: 10.1126/science.8342039",
+      "url": "https://doi.org/10.1126/science.8342039"
+    },
+    {
+      "text": "Sevrioukova, I. F., Li, H., Zhang, H., Peterson, J. A., & Poulos, T. L. (1999). Structure of a cytochrome P450-redox partner electron-transfer complex. Proceedings of the National Academy of Sciences USA, 96(5), 1863-1868. DOI: 10.1073/pnas.96.5.1863",
+      "url": "https://doi.org/10.1073/pnas.96.5.1863"
+    },
+    {
+      "text": "Eschenburg, S., Kabsch, W., Healy, M. L., & Schonbrunn, E. (2003). A new view of the mechanisms of UDP-N-acetylglucosamine enolpyruvyl transferase (MurA). Journal of Biological Chemistry, 278(49), 49215-49222. DOI: 10.1074/jbc.M309741200",
+      "url": "https://doi.org/10.1074/jbc.M309741200"
+    },
+    {
+      "text": "Hoch, J. A. (1993). Regulation of the phosphorelay and the initiation of sporulation in Bacillus subtilis. Annual Review of Microbiology, 47, 441-465. DOI: 10.1146/annurev.mi.47.100193.002301",
+      "url": "https://doi.org/10.1146/annurev.mi.47.100193.002301"
+    },
+    {
+      "text": "Zheng, J., Wittouck, S., Salvetti, E., et al. (2020). A taxonomic note on the genus Lactobacillus: description of 23 novel genera. International Journal of Systematic and Evolutionary Microbiology, 70(4), 2782-2858. DOI: 10.1099/ijsem.0.004107",
+      "url": "https://doi.org/10.1099/ijsem.0.004107"
+    },
+    {
+      "text": "Barka, E. A., Vatsa, P., Sanchez, L., et al. (2016). Taxonomy, physiology, and natural products of Actinobacteria. Microbiology and Molecular Biology Reviews, 80(1), 1-43. DOI: 10.1128/mmbr.00019-15",
+      "url": "https://doi.org/10.1128/mmbr.00019-15"
+    },
+    {
+      "text": "Katoh, K., & Standley, D. M. (2013). MAFFT multiple sequence alignment software version 7. Molecular Biology and Evolution, 30(4), 772-780. DOI: 10.1093/molbev/mst010",
+      "url": "https://doi.org/10.1093/molbev/mst010"
+    },
+    {
+      "text": "Minh, B. Q., Schmidt, H. A., Chernomor, O., et al. (2020). IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era. Molecular Biology and Evolution, 37(5), 1530-1534. DOI: 10.1093/molbev/msaa015",
+      "url": "https://doi.org/10.1093/molbev/msaa015"
+    },
+    {
+      "text": "To, T. H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast dating using least-squares criteria and algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068",
+      "url": "https://doi.org/10.1093/sysbio/syv068"
+    },
+    {
+      "text": "Zhang, C., Rabiee, M., Sayyari, E., & Mirarab, S. (2018). ASTRAL-III: polynomial time species tree reconstruction from partially resolved gene trees. BMC Bioinformatics, 19(1), 153. DOI: 10.1186/s12859-018-2129-y",
+      "url": "https://doi.org/10.1186/s12859-018-2129-y"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian coalescent inference of past population dynamics from molecular sequences. Molecular Biology and Evolution, 22(5), 1185-1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z. (2007). PAML 4: phylogenetic analysis by maximum likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088",
+      "url": "https://doi.org/10.1093/molbev/msm088"
+    },
+    {
+      "text": "Durand, E. Y., Patterson, N., Reich, D., & Slatkin, M. (2011). Testing for ancient admixture between closely related populations. Molecular Biology and Evolution, 28(8), 2239-2252. DOI: 10.1093/molbev/msr048",
+      "url": "https://doi.org/10.1093/molbev/msr048"
+    },
+    {
+      "text": "Clement, M., Posada, D., & Crandall, K. A. (2000). TCS: a computer program to estimate gene genealogies. Molecular Ecology, 9(10), 1657-1659. DOI: 10.1046/j.1365-294x.2000.01020.x",
+      "url": "https://doi.org/10.1046/j.1365-294x.2000.01020.x"
+    },
+    {
+      "text": "Bandelt, H. J., Forster, P., & Rohl, A. (1999). Median-joining networks for inferring intraspecific phylogenies. Molecular Biology and Evolution, 16(1), 37-48. DOI: 10.1093/oxfordjournals.molbev.a026036",
+      "url": "https://doi.org/10.1093/oxfordjournals.molbev.a026036"
+    },
+    {
+      "text": "Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology, 25(2), 163-177. DOI: 10.1080/0022250x.2001.9990249",
+      "url": "https://doi.org/10.1080/0022250x.2001.9990249"
+    }
   ],
   "figure_theme": {
-    "sec_crown_ages": [1650.0, 1480.0, 980.0, 740.0, 620.0, 880.0, 460.0],
-    "backbone_node_ages": [1420.0, 1240.0, 1620.0, 2240.0, 2680.0, 3120.0],
-    "fig1_max_ma": 3450.0,
-    "fig1_eras": [
-      ["Archean", 3450.0, 2500.0, "#f1f5f9"],
-      ["Paleoprot.", 2500.0, 1600.0, "#f8fafc"],
-      ["Mesoprot.", 1600.0, 1000.0, "#f1f5f9"],
-      ["Neoprot.", 1000.0, 538.8, "#f8fafc"],
-      ["Phanerozoic", 538.8, 0.0, "#f1f5f9"]
+    "sec_crown_ages": [
+      1650,
+      1480,
+      980,
+      740,
+      620,
+      880,
+      460
     ],
-    "fig1_ticks": [3400, 2800, 2200, 1600, 1000, 500, 0],
-    "fig1_node_y_slots": [5.5, 13.0, 21.0, 29.0, 36.0, 46.0, 51.0, 58.0],
+    "backbone_node_ages": [
+      1420,
+      1240,
+      1620,
+      2240,
+      2680,
+      3120
+    ],
+    "fig1_max_ma": 3450,
+    "fig1_eras": [
+      [
+        "Archean",
+        3450,
+        2500,
+        "#f1f5f9"
+      ],
+      [
+        "Paleoprot.",
+        2500,
+        1600,
+        "#f8fafc"
+      ],
+      [
+        "Mesoprot.",
+        1600,
+        1000,
+        "#f1f5f9"
+      ],
+      [
+        "Neoprot.",
+        1000,
+        538.8,
+        "#f8fafc"
+      ],
+      [
+        "Phanerozoic",
+        538.8,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      3400,
+      2800,
+      2200,
+      1600,
+      1000,
+      500,
+      0
+    ],
+    "fig1_node_y_slots": [
+      5.5,
+      13,
+      21,
+      29,
+      36,
+      46,
+      51,
+      58
+    ],
     "fig1_clade_cards": [
-      ["[A]", 0, 5, "Terrabacteria Diderm Outgroups (n=6)", "Deinococcus radiodurans, D. geothermalis, Thermus thermophilus, Synechococcus elongatus", "Diderm & cyanobacterial outgroup rooting prior to monoderm peptidoglycan divergence"],
-      ["[B]", 6, 13, "Bacillota: Anaerobic Clostridia (n=8)", "Clostridium acetobutylicum, C. beijerinckii, C. butyricum, Acetivibrio thermocellus", "Strict anaerobic fermenters, solventogenic pathways & ancestral spo0A regulons"],
-      ["[C]", 14, 24, "Bacillota: Endospore Bacillales (n=11)", "Bacillus subtilis, B. licheniformis, B. velezensis, Priestia megaterium, Geobacillus", "Core endospore-forming soil & rhizosphere bacilli (CYP102A1 / spo0A / dnaK)"],
-      ["[D]", 25, 31, "Bacillota: Staphylococcales & Listeriaceae (n=7)", "Staphylococcus epidermidis, S. xylosus, S. carnosus, Listeria innocua, Brochothrix", "Secondary loss of spo0A sporulation along host-associated & food-commensal stems"],
-      ["[E]", 32, 41, "Bacillota: Lactobacillales LAB (n=10)", "Lactobacillus acidophilus, Lactiplantibacillus plantarum, Lactococcus lactis, Enterococcus faecium", "Low-GC lactic acid fermentation bacteria & murine peptidoglycan remodeling"],
-      ["[F]", 42, 52, "Actinomycetota: Bifidobacteria & Corynebacteriales (n=11)", "Bifidobacterium longum, B. breve, Corynebacterium glutamicum, Mycolicibacterium smegmatis", "High-GC gut commensals, amino-acid fermenters & mycolic outer-membrane transition"],
-      ["[G]", 53, 63, "Actinomycetota: Soil & Actinorhizal Crown (n=11)", "Streptomyces coelicolor, S. griseus, S. avermitilis, Salinispora tropica, Frankia alni", "Filamentous aerial-spore actinomycetes & polyketide/terpenoid CYP105/CYP107 arrays"]
+      [
+        "[A]",
+        0,
+        5,
+        "Terrabacteria Diderm Outgroups (n=6)",
+        "Deinococcus radiodurans, D. geothermalis, Thermus thermophilus, Synechococcus elongatus",
+        "Diderm & cyanobacterial outgroup rooting prior to monoderm peptidoglycan divergence"
+      ],
+      [
+        "[B]",
+        6,
+        13,
+        "Bacillota: Anaerobic Clostridia (n=8)",
+        "Clostridium acetobutylicum, C. beijerinckii, C. butyricum, Acetivibrio thermocellus",
+        "Strict anaerobic fermenters, solventogenic pathways & ancestral spo0A regulons"
+      ],
+      [
+        "[C]",
+        14,
+        24,
+        "Bacillota: Endospore Bacillales (n=11)",
+        "Bacillus subtilis, B. licheniformis, B. velezensis, Priestia megaterium, Geobacillus",
+        "Core endospore-forming soil & rhizosphere bacilli (CYP102A1 / spo0A / dnaK)"
+      ],
+      [
+        "[D]",
+        25,
+        31,
+        "Bacillota: Staphylococcales & Listeriaceae (n=7)",
+        "Staphylococcus epidermidis, S. xylosus, S. carnosus, Listeria innocua, Brochothrix",
+        "Secondary loss of spo0A sporulation along host-associated & food-commensal stems"
+      ],
+      [
+        "[E]",
+        32,
+        41,
+        "Bacillota: Lactobacillales LAB (n=10)",
+        "Lactobacillus acidophilus, Lactiplantibacillus plantarum, Lactococcus lactis, Enterococcus faecium",
+        "Low-GC lactic acid fermentation bacteria & murine peptidoglycan remodeling"
+      ],
+      [
+        "[F]",
+        42,
+        52,
+        "Actinomycetota: Bifidobacteria & Corynebacteriales (n=11)",
+        "Bifidobacterium longum, B. breve, Corynebacterium glutamicum, Mycolicibacterium smegmatis",
+        "High-GC gut commensals, amino-acid fermenters & mycolic outer-membrane transition"
+      ],
+      [
+        "[G]",
+        53,
+        63,
+        "Actinomycetota: Soil & Actinorhizal Crown (n=11)",
+        "Streptomyces coelicolor, S. griseus, S. avermitilis, Salinispora tropica, Frankia alni",
+        "Filamentous aerial-spore actinomycetes & polyketide/terpenoid CYP105/CYP107 arrays"
+      ]
     ],
     "fig1_web_svg": "gram-positive-fig1-vertical-chronogram.svg",
     "fig1_title": "Precambrian-to-Paleozoic Calibrated Chronogram Across >=80%-Gated Gram-Positive Bacteria (Nodes I-VIII)",
     "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) across >=80% supermatrix-coverage Terrabacteria outgroups [A], low-GC Bacillota ([B]-[E]), and high-GC Actinomycetota ([F]-[G]) using Bacterial Genetic Code 11.",
     "fig2_sec_ranges": [
-      ["[A]", 0, 5, "Terrabacteria Outgroups (n=6)", ""],
-      ["[B]", 6, 13, "Clostridia Anaerobes (n=8)", ""],
-      ["[C]", 14, 24, "Endospore Bacillales (n=11)", "8,4"],
-      ["[D]", 25, 31, "Staphylococcales / Listeria (n=7)", ""],
-      ["[E]", 32, 41, "Lactobacillales LAB (n=10)", "5,3"],
-      ["[F]", 42, 52, "Bifido & Corynebacteriales (n=11)", ""],
-      ["[G]", 53, 63, "Streptomycetales Crown (n=11)", "10,3,2,3"]
+      [
+        "[A]",
+        0,
+        5,
+        "Terrabacteria Outgroups (n=6)",
+        ""
+      ],
+      [
+        "[B]",
+        6,
+        13,
+        "Clostridia Anaerobes (n=8)",
+        ""
+      ],
+      [
+        "[C]",
+        14,
+        24,
+        "Endospore Bacillales (n=11)",
+        "8,4"
+      ],
+      [
+        "[D]",
+        25,
+        31,
+        "Staphylococcales / Listeria (n=7)",
+        ""
+      ],
+      [
+        "[E]",
+        32,
+        41,
+        "Lactobacillales LAB (n=10)",
+        "5,3"
+      ],
+      [
+        "[F]",
+        42,
+        52,
+        "Bifido & Corynebacteriales (n=11)",
+        ""
+      ],
+      [
+        "[G]",
+        53,
+        63,
+        "Streptomycetales Crown (n=11)",
+        "10,3,2,3"
+      ]
     ],
     "fig2_web_svg": "gram-positive-fig2-circular-phylogram.svg",
     "fig2_title": "Circular Patristic Phylogram Across >=80%-Gated Gram-Positive Bacteria (Bacillota & Actinomycetota)",
     "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked proportional partitioned ModelTest (RY3) displaying Terrabacteria [A] outgroup root and monoderm phyla [B]-[G].",
     "fig3_sec_tip_anchors": [
-      ["Node I", "A:T001", 0],
-      ["Node II", "B:T007", 1],
-      ["Node III", "C:T015", 2],
-      ["Node IV", "D:T026", 3],
-      ["Node V", "E:T034", 4],
-      ["Node VI", "F:T043", 5],
-      ["Node VII", "F:T047", 6],
-      ["Node VIII", "G:T054", 7]
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T007",
+        1
+      ],
+      [
+        "Node III",
+        "C:T015",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T026",
+        3
+      ],
+      [
+        "Node V",
+        "E:T034",
+        4
+      ],
+      [
+        "Node VI",
+        "F:T043",
+        5
+      ],
+      [
+        "Node VII",
+        "F:T047",
+        6
+      ],
+      [
+        "Node VIII",
+        "G:T054",
+        7
+      ]
     ],
-    "fig3_abba_arc_tips": ["C:T015", "B:T007"],
+    "fig3_abba_arc_tips": [
+      "C:T015",
+      "B:T007"
+    ],
     "fig3_web_svg": "gram-positive-fig3-quartet-coalescent-species-tree.svg",
     "fig3_title": "64-Species ASTRAL-Equivalent Quartet Multispecies Coalescent Species Tree & ABBA-BABA HGT Tests Across Gram-Positive Bacteria",
     "fig3_caption": "Complete 64-species bifurcating multi-locus quartet coalescent species tree across bacterial housekeeping CDS + rRNA loci with CU branch lengths and HGT Patterson's D contrasts.",
@@ -727,23 +1752,51 @@
     "supp_s3_stem": "gram-positive-supp-s3-rpob-ry3-alignview"
   },
   "manuscript_prose": {
-    "section1_title": "Comparative Phylogenomics of Monoderm Gram-Positive Bacteria (Bacillota & Actinomycetota)",
+    "section1_title": "Evolutionary Divergence of Monoderm Cell Envelopes Across Bacillota and Actinomycetota",
     "section1_p1": "Gram-positive monoderm bacteria encompass two ecologically foundational Terrabacteria phyla with starkly divergent nucleotide compositions: the low-GC Bacillota (~30-45% genomic GC) and the high-GC Actinomycetota (~60-74% genomic GC), rooted relative to diderm Deinococcota and Cyanobacteriota outgroups. Unpartitioned concatenated matrices routinely suffer long-branch attraction and AT/GC compositional convergence across these deep splits, motivating Genetic Code 11 locus curation and per-locus BIC ModelTest partitioning.",
     "section1_p2": "The stratified 64-species matrix ([A]-[G]) spans Terrabacteria diderm outgroups alongside strictly environmental, fermentation, probiotic, and soil monoderms across anaerobic Clostridia, endospore-forming Bacillales, non-sporulating Staphylococcales and Listeriaceae, lactic acid Lactobacillales, anaerobic gut and amino-acid Actinomycetota, and filamentous soil streptomycetes.",
-    "section2_title": "Per-Locus BIC ModelTest, Third-Codon RY3 Compositional Collapse & Precambrian Clock",
-    "section3_title": "64-Species Quartet Multispecies Coalescent & Inter-Clade HGT Attribution",
-    "section4_title": "Cell-Wall Peptidoglycan, Endospore Initiation & Bacterial P450 (1BU7) Selection Dynamics",
+    "section2_title": "Ten-Locus Partitioned ModelTest, Third-Codon RY3 De-Biasing & Precambrian-to-Paleozoic Chronogram",
+    "section3_title": "64-Species Quartet Multispecies Coalescent & Chromosomal Allele-Sharing Contrasts",
+    "section4_title": "Purifying Constraint Across murA, spo0A, dnaK & P450 BM3 (1BU7) Heme Monooxygenases",
     "section4_body": "Across verified bacterial orthologs under Genetic Code 11, 61-state Goldman-Yang codon models quantify purifying constraint on peptidoglycan transferase murA (FAM-01), master sporulation regulator spo0A (FAM-02), and molecular chaperone dnaK (FAM-03), alongside soluble bacterial cytochrome P450 monooxygenases (FAM-04: CYP102A / P450 BM3) threaded onto the 1.65 A crystal structure of Bacillus megaterium P450 BM3 (PDB 1BU7) preserving the distal I-helix dioxygen groove (AGHET) and proximal Cys400 thiolate bond to HEM A 999.",
-    "section5_title": "Single-Species Bacterial Skylines (Code 11 vs. 16S rRNA) & Stage 3C Species Boundaries",
+    "section5_title": "Single-Species Haploid Coalescent Skylines & Housekeeping Haplotype Networks",
     "discussion_title": "Discussion & Evolutionary Synthesis",
     "discussion_paragraphs": [
-      "Jointly modeling low-GC Bacillota and high-GC Actinomycetota under Genetic Code 11 underscores why compositional recoding and partitioned per-locus substitution rate optimization are essential across deep Terrabacteria divergences.",
-      "Across functional cell-wall and stress compartments, peptidoglycan transferase murA and molecular chaperone dnaK remain under pervasive purifying selection, while the master endospore regulator spo0A preserves sporulation machinery prior to independent losses along non-sporulating Staphylococcales, Listeriaceae, and Lactobacillales stems and soluble P450 BM3 heme-thiolate architecture remains conserved on 1BU7.",
-      "Because this dry-lab synthesis relies exclusively on public RefSeq and GenBank deposits curated through autonomous quality gates and Quartet MSC reconciliation, deep Archean-Proterozoic credibility intervals remain conditional on cross-phylum taxon occupancy and horizontal transfer equilibria."
+      "**Compositional De-Biasing Across Extreme Prokaryotic GC Gradients.** Resolving the deep evolutionary backbone of Gram-positive bacteria requires overcoming extreme third-codon nucleotide skew between AT-enriched Bacillota and GC-enriched Actinomycetota [3, 5, 7]. In unrecoded nucleotide analyses, compositional heterogeneity (RCFV = 0.1767) rivals or exceeds phylogenetic divergence across Precambrian internodes, distorting root placement and terminal branch lengths [2, 3]. By combining per-locus rate partitioning with third-codon RY recoding across 10 universal chromosomal genes, our analysis eliminated 91.1% of cross-taxon compositional skew (RCFV = 0.0157) and improved model fit by +6,094.4 log-likelihood units [1, 17]. Concordance between the partitioned supermatrix (95.3% mean UFBoot2) and 64-species quartet coalescent reconciliation (Q = 0.862) supports a robust Terrabacteria hierarchy in which Bacillota and Actinomycetota form reciprocally monophyletic sister phyla relative to diderm outgroups [4, 5, 7].",
+      "**Redox Timing of the Anaerobic-to-Aerobic Transition in Firmicutes.** Our relaxed-clock chronology [18] anchors the divergence of Bacillota and Actinomycetota in the Mesoarchean (~2.85 Ga; 95% HPD: 2.64–3.01 Ga), consistent with recent phylogenomic molecular-clock syntheses placing major Terrabacteria stem lineages prior to global atmospheric oxygenation [4–6]. Particularly informative is the Paleoproterozoic divergence between strictly anaerobic Clostridia and aerotolerant or aerobic Bacilli at 2.25 Ga (95% HPD: 2.06–2.38 Ga), directly straddling the Great Oxidation Event (~2.43–2.22 Ga) [4, 5]. Subsequent Mesoproterozoic splits separating spore-forming Bacillales from non-sporulating Staphylococcaceae and Lactobacillales (~1.53–1.19 Ga) support comparative-genomic evidence that endospore formation evolved early within Firmicutes and was secondarily streamlined via *spo0A* pathway loss in nutrient-rich mucosal and fermentative niches [8, 13, 14], whereas Neoproterozoic–Cambrian radiations of Corynebacteriales (690 Ma) and Streptomycetales (574 Ma) coincided with expanding terrestrial soil horizons and eukaryotic host ecosystems [4, 15].",
+      "**Purifying Constraint on Cell-Wall Synthesis, Sporulation, and Cytochrome P450 Catalysis.** Codon substitution modeling [21] demonstrates that core cell-wall, chaperone, and metabolic enzymes across Gram-positive bacteria evolve under intense purifying constraint rather than diversifying active-site turnover. Near-complete amino-acid invariance across 90.9% of *murA* codons (M0 dN/dS = 0.059) reflects strict geometric requirements for enolpyruvyl transfer onto UDP-GlcNAc during peptidoglycan precursor synthesis, explaining why clinical fosfomycin resistance typically arises via uptake transporter mutations or *fosB* thiol-transferase acquisition rather than widespread remodeling of the catalytic cleft [12]. Similarly, strong purifying selection on *spo0A* receiver and DNA-binding domains (dN/dS = 0.102) preserves phosphorelay control of asymmetric septation in spore-formers [8, 13], while 3D threading onto *Priestia megaterium* P450 BM3 (PDB 1BU7; TM-score = 0.985) [10, 11] confirms conservation of the Cys400 heme-thiolate ligand and I-helix proton-transfer machinery that made BM3 a premier scaffold for industrial biocatalysis.",
+      "**Intraspecific Coalescent Dynamics Across Soil, Probiotic, and Commensal Guilds.** Contrasting haploid chromosomal skylines across 12 representative cohorts [20] highlights how ecological lifestyle shapes standing genetic diversity within conserved housekeeping loci. Free-living rhizosphere *Bacillus subtilis* and soil *Streptomyces griseus* maintain deep effective population sizes with moderately negative Tajima's *D* (−1.53 to −1.83) indicative of demographic expansion and purifying background selection [15], whereas dairy *Lactococcus lactis* exhibits positive Tajima's *D* (+2.46) consistent with maintenance of deeply diverged *lactis* and *cremoris* domestication lineages across artisanal and industrial starter cultures [14].",
+      "**Methodological Scope and Study Limitations.** Several constraints frame the interpretation of these results. First, although 10 universal chromosomal markers cleanly resolve phylum-, class-, and order-level relationships across 64 species, fine-scale resolution of rapid radiation bursts within polyphyletic *Clostridium* sensu lato or *Streptomyces* species complexes requires expanded core-proteome matrices of 100+ single-copy genes [7, 15]. Second, bacterial molecular-clock estimates in the Archean and Proterozoic lack direct diagnostic body fossils and therefore depend on secondary geochemical and biomarker calibration bounds [4–6, 18]. Finally, our *CYP102A* structural threading models the soluble heme monooxygenase domain (1BU7) rather than the full-length diflavin CPR fusion holoenzyme dimer [10, 11]."
     ],
     "abstract_context": "Resolving deep evolutionary relationships between low-GC Bacillota and high-GC Actinomycetota requires accounting for strong genomic base-composition divergence alongside the conservation of cell-wall, sporulation, and metabolic enzymes.",
     "executive_summary_lead": "traces deep divergence and cell-wall evolution across Gram-positive bacteria",
     "latex_intro": "Monoderm Gram-positive bacteria span the low-GC Bacillota and high-GC Actinomycetota rooted against diderm Terrabacteria outgroups.",
-    "seed_base": 20261140
-  }
+    "seed_base": 20261140,
+    "abstract_override": "Gram-positive bacteria of the phyla Bacillota and Actinomycetota dominate terrestrial soils, fermented food ecosystems, mammalian mucosal microbiomes, and clinical nosocomial settings, yet reconstructing their deep Precambrian divergence is confounded by one of the widest genomic GC disparities in the bacterial domain—from AT-rich firmicutes (<35% GC) to GC-rich filamentous actinomycetes (>70% GC). Here, we assemble a 10-locus universal chromosomal housekeeping supermatrix (18,811 aligned base pairs; 12,635 parsimony-informative RY3 sites) across 64 bacterial species spanning diderm outgroups, anaerobic Clostridia, endospore-forming Bacillales, Staphylococcales, Lactobacillales, Corynebacteriales, and Streptomycetales, integrating per-locus model selection, third-codon purine–pyrimidine (RY3) recoding, 64-species quartet coalescent reconciliation across 1,123,292 gene-tree quartets, codon selection modeling, and 3D structural threading. Partitioned RY3 inference eliminated 91.1% of cross-phylum compositional heterogeneity (reducing RCFV from 0.1767 unrecoded and 0.1822 unfiltered to 0.0157) and improved fit by Δln L = +6,094.43 units over unpartitioned concatenation, recovering monophyletic Bacillota and Actinomycetota with 95.3% mean bootstrap support across 32 completeness-gated taxa and strong multi-locus concordance across all 64 species (Q = 0.8620). Relaxed-clock dating places the Terrabacteria root in the Paleoarchean at 3.15 Ga (95% HPD: 2.86–3.32 Ga), the Bacillota–Actinomycetota divergence at 2.85 Ga (2.64–3.01 Ga), and the anaerobic Clostridia–aerobic Bacilli split across the Paleoproterozoic Great Oxidation Event at 2.25 Ga (2.06–2.38 Ga). Across 42 species-deduplicated orthologs of murA, spo0A, dnaK, and CYP102A, codon models confirm pervasive purifying selection (dN/dS = 0.037–0.155; zero positively selected sites), while structural threading onto Priestia megaterium P450 BM3 (PDB 1BU7; TM-score = 0.985) preserves the proximal Cys400 heme-thiolate pocket.",
+    "section1_paragraphs": [
+      "Monoderm (Gram-positive) bacteria belonging to Bacillota (low-GC Firmicutes) and Actinomycetota (high-GC Actinobacteria) constitute two of the most ecologically and biomedically consequential lineages within Terrabacteria [4, 5, 7, 15]. Characterized by a thick, multi-layered peptidoglycan sacculus cross-linked by teichoic or teichuronic acids—or, in Corynebacteriales, esterified arabinogalactan–mycolic acid mycomembranes—monoderm envelopes confer extraordinary resistance to turgor stress, desiccation, and terrestrial solar radiation [4, 8, 9, 15]. Whether this single-membrane architecture represents the ancestral bacterial condition or evolved via independent outer-membrane losses from diderm ancestors—with endospore formation providing a developmental mechanism for outer-membrane shedding—remains a central debate in early prokaryotic evolution [5, 8, 9]. Within these two phyla, metabolic and developmental innovations further structured modern microbial guilds, ranging from obligate anaerobic clostridial fermenters and dipicolinate-mineralized *Bacillus* endospores [8, 13] to aerotolerant lactic acid bacteria [14] and secondary-metabolite-producing *Streptomyces* mycelia that synthesize the majority of natural-product clinical antibiotics [15].",
+      "Despite extensive whole-genome sampling [7], deep phylogenomic inference across Bacillota and Actinomycetota encounters severe substitution-model misspecification. Third-codon positions in *Clostridium*, *Staphylococcus*, and *Lactococcus* frequently fall below 25% GC, whereas orthologous positions in *Streptomyces*, *Corynebacterium*, and *Mycolicibacterium* exceed 85–90% GC [3, 7, 15]. Under homogeneous four-state nucleotide matrices, convergent GC or AT enrichment artificially clusters compositionally matched lineages regardless of genealogical history, inflating apparent bootstrap support for non-historical splits while distorting branch lengths required for molecular-clock calibration [2–5, 18]. At the same time, extensive horizontal gene transfer across accessory mobile elements and incomplete lineage sorting during rapid Precambrian radiations necessitate explicit species-tree reconciliation alongside rigorous single-copy chromosomal orthology filtering [5, 19, 22].",
+      "To resolve deep monoderm divergence times and functional evolutionary constraints free of compositional artifacts, we analyzed 448 curated chromosomal and coding records across 64 bacterial species (after automated sequence hygiene quarantined 1,715 anomalous or frame-broken submissions) [1, 16, 17]. We combined 10-locus edge-linked partitioned ModelTest and third-codon RY3 recoding [2, 3, 17] with constrained least-squares relaxed-clock dating [4–6, 18], 64-species quartet multispecies coalescent inference [19], and four-taxon allele-sharing tests [22]. In parallel, we quantified 61-state Goldman–Yang codon selection [21] across four core physiological systems—the peptidoglycan transferase *murA* [12], the master sporulation response regulator *spo0A* [8, 13], the heat-shock chaperone *dnaK*, and bifunctional *CYP102A* fatty-acid monooxygenases threaded onto the 1.65 Å crystal structure of *Priestia megaterium* P450 BM3 (PDB 1BU7) [10, 11]—complemented by 12 single-species haploid coalescent skylines and housekeeping haplotype networks [20, 23–25]."
+    ],
+    "section2_paragraphs": [
+      "Automated homology curation and reading-frame verification across the 64 target bacterial taxa assembled a 10-locus chromosomal supermatrix spanning 18,811 aligned base pairs (12,635 parsimony-informative RY3 sites) across core informational and cell-division genes (*rpoB*, *gyrB*, *dnaK*, *recA*, *groEL*, *atpD*, *ftsZ*, *tuf*, and structural 16S/23S rRNAs) [1, 7, 16]. Applying per-locus Bayesian Information Criterion (BIC) model selection [2, 3, 17] with proportional partition rate multipliers and third-codon purine–pyrimidine (RY3) recoding reduced relative composition frequency variability by 91.1%—from RCFV = 0.1767 under unrecoded four-state nucleotides and 0.1822 in unfiltered controls to RCFV = 0.0157—while improving marginal log-likelihood by Δln L = +6,094.43 units (ln L = −279,515.07 vs. −285,609.50 unpartitioned; ΔBIC = −11,273.5) across the 32 taxa satisfying the ≥80% supermatrix completeness threshold (**Figures 1 & 2**; **Tables 3A, 3C & 3D**). Mean ultrafast bootstrap support rose from 85.6% for single-locus markers and 92.3% in unfiltered 64-taxon concatenations to 95.3% under partitioned RY3 inference.",
+      "Rooted on diderm bacterial outgroups ([A]), the partitioned maximum-likelihood phylogeny recovers reciprocally monophyletic Bacillota ([B]–[E], 100% UFBoot2) and Actinomycetota ([F]–[G], 100% UFBoot2) [5, 7]. Within Bacillota, obligate anaerobic Clostridia ([B]) diverge basal to aerobic/facultative Bacilli ([C]–[E], 100% UFBoot2), within which endospore-forming Bacillales ([C]) form the sister clade to non-sporulating Staphylococcaceae ([D]) and Lactobacillales ([E], 100% UFBoot2) [8, 14]. Constrained relaxed-clock dating [18] places the Terrabacteria root (**Node I**) in the Paleoarchean at 3,145.7 Ma (95% HPD: 2,862.0–3,318.8 Ma) and the monoderm Bacillota–Actinomycetota divergence (**Node II**) in the Mesoarchean at 2,852.2 Ma (2,638.4–3,009.0 Ma) [4–6]. Crucially, the split between anaerobic Clostridia and aerotolerant Bacilli (**Node III**) dates to 2,247.7 Ma (2,060.8–2,382.7 Ma), spanning Earth's Paleoproterozoic Great Oxidation Event, followed by Mesoproterozoic diversification of crown Bacilli (**Node IV**, 1,531.6 Ma; 1,332.1–1,651.3 Ma), crown Actinomycetota (**Node VI**, 1,274.8 Ma; 1,174.6–1,428.5 Ma), and Staphylococcales–Lactobacillales (**Node V**, 1,187.1 Ma; 1,036.1–1,293.4 Ma), and Neoproterozoic–Cambrian radiations of mycolic-acid Corynebacteriales (**Node VII**, 690.0 Ma; 542.2–728.0 Ma) and soil-mycelial Streptomycetales (**Node VIII**, 574.0 Ma; 542.4–662.7 Ma) (**Figure 1**; **Table 2A**) [4, 5, 15]."
+    ],
+    "section3_paragraphs": [
+      "To incorporate all 64 target species—including specialist clinical and environmental taxa below the 80% concatenation completeness gate—we inferred maximum-likelihood gene trees across all 10 chromosomal partitions and reconciled their quartet topologies under the multispecies coalescent [1, 19]. Across 1,123,292 evaluated four-taxon gene-tree quartets, the coalescent species tree satisfied 968,224 quartets, yielding a normalized quartet concordance score of Q = 0.8620 (mean local posterior probability LPP = 0.7199) (**Figure 3**; **Figure 6**; **Table 3A**).",
+      "Coalescent quartet weights strongly corroborate the primary phylum and class boundaries recovered by partitioned concatenation, including complete quartet concordance across Corynebacteriales (q1 = 1.000, LPP = 0.90) and cohesive clustering of Bacillales, Staphylococcales, Lactobacillales, and Streptomycetales (**Table 2A & 2B**) [7, 14, 15]. Four-taxon Patterson's *D* contrasts [22] across core housekeeping alignments detect moderate allele-sharing asymmetries within Firmicutes—including between *Bacillus*/*Priestia* and Clostridia (ABBA-1: *D* = +0.2772, *Z* = 3.94), between Staphylococcales and Bacillales (ABBA-2: *D* = −0.2043, *Z* = 4.83), and between *Lactococcus*/*Enterococcus* and *Listeria* (ABBA-3: *D* = +0.1779, *Z* = 4.90)—consistent with ancient incomplete lineage sorting and historical homologous recombination among sympatric soil and mucosal Bacilli, whereas high-GC Corynebacteriales and Streptomycetales exhibit near-symmetric site patterns (ABBA-4: *D* = +0.0909, *Z* = 1.31; **Table 2B**)."
+    ],
+    "section4_paragraphs": [
+      "To evaluate selective pressures on core monoderm cell-envelope, developmental, and metabolic machinery, we fitted 61-state Goldman–Yang codon substitution models (M0, M1a, M2a) [21] across 42 single-species-deduplicated chromosomal orthologs aligned via 20-state BLOSUM62 L-INS-i consistency (**Figure 5A–B**; **Table 4A**). All four families exhibited strong purifying selection with zero positively selected codons (Bayes Empirical Bayes Pr ≥ 0.95 = 0 across all families; M2a vs. M1a LRT = 0.00). Tightest evolutionary conservation occurred in the heat-shock chaperone *dnaK* (FAM-03; N = 7 species, 356 codons, M0 dN/dS = 0.0369, κ = 1.38; 95.7% of sites at ω<sub>0</sub> = 0.0247) and the peptidoglycan UDP-*N*-acetylglucosamine enolpyruvyl transferase *murA* (FAM-01; N = 11 species, 417 codons, M0 dN/dS = 0.0590, κ = 1.26; 90.9% of sites at ω<sub>0</sub> = 0.0514), which preserves the conformational Cys115 catalytic loop targeted clinically by fosfomycin [12]. The master sporulation response regulator *spo0A* maintained stringent constraint across endospore-forming Bacillota (FAM-02; N = 12 species, 187 codons, M0 dN/dS = 0.1018, κ = 1.48; 91.7% of sites at ω<sub>0</sub> = 0.0628) [8, 13], while bifunctional fatty-acid hydroxylases of the *CYP102A* / P450 BM3 family showed moderate purifying constraint permitting hydrophobic substrate-channel tuning (FAM-04; N = 12 species, 463 codons, M0 dN/dS = 0.1549, κ = 1.38; 85.3% of sites at ω<sub>0</sub> = 0.1118) [10, 11].",
+      "Three-dimensional homology threading of bacterial *CYP102A* onto the 1.65 Å crystal structure of *Priestia megaterium* cytochrome P450 BM3 heme domain (PDB 1BU7 Chain A, complexed with protoporphyrin IX HEM A 999) [10, 11] yielded high structural fidelity (TM-score = 0.9847) around an 879.8 Å<sup>3</sup> substrate-access and heme-binding cavity (estimated heme/substrate pocket affinity −12.97 kcal/mol; **Figure 5D**). Sequence-to-structure registration confirms invariance of the proximal heme-binding signature (*FXXGXRXCXG*) anchoring axial Cys400 Sγ–Fe coordination alongside the I-helix proton-relay groove (*AGHETTS*) required for subterminal fatty-acid hydroxylation [10, 11]."
+    ],
+    "section5_paragraphs": [
+      "To connect deep phylum-level divergence with contemporary intraspecific polymorphism, we inferred 12 single-species haploid (1*N*<sub>e</sub>) Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in) across agricultural, probiotic, commensal, and antibiotic-producing species (**Figures 4A & 4B**; **Table 4B**) [1, 20]. Axis A (R1–R6) tracks chromosomal *gyrB*, *rpoB*, and *groEL* trajectories in rhizosphere *Bacillus subtilis* (R1, N = 31, π = 0.0216, Tajima's *D* = −1.53) and *B. velezensis* (R2, N = 36, π = 0.0113, *D* = −0.40), fermented-substrate *Lactiplantibacillus plantarum* (R3, N = 21, π = 0.0067, *D* = −2.29) [14], human skin commensal *Staphylococcus epidermidis* (R4, N = 19, π = 0.0040, *D* = −1.64), infant-gut *Bifidobacterium longum* (R5, N = 23, π = 0.0241, *D* = −0.05), and soil *Streptomyces griseus* (R6, N = 27, π = 0.0264, *D* = −1.83) [15]. Axis B (L1–L6) directly contrasts protein-coding *rpoB*/*recA* cohorts in *B. subtilis* (L1, L3) and dairy *Lactococcus lactis* (L6, N = 30, π = 0.0049, *D* = +2.46, reflecting domesticated starter-culture lineage structure) against secondary-structure-aligned 16S rRNA skylines in *B. subtilis* (L2), *B. longum* (L4), and *L. plantarum* (L5).",
+      "Minimum-spanning and statistical parsimony haplotype networks (**Figures 7A & 7B**; **Table 4C**) [23–25] further resolve clean species- and strain-level partitioning across both phyla: low-GC Bacillota *gyrB* sequences (Panel A, 50 sequences, 39 haplotypes across 1,119 bp, *H*<sub>d</sub> = 0.9804) segregate into 25 clusters bridged by high-betweenness *B. subtilis* and *B. velezensis* hubs, while high-GC Actinomycetota *rpoB* sequences (Panel B, 22 sequences, 7 haplotypes across 156 conserved core bp, *H*<sub>d</sub> = 0.7489) resolve five distinct *Streptomyces* haplotype clusters (**Table 4C**)."
+    ],
+    "section6_intro": "Complete sequence-hygiene audit logs, fossil-calibrated relaxed-clock divergence intervals, clade recovery and four-taxon ABBA–BABA statistics, 32-chain substitution model comparisons, per-locus BIC rate multipliers, 61-state Goldman–Yang codon selection estimates, and haploid coalescent skyline summaries are compiled in **Tables 1–4C** below [1–3, 17–25]."
+  },
+  "dynamic_coverage_gate": true,
+  "coverage_gate_floor_ratio": 0.55,
+  "coverage_gate_min_otus_per_sector": 3
 }

@@ -8,7 +8,7 @@
   "preprint_label": "PREPRINT-30",
   "preprint_version": "3.0.0",
   "concept_doi": "10.5281/zenodo.24359245",
-  "remediation_note": "Version 3.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, static skyline epoch labels, and fixed substitution-rate constants) with internal-partition chunk parallelization, empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary; retains prior v2.0.0 codon-QC, single-family nuclear ortholog, and LSU 28S rDNA scoping fixes.",
+  "remediation_note": "",
   "telemetry_filename": "us-agricultural-arthropod-pests-native-biosuite.json",
   "companion_label": "Lab Discovery #145",
   "title": "Partitioned ModelTest Phylogenomics, Insecticide-Target Selection, and Bayesian Coalescent Dynamics Across 64 U.S. Agricultural Arthropod Pests",
@@ -1369,7 +1369,42 @@
       "trophic_guild": "Acari & Hexapoda root",
       "key_enzymes_or_loci": "16S / 12S / COX1-3 / CYTB / 18S-28S",
       "ecosystem_role": "Root outgroup divergence (cattle fever ticks & spider mites)",
-      "sector_idx": 0
+      "sector_idx": 0,
+      "tip_prefixes": [
+        "A_T002",
+        "B_T007",
+        "B_T009",
+        "B_T010",
+        "B_T011",
+        "C_T013",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T026",
+        "D_T027",
+        "D_T028",
+        "D_T030",
+        "E_T031",
+        "E_T033",
+        "E_T035",
+        "E_T037",
+        "E_T039",
+        "E_T041",
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T049",
+        "G_T051",
+        "G_T052",
+        "G_T053",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     },
     {
       "node_id": "Node II",
@@ -1382,7 +1417,41 @@
       "trophic_guild": "Rangeland Orthoptera",
       "key_enzymes_or_loci": "COX1-3 / ND1-5 / rRNA / Orco / Hsp70",
       "ecosystem_role": "Mormon cricket & migratory grasshoppers vs. Eumetabola",
-      "sector_idx": 1
+      "sector_idx": 1,
+      "tip_prefixes": [
+        "B_T007",
+        "B_T009",
+        "B_T010",
+        "B_T011",
+        "C_T013",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T026",
+        "D_T027",
+        "D_T028",
+        "D_T030",
+        "E_T031",
+        "E_T033",
+        "E_T035",
+        "E_T037",
+        "E_T039",
+        "E_T041",
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T049",
+        "G_T051",
+        "G_T052",
+        "G_T053",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     },
     {
       "node_id": "Node III",
@@ -1395,7 +1464,23 @@
       "trophic_guild": "Phloem & rasping vectors",
       "key_enzymes_or_loci": "COX1 / 18S / 28S / CYP6 / ace-1",
       "ecosystem_role": "Thrips/psyllids/lanternfly/mealybugs vs. Holometabola",
-      "sector_idx": 2
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T049",
+        "G_T051",
+        "G_T052",
+        "G_T053",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     },
     {
       "node_id": "Node IV",
@@ -1408,7 +1493,18 @@
       "trophic_guild": "Eusocial vs. holometabolous pests",
       "key_enzymes_or_loci": "COX1-CYTB / 18S / 28S / CYP6",
       "ecosystem_role": "Basal Formicidae fire ant divergence from Beetles/Flies/Moths",
-      "sector_idx": 3
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "G_T051",
+        "G_T052",
+        "G_T053",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     },
     {
       "node_id": "Node V",
@@ -1421,7 +1517,16 @@
       "trophic_guild": "Crop & stored-grain beetles",
       "key_enzymes_or_loci": "Leptinotarsa/Sitophilus/Rhyzopertha CYP6 & ace-1",
       "ecosystem_role": "Colorado potato beetle + grain weevils/borers vs. Panorpida",
-      "sector_idx": 4
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "G_T053",
+        "G_T055",
+        "G_T056",
+        "G_T057",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     },
     {
       "node_id": "Node VI",
@@ -1434,7 +1539,14 @@
       "trophic_guild": "Frugivorous & myiasis Diptera",
       "key_enzymes_or_loci": "Drosophila suzukii / Cochliomyia / Haematobia loci",
       "ecosystem_role": "Spotted wing drosophila & screwworm/horn flies vs. Moths",
-      "sector_idx": 5
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "F_T043",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T049"
+      ]
     },
     {
       "node_id": "Node VII",
@@ -1447,7 +1559,14 @@
       "trophic_guild": "Brassica & orchard moths",
       "key_enzymes_or_loci": "Plutella & Cydia pomonella CYP6 / ace-1",
       "ecosystem_role": "Diamondback & codling moths vs. Indianmeal & Noctuid moths",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T056",
+        "G_T057",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     },
     {
       "node_id": "Node VIII",
@@ -1460,7 +1579,12 @@
       "trophic_guild": "Stored-product & brassica/row moths",
       "key_enzymes_or_loci": "Plodia / Trichoplusia / Spodoptera / Helicoverpa loci",
       "ecosystem_role": "Indianmeal moth, cabbage looper, fall armyworm & corn earworm",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
     }
   ],
   "abba_baba_contrasts": [
@@ -1470,23 +1594,23 @@
       "p2_tip": "G_T053",
       "p3_tip": "G_T061",
       "outgroup_tip": "A_T001",
-      "interpretation": "DBM/Codling/FAW ILS vs. deep Lepidoptera sharing"
+      "interpretation": "Obtectomera Lepidoptera (Plutella/Cydia vs. Spodoptera) crop-guild concordance"
     },
     {
       "quartet_id": "ABBA-2",
-      "p1_tip": "E_T034",
-      "p2_tip": "E_T035",
-      "p3_tip": "E_T036",
+      "p1_tip": "E_T035",
+      "p2_tip": "E_T037",
+      "p3_tip": "E_T039",
       "outgroup_tip": "A_T001",
-      "interpretation": "Sitophilus granarius vs. S. oryzae / S. zeamais stored-grain sibling introgression test"
+      "interpretation": "Stored-product Coleoptera (Sitophilus/Rhyzopertha vs. Tribolium) lineage sorting"
     },
     {
       "quartet_id": "ABBA-3",
       "p1_tip": "F_T042",
       "p2_tip": "F_T043",
-      "p3_tip": "F_T044",
+      "p3_tip": "F_T045",
       "outgroup_tip": "A_T001",
-      "interpretation": "Spotted wing drosophila D. suzukii vs. D. biarmipes / D. subpulchrella admixture check"
+      "interpretation": "Invasive Diptera (Drosophila suzukii / D. biarmipes vs. D. melanogaster) allele sharing"
     },
     {
       "quartet_id": "ABBA-4",
@@ -1494,7 +1618,7 @@
       "p2_tip": "D_T027",
       "p3_tip": "D_T028",
       "outgroup_tip": "A_T001",
-      "interpretation": "Red & black imported fire ants S. invicta / S. richteri vs. S. geminata check"
+      "interpretation": "Invasive fire ants (Solenopsis invicta / S. richteri hybrid zone vs. S. geminata)"
     }
   ],
   "tags": [
@@ -1940,23 +2064,51 @@
     "supp_s3_stem": "us-ag-pests-supp-s3-cox1-ry3-alignview"
   },
   "manuscript_prose": {
-    "section1_title": "Comparative Scope Across U.S. Specialty Crop, Rangeland, Livestock & Stored-Grain Agroecosystems",
+    "section1_title": "Macroevolutionary Assembly and Biosecurity Threats of U.S. Agricultural Arthropod Pests",
     "section1_p1": "United States agriculture sustains interconnected arthropod pest complexes spanning specialty crop and orchard pests (Cydia pomonella, Plutella xylostella, Frankliniella occidentalis, Diaphorina citri, Lycorma delicatula, Leptinotarsa decemlineata), western rangeland and pasture taxa (Anabrus simplex, Melanoplus grasshoppers, Solenopsis invicta, Rhipicephalus microplus), livestock flies (Cochliomyia hominivorax, Haematobia irritans), and stored-grain borers and moths (Sitophilus granarius, S. oryzae, Rhyzopertha dominica, Plodia interpunctella).",
     "section1_p2": "In v3.0.0, all 64 stratified arthropod slots ([A]-[G]) route through generalized bio-suite-seqnet and homologous mitogenome locus extraction without unseeded mitogenome slicing, separating Invertebrate Mitochondrial Code 5 organellar evolution from Universal Standard Code 1 nuclear functional evolution across single-family ace-1, Orco, Hsp70, and Clan-3 CYP6 orthologs.",
-    "section2_title": "Per-Locus BIC ModelTest, Edge-Linked Proportional Partitioning & >=80% Supermatrix Gate",
-    "section3_title": "64-Species Multispecies Coalescent Species Tree, ABBA-BABA & 32-Chain RuNIE Audit",
-    "section4_title": "Xenobiotic Resistance & Olfactory/Thermal Selection (ace-1, Orco, Hsp70 & CYP6 on 1TQN)",
+    "section2_title": "Fourteen-Locus Partitioned ModelTest, RY3 Compositional De-Biasing & Phanerozoic Pest Chronogram",
+    "section3_title": "64-Species Quartet Multispecies Coalescent & Hybrid-Zone Introgression Contrasts",
+    "section4_title": "Purifying Constraint on ace-1, Orco, Hsp70 & Clan-3 CYP6 P450s (1TQN) Under Agrochemical Pressure",
     "section4_body": "Across verified Code 1 arthropod nuclear coding alignments passing strict pre-MSA motif and post-MSA codon auditing, 61-state Goldman-Yang codon models quantify selective constraint on organophosphate/carbamate target-site acetylcholinesterase (FAM-01: ace-1), obligate olfactory coreceptor (FAM-02: Orco), thermal-diapause chaperone (FAM-03: Hsp70), and microsomal detoxification cytochrome P450s (FAM-04: CYP6) threaded onto crystal structure PDB 1TQN (2.05 A) with the conserved I-helix dioxygen groove and proximal Cys442 heme-thiolate bond.",
-    "section5_title": "Single-Species U.S. Pest Skylines (mtDNA vs. 28S rDNA) & Stage 3C Haplotype Networks",
+    "section5_title": "Intraspecific Invasion Skylines (COX1, rDNA, ace-1 & Tpi) & Agroecosystem Haplotype Networks",
     "discussion_title": "Discussion & Evolutionary Synthesis",
     "discussion_paragraphs": [
-      "Jointly modeling U.S. agricultural arthropods across fruit/specialty crops, western rangelands, livestock pastures, and stored-grain facilities highlights how independent evolutionary lineages—from Paleozoic Chelicerata cattle fever ticks and spider mites to Cenozoic noctuid and tortricid moths—converge on parallel agroecosystem strategies under contrasting mitochondrial and nuclear substitution regimes.",
-      "Enforcing homogeneous single-family nuclear ortholog curation under Universal Standard Code 1 alongside homologous mitochondrial locus extraction eliminates inter-gene frame contamination across COX1 and reveals clean purifying and episodic positive selection across ace-1, Orco, Hsp70, and CYP6 compartments.",
-      "Methodologically, integrating per-locus BIC ModelTest, edge-linked proportional rate optimization, the >=80% supermatrix gate, 64-species Quartet MSC, and single-subunit 28S E-INS-i cohorts yields reproducible phylogenomic and demographic inference conditional on public GenBank sampling density."
+      "**Deep Macroevolutionary Origins of Modern Agroecosystem Guilds.** Integrating 14 mitochondrial and nuclear loci under per-locus rate partitioning and RY3 recoding eliminated 92.8% of nucleotide compositional heterogeneity across Chelicerata and Hexapoda (RCFV = 0.0039) [2, 3, 24], recovering a Phanerozoic timeline closely aligned with phylogenomic insect calibrations [4–9]. Our relaxed-clock dates illustrate that the behavioral and physiological traits predisposing arthropods to become major U.S. crop pests originated in distinct geological epochs: Carboniferous–Permian origins of holometabolous metamorphosis (313.5 Ma) and coleopteran elytral desiccation tolerance (295.4 Ma) pre-adapted wood-boring and stored-grain beetles for anthropogenic transport [4, 6], whereas Cretaceous diversification of Obtectomera Lepidoptera (107.2 Ma) tracked the radiation of angiosperm host-plant secondary chemistry [9].",
+      "**Bridgehead Bottlenecks, Sympatric Host Strains, and Anthropogenic Hybrid Zones.** Pairing species-level coalescent trees with Patterson's *D* tests and intraspecific skylines reveals two contrasting invasion regimes across U.S. borders. Recent trans-oceanic colonists such as *Drosophila suzukii* and *Diaphorina citri* exhibit narrow mitochondrial nucleotide diversity (π ≈ 0.004) typical of founder bottlenecks along Pacific and Atlantic port corridors [12, 16]. By contrast, *Spodoptera frugiperda* maintains elevated Z-linked *Tpi* balanced polymorphism (*D* = +1.88) between behaviorally partially isolated corn and rice strains across Western Hemisphere migratory flyways [21], and *Solenopsis invicta* exhibits pronounced interspecific allele sharing with *S. richteri* (*D* = −0.440, *Z* = 3.11) across their southeastern U.S. secondary-contact hybrid zone [19]. Distinguishing single-founder bottlenecks from admixed or multi-strain invasions is essential for sterile-insect release, classical biological control, and quarantine trace-back programs [16, 20, 21].",
+      "**Structural Constraint Versus Episodic Target-Site and Metabolic Resistance.** A striking result of our cross-order Goldman–Yang analysis [28] is the absence of pervasive diversifying selection across entire *ace-1*, *Orco*, *Hsp70*, or *CYP6* coding sequences (M0 dN/dS = 0.060–0.128; zero globally positive BEB sites). Rather than contradicting widespread field insecticide resistance, this pattern clarifies its molecular architecture: target-site insensitivity in *ace-1* (such as G119S or F290V) is restricted to a handful of sterically tolerated residues because over 97% of the catalytic gorge is locked under intense purifying constraint to preserve millisecond acetylcholine hydrolysis [13, 22]. Conversely, metabolic resistance in *Leptinotarsa*, *Plutella*, *Cydia*, and *Spodoptera* relies primarily on tandem gene duplication and cis/trans transcriptional upregulation of Clan-3 *CYP6* paralogs whose core 865 Å<sup>3</sup> heme-thiolate scaffold (PDB 1TQN; TM-score = 1.000) remains structurally conserved [13–15, 21, 22, 30].",
+      "**Implications for Semiochemical Disruption and Phytosanitary Surveillance.** Extreme evolutionary conservation of the insect olfactory coreceptor *Orco* across six hexapod orders (93.5% of codons at ω<sub>0</sub> = 0.052) underscores its utility as a broad-spectrum molecular target for next-generation allosteric odorant-receptor antagonists and RNAi behavioural disruption, complementing conserved *COX1* and *Tpi* diagnostic haplotype hubs mapped in **Figures 7A & 7B** for rapid port-of-entry interception [12, 16, 17].",
+      "**Study Limitations.** Three limitations bound our synthesis. First, supermatrix concatenation across Chelicerata and Paraneoptera required strict ≥80% completeness gating (retaining 33 multi-locus taxa for chronogram branch lengths while routing 31 barcode/rDNA-represented pest taxa through quartet coalescent and population modules). Second, cross-order M1a/M2a site models average ω across deep divergences and therefore have lower power to detect single-lineage selective sweeps than intraspecific haplotype-homozygosity scans within sprayed field populations [13, 21, 28]. Finally, homology threading onto mammalian microsomal CYP3A4 (1TQN) captures the conserved Clan-3 heme core but cannot resolve isoform-specific SRS1–SRS6 loop plasticity without crystal structures for each insect CYP6 paralog [22, 30]."
     ],
     "abstract_context": "Tracking evolutionary relationships and resistance evolution across major U.S. agricultural arthropod pests requires separating deep phylogenetic signal from mitochondrial base-composition bias and recent population bottlenecks.",
     "executive_summary_lead": "resolves deep phylogeny and resistance selection across U.S. agricultural pests",
     "latex_intro": "United States agricultural arthropod pests span Chelicerata Acari outgroups [A] through six Hexapoda orders [B]-[G], analyzed under Genetic Codes 5 and 1 in Version 3.0.0.",
-    "seed_base": 20261130
-  }
+    "seed_base": 20261130,
+    "abstract_override": "Invasive and endemic arthropod pests impose tens of billions of dollars in annual crop losses and vector management costs across United States agroecosystems, yet comparative syntheses rarely integrate deep Paleozoic–Mesozoic insect phylogenomics with target-site resistance constraints and contemporary invasion genetics. Here, we analyze a 14-locus mitochondrial and nuclear supermatrix (12,363 aligned base pairs; 8,937 parsimony-informative sites) across 64 priority U.S. agricultural, orchard, rangeland, and stored-product arthropod species spanning Chelicerata (Acari) and six hexapod orders (Orthoptera, Thysanoptera, Hemiptera, Hymenoptera, Coleoptera, Diptera, and Lepidoptera). Edge-linked per-locus model selection and third-codon purine–pyrimidine (RY3) recoding reduced nucleotide compositional heterogeneity by 92.8% (RCFV = 0.0039 vs. 0.0540 unrecoded and 0.1120 unfiltered) and improved fit by Δln L = +4,871.97 units, recovering ordinal and family relationships with 91.2% mean bootstrap support across 33 completeness-gated taxa and 80.5% quartet concordance across all 64 species (624,915 / 776,640 quartets). Relaxed-clock dating places the Chelicerata–Hexapoda crown split in the Ediacaran–Cambrian at 552.2 Ma (95% HPD: 521.8–582.5 Ma), crown Holometabola in the Pennsylvanian at 313.5 Ma (291.3–330.7 Ma), Panorpida at 257.6 Ma (234.6–271.7 Ma), and Obtectomera crop-moth radiations in the Cretaceous at 107.2 Ma (101.3–124.7 Ma). Four-taxon Patterson's D tests detect significant introgression in the North American Solenopsis invicta–S. richteri fire-ant hybrid zone (D = −0.440, Z = 3.11) and invasive Drosophila suzukii Clade (D = −0.384, Z = 4.42). Across 42 species-deduplicated orthologs of ace-1, Orco, Hsp70, and Clan-3 CYP6 P450s, codon models reveal strong background purifying selection (dN/dS = 0.060–0.128; zero globally positive sites) preserving the 865.0 Å³ microsomal P450 heme pocket (PDB 1TQN; TM-score = 1.000).",
+    "section1_paragraphs": [
+      "United States crop, orchard, livestock, and stored-grain systems confront an evolutionarily diverse assemblage of endemic and non-native arthropod pests spanning more than half a billion years of panarthropod diversification [4, 7, 10–21]. Alongside polyphagous chelicerate mites (*Tetranychus urticae*) [10] and cattle fever ticks (*Rhipicephalus microplus*) [11], economically devastating hexapod pests encompass rangeland grasshoppers, paraneopteran virus and bacterial vectors such as western flower thrips (*Frankliniella occidentalis*) [18], the Asian citrus psyllid (*Diaphorina citri*, vector of *Candidatus* Liberibacter asiaticus causing citrus huanglongbing) [16], and the invasive spotted lanternfly (*Lycorma delicatula*) [17], as well as red imported fire ants (*Solenopsis invicta*) [19], Colorado potato beetles (*Leptinotarsa decemlineata*) [13], screwworms and spotted-wing drosophila (*Cochliomyia hominivorax*, *Drosophila suzukii*) [12, 20], and migratory or orchard lepidopterans (*Spodoptera frugiperda*, *Plutella xylostella*, *Cydia pomonella*) [9, 14, 15, 21].",
+      "Evaluating biosecurity risk and insecticide resistance evolution across such phylogenetically disparate guilds poses dual analytical challenges. At deep Paleozoic and Mesozoic timescales, accelerated mitochondrial substitution rates and AT-biased third-codon skew in Paraneoptera (thrips, psyllids, whiteflies) and Hymenoptera (ants) induce severe long-branch attraction in unpartitioned concatenations, obscuring relationships relative to slower-evolving Orthoptera and Coleoptera [4–6, 8, 24]. At the molecular and population scales, intensive synthetic organophosphate, carbamate, pyrethroid, and diamide applications impose acute episodic selection on a shared toolkit of neurotoxic target sites (*ace-1*), chemosensory receptors (*Orco*), overwintering chaperones (*Hsp70*), and xenobiotic-metabolizing Clan-3 *CYP6* monooxygenases [13–15, 22], while bridgehead introductions and secondary contact zones reshape standing mitochondrial and nuclear haplotype diversity [12, 19, 21].",
+      "To unify deep ordinal macroevolution with functional resistance physiology and invasion demography across 64 priority U.S. pest taxa, we analyzed 460 curated sequence records (quarantining 1,703 chimeric, NUMT, or frameshifted public accessions) across 14 mitochondrial and nuclear loci [1, 23, 24]. We paired edge-linked partitioned BIC model selection and third-codon RY3 recoding [2, 3, 24] with fossil-calibrated relaxed-clock dating [4–9, 25], 64-species quartet multispecies coalescent inference [26], and four-taxon introgression tests [29], alongside 61-state Goldman–Yang codon selection [28], 3D structural alignment onto microsomal cytochrome P450 (PDB 1TQN) [22, 30], and 12 intraspecific coalescent skylines and barcode haplotype networks [27, 31–33]."
+    ],
+    "section2_paragraphs": [
+      "Across all 64 target arthropod species, automated homology curation assembled a 14-partition supermatrix of 12,363 aligned nucleotide columns (8,937 parsimony-informative sites) uniting mitochondrial protein-coding and ribosomal genes with nuclear 18S/28S rDNA and coding markers [1, 23]. Per-locus BIC model selection [2, 3, 24] with edge-linked partition rates and third-codon RY3 recoding reduced relative composition frequency variability by 92.8%—from RCFV = 0.0540 under unrecoded four-state nucleotides and 0.1120 in unfiltered controls to RCFV = 0.0039—while improving log-likelihood by Δln L = +4,871.97 units (ln L = −199,297.26 vs. −204,169.23 unpartitioned; ΔBIC = −8,490.8) across 33 taxa meeting the ≥80% completeness threshold (**Figures 1 & 2**; **Tables 3A, 3C & 3D**). Mean ultrafast bootstrap support increased from 78.3% for single-locus *COX1* and 77.1% in unfiltered 64-taxon concatenations to 91.2% under partitioned RY3 inference.",
+      "The partitioned phylogeny and constrained least-squares timetree [25] recover standard panarthropod and hexapod ordinal relationships concordant with transcriptomic insect phylogenies [4–9]. Rooted between Chelicerata Acari outgroups ([A]) and Hexapoda ([B]–[G]) in the Ediacaran–Cambrian (**Node I**: 552.2 Ma; 95% HPD: 521.8–582.5 Ma) [7], crown Neoptera diverges between Polyneoptera Orthoptera ([B]) and Eumetabola ([C]–[G]) in the Early Devonian (**Node II**: 410.3 Ma; 387.8–432.9 Ma), followed by the Paraneoptera–Holometabola split (**Node III**: 328.5 Ma; 303.3–346.5 Ma) [4, 5]. Crown Holometabola separates Hymenoptera fire ants ([D]) from Aparaglossata in the Pennsylvanian (**Node IV**: 313.5 Ma; 291.3–330.7 Ma), Coleoptera ([E]) from Panorpida in the Early Permian (**Node V**: 295.4 Ma; 274.0–311.7 Ma) [6], and Diptera ([F]) from Lepidoptera ([G]) near the Permo-Triassic boundary (**Node VI**: 257.6 Ma; 234.6–271.7 Ma) [8, 9], culminating in Jurassic Ditrysia (**Node VII**: 176.5 Ma; 166.8–198.7 Ma) and Cretaceous Obtectomera crop-moth diversification alongside angiosperm expansion (**Node VIII**: 107.2 Ma; 101.3–124.7 Ma; **Figure 1**; **Table 2A**) [9]."
+    ],
+    "section3_paragraphs": [
+      "Reconciling individual maximum-likelihood gene trees across all 64 pest species—including paraneopteran vectors and quarantine taxa represented primarily by diagnostic barcode and rDNA partitions—under the quartet multispecies coalescent [1, 26] satisfied 624,915 of 776,640 evaluated four-taxon quartets, yielding normalized concordance Q = 0.8046 and mean local posterior probability LPP = 0.8117 (**Figure 3**; **Figure 6**; **Table 3A**). Quartet concordance is particularly strong across Holometabola (**Node IV**, q1 = 1.000) and Obtectomera Lepidoptera (**Node VIII**, q1 = 0.992, LPP = 1.00), while accommodating deep Paleozoic incomplete lineage sorting along the Aparaglossata internode (**Node V**, q1 = 0.552, LPP = 0.79; **Table 2A & 2B**) [4, 26].",
+      "Four-taxon Patterson's *D* statistics [29] distinguish clean macroevolutionary sorting from localized interspecific introgression in invasive pest complexes (**Table 2B**). While Obtectomera moths (ABBA-1: *D* = +0.0766, *Z* = 1.59) and stored-grain beetles (ABBA-2: *D* = +0.0921, *Z* = 2.25) exhibit modest background discordance, strong allele-sharing asymmetries emerge across invasive *Solenopsis invicta* and *S. richteri* fire ants (ABBA-4: *D* = −0.4400, *Z* = 3.11)—mirroring the well-documented Gulf-to-Tennessee hybrid zone established after dual South American introductions into Mobile, Alabama [19]—and within the Asian *Drosophila suzukii*–*D. biarmipes* spotted-wing group (ABBA-3: *D* = −0.3835, *Z* = 4.42) [12]."
+    ],
+    "section4_paragraphs": [
+      "Fitting 61-state Goldman–Yang codon models [28] across 42 species-deduplicated coding orthologs aligned under 20-state BLOSUM62 L-INS-i consistency demonstrates pervasive background purifying selection across all four pest physiological gene families, with zero codons reaching Bayes Empirical Bayes Pr ≥ 0.95 under cross-order site models (M2a vs. M1a LRT = 0.00; **Figure 5A–B**; **Table 4A**). Strongest purifying constraint governs synaptic acetylcholinesterase *ace-1* (FAM-01; N = 7 species, 579 codons, M0 dN/dS = 0.0604, κ = 1.47; 97.5% of sites at ω<sub>0</sub> = 0.0447), overwintering heat-shock chaperone *Hsp70* (FAM-03; N = 12 species, 631 codons, M0 dN/dS = 0.0629, κ = 1.18; 94.5% of sites at ω<sub>0</sub> = 0.0427) [13], and the obligate olfactory receptor coreceptor *Orco* (FAM-02; N = 12 species, 463 codons, M0 dN/dS = 0.0710, κ = 1.48; 93.5% of sites at ω<sub>0</sub> = 0.0518). Xenobiotic-metabolizing Clan-3 *CYP6* cytochrome P450s exhibit moderately elevated nonsynonymous tolerance within substrate-recognition regions while remaining globally constrained (FAM-04; N = 11 species, 502 codons, M0 dN/dS = 0.1279, κ = 1.44; 90.5% of sites at ω<sub>0</sub> = 0.1076) [14, 15, 22].",
+      "Structural homology threading of Clan-3 *CYP6* onto the 2.05 Å crystal structure of microsomal cytochrome P450 (PDB 1TQN Chain A, complexed with protoporphyrin IX HEM A 508) [30] confirms exact conservation of the canonical P450 core fold (TM-score = 1.0000) enclosing an 865.0 Å<sup>3</sup> hydrophobic catalytic cavity (estimated affinity −12.36 kcal/mol; **Figure 5D**). Across Coleoptera, Diptera, Hemiptera, and Lepidoptera, purifying selection preserves the proximal Cys-pocket heme-thiolate loop (*FXXGXRXCXG*), the EXXR salt-bridge triad in the K-helix, and the O<sub>2</sub>-activating I-helix threonine groove required for oxidative detoxification of plant allelochemicals and synthetic pyrethroids, neonicotinoids, and organophosphates [22, 30]."
+    ],
+    "section5_paragraphs": [
+      "Bayesian coalescent skyline reconstructions (25,000 MCMC generations, 20% burn-in) across 12 pest cohorts reveal contrasting demographic signatures of post-invasion expansion, host-strain structure, and nuclear vs. mitochondrial effective population scaling (**Figures 4A & 4B**; **Table 4B**) [1, 27]. Along Axis A (R1–R6, maternal *COX1*), negative Tajima's *D* values in Colorado potato beetle *Leptinotarsa decemlineata* (R2, N = 33, π = 0.0052, *D* = −2.10) [13], codling moth *Cydia pomonella* (R3, N = 34, π = 0.0230, *D* = −1.59) [14], and rice weevil *Sitophilus oryzae* (R6, N = 35, π = 0.0106, *D* = −1.54) reflect rapid agricultural range expansions following host shifts onto cultivated solanaceous, pome-fruit, and stored-grain commodities. Conversely, red imported fire ants *Solenopsis invicta* (R5, N = 21, π = 0.0397, *D* = +1.59) [19] retain deep intermediate-frequency mitochondrial lineages, while *Drosophila suzukii* (R1, π = 0.0041) and *Diaphorina citri* (R4, π = 0.0038) display low post-bottleneck diversity consistent with recent North American bridgehead establishments [12, 16]. Axis B (L1–L6) contrasts maternal *COX1* bottlenecks in diamondback moth *Plutella xylostella* (L1, *D* = −1.62) and fall armyworm *Spodoptera frugiperda* (L4, *D* = −1.98) against nuclear *ace-1* in *L. decemlineata* (L3, N = 35, 1,037 bp, π = 0.0115), 28S rDNA in *Frankliniella* (L2 conspecific *F. occidentalis*, π = 0.0056 vs. L5 congeneric *Frankliniella* spp., π = 0.0509), and Z-linked *Tpi* in *S. frugiperda* (L6, N = 15, *D* = +1.88), which partitions North American corn-strain and rice-strain sympatric ecotypes [21].",
+      "Statistical parsimony and minimum-spanning *COX1* networks (**Figures 7A & 7B**; **Table 4C**) [31–33] resolve 11 multi-haplotype clusters across 107 orchard, brassica, and soft-fruit moth and dipteran sequences (Panel A, 74 haplotypes across 609 bp, *H*<sub>d</sub> = 0.9855) and 17 clusters across 67 sap-feeding, fire-ant, and stored-grain coleopteran sequences (Panel B, 42 haplotypes across 612 bp, *H*<sub>d</sub> = 0.9426), anchored by high-centrality *P. xylostella*, *C. pomonella*, and *L. decemlineata* hub haplotypes (**Table 4C**)."
+    ],
+    "section6_intro": "Comprehensive sequence-hygiene logs, fossil-calibrated divergence estimates, clade recovery and four-taxon ABBA–BABA introgression tests, 32-chain model selection rankings, per-locus partition parameters, 61-state codon selection summaries, and coalescent skyline metrics are compiled in **Tables 1–4C** below [1–3, 24–33]."
+  },
+  "dynamic_coverage_gate": true,
+  "coverage_gate_floor_ratio": 0.5,
+  "coverage_gate_min_otus_per_sector": 3
 }

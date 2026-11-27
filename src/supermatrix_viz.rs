@@ -524,7 +524,9 @@ pub fn render_supermatrix_positional_coverage_svg_with_gate(
         "<text x=\"28\" y=\"347\" font-size=\"12.5\" font-weight=\"700\" fill=\"#0f172a\">Panel B | {}-Taxon x Position Occupancy ({} Phylogram &gt;={:.0}%; {} Coalescent/PopGen-Only)</text>\n",
         n_taxa, n_gated_in, gate_pct, n_popgen_only
     ));
-    if is_bacterial {
+    if is_universal_ae {
+        out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Universal CDS | Blue = SSU/LSU rRNA | Purple = Core Cellular | Orange = Gap (-) | Slate = Missing (?)</text>\n");
+    } else if is_bacterial {
         out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Bacterial CDS | Blue = Bacterial rRNA | Orange = Gap (-) | Slate = Missing (?)</text>\n");
     } else {
         out.push_str("<text x=\"1452\" y=\"347\" text-anchor=\"end\" font-size=\"10.2\" fill=\"#334155\">Teal = Mito PCG | Blue = Mito rRNA | Purple = Nuclear | Orange = Gap (-) | Slate = Missing (?)</text>\n");

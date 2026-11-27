@@ -1093,9 +1093,22 @@ impl AlignmentWorkspace {
             }
         }
 
-        // 4. Scan translated consensus for canonical functional protein motifs (PROSITE-style patterns)
+        // 4. Scan translated consensus for canonical functional protein motifs (skip on non-coding rRNA/rDNA/ITS)
+        let nc_check = format!("{} {}", self.title, self.source_path).to_ascii_lowercase();
+        let is_noncoding_rna = nc_check.contains("rrna")
+            || nc_check.contains("rdna")
+            || nc_check.contains("ribosomal rna")
+            || nc_check.contains("18s")
+            || nc_check.contains("16s")
+            || nc_check.contains("28s")
+            || nc_check.contains("23s")
+            || nc_check.contains("5.8s")
+            || nc_check.contains("its1");
         let aa_bytes = self.consensus_aa_string.as_bytes();
         for (codon_idx, window) in aa_bytes.windows(6).enumerate() {
+            if is_noncoding_rna {
+                break;
+            }
             let start_bp = frame_offset + codon_idx * 3 + 1;
             let end_bp = (start_bp + 17).min(len);
             // Check H-X-X-H / H-E-X-X-H (Heme / Metalloprotease catalytic site)
@@ -1142,8 +1155,14 @@ impl AlignmentWorkspace {
             }
         }
 
-        // 5. Terminal Ancient-DNA (aDNA) 5' and 3' Deamination Audit Windows
-        if len >= 50 {
+        // 5. Terminal Ancient-DNA (aDNA) 5' and 3' Deamination Audit Windows (only on ancient/subfossil datasets)
+        let meta_low = format!("{} {}", self.title, self.source_path).to_ascii_lowercase();
+        let is_ancient_dna = meta_low.contains("adna")
+            || meta_low.contains("ancient")
+            || meta_low.contains("paleogenom")
+            || meta_low.contains("subfossil")
+            || meta_low.contains("permafrost");
+        if len >= 50 && is_ancient_dna {
             features.push(AlignmentFeatureAnnotation {
                 feature_id: "ADNA-5PRIME".to_string(),
                 feature_type: "aDNA_Deam_Zone".to_string(),
@@ -2854,8 +2873,10 @@ fn glyph_5x7(ch: char) -> [u8; 7] {
         ':' => [0b00000, 0b01100, 0b01100, 0b00000, 0b01100, 0b01100, 0b00000],
         '/' => [0b00001, 0b00010, 0b00010, 0b00100, 0b01000, 0b01000, 0b10000],
         '|' => [0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100],
-        '(' | '[' => [0b00110, 0b01000, 0b01000, 0b01000, 0b01000, 0b01000, 0b00110],
-        ')' | ']' => [0b01100, 0b00010, 0b00010, 0b00010, 0b00010, 0b00010, 0b01100],
+        '(' => [0b00110, 0b01000, 0b01000, 0b01000, 0b01000, 0b01000, 0b00110],
+        ')' => [0b01100, 0b00010, 0b00010, 0b00010, 0b00010, 0b00010, 0b01100],
+        '[' => [0b01110, 0b01000, 0b01000, 0b01000, 0b01000, 0b01000, 0b01110],
+        ']' => [0b01110, 0b00010, 0b00010, 0b00010, 0b00010, 0b00010, 0b01110],
         '%' => [0b11001, 0b11010, 0b00010, 0b00100, 0b01000, 0b01011, 0b10011],
         '*' => [0b00000, 0b10101, 0b01110, 0b11111, 0b01110, 0b10101, 0b00000],
         '_' => [0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b00000, 0b11111],
@@ -3299,6 +3320,15 @@ impl AlignmentViewerState {
         fb.fill_rect(0, 0, w, 42, (15, 23, 42));
         fb.fill_rect(0, 41, w, 1, (51, 65, 85));
 
+        let is_translated_mode = !matches!(
+            self.mode,
+            ViewAlphabetMode::Nucleotide | ViewAlphabetMode::Ry3Recoded
+        );
+        let has_adna_features = self
+            .workspace
+            .features
+            .iter()
+            .any(|f| f.feature_id.starts_with("ADNA-"));
         let toolbar_buttons: &[(&str, u16, bool, (u8, u8, u8))] = &[
             (
                 "DNA",
@@ -3339,19 +3369,19 @@ impl AlignmentViewerState {
             (
                 "Fr+1",
                 ACT_FRAME_1,
-                self.reading_frame == 1,
+                is_translated_mode && self.reading_frame == 1,
                 (56, 189, 248),
             ),
             (
                 "Fr+2",
                 ACT_FRAME_2,
-                self.reading_frame == 2,
+                is_translated_mode && self.reading_frame == 2,
                 (56, 189, 248),
             ),
             (
                 "Fr+3",
                 ACT_FRAME_3,
-                self.reading_frame == 3,
+                is_translated_mode && self.reading_frame == 3,
                 (56, 189, 248),
             ),
             (
@@ -3369,12 +3399,14 @@ impl AlignmentViewerState {
                 (56, 189, 248),
             ),
             ("BestFocal", ACT_ZOOM_FOCAL_BEST, false, (236, 72, 153)),
-            ("Mask-aDNA", ACT_MASK_ADNA, false, (239, 68, 68)),
             ("Snap SVG+PNG", ACT_SNAPSHOT_SVG_PNG, false, (16, 185, 129)),
         ];
 
         let mut bx = 8;
         for &(label, act, is_active, accent) in toolbar_buttons {
+            if act == ACT_MASK_ADNA && !has_adna_features {
+                continue;
+            }
             let bw = (label.len() as i32) * 6 + 14;
             if bx + bw > w - 6 {
                 break;
@@ -3431,14 +3463,26 @@ impl AlignmentViewerState {
         fb.stroke_rect(map_x0, minimap_y + 5, map_w, 24, (51, 65, 85));
 
         // Draw conservation sparkline & feature blocks across the full alignment length
+        let use_aa_cons = matches!(
+            self.mode,
+            ViewAlphabetMode::DualDnaAndAminoAcid
+                | ViewAlphabetMode::AminoAcidOverlay
+                | ViewAlphabetMode::AminoAcidCompact
+                | ViewAlphabetMode::Dayhoff6Recoded
+        );
         for px in 0..map_w {
             let col = ((px as usize) * len) / (map_w as usize);
             if let Some(st) = self.workspace.column_stats.get(col) {
-                let bh = (st.conservation_fraction * 18.0) as i32;
-                let col_rgb = if st.is_parsimony_informative {
-                    (168, 85, 247)
-                } else if st.gap_fraction > 0.35 {
+                let (c_frac, is_pi) = if use_aa_cons {
+                    self.aa_column_conservation(col)
+                } else {
+                    (st.conservation_fraction, st.is_parsimony_informative)
+                };
+                let bh = (c_frac * 18.0) as i32;
+                let col_rgb = if st.gap_fraction > 0.35 {
                     (239, 68, 68)
+                } else if is_pi {
+                    (168, 85, 247)
                 } else {
                     (14, 165, 233)
                 };
@@ -3587,12 +3631,17 @@ impl AlignmentViewerState {
                 }
             }
 
-            // Conservation bar
+            // Conservation bar (AA-level in Dual DNA+AA / AA modes; DNA-level in Nucleotide / RY3 modes)
             if let Some(st) = self.workspace.column_stats.get(col_idx) {
-                let bh = (st.conservation_fraction * 26.0) as i32;
-                let bar_c = if st.is_parsimony_informative {
+                let (c_frac, is_pi) = if use_aa_cons {
+                    self.aa_column_conservation(col_idx)
+                } else {
+                    (st.conservation_fraction, st.is_parsimony_informative)
+                };
+                let bh = (c_frac * 26.0) as i32;
+                let bar_c = if is_pi {
                     (168, 85, 247)
-                } else if st.conservation_fraction >= 0.95 {
+                } else if c_frac >= 0.95 {
                     (56, 189, 248)
                 } else {
                     (100, 116, 139)
@@ -3629,10 +3678,12 @@ impl AlignmentViewerState {
             } else {
                 100
             };
+            let rem = col_1based % tick_interval;
+            let next_mult_dist = if rem == 0 { 0 } else { tick_interval - rem };
             let is_major_tick = if self.mode == ViewAlphabetMode::AminoAcidCompact {
                 d_idx == 0 || (d_idx % 5 == 0)
             } else {
-                col_1based % tick_interval == 0 || d_idx == 0
+                rem == 0 || (d_idx == 0 && next_mult_dist >= 4)
             };
             if is_major_tick {
                 fb.fill_rect(cx, content_y0 + 52, 1, 9, (226, 232, 240));
@@ -3644,7 +3695,7 @@ impl AlignmentViewerState {
                     1,
                     Some(54),
                 );
-            } else if col_px >= 10 && col_1based % 5 == 0 {
+            } else if d_idx == 0 || (col_px >= 10 && col_1based % 5 == 0) {
                 fb.fill_rect(cx, content_y0 + 56, 1, 5, (100, 116, 139));
             }
         }
@@ -3734,22 +3785,30 @@ impl AlignmentViewerState {
                                 1,
                             );
                         }
-                        let (bg_aa, fg_aa) = residue_cell_colors(
-                            aa_byte,
-                            true,
-                            ViewAlphabetMode::AminoAcidOverlay,
-                            self.color_scheme,
-                            col_stat,
-                        );
-                        fb.fill_rect(cx, ry + top_h, (col_px - 1).max(1), bot_h - 1, bg_aa);
-                        if col_px >= 8 && codon_pos == 1 {
-                            fb.draw_char(
-                                cx + (col_px - 5) / 2,
-                                ry + top_h + (bot_h - 7) / 2,
-                                aa_byte as char,
-                                fg_aa,
-                                1,
+                        // Render a unified 3-column codon block once at the first visible base of each codon
+                        if codon_pos == 0 || d_idx == 0 {
+                            let span_cols = (3usize.saturating_sub(codon_pos))
+                                .min(num_disp_cols.saturating_sub(d_idx))
+                                .min(self.workspace.alignment_length.saturating_sub(col_idx))
+                                .max(1);
+                            let block_w = (span_cols as i32 * col_px - 1).max(1);
+                            let (bg_aa, fg_aa) = residue_cell_colors(
+                                aa_byte,
+                                true,
+                                ViewAlphabetMode::AminoAcidOverlay,
+                                self.color_scheme,
+                                col_stat,
                             );
+                            fb.fill_rect(cx, ry + top_h, block_w, bot_h - 1, bg_aa);
+                            if col_px >= 8 && (span_cols >= 2 || codon_pos == 1) {
+                                fb.draw_char(
+                                    cx + (block_w - 5) / 2,
+                                    ry + top_h + (bot_h - 7) / 2,
+                                    aa_byte as char,
+                                    fg_aa,
+                                    1,
+                                );
+                            }
                         }
                     }
                     ViewAlphabetMode::AminoAcidOverlay => {
@@ -3967,9 +4026,10 @@ impl AlignmentViewerState {
                         self.genetic_code,
                         self.reading_frame,
                     );
+                    let (aa_id_frac, _) = self.aa_column_conservation(col0);
                     let (aa_name, aa_chem, _) = amino_acid_full_name_and_chemistry(aa);
                     format!(
-                        "Col {}/{} | Taxon: {} | Base: {} | Codon: {}{}{} -> {} ({}, {}) | Id: {:.0}% | H={:.2}b | dN/dS={:.2}",
+                        "Col {}/{} | Taxon: {} | Base: {} | Codon: {}{}{} -> {} [{} | {}] | AA-Id: {:.0}% | H={:.2}b | dN/dS={:.2}",
                         h_col1,
                         self.workspace.alignment_length,
                         seq.taxon,
@@ -3980,7 +4040,7 @@ impl AlignmentViewerState {
                         aa as char,
                         aa_name,
                         aa_chem,
-                        st.conservation_fraction * 100.0,
+                        aa_id_frac * 100.0,
                         st.shannon_entropy_bits,
                         st.codon_omega_estimate
                     )
@@ -3994,6 +4054,39 @@ impl AlignmentViewerState {
 
         fb.draw_text(10, stat_y + 10, &status_line, (226, 232, 240), 1, Some(w - 20));
         hits
+    }
+
+    /// Compute translated amino-acid conservation fraction and parsimony-informativeness (`>= 2`
+    /// distinct amino acids each occurring in `>= 2` sequences) at `col_idx` in the active frame.
+    fn aa_column_conservation(&self, col_idx: usize) -> (f64, bool) {
+        let n = self.workspace.sequences.len();
+        if n == 0 {
+            return (1.0, false);
+        }
+        let mut counts = [0u16; 27];
+        let mut valid = 0usize;
+        for s_idx in 0..n {
+            let (_, aa, _) = self.workspace.codon_and_aa_at(
+                s_idx,
+                col_idx,
+                self.genetic_code,
+                self.reading_frame,
+            );
+            let u = aa.to_ascii_uppercase();
+            if u.is_ascii_uppercase() && u != b'X' {
+                counts[(u - b'A') as usize] = counts[(u - b'A') as usize].saturating_add(1);
+                valid += 1;
+            } else if u == b'*' {
+                counts[26] = counts[26].saturating_add(1);
+                valid += 1;
+            }
+        }
+        if valid == 0 {
+            return (0.0, false);
+        }
+        let max_c = counts.iter().copied().max().unwrap_or(0) as usize;
+        let ge2 = counts.iter().filter(|&&c| c >= 2).count();
+        (max_c as f64 / n as f64, ge2 >= 2)
     }
 }
 /// Structured JSON report emitted when `bio-suite align-view` is run in pipeline/snapshot mode.

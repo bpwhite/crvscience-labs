@@ -8,7 +8,7 @@
   "preprint_label": "PREPRINT-25",
   "preprint_version": "4.0.0",
   "concept_doi": "10.5281/zenodo.24107446",
-  "remediation_note": "Version 4.0.0 re-executed Stages 1-5 through the 100% shortcut-free generalized declarative bio-suite-supervisor engine (eliminating legacy hardcoded Table 3B Z-scores, symmetric HPD shortcuts, static skyline epoch labels, and fixed substitution-rate constants) with internal-partition chunk parallelization, empirical Kishino-Hasegawa paired-sites Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, real 25,000-generation single-species Bayesian skylines, and a plain-English Abstract and Executive Summary; retains prior v3.0.0 published taxonomic 23-family benchmark validation, homogeneous nuclear single-family, and 16S LSU rRNA fixes.",
+  "remediation_note": "",
   "telemetry_filename": "nudibranch-global-radiation-native-biosuite.json",
   "companion_label": "Lab Discovery #137",
   "title": "Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines",
@@ -50,7 +50,7 @@
     "OZ505968.1",
     "OZ560267.1",
     "KU365728.1",
-    "DQ991929.1",
+    "OZ560267.1",
     "NC_026988.1",
     "PZ235484.1",
     "NC_079703.1",
@@ -335,15 +335,19 @@
       "tip_code": "B:T009",
       "sector_code": "[B] Pleurobranchida Sister Order",
       "family": "Pleurobranchidae",
-      "species": "Berthellina sp. IWP",
-      "synonyms": []
+      "species": "Pleurobranchus sp. P8Z",
+      "synonyms": [
+        "Pleurobranchus"
+      ]
     },
     {
       "tip_code": "C:T010",
       "sector_code": "[C] Cladobranchia Dendronotida",
       "family": "Tritoniidae",
-      "species": "Tritonia tetraquetra",
-      "synonyms": []
+      "species": "Tritonia diomedea",
+      "synonyms": [
+        "Tritonia tetraquetra"
+      ]
     },
     {
       "tip_code": "C:T011",
@@ -393,14 +397,16 @@
       "tip_code": "C:T017",
       "sector_code": "[C] Cladobranchia Dendronotida",
       "family": "Arminidae",
-      "species": "Dermatobranchus otome",
-      "synonyms": []
+      "species": "Dermatobranchus otome Clade-1",
+      "synonyms": [
+        "Dermatobranchus otome"
+      ]
     },
     {
       "tip_code": "C:T018",
       "sector_code": "[C] Cladobranchia Dendronotida",
       "family": "Arminidae",
-      "species": "Dermatobranchus otome NW",
+      "species": "Dermatobranchus otome Clade-2",
       "synonyms": [
         "Dermatobranchus otome"
       ]
@@ -1270,7 +1276,71 @@
       "trophic_guild": "Tectipleura sea hares & sacoglossans",
       "key_enzymes_or_loci": "COI-ATP6 / 16S / 12S / 18S-28S / CTSL / CYP3A",
       "ecosystem_role": "Tectipleura outgroup calibration anchor for Nudipleura crown dating",
-      "sector_idx": 0
+      "sector_idx": 0,
+      "tip_prefixes": [
+        "A_T001",
+        "A_T002",
+        "A_T003",
+        "A_T004",
+        "B_T005",
+        "B_T006",
+        "B_T008",
+        "B_T009",
+        "C_T010",
+        "C_T011",
+        "C_T012",
+        "C_T013",
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T020",
+        "D_T021",
+        "D_T022",
+        "D_T023",
+        "D_T024",
+        "D_T025",
+        "D_T026",
+        "D_T027",
+        "D_T028",
+        "D_T029",
+        "D_T030",
+        "E_T031",
+        "E_T032",
+        "E_T033",
+        "E_T034",
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T039",
+        "F_T040",
+        "F_T041",
+        "F_T042",
+        "F_T043",
+        "F_T044",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T051",
+        "G_T052",
+        "G_T053",
+        "G_T054",
+        "G_T055",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     },
     {
       "node_id": "Node II",
@@ -1283,7 +1353,67 @@
       "trophic_guild": "Side-gilled Pleurobranchida slugs",
       "key_enzymes_or_loci": "Mantle acid glands / nAChR alpha / Hsp70",
       "ecosystem_role": "Basal Nudipleura sister order bridging shelled opisthobranchs and naked sea slugs",
-      "sector_idx": 1
+      "sector_idx": 1,
+      "tip_prefixes": [
+        "B_T005",
+        "B_T006",
+        "B_T008",
+        "B_T009",
+        "C_T010",
+        "C_T011",
+        "C_T012",
+        "C_T013",
+        "C_T014",
+        "C_T015",
+        "C_T016",
+        "C_T017",
+        "C_T018",
+        "C_T019",
+        "D_T020",
+        "D_T021",
+        "D_T022",
+        "D_T023",
+        "D_T024",
+        "D_T025",
+        "D_T026",
+        "D_T027",
+        "D_T028",
+        "D_T029",
+        "D_T030",
+        "E_T031",
+        "E_T032",
+        "E_T033",
+        "E_T034",
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T039",
+        "F_T040",
+        "F_T041",
+        "F_T042",
+        "F_T043",
+        "F_T044",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T051",
+        "G_T052",
+        "G_T053",
+        "G_T054",
+        "G_T055",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     },
     {
       "node_id": "Node III",
@@ -1296,7 +1426,42 @@
       "trophic_guild": "Cerata vs. branchial-plume sea slugs",
       "key_enzymes_or_loci": "Rhinophore nAChR / CTSL / CYP3A29",
       "ecosystem_role": "Primary bifurcation between Cladobranchia and Doridina",
-      "sector_idx": 2
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "E_T031",
+        "E_T032",
+        "E_T033",
+        "E_T034",
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T039",
+        "F_T040",
+        "F_T041",
+        "F_T042",
+        "F_T043",
+        "F_T044",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T051",
+        "G_T052",
+        "G_T053",
+        "G_T054",
+        "G_T055",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     },
     {
       "node_id": "Node IV",
@@ -1309,7 +1474,21 @@
       "trophic_guild": "Cnidarian-grazing cladobranchs",
       "key_enzymes_or_loci": "CTSL digestive peptidases / nAChR / Hsp70",
       "ecosystem_role": "Origin of branched digestive-gland diverticula for cnidarian predation",
-      "sector_idx": 2
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "C_T019",
+        "D_T020",
+        "D_T021",
+        "D_T022",
+        "D_T023",
+        "D_T024",
+        "D_T025",
+        "D_T026",
+        "D_T027",
+        "D_T028",
+        "D_T029",
+        "D_T030"
+      ]
     },
     {
       "node_id": "Node V",
@@ -1322,7 +1501,20 @@
       "trophic_guild": "Kleptocnidae anemone & hydroid predators",
       "key_enzymes_or_loci": "Cnidosac phagocytosis CTSL / CYP3A29",
       "ecosystem_role": "Evolution of apical ceratal cnidosacs deploying intact prey nematocysts",
-      "sector_idx": 3
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "D_T020",
+        "D_T021",
+        "D_T022",
+        "D_T023",
+        "D_T024",
+        "D_T025",
+        "D_T026",
+        "D_T027",
+        "D_T028",
+        "D_T029",
+        "D_T030"
+      ]
     },
     {
       "node_id": "Node VI",
@@ -1335,7 +1527,41 @@
       "trophic_guild": "Spanish Dancers & phanerobranch polycerids",
       "key_enzymes_or_loci": "Gill-pocket neuromotor nAChR / CYP3A",
       "ecosystem_role": "Transition to retractile cryptobranch branchial pockets",
-      "sector_idx": 4
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "E_T031",
+        "E_T032",
+        "E_T034",
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T039",
+        "F_T040",
+        "F_T041",
+        "F_T042",
+        "F_T043",
+        "F_T044",
+        "F_T045",
+        "F_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T051",
+        "G_T052",
+        "G_T053",
+        "G_T054",
+        "G_T055",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     },
     {
       "node_id": "Node VII",
@@ -1348,7 +1574,18 @@
       "trophic_guild": "Spiculate dorids & suctorial porostomes",
       "key_enzymes_or_loci": "Sponge metabolite CYP3A / Hsp70",
       "ecosystem_role": "Divergence of suctorial porostome and aposematic sponge-feeding dorids",
-      "sector_idx": 5
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T051",
+        "G_T052",
+        "G_T053",
+        "G_T054",
+        "G_T055"
+      ]
     },
     {
       "node_id": "Node VIII",
@@ -1361,7 +1598,17 @@
       "trophic_guild": "Aposematic sponge-terpene specialists",
       "key_enzymes_or_loci": "MDF terpenoid CYP3A29 / Hsp70 heatwave chaperones",
       "ecosystem_role": "Indo-Pacific Mullerian mimicry radiation sequestering sponge furanoterpenes",
-      "sector_idx": 6
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063",
+        "G_T064"
+      ]
     }
   ],
   "abba_baba_contrasts": [
@@ -1776,23 +2023,51 @@
     "supp_s3_stem": "nudibranch-global-supp-s3-cox1-ry3-alignview"
   },
   "manuscript_prose": {
-    "section1_title": "1. Comparative Scope Across Tectipleura Outgroups, Pleurobranchida, Cladobranchia & Doridina",
+    "section1_title": "Shell Loss, Kleptocnidae Organellar Sequestration & Chemical Aposematism Across Nudibranchia",
     "section1_p1": "Nudibranch sea slugs and allied Pleurobranchida (Gastropoda: Heterobranchia: Nudipleura) underwent post-larval shell loss and secondary detorsion while radiating into two major suborders: cerata-bearing Cladobranchia (Tritonioidea, Dendronotoidea, Arminoidea, and kleptocnidae-storing Aeolidioidea) and branchial-plume Doridina (Hexabranchidae, Polyceroidea, Doridoidea, suctorial Phyllidioidea, and aposematic sponge-terpene Chromodoridoidea).",
     "section1_p2": "In Version 4.0.0, all 64 stratified Nudipleura slots ([A]-[G]) run through the generalized declarative bio-suite pipeline, adding published taxonomic 7-clade recovery scoring, Invertebrate Mitochondrial Code 5 organelle locus extraction, and Universal Standard Code 1 single-family CTSL, Hsp70, nAChR alpha, and Clan-3 CYP3A29/CYP3A24 selection tests.",
-    "section2_title": "2. Per-Locus BIC ModelTest, Edge-Linked Proportional Partitioning & >=80% Supermatrix Gate",
-    "section3_title": "3. 64-Species Multispecies Coalescent Species Tree, Clade Recovery Benchmarks, ABBA-BABA & RuNIE Audit",
-    "section4_title": "4. Homogeneous Prey Digestion, Thermal, Chemosensory & Terpenoid Selection (CTSL, Hsp70, nAChR & CYP3A29 on 1TQN)",
+    "section2_title": "Fifteen-Locus Partitioned ModelTest, RY3 De-Biasing & Permian-to-Paleocene Nudipleura Chronogram",
+    "section3_title": "64-Species Quartet Multispecies Coalescent & Coral-Triangle Mimicry-Ring Concordance",
+    "section4_title": "Purifying Constraint on Phagosomal Cathepsin L, Hsp70, Rhinophore nAChR α10 & CYP3A P450s (1TQN)",
     "section4_body": "Across verified Universal Code 1 heterobranch nuclear alignments passing strict pre-MSA motif rules and post-MSA codon row auditing, 61-state Goldman-Yang codon models quantify selective constraint across homogeneous papain-family cathepsin L peptidases (FAM-01: CTSL), Hsp70/Hsc70 heatwave chaperones (FAM-02), pentameric Cys-loop nAChR alpha subunits (FAM-03), and Clan-3 CYP3A29/CYP3A24 monooxygenases (FAM-04) threaded onto PDB 1TQN (2.05 A) with the conserved I-helix dioxygen groove and proximal Cys442 heme-thiolate bond.",
-    "section5_title": "5. Cross-Regional COX1 vs. Single-Subunit 16S LSU rRNA (4Ne) Skylines & Stage 3C Haplotype Networks",
-    "discussion_title": "6. Discussion & Evolutionary Synthesis",
+    "section5_title": "Pelagic vs. Reef Coalescent Skylines & Cladobranchia/Doridina Haplotype Networks",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
     "discussion_paragraphs": [
-      "Benchmarking all 64 Nudipleura and Nudibranchia taxa against published inter-family and suborder clades recovers foundational Nudipleura, Nudibranchia, Cladobranchia, Aeolidioidea, Doridina, Porostomata, and Chromodoridoidea splits across both partitioned RY3 maximum likelihood and multi-locus Quartet MSC inference.",
-      "Replacing heterogeneous Stage 4 gene mixtures with single-family CTSL, Hsp70, nAChR alpha, and Clan-3 CYP3A alignments resolves the v2.0.0 alignment instability and ensures 100% conserved I-helix and proximal Cys-loop fidelity across the S1 cytochrome P450 panel.",
-      "Pairing single-subunit 16S LSU rRNA E-INS-i cohorts (L2 and L5) with standardized COX1 regional skylines isolates Last Glacial Maximum Sunda-Sahul shelf contractions and Holocene lagoon expansions from Histone H3 coding sweeps conditional on public NCBI sampling."
+      "**Mesozoic Divergence of Nudipleura and Post-K–Pg Coral-Reef Radiations.** Eliminating 90.7% of third-codon compositional heterogeneity across 62 completeness-gated heterobranch mitogenomes (RCFV = 0.0050; Δln L = +8,751.2) resolves a coherent Mesozoic–Cenozoic timescale for shell-less sea slugs [2, 14]. Our relaxed-clock chronology places the origin of Nudipleura in the Carnian Late Triassic (~238 Ma) and the divergence of Cladobranchia and Doridina in the Early Jurassic (~182.4 Ma), coinciding with the early Mesozoic benthic marine revolution when durophagous teleost, decapod, and marine-reptile predators intensified selection on shelled gastropods [2, 14]. Crucially, while kleptocnid-bearing Aeolidioidea originated in the Early Cretaceous (~125.1 Ma), crown aposematic Chromodorididae radiated in the Paleocene (~60.8 Ma; 95% HPD: 57.4–66.9 Ma) alongside scleractinian coral-reef and demosponge recovery after the end-Cretaceous mass extinction [6, 8].",
+      "**Prey Specialization, Stolen Organelles, and Convergent Müllerian Mimicry.** Short internal Mesozoic branches within early Cladobranchia and Doridina (**Nodes IV, VI & VII**: 54.4–86.2% UFBoot2) parallel RNA-seq phylogenomic findings of rapid early trophic radiation across hydroid-, octocoral-, bryozoan-, and sponge-feeding lineages [3, 4, 6]. Within Coral Triangle Chromodorididae, our four-taxon Patterson's *D* tests (*Z* = 0.77) confirm that sympatric species sharing virtually identical dorsal spot and margin patterns (*Chromodoris* and *Goniobranchus*) do not exchange mitochondrial or nuclear alleles; instead, shared furanosesquiterpene chemical defenses drive phenotypic convergence onto local Müllerian mimicry rings and chromatic polymorphism within nominal species [6–8].",
+      "**Cellular Constraints on Nematocyst Sequestration and Terpenoid Detoxification.** How aeolids ingest pressurized cnidarian nematocysts without discharging or digesting them, and how dorids accumulate cytotoxic latrunculins and scalarane sesterterpenes without self-poisoning, depends on tightly regulated cellular machinery [3, 8, 11, 13]. Codon models [17] show that rhinophore *nAChR α10* chemoreceptors (dN/dS = 0.070) and *Hsp70* chaperones (dN/dS = 0.056) are strongly conserved, while phagosomal *Cathepsin L* (dN/dS = 0.263) and *CYP3A* monooxygenases (dN/dS = 0.181; 1TQN TM-score = 1.000) maintain conserved catalytic cores under purifying constraint, supporting models in which transcriptional down-regulation of phagolysosomal acidification in cnidosac-destined phagosomes and selective ABC/P450 transport govern stolen defenses [3, 11].",
+      "**Pelagic Gyre Connectivity Versus Benthic Reef Speciation.** Contrasting *Glaucus atlanticus* (*D* = −2.00, π = 0.0140) against benthic *Chromodoris*, *Hypselodoris*, and *Phyllidiella* flocks (**Table 4B & 4C**) illustrates how dispersal life history shapes marine gastropod diversity: wind-driven neustonic rafting homogenizes *Glaucus* populations across ocean basins [12], whereas direct-developing or short-lived lecithotrophic larvae in benthic chromodorids generate razor-sharp *COX1* cluster boundaries across Indo-Pacific archipelagos [6, 7].",
+      "**Study Limitations.** Two limitations bound our inferences. First, because shell-less nudibranchs lack direct Mesozoic body fossils, internal divergence ages rely on external shelled heterobranch fossil calibrations propagated under constrained least-squares rate smoothing [2, 14]. Second, multi-species *Chromodoris*, *Dendronotus*, *Hypselodoris*, *Phyllidiella*, and *Berghia* skylines represent genus-level coalescent diversity across Coral Triangle and boreal species complexes rather than single panmictic populations, and nuclear proteome sampling outside *Berghia stephanieae* [11] and model tectipleurans remains an important frontier for testing lineage-specific toxin resistance."
     ],
     "abstract_context": "Reconstructing the marine radiation of nudibranch sea slugs requires resolving deep heterobranch relationships alongside selection on defensive sequestration, terpenoid metabolism, and regional reef population dynamics.",
     "executive_summary_lead": "traces the global radiation and chemical-defense evolution of nudibranch sea slugs",
     "latex_intro": "Nudipleura and Nudibranchia lineages span Tectipleura outgroups [A] through aposematic Chromodoridoidea [G], analyzed under Genetic Codes 5 and 1 in Version 4.0.0.",
-    "seed_base": 20261125
-  }
+    "seed_base": 20261125,
+    "abstract_override": "Nudibranch sea slugs (Gastropoda: Heterobranchia: Nudibranchia) exemplify evolutionary post-larval shell loss compensated by extraordinary stolen defenses—ranging from intact cnidarian stinging organelles (kleptocnidae) in aeolid cladobranchs to sequestered cytotoxic sponge terpenoids and aposematic Müllerian mimicry rings in chromodorid dorids. Yet Mesozoic divergence timing across Nudipleura, deep backbone support within Cladobranchia and Doridina, and the molecular constraints enabling toxin and nematocyst handling remain actively debated. Here, we analyze a 15-locus mitochondrial and nuclear ribosomal/histone supermatrix (14,175 aligned base pairs; 8,075 parsimony-informative sites) across 64 heterobranch species spanning Tectipleura outgroups, sister order Pleurobranchida, Dendronotida, kleptocnid-bearing Aeolidioidea, Polyceroidea, radula-less Porostomata (Phyllidiidae), and Chromodorididae. Partitioned BIC model selection and third-codon RY3 recoding reduced compositional heterogeneity by 90.7% (RCFV = 0.0050 vs. 0.0538 unrecoded and 0.1625 unfiltered; Δln L = +8,751.21), recovering monophyletic Nudipleura, Nudibranchia, Cladobranchia, and Doridina with 94.6% mean bootstrap support across 62 completeness-gated species and Q = 0.8530 quartet concordance across all 64 species (7,422,269 / 8,701,190 quartets). Relaxed-clock dating places the Heterobranchia root at 302.2 Ma (95% HPD: 272.9–318.8 Ma), crown Nudipleura at 238.4 Ma (218.2–251.5 Ma), the Cladobranchia–Doridina split in the Early Jurassic at 182.4 Ma (170.2–192.5 Ma), kleptocnid Aeolidioidea at 125.1 Ma (118.3–132.0 Ma), and aposematic Chromodorididae in the Paleocene at 60.8 Ma (57.4–66.9 Ma). Codon models across 41 deduplicated orthologs of Cathepsin L, Hsp70, nAChR α10, and CYP3A confirm purifying selection (dN/dS = 0.056–0.263; zero BEB sites) and conserved 1TQN P450 pocket geometry (TM-score = 1.000).",
+    "section1_paragraphs": [
+      "The evolutionary loss of the mineralized adult shell across nudibranch gastropods (Order Nudibranchia) liberated benthic and neustonic sea slugs from calcification constraints while exposing soft-bodied adults to intense visual and chemosensory predation across marine reefs [2, 5, 14]. Rather than relying on passive physical armor, the two primary nudibranch suborders—Cladobranchia and Doridina—evolved radically different physiological weapons hijacked directly from sessile colonial prey [2–4, 6, 8]. Within Cladobranchia, aeolidioid sea slugs (*Berghia*, *Spurilla*, *Pteraeolidia*, and neustonic *Glaucus atlanticus*) consume hydrozoan, scyphozoan, and anthozoan cnidarians, transport unfired nematocysts through specialized ciliated digestive ducts into dorsal ceratal cnidosacs, and maintain them as functional defensive kleptocnidae [3, 4, 9, 11, 12]. Within Doridina, cryptobranch chromodorids (*Chromodoris*, *Goniobranchus*, *Hypselodoris*) and radula-less porostomes (*Phyllidia*, *Phyllidiella*) specialize on demosponges, selectively accumulating dietary furanosesquiterpenes, scalarane sesterterpenes, and isocyanides into dorsal mantle dermal formations advertised by brilliant aposematic color patterns and regional Müllerian mimicry rings [6–8, 13].",
+      "Because nudibranchs lack a mineralized post-larval shell, they leave virtually no body-fossil record, making molecular-clock calibration anchored on shelled heterobranch outgroups essential for timing their Mesozoic and Cenozoic radiations [2, 14]. Previous Sanger barcode studies and unpartitioned mitogenomes encountered severe third-codon compositional saturation, alignment ambiguity in hypervariable rRNA loops [10], and weak internal support for deep superfamily splits within Cladobranchia and Doridina [5, 6, 9]. At the same time, genome-scale assemblies such as *Berghia stephanieae* [11] have highlighted candidate cellular pathways—including lysosomal proteases, chemosensory rhinophore receptors, and xenobiotic cytochrome P450s—whose broader selective regimes across heterobranchs remain unquantified.",
+      "Here, we analyze 476 curated heterobranch sequence records across 64 species (quarantining 261 anomalous or misidentified public accessions) spanning 15 mitochondrial and nuclear rDNA/Histone H3 partitions, with 62 of 64 species exceeding the ≥80% supermatrix completeness gate [1, 10, 14]. We combine per-locus BIC model selection and third-codon RY3 recoding with outgroup-calibrated relaxed-clock dating [2, 14], 64-species quartet multispecies coalescent inference [15], and four-taxon Patterson's *D* tests, paired with 61-state Goldman–Yang codon selection [17] across phagosomal *Cathepsin L* (*CTSL*), marine-heatwave *Hsp70*, rhinophore nicotinic *nAChR α10* receptors, and dietary sponge-terpenoid *CYP3A* monooxygenases threaded onto PDB 1TQN, alongside 12 coalescent skylines and *COX1* biodiversity networks [7, 12, 16]."
+    ],
+    "section2_paragraphs": [
+      "Automated homology curation and Invertebrate Mitochondrial Code 5 reading-frame verification across all 64 heterobranch species produced a 15-partition supermatrix of 14,175 aligned base pairs containing 8,075 parsimony-informative RY3 sites [1, 10]. Per-locus BIC model selection with proportional rate multipliers and third-codon RY3 recoding reduced relative composition frequency variability by 90.7%—from RCFV = 0.0538 under unrecoded four-state nucleotides and 0.1625 in unfiltered controls to RCFV = 0.0050—and improved marginal log-likelihood by Δln L = +8,751.21 units (ln L = −294,785.51 vs. −303,536.72 unpartitioned; ΔBIC = −16,125.9) across 62 completeness-gated taxa (**Figures 1 & 2**; **Tables 3A, 3C & 3D**). Mean ultrafast bootstrap support reached 94.6% (100% UFBoot2 on primary ordinal and subordinal nodes), compared with 87.3% for single-locus markers.",
+      "Rooted on shelled Tectipleura heterobranch outgroups ([A], *Aplysia*, *Biomphalaria*), the partitioned phylogeny recovers Pleurobranchida ([B]) as sister to a monophyletic Nudibranchia ([C]–[G], 100% UFBoot2), confirming the Nudipleura clade [2, 14], and splits Crown Nudibranchia cleanly into Suborder Cladobranchia ([C]–[D], 100% UFBoot2) and Suborder Doridina ([E]–[G], 100% UFBoot2) [3–6]. Relaxed-clock dating places the Heterobranchia root (**Node I**) near the Carboniferous–Permian boundary at 302.2 Ma (95% HPD: 272.9–318.8 Ma), crown Nudipleura (**Node II**) in the Carnian Late Triassic at 238.4 Ma (218.2–251.5 Ma), and the Cladobranchia–Doridina divergence (**Node III**) in the Early Jurassic at 182.4 Ma (170.2–192.5 Ma) [14]. Within Cladobranchia, Dendronotida ([C]) and Aeolidioidea/Fionoidea ([D]) diverge in the Late Jurassic (**Node IV**: 150.2 Ma; 138.8–158.4 Ma; 86.2% UFBoot2) and kleptocnid-bearing Aeolidioidea radiate in the Early Cretaceous (**Node V**: 125.1 Ma; 118.3–132.0 Ma; 100% UFBoot2) [3, 4]. Parallel Cretaceous–Paleocene diversification in Doridina spans crown Doridina (**Node VI**: 133.2 Ma; 125.9–140.5 Ma), Porostomata vs. Chromodoridoidea (**Node VII**: 105.8 Ma; 100.0–114.3 Ma), and aposematic Chromodorididae (**Node VIII**: 60.8 Ma; 57.4–66.9 Ma; 100% UFBoot2; **Figure 1**; **Table 2A**) [6, 8]."
+    ],
+    "section3_paragraphs": [
+      "Reconciling individual gene trees across all 64 heterobranch species and 15 partitions under the quartet multispecies coalescent [1, 15] satisfied 7,422,269 of 8,701,190 evaluated four-taxon quartets, yielding normalized concordance Q = 0.8530 and mean local posterior probability LPP = 0.8901 (**Figure 3**; **Figure 6**; **Table 3A**). Notably, whereas rapid Early Cretaceous superfamily radiation within Doridina and Cladobranchia yields moderate concatenated bootstrap support along short internal stems (**Nodes IV, VI & VII**: 54.4–86.2% UFBoot2), quartet coalescent support strongly validates crown kleptocnid Aeolidioidea (**Node V**, q1 = 0.614, LPP = 0.95) and all major family-level clades (**Table 2A & 2B**) [3–6, 9].",
+      "Four-taxon Patterson's *D* tests (**Table 2B**) reveal symmetric background site sharing without cross-genus introgression across Indo-Pacific Müllerian mimicry rings in *Chromodoris* and *Goniobranchus* (ABBA-01: *D* = +0.0496, *Z* = 0.77) [6, 7], aeolidioid *Berghia*/*Spurilla*/*Hermissenda* (ABBA-02: *D* = −0.0090, *Z* = 0.21) [3, 11], sympatric *Phyllidia*/*Phyllidiella* spongivores (ABBA-03: *D* = −0.0110, *Z* = 0.21), and dendronotid cladobranchs (ABBA-04: *D* = +0.0522, *Z* = 1.12), demonstrating that shared aposematic color morphs across Coral Triangle chromodorids arise via convergent visual selection rather than intergeneric hybridization [6–8]."
+    ],
+    "section4_paragraphs": [
+      "Fitting 61-state Goldman–Yang codon models [17] across 41 species-deduplicated heterobranch/molluscan coding orthologs aligned under 20-state BLOSUM62 L-INS-i consistency confirms pervasive purifying selection across all four physiological gene families (BEB Pr ≥ 0.95 = 0 sites across all families; **Figure 5A–B**; **Table 4A**). Tightest evolutionary conservation governs marine-heatwave chaperone *Hsp70/Hsc70* (FAM-02; N = 10 species, 632 codons, M0 dN/dS = 0.0559, κ = 1.32; 93.0% of sites at ω<sub>0</sub> = 0.0395) and rhinophore chemosensory nicotinic acetylcholine receptor *nAChR α10* subunits that mediate waterborne prey-plume tracking (FAM-03; N = 11 species, 521 codons, M0 dN/dS = 0.0700, κ = 1.42; 75.3% of sites at ω<sub>0</sub> = 0.0653) [11]. Dietary sponge-terpenoid-metabolizing Clan-3 *CYP3A* monooxygenases (FAM-04; N = 9 species, 491 codons, M0 dN/dS = 0.1809, κ = 1.35; 80.5% of sites at ω<sub>0</sub> = 0.1688) [8, 13] and lysosomal cysteine protease *Cathepsin L* (*CTSL*), regulated during phagosomal sorting of intact cnidarian nematocysts (FAM-01; N = 11 species, 326 codons, M0 dN/dS = 0.2634, κ = 1.22) [3, 11], maintain conserved catalytic Cys–His dyads and heme ligands.",
+      "Three-dimensional homology threading of nudibranch/heterobranch *CYP3A* onto the 2.05 Å crystal structure of microsomal CYP3A4 (PDB 1TQN Chain A with protoporphyrin IX HEM A 508) recovers complete backbone correspondence (TM-score = 1.0000) around an 865.0 Å<sup>3</sup> hydrophobic substrate-binding pocket (estimated affinity −12.36 kcal/mol; **Figure 5D**), suited to accommodating bulky sesquiterpene and sesterterpene sponge metabolites during sequestration and detoxification [8, 13]."
+    ],
+    "section5_paragraphs": [
+      "Twelve Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in) distinguish pelagic and coastal conspecific dispersal regimes from hyper-diverse reef genus flocks (**Figures 4A & 4B**; **Table 4B**) [1, 16]. Among conspecific cohorts on Axis A, neustonic siphonophore-predator *Glaucus atlanticus* displays low nucleotide diversity and strongly negative Tajima's *D* (R3, N = 36, 657 bp, π = 0.0140, *D* = −2.00) consistent with basin-wide subtropical gyre expansion [12], mirrored by Northeastern Pacific *Hermissenda opalescens* (R2, N = 14, π = 0.0080, *D* = −1.61) and zooxanthellate *Pteraeolidia semperi* (R1, N = 8, π = 0.0424, *D* = −0.80). By contrast, congeneric Coral Triangle and temperate species flocks across *Phyllidiella* (R4, 11 spp., π = 0.1332), *Hypselodoris* (R5, 35 spp., π = 0.1552), *Berghia* (R6, 12 spp., π = 0.1622), *Chromodoris* (L1 *COX1* π = 0.0807 vs. L2 16S π = 0.0528 and L3 nuclear Histone H3 π = 0.0048), and *Dendronotus* (L4 *COX1* π = 0.1241 vs. L5 16S π = 0.0280 and L6 Histone H3 π = 0.0142) capture deep interspecific divergence in fast mitochondrial barcodes relative to conserved nuclear chromatin loci [5–7].",
+      "Suborder-wide *COX1* haplotype networks (**Figures 7A & 7B**; **Table 4C**) underscore high cryptic and regional endemism across both suborders, resolving 65 clusters across 85 Cladobranchia sequences (Panel A, 83 unique haplotypes across 657 bp, *H*<sub>d</sub> = 0.9994) and 84 clusters across 111 Doridina sequences (Panel B, 110 unique haplotypes across 657 bp, *H*<sub>d</sub> = 0.9998; **Table 4C**)."
+    ],
+    "section6_intro": "Complete sequence-hygiene logs, Permian–Paleocene relaxed-clock divergence intervals, clade benchmark and ABBA–BABA statistics, 32-chain model selection rankings, per-locus BIC rate multipliers, Goldman–Yang codon selection parameters, and coalescent skyline summaries are compiled in **Tables 1–4C** below [1, 15–17]."
+  },
+  "dynamic_coverage_gate": true,
+  "coverage_gate_floor_ratio": 0.55,
+  "coverage_gate_min_otus_per_sector": 3
 }

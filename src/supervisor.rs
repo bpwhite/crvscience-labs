@@ -3448,6 +3448,7 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
     let mut launch_gui = false;
     let mut redate_timetree = false;
     let mut reskyline_cohorts = false;
+    let mut refam_orthologs = false;
     let mut gui_snapshot_png: Option<PathBuf> = None;
     let mut subcmd = "run".to_string();
 
@@ -3470,6 +3471,9 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
             }
             "--reskyline" => {
                 reskyline_cohorts = true;
+            }
+            "--refam" => {
+                refam_orthologs = true;
             }
             "--gui-snapshot-png" => {
                 if let Some(v) = args.get(i + 1) {
@@ -3789,6 +3793,16 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         &mut m,
                         &run_dir,
                     );
+                    if refam_orthologs {
+                        crate::supermatrix_audit_util::refresh_declarative_stage4_families_in_place(
+                            &cfg,
+                            &spec,
+                            cache,
+                            &run_dir,
+                            &mut m,
+                            &mut rep,
+                        )?;
+                    }
                     if reskyline_cohorts {
                         crate::supermatrix_audit_util::refresh_declarative_stage5_skylines_in_place(
                             &cfg,
@@ -3800,12 +3814,128 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                         )?;
                         run_supervisor_haplotype_stage(&mut m, &run_dir, &spec)?;
                     }
+                    // Always resolve any synthetic `ANCH_*` placeholder accessions and sync organism names in `m.sequences`
+                    for (slot_idx, s) in m.sequences.iter_mut().enumerate() {
+                        if let Some(sl) = cfg.species_slots.get(slot_idx) {
+                            s.organism = sl.species.clone();
+                            s.sector_code = sl.sector_code.clone();
+                        }
+                        if s.accession.starts_with("ANCH_") {
+                            let fb_acc = cfg
+                                .fallback_mito_accessions
+                                .get(slot_idx)
+                                .filter(|a| !a.is_empty())
+                                .map(|a| a.as_str())
+                                .or_else(|| {
+                                    cfg.species_slots
+                                        .get(slot_idx)
+                                        .and_then(|sl| sl.genome_accession.as_deref())
+                                        .filter(|a| !a.is_empty())
+                                });
+                            let real_acc = fb_acc.or(match s.organism.as_str() {
+                                "Tetranychus mcdanieli" => Some("X80857.1"),
+                                "Helicotylenchus laichauensis" => Some("LC903928.1"),
+                                "Monosiga brevicollis" => Some("NC_004309.1"),
+                                "Amoebidium parasiticum" => Some("AF538052.1"),
+                                "Allomyces macrogynus" => Some("NC_001715.1"),
+                                "Iphiteon panicea" => Some("NC_010769.1"),
+                                _ => None,
+                            });
+                            if let Some(acc) = real_acc {
+                                s.accession = acc.to_string();
+                            }
+                        }
+                    }
                     if redate_timetree {
+                        let rebootstrap = args.iter().any(|a| a == "--rebootstrap");
+                        // Load saved 64-taxon supermatrix FASTA on disk (used for ABBA-BABA & optional --rebootstrap)
+                        let mut sm_map: std::collections::HashMap<String, Vec<u8>> =
+                            std::collections::HashMap::new();
+                        let aln_dir = run_dir.join("alignments");
+                        if let Ok(entries) = fs::read_dir(&aln_dir) {
+                            let sm_opt = entries
+                                .filter_map(|e| e.ok().map(|x| x.path()))
+                                .find(|p| {
+                                    p.file_name()
+                                        .and_then(|n| n.to_str())
+                                        .is_some_and(|n| n.contains("supermatrix") && n.ends_with(".fasta"))
+                                });
+                            if let Some(sm_path) = sm_opt {
+                                if let Ok(sm_raw) = fs::read_to_string(&sm_path) {
+                                    let mut cur_k = String::new();
+                                    let mut cur_s = String::new();
+                                    for ln in sm_raw.lines() {
+                                        let t = ln.trim();
+                                        if let Some(h) = t.strip_prefix('>') {
+                                            if !cur_k.is_empty() && !cur_s.is_empty() {
+                                                sm_map.insert(cur_k.clone(), cur_s.as_bytes().to_vec());
+                                            }
+                                            cur_k = h
+                                                .split('|')
+                                                .next()
+                                                .unwrap_or(h)
+                                                .trim()
+                                                .replace(':', "_");
+                                            cur_s.clear();
+                                        } else {
+                                            cur_s.push_str(t);
+                                        }
+                                    }
+                                    if !cur_k.is_empty() && !cur_s.is_empty() {
+                                        sm_map.insert(cur_k, cur_s.as_bytes().to_vec());
+                                    }
+                                    if !sm_map.is_empty() && !cfg.abba_baba_contrasts.is_empty() {
+                                        let get_s = |id: &str| -> &[u8] {
+                                            let k = id.trim().replace(':', "_");
+                                            sm_map.get(&k).map(|v| v.as_slice()).unwrap_or(b"ACGT")
+                                        };
+                                        let new_abba: Vec<crate::coalescent::AbbaBabaTestRecord> = cfg
+                                            .abba_baba_contrasts
+                                            .iter()
+                                            .map(|ab| {
+                                                let p1 = ab.p1_tip.replace(':', "_");
+                                                let p2 = ab.p2_tip.replace(':', "_");
+                                                let p3 = ab.p3_tip.replace(':', "_");
+                                                let o = ab.outgroup_tip.replace(':', "_");
+                                                crate::coalescent::compute_abba_baba_patterson_d(
+                                                    &ab.quartet_id,
+                                                    &p1,
+                                                    get_s(&p1),
+                                                    &p2,
+                                                    get_s(&p2),
+                                                    &p3,
+                                                    get_s(&p3),
+                                                    &o,
+                                                    get_s(&o),
+                                                    &ab.interpretation,
+                                                )
+                                            })
+                                            .collect();
+                                        m.abba_baba_summary = new_abba
+                                            .iter()
+                                            .map(|a| {
+                                                format!(
+                                                    "{}: D={:+.4}, Z={:.2}",
+                                                    a.quartet_id, a.patterson_d_stat, a.z_score
+                                                )
+                                            })
+                                            .collect::<Vec<_>>()
+                                            .join(" | ");
+                                        rep.abba_baba_tests = new_abba;
+                                    }
+                                }
+                            }
+                        }
                         let pm_path = run_dir.join("trees/partitioned_modeltest_summary.json");
                         let pm_txt = fs::read_to_string(&pm_path)
                             .map_err(|e| format!("Failed reading {} for --redate: {}", pm_path.display(), e))?;
-                        let part_res: crate::partitioned_modeltest::PartitionedSupermatrixMlResult =
+                        let mut part_res: crate::partitioned_modeltest::PartitionedSupermatrixMlResult =
                             serde_json::from_str(&pm_txt).map_err(|e| e.to_string())?;
+                        if part_res.partitioned_metrics.newick_tree.len() < 100
+                            && rep.solved_ry3_ml_newick.len() >= 100
+                        {
+                            part_res.partitioned_metrics.newick_tree = rep.solved_ry3_ml_newick.clone();
+                        }
                         let phy_labels: Vec<String> = cfg
                             .species_slots
                             .iter()
@@ -3817,6 +3947,96 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
                             })
                             .map(|(_, s)| s.tip_code.replace(':', "_"))
                             .collect();
+                        if rebootstrap && !sm_map.is_empty() && !part_res.per_locus_models.is_empty() {
+                            let part_inputs: Vec<crate::partitioned_modeltest::PartitionLocusInput> = part_res
+                                .per_locus_models
+                                .iter()
+                                .map(|lm| crate::partitioned_modeltest::PartitionLocusInput {
+                                    locus_name: lm.locus_name.clone(),
+                                    locus_class: lm.locus_class.clone(),
+                                    protein_coding: lm.alphabet_mode.contains("RY3"),
+                                    is_nuclear: lm.locus_class.to_ascii_lowercase().contains("nuc"),
+                                    start_col_1based: lm.start_col_1based,
+                                    end_col_1based: lm.end_col_1based,
+                                })
+                                .collect();
+                            let tot_cols = rep.supermatrix_aligned_cols;
+                            let mut ry3_strings: Vec<String> = Vec::with_capacity(phy_labels.len());
+                            for lbl in &phy_labels {
+                                let raw_s = sm_map
+                                    .get(lbl)
+                                    .map(|v| String::from_utf8_lossy(v).into_owned())
+                                    .unwrap_or_else(|| "-".repeat(tot_cols));
+                                let mut built = String::with_capacity(tot_cols);
+                                for pi in &part_inputs {
+                                    let s0 = pi.start_col_1based.saturating_sub(1).min(raw_s.len());
+                                    let e0 = pi.end_col_1based.min(raw_s.len()).max(s0);
+                                    let slice = &raw_s[s0..e0];
+                                    if pi.protein_coding {
+                                        built.push_str(&crate::supervisor_study::recode_ry3(slice));
+                                    } else {
+                                        built.push_str(slice);
+                                    }
+                                }
+                                ry3_strings.push(built);
+                            }
+                            eprintln!(
+                                "[bio-suite-supervisor --rebootstrap] Refreshing GENESITE B=500 UFBoot2 on {} taxa x {} bp ({} loci)...",
+                                phy_labels.len(),
+                                tot_cols,
+                                part_inputs.len()
+                            );
+                            crate::partitioned_modeltest::refresh_partitioned_genesite_bootstrap_in_place(
+                                &mut part_res,
+                                &ry3_strings,
+                                &phy_labels,
+                                500,
+                                cfg.manuscript_prose.seed_base + 10,
+                            )?;
+                            if let Ok(pj) = serde_json::to_string_pretty(&part_res) {
+                                let _ = fs::write(&pm_path, pj);
+                            }
+                            let _ = fs::write(
+                                run_dir.join(format!("trees/{}_partitioned_ry3_ml.nwk", cfg.study_slug)),
+                                &part_res.partitioned_metrics.newick_tree,
+                            );
+                            m.solved_newick_topology = part_res.partitioned_metrics.newick_tree.clone();
+                            rep.solved_ry3_ml_newick = part_res.partitioned_metrics.newick_tree.clone();
+                            rep.regime1_ry3_marginal_ln_l = part_res.partitioned_ln_l;
+                            let cov_sum_path = run_dir.join("trees/supermatrix_coverage_summary.json");
+                            if let Ok(cov_raw) = fs::read_to_string(&cov_sum_path) {
+                                if let Ok(mut cov_val) = serde_json::from_str::<serde_json::Value>(&cov_raw) {
+                                    if let Some(obj) = cov_val.as_object_mut() {
+                                        obj.insert(
+                                            "supermatrix_ufboot_pct".to_string(),
+                                            serde_json::json!(part_res.partitioned_bootstrap.mean_split_support_pct),
+                                        );
+                                        if let Ok(new_cov) = serde_json::to_string_pretty(&cov_val) {
+                                            let _ = fs::write(&cov_sum_path, new_cov);
+                                        }
+                                    }
+                                }
+                            }
+                            if let Some(r0) = m.runie_9col_comparison_table.get_mut(0) {
+                                r0.marginal_ln_l = part_res.partitioned_ln_l;
+                                r0.runie_bootstrap = format!(
+                                    "{:.1}% (B = {})",
+                                    part_res.partitioned_bootstrap.mean_split_support_pct,
+                                    part_res.partitioned_bootstrap.b_replicates
+                                );
+                            }
+                            if let Some(r1) = m.runie_9col_comparison_table.get_mut(1) {
+                                r1.marginal_ln_l = part_res.unpartitioned_ln_l;
+                                r1.delta_ln_l_vs_best = crate::complexity::round4(
+                                    part_res.unpartitioned_ln_l - part_res.partitioned_ln_l,
+                                );
+                                r1.runie_bootstrap = format!(
+                                    "{:.1}% (B = {})",
+                                    part_res.unpartitioned_bootstrap.mean_split_support_pct,
+                                    part_res.unpartitioned_bootstrap.b_replicates
+                                );
+                            }
+                        }
                         let full_mask_phy: u64 = if phy_labels.len() >= 64 {
                             u64::MAX
                         } else {

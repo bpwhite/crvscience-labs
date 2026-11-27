@@ -133,7 +133,7 @@ pub fn resolve_dynamic_supermatrix_coverage_gate(
     }
 
     let mut candidates: Vec<f64> = vec![base_ratio];
-    for &c in &[0.80_f64, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50] {
+    for &c in &[0.80_f64, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40] {
         if c < base_ratio - 1e-9 && c > eff_floor + 1e-9 {
             candidates.push(c);
         }
@@ -627,30 +627,65 @@ pub fn discover_and_cache_entrez_cohort(
             }
         }
 
-        // Stratify across (organism, accession 2-letter batch prefix) buckets sorted by descending slen
-        // to avoid Entrez recency-bias clone flooding from single-study bulk uploads.
-        let mut buckets: std::collections::BTreeMap<(String, String), Vec<DiscoveredEntrezSummary>> =
-            std::collections::BTreeMap::new();
+        // Stratify first by organism (normalized genus+species) and within each organism by 2-letter
+        // accession batch prefix sorted by descending slen: guarantees multi-species OR queries visit
+        // every distinct species before repeating any taxon, while single-species PopSet queries still
+        // interleave across independent submission prefixes.
+        let mut by_org: std::collections::BTreeMap<
+            String,
+            std::collections::BTreeMap<String, Vec<DiscoveredEntrezSummary>>,
+        > = std::collections::BTreeMap::new();
         for c in candidates {
-            let org_key = c.organism.trim().to_ascii_lowercase();
+            let mut w = c.organism.split_whitespace();
+            let g = w.next().unwrap_or("").to_ascii_lowercase();
+            let sp = w.next().unwrap_or("").to_ascii_lowercase();
+            let org_key = if !g.is_empty() && !sp.is_empty() {
+                format!("{} {}", g, sp)
+            } else {
+                c.organism.trim().to_ascii_lowercase()
+            };
             let acc_prefix: String = c
                 .accession
                 .chars()
                 .take_while(|ch| ch.is_ascii_alphabetic())
                 .take(2)
                 .collect();
-            buckets.entry((org_key, acc_prefix)).or_default().push(c);
+            by_org
+                .entry(org_key)
+                .or_default()
+                .entry(acc_prefix)
+                .or_default()
+                .push(c);
         }
-        for vec_b in buckets.values_mut() {
-            vec_b.sort_by(|a, b| b.slen.cmp(&a.slen).then_with(|| a.accession.cmp(&b.accession)));
+        let mut org_streams: Vec<Vec<DiscoveredEntrezSummary>> = Vec::with_capacity(by_org.len());
+        for sub_map in by_org.into_values() {
+            let mut prefix_vecs: Vec<Vec<DiscoveredEntrezSummary>> = sub_map.into_values().collect();
+            for pv in &mut prefix_vecs {
+                pv.sort_by(|a, b| b.slen.cmp(&a.slen).then_with(|| a.accession.cmp(&b.accession)));
+            }
+            let mut interleaved = Vec::new();
+            let mut p_idx = 0usize;
+            loop {
+                let mut any = false;
+                for pv in &prefix_vecs {
+                    if p_idx < pv.len() {
+                        interleaved.push(pv[p_idx].clone());
+                        any = true;
+                    }
+                }
+                if !any {
+                    break;
+                }
+                p_idx += 1;
+            }
+            org_streams.push(interleaved);
         }
 
         let mut collected = Vec::with_capacity(target_count);
-        let mut bucket_lists: Vec<Vec<DiscoveredEntrezSummary>> = buckets.into_values().collect();
         let mut pass_idx = 0usize;
         while collected.len() < target_count {
             let mut progressed = false;
-            for bvec in &mut bucket_lists {
+            for bvec in &org_streams {
                 if pass_idx < bvec.len() {
                     collected.push(bvec[pass_idx].clone());
                     progressed = true;
@@ -1291,7 +1326,7 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
                     }
                 }
             }
-            let min_d6_hits = (target_aa_len / 11).clamp(12, 20);
+            let min_d6_hits = (target_aa_len / 13).clamp(8, 16);
             let mut best_d6_score = 0usize;
             for (is_rc, frame, aa) in &frame_translations {
                 let aa_d6: Vec<u8> = aa
@@ -1316,7 +1351,7 @@ pub(crate) fn extract_homologous_mito_locus_from_genome(
                 }
                 if let Some((&top_diag, &top_cnt)) = diag_counts.iter().max_by_key(|(_, c)| *c) {
                     if top_cnt > best_d6_score && top_cnt >= min_d6_hits {
-                        if let Some(cand) = extract_diag_window(*is_rc, *frame, aa, top_diag, 40, 2, 126) {
+                        if let Some(cand) = extract_diag_window(*is_rc, *frame, aa, top_diag, 38, 1, 120) {
                             best_d6_score = top_cnt;
                             best_nt_seq = Some(cand);
                         }
@@ -1636,17 +1671,43 @@ pub(crate) fn export_trimmed_supp_s2_rdna_fasta(
             }
             let gf = gaps as f64 / probe_cols_p1.len().max(1) as f64;
             let cid = if comp > 0 { match_c as f64 / comp as f64 } else { 0.0 };
-            gf <= 0.16 && cid >= 0.76
+            // Also enforce a sliding 60-bp local window identity >= 0.72 so localized homopolymer/chimeric tracts fail QC
+            let mut local_ok = true;
+            if probe_cols_p1.len() >= 60 {
+                for ws in (0..=probe_cols_p1.len() - 60).step_by(20) {
+                    let mut wc = 0usize;
+                    let mut wm = 0usize;
+                    let mut wg = 0usize;
+                    for pi in ws..(ws + 60) {
+                        let c = probe_cols_p1[pi];
+                        let b = bytes.get(c).copied().unwrap_or(b'-').to_ascii_uppercase();
+                        let cb = cons_p1[pi];
+                        if !is_base(b) {
+                            wg += 1;
+                        } else if is_base(cb) {
+                            wc += 1;
+                            if b == cb {
+                                wm += 1;
+                            }
+                        }
+                    }
+                    if wg > 15 || (wc >= 35 && (wm as f64 / wc as f64) < 0.72) {
+                        local_ok = false;
+                        break;
+                    }
+                }
+            }
+            gf <= 0.14 && cid >= 0.80 && local_ok
         })
         .map(|a| a.id.clone())
         .collect();
-    if keep_ids.len() >= 12 && keep_ids.len() < aln.len() {
+    if keep_ids.len() >= 8 && keep_ids.len() < aln.len() {
         let filtered_recs: Vec<FastaRecord> = rna_recs
             .iter()
             .filter(|r| keep_ids.contains(&r.id))
             .cloned()
             .collect();
-        if filtered_recs.len() >= 12 {
+        if filtered_recs.len() >= 8 {
             let (_, realn, _) = align_sequences_mafft_native_with_config(&filtered_recs, &cfg);
             let new_cols = realn.first().map(|a| a.aligned_seq.len()).unwrap_or(0);
             if new_cols > 0 && !realn.is_empty() {

@@ -5208,6 +5208,7 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
 
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
     let is_universal_ae = theme.supp_s3_source.contains("Universal");
+    let is_nuclear_code1 = theme.supp_s3_source.contains("Nuclear Code 1");
     let a_boxes: [(&str, String, String, String, String, &str, &str, &str); 6] = [
         (
             "A1. Entrez + Blind Audit",
@@ -5215,8 +5216,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
                 format!("• {} >={:.0}% OTUs / {} Taxa", n_phy, gate_pct, manifest.sequences.len().min(64))
             } else if is_bacterial {
                 format!("• {} Taxa + 48 Bact CDS", n_phy)
-            } else if is_universal_ae {
-                format!("• {} Archaea/Euk + {} Fam", n_phy, study.functional_families.len())
+            } else if is_universal_ae || is_nuclear_code1 {
+                format!("• {} Nuclear + {} Fam", n_phy, study.functional_families.len())
             } else {
                 format!("• {} Mito + {} Nuc Fam", n_phy, study.functional_families.len())
             },
@@ -5233,6 +5234,8 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
                 "• Code-11 Strand Phasing".to_string()
             } else if is_universal_ae {
                 "• Code-1/11 ORF Phasing".to_string()
+            } else if is_nuclear_code1 {
+                "• Code-1 Nuclear Phasing".to_string()
             } else {
                 "• Phased COX1 Origin".to_string()
             },
@@ -5240,10 +5243,12 @@ fn render_bemisia_fig6_runie_pipeline_architecture(
                 format!("• rpoB/16S: {} cols", study.mito_aligned_cols)
             } else if is_universal_ae {
                 format!("• SSU/LSU rRNA: {} cols", study.mito_aligned_cols)
+            } else if is_nuclear_code1 {
+                "• 18S+28S rRNA: 3660 cols".to_string()
             } else {
                 format!("• Mito: {} cols", study.mito_aligned_cols)
             },
-            if is_bacterial || is_universal_ae {
+            if is_bacterial || is_universal_ae || is_nuclear_code1 {
                 format!("• Coding Core: {} cols", study.nuclear_aligned_cols)
             } else {
                 format!("• Nuclear: {} cols", study.nuclear_aligned_cols)
@@ -6021,6 +6026,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
 
     let is_bacterial = theme.supp_s3_source.contains("Bacterial");
     let is_universal_ae = theme.supp_s3_source.contains("Universal");
+    let is_nuclear_code1_s3 = theme.supp_s3_source.contains("Nuclear Code 1");
     let is_col4_s1 = theme.supp_s1_source.contains("COL4");
 
     // --- Supplemental Figure S1: FAM-04 Primary Structural Target (CYP450, Ran GTPase, or COL4A1, Dual DNA+AA) ---
@@ -6211,6 +6217,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         }
         let s1 = best_s;
         let e1 = (s1 + win - 1).min(ws.alignment_length.max(1));
+        ws.features
+            .retain(|f| f.end_col_1based + 3 < s1 || f.start_col_1based > e1 + 3);
         ws.features.insert(
             0,
             crate::align_viewer::AlignmentFeatureAnnotation {
@@ -6275,10 +6283,10 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         mirror_pair(&svg_out, &png_out, &theme.supp_s2_stem)?;
     }
 
-    // --- Supplemental Figure S3: Phased Coding Locus (Mito Table 5, Bacterial Code 11, or Universal Code 1/11) ---
+    // --- Supplemental Figure S3: Phased Coding Locus (Mito Table 5, Bacterial Code 11, Nuclear Code 1, or Universal Code 1/11) ---
     let s3_fasta = aln_dir.join("supp_s3_cox1_64taxa.fasta");
     if s3_fasta.is_file() {
-        let gcode = if is_bacterial || is_universal_ae {
+        let gcode = if is_bacterial || is_universal_ae || is_nuclear_code1_s3 {
             GeneticCodeTable::Standard1
         } else {
             GeneticCodeTable::InvertebrateMito5
@@ -6296,13 +6304,15 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             "Codon-Locked Housekeeping MSA (Bacterial Genetic Code 11: TAA/TAG/TGA Stops)".to_string()
         } else if is_universal_ae {
             "Codon-Locked Archaea-Eukarya MSA (Universal Code 1/11: TAA/TAG/TGA Stops)".to_string()
+        } else if is_nuclear_code1_s3 {
+            "Codon-Locked Nuclear Housekeeping MSA (Standard Code 1: TAA/TAG/TGA Stops)".to_string()
         } else {
             "COX1-Phased Codon MSA (Invertebrate Mitochondrial Code Table 5: TGA=W, AGA=S)".to_string()
         };
 
         let s3_motifs: &[&str] = if is_bacterial {
             &["QLSQFMDQ", "QLSQF", "TQLSQ", "GERVL", "EGDSA", "VEGDS", "PLRGK"]
-        } else if is_universal_ae {
+        } else if is_universal_ae || is_nuclear_code1_s3 {
             &["GHVDSGKST", "DCPGHRDF", "DAPGHRDF", "GHVDS", "HVDSG", "DSGKS", "DAPGH", "DCPGH"]
         } else {
             &["FPRMN", "APDMA", "GFGNW", "GHPEV", "WLLPP"]
@@ -6313,7 +6323,19 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             s3_motifs,
             22,
         );
-        if is_universal_ae || is_bacterial {
+        if is_nuclear_code1_s3 || is_universal_ae || is_bacterial {
+            ws.sequences.retain(|seq_row| {
+                let lo = s1.saturating_sub(1).min(seq_row.aligned_dna.len());
+                let hi = e1.min(seq_row.aligned_dna.len()).max(lo);
+                let sub = &seq_row.aligned_dna[lo..hi];
+                let valid = sub
+                    .iter()
+                    .filter(|&&b| b != b'-' && b != b'N' && b != b'?')
+                    .count();
+                valid * 2 >= sub.len().max(1)
+            });
+        }
+        if is_universal_ae || is_bacterial || is_nuclear_code1_s3 {
             ws.features
                 .retain(|f| !f.feature_id.starts_with("MOTIF-HEME-"));
         }
@@ -6322,7 +6344,7 @@ fn generate_bemisia_supplemental_alignview_snapshots(
             crate::align_viewer::AlignmentFeatureAnnotation {
                 feature_id: if is_bacterial {
                     "RPOB-CORE".to_string()
-                } else if is_universal_ae {
+                } else if is_universal_ae || is_nuclear_code1_s3 {
                     "EF1A-GTP".to_string()
                 } else {
                     "COX1-CORE".to_string()
@@ -6332,6 +6354,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                     "Bacterial rpoB/gyrB Catalytic Core".to_string()
                 } else if is_universal_ae {
                     "Asgard-Eukaryote EF1A/tuf GTPase Core".to_string()
+                } else if is_nuclear_code1_s3 {
+                    "Holozoa & Metazoa EF1A/EEF1A1 GTPase Core".to_string()
                 } else {
                     "COX1 Heme-Cu Catalytic Core".to_string()
                 },
@@ -6344,6 +6368,8 @@ fn generate_bemisia_supplemental_alignview_snapshots(
                     "Zero internal stops under Bacterial Code 11 across low-GC Bacillota & high-GC Actinomycetota".to_string()
                 } else if is_universal_ae {
                     "Zero internal stops under Code 1/11 uniting Asgardarchaeota & crown Eukarya".to_string()
+                } else if is_nuclear_code1_s3 {
+                    "Zero internal stops under Standard Code 1 across Holozoa, Ctenophora, Porifera, Placozoa, Cnidaria & Bilateria".to_string()
                 } else {
                     "Zero internal stops under Invertebrate Mito Table 5; heavy 3rd-pos AT transitions".to_string()
                 },
@@ -6372,6 +6398,11 @@ fn generate_bemisia_supplemental_alignview_snapshots(
         } else if is_universal_ae {
             format!(
                 "runie-align-view | Archaea-Eukarya EF1A/tuf Core ({}..{} bp, Code 1/11 — 0 Internal Stops)",
+                s1, e1
+            )
+        } else if is_nuclear_code1_s3 {
+            format!(
+                "runie-align-view | Holozoa & Metazoa EF1A Core ({}..{} bp, Standard Code 1 — 0 Internal Stops)",
                 s1, e1
             )
         } else {

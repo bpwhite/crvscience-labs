@@ -2880,7 +2880,12 @@ pub fn export_declarative_manuscript_and_staged_bundle(
             ));
         }
 
-        let hap_gate_html = if cfg.universal_archaea_eukarya {
+        let hap_is_coi = hp_a.is_some_and(|p| {
+            p.locus_tag.eq_ignore_ascii_case("COI") || p.locus_tag.eq_ignore_ascii_case("COX1")
+        });
+        let hap_gate_html = if hap_is_coi {
+            "<code>COI-5P</code> Folmer Core Overlap Gated"
+        } else if cfg.universal_archaea_eukarya {
             "Homologous <code>EF1A/tuf</code> &amp; <code>RPB2/rpoB</code> Core Overlap Gated"
         } else if cfg.is_prokaryote {
             "Homologous Chromosomal Core Overlap Gated"

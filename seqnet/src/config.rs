@@ -209,7 +209,8 @@ pub fn build_named_locus_panel(names: &[String], invert_mito: bool) -> Vec<Locus
         ("univ_vmaB", true, 350, 1700, &["VMA2", "ATP6V1B", "atpB", "V-type ATP synthase subunit B", "V-type proton ATPase subunit B"]),
         ("univ_rad51", true, 300, 1400, &["radA", "RAD51", "DMC1", "DNA repair protein RAD51", "DNA repair and recombination protein RadA"]),
         ("univ_cct", true, 350, 2000, &["TCP1", "CCT1", "CCT2", "cpn60", "thermosome", "T-complex protein 1", "chaperonin"]),
-        ("univ_hsp70", true, 350, 2300, &["dnaK", "HSP70", "SSA1", "HSPA8", "molecular chaperone DnaK", "heat shock protein 70"]),
+        ("univ_hsp70", true, 350, 2300, &["dnaK", "HSP70", "SSA1", "HSPA8", "molecular chaperone DnaK", "heat shock protein 70", "heat shock cognate 71"]),
+        ("univ_hsp90", true, 650, 3000, &["htpG", "HSP90", "HSP90AA1", "HSP90AB1", "HSP83", "HSP82", "HSC82", "heat shock protein 90", "molecular chaperone HtpG"]),
         ("univ_eif5b", true, 500, 4200, &["infB", "EIF5B", "FUN12", "translation initiation factor 5B", "translation initiation factor IF-2"]),
         ("univ_sec61a", true, 500, 2600, &["secY", "SEC61A1", "SEC61", "protein transport protein Sec61 subunit alpha", "preprotein translocase subunit SecY"]),
         ("univ_rpl2", true, 450, 1400, &["rplB", "RPL2", "RPL8", "uL2", "50S ribosomal protein L2", "60S ribosomal protein L2", "large ribosomal subunit protein uL2"]),
@@ -411,17 +412,17 @@ mod tests {
 
         let univ_names: Vec<String> = [
             "univ_rpb2", "univ_rpb1", "univ_ef1a", "univ_ef2", "univ_vmaA", "univ_vmaB",
-            "univ_rad51", "univ_cct", "univ_hsp70", "univ_eif5b", "univ_sec61a", "univ_rpl2",
-            "univ_rpl3", "univ_rps3", "univ_fen1", "univ_pcna", "univ_thrrs", "univ_ssu",
-            "univ_lsu",
+            "univ_rad51", "univ_cct", "univ_hsp70", "univ_hsp90", "univ_eif5b", "univ_sec61a",
+            "univ_rpl2", "univ_rpl3", "univ_rps3", "univ_fen1", "univ_pcna", "univ_thrrs",
+            "univ_ssu", "univ_lsu",
         ]
         .iter()
         .map(|s| (*s).to_string())
         .collect();
         let univ = build_named_locus_panel(&univ_names, true);
-        assert_eq!(univ.len(), 19);
+        assert_eq!(univ.len(), 20);
         assert!(univ.iter().all(|l| l.genetic_code_table == 1));
-        assert!(univ.iter().take(17).all(|l| l.protein_coding));
-        assert!(univ.iter().skip(17).all(|l| !l.protein_coding));
+        assert!(univ.iter().take(18).all(|l| l.protein_coding));
+        assert!(univ.iter().skip(18).all(|l| !l.protein_coding));
     }
 }

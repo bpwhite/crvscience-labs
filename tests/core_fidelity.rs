@@ -2128,7 +2128,7 @@ fn test_declarative_study_config_json_and_no_new_per_study_rs_files() {
         ("invasive_snails_preprint24.json", 16usize, "1TQN", 5u8),
         ("bemisia_preprint23.json", 16usize, "1TQN", 5u8),
         ("anopheles_preprint22.json", 17usize, "1TQN", 5u8),
-        ("basal_metazoa_preprint05.json", 16usize, "1LI1", 5u8),
+        ("basal_metazoa_preprint05.json", 20usize, "1LI1", 1u8),
     ] {
         let cfg_path = manifest_dir.join("benchmarks/studies").join(fname);
         let cfg = DeclarativeStudyConfig::load(&cfg_path)

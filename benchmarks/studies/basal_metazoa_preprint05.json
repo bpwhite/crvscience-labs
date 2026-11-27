@@ -1,7 +1,7 @@
 {
   "study_slug": "STUDY-BASAL-METAZOA-TIMETREE-NATIVE-BIOSUITE-2026",
   "fig_prefix": "basal-metazoa",
-  "run_id": "runie-native-basal-metazoa-05-v4",
+  "run_id": "runie-native-basal-metazoa-05-v5",
   "preprint_slug": "basal-metazoa-timetree-preprint",
   "discovery_slug": "cteno-porifera-cnidaria-timetree",
   "validation_set_id": "VAL-SET-044-BASAL-METAZOA-CTENO-PORIFERA-CNIDARIA-TIMETREE-64TAXA-1.64MB",
@@ -10,266 +10,260 @@
   "concept_doi": "10.5281/zenodo.23974572",
   "remediation_note": "",
   "telemetry_filename": "basal-metazoa-cteno-porifera-cnidaria-timetree.json",
-  "companion_label": "Lab Discovery #135",
+  "companion_label": "Lab Discovery #114",
   "title": "Calibrated Phylogenomic Time-Tree, Basement Membrane & Neurosensory Selection, and Marine Coalescent Skylines Across Basal Metazoa",
-  "subtitle_prefix": "100% Native Rust Genetic Code 5 & 1 Partitioned ModelTest Phylogenomics",
+  "subtitle_prefix": "100% Native Rust 20-Locus Nuclear Code-1 Partitioned ModelTest Phylogenomics",
   "category": "Deep Metazoan Phylogenomics, Geochronology & Evolution",
   "read_time": "24 min read",
   "complexity": "High (Graduate Phylogenomics & Deep Metazoan Evolution)",
   "taxonomic_scope": "Holozoa Outgroups + Ctenophora + Porifera + Placozoa + Cnidaria + Crown Bilateria",
-  "genetic_code_table": 5,
+  "genetic_code_table": 1,
   "is_prokaryote": false,
   "benchmark_design_path": "crvscience-labs/benchmarks/basal_metazoa_preprint05_design.json",
   "cache_subdir": "val_set_044_basal_metazoa_timetree_334recs",
   "seqnet_sqlite_name": "seqnet_basal_metazoa_preprint05.sqlite",
   "nexus_filename": "seqnet_basal_metazoa_supermatrix.nex",
   "supermatrix_fasta_name": "basal_metazoa_64taxa_supermatrix.fasta",
-  "s3_locus_canonical": "COI",
-  "mito_cohort_queries": [
-    {
-      "cache_key": "bm05_nuc_18s_q1",
-      "query": "(Cnidaria[Organism] OR Porifera[Organism] OR Ctenophora[Organism]) AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 500:2200[SLEN] NOT \"28S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
-      "target_n": 48,
-      "min_bp": 450,
-      "max_bp": 2200
-    },
-    {
-      "cache_key": "bm05_nuc_28s_q1",
-      "query": "(Cnidaria[Organism] OR Porifera[Organism] OR Ctenophora[Organism]) AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 400:2800[SLEN] NOT \"18S\"[Title] NOT PREDICTED[Title] NOT mRNA[Filter] NOT genome[Title]",
-      "target_n": 48,
-      "min_bp": 350,
-      "max_bp": 2800
-    }
-  ],
-  "fallback_mito_accessions": [
-    "NC_004309.1",
-    "PQ097057.1",
-    "AF538044.1",
-    "NC_046408.1",
-    "NC_016117.1",
-    "JN392469.1",
-    "OZ318085.1",
-    "PX922698.1",
-    "NC_010769.1",
-    "EF537576.1",
-    "NC_008944.1",
-    "NC_010202.1",
-    "NC_010496.1",
-    "NC_006991.1",
-    "NC_006990.1",
-    "NC_010211.1",
-    "NC_010203.1",
-    "OZ172661.1",
-    "NC_009090.1",
-    "NC_010215.1",
-    "NC_008151.3",
-    "NC_008834.2",
-    "NC_008832.4",
-    "NC_008833.4",
-    "MT957400.1",
-    "NC_041549.1",
-    "NC_008164.1",
-    "NC_000933.1",
-    "NC_003522.1",
-    "NC_022830.1",
-    "NC_011162.1",
-    "NC_009797.1",
-    "NC_007226.1",
-    "NC_030186.1",
-    "NC_007226.1",
-    "NC_022265.1",
-    "PP438735.1",
-    "NC_008161.1",
-    "AF064823.1",
-    "NC_018378.1",
-    "NC_008073.1",
-    "NC_013573.1",
-    "NC_008446.1",
-    "QB214204.1",
-    "NC_035741.1",
-    "NC_035740.1",
-    "NC_016466.1",
-    "NC_020459.1",
-    "JN700937.1",
-    "BK067232.1",
-    "JN700945.1",
-    "NC_011220.1",
-    "NC_010214.1",
-    "BK067244.1",
-    "ON417653.1",
-    "JN700944.1",
-    "NC_002681.1",
-    "NC_003057.1",
-    "NC_001322.1",
-    "NC_001673.1",
-    "NC_001636.1",
-    "NC_001453.1",
-    "NC_001912.1",
-    "NC_012920.1"
-  ],
+  "s3_locus_canonical": "univ_ef1a",
+  "mito_cohort_queries": [],
+  "fallback_mito_accessions": [],
   "s4_banner_title": "Holozoa & Basal Metazoa (Ctenophora, Porifera, Placozoa, Cnidaria)",
   "anchor_species": "Nematostella vectensis",
-  "anchor_locus": "COI",
+  "anchor_locus": "univ_ef1a",
   "locus_defs": [
     {
-      "canonical": "COI",
-      "display_name": "COI",
+      "canonical": "univ_rpb1",
+      "display_name": "RPB1/POLR2A",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 220,
-      "max_bp": 1800,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 8500,
       "min_taxa": 14,
-      "min_aa": 90
+      "min_aa": 200,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.28
     },
     {
-      "canonical": "COII",
-      "display_name": "COII",
+      "canonical": "univ_rpb2",
+      "display_name": "RPB2/POLR2B",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 180,
-      "max_bp": 1200,
-      "min_taxa": 12,
-      "min_aa": 90
+      "is_nuclear": true,
+      "min_bp": 650,
+      "max_bp": 5500,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.28
     },
     {
-      "canonical": "COIII",
-      "display_name": "COIII",
+      "canonical": "univ_ef1a",
+      "display_name": "EF1A/EEF1A1",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 180,
-      "max_bp": 1200,
-      "min_taxa": 12,
-      "min_aa": 90
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
     },
     {
-      "canonical": "CYTB",
-      "display_name": "CYTB",
+      "canonical": "univ_ef2",
+      "display_name": "EF2/EEF2",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 220,
-      "max_bp": 1500,
-      "min_taxa": 12,
-      "min_aa": 90
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 4500,
+      "min_taxa": 14,
+      "min_aa": 200,
+      "min_aa_identity": 0.15,
+      "min_dayhoff6_sim": 0.29
     },
     {
-      "canonical": "ND1",
-      "display_name": "ND1",
+      "canonical": "univ_vmaA",
+      "display_name": "VMA1/ATP6V1A",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 200,
-      "max_bp": 1400,
-      "min_taxa": 12,
-      "min_aa": 90
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 4000,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.15,
+      "min_dayhoff6_sim": 0.29
     },
     {
-      "canonical": "ND2",
-      "display_name": "ND2",
+      "canonical": "univ_vmaB",
+      "display_name": "VMA2/ATP6V1B",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 200,
-      "max_bp": 1400,
-      "min_taxa": 12,
-      "min_aa": 90
+      "is_nuclear": true,
+      "min_bp": 650,
+      "max_bp": 3400,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.15,
+      "min_dayhoff6_sim": 0.3
     },
     {
-      "canonical": "ND3",
-      "display_name": "ND3",
+      "canonical": "univ_rad51",
+      "display_name": "RAD51",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 150,
-      "max_bp": 800,
-      "min_taxa": 10,
-      "min_aa": 55
+      "is_nuclear": true,
+      "min_bp": 550,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 130,
+      "min_aa_identity": 0.15,
+      "min_dayhoff6_sim": 0.28
     },
     {
-      "canonical": "ND4",
-      "display_name": "ND4",
+      "canonical": "univ_cct",
+      "display_name": "CCT/TCP1",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 200,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 3200,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.27
+    },
+    {
+      "canonical": "univ_hsp70",
+      "display_name": "HSP70/HSPA8",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 3600,
+      "min_taxa": 14,
+      "min_aa": 200,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_hsp90",
+      "display_name": "HSP90/HSP90AA1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 3200,
+      "min_taxa": 14,
+      "min_aa": 200,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_eif5b",
+      "display_name": "eIF5B",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 4500,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.27
+    },
+    {
+      "canonical": "univ_sec61a",
+      "display_name": "Sec61A",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 150,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.28
+    },
+    {
+      "canonical": "univ_rpl2",
+      "display_name": "RPL8/uL2",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
       "max_bp": 1600,
-      "min_taxa": 12,
-      "min_aa": 90
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
     },
     {
-      "canonical": "ND4L",
-      "display_name": "ND4L",
+      "canonical": "univ_rpl3",
+      "display_name": "RPL3/uL3",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 150,
-      "max_bp": 700,
-      "min_taxa": 10,
-      "min_aa": 55
-    },
-    {
-      "canonical": "ND5",
-      "display_name": "ND5",
-      "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 220,
+      "is_nuclear": true,
+      "min_bp": 550,
       "max_bp": 2000,
-      "min_taxa": 12,
-      "min_aa": 90
+      "min_taxa": 14,
+      "min_aa": 150,
+      "min_aa_identity": 0.17,
+      "min_dayhoff6_sim": 0.31
     },
     {
-      "canonical": "ND6",
-      "display_name": "ND6",
+      "canonical": "univ_rps3",
+      "display_name": "RPS3/uS3",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 150,
-      "max_bp": 900,
-      "min_taxa": 10,
-      "min_aa": 55
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1600,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
     },
     {
-      "canonical": "ATP6",
-      "display_name": "ATP6",
+      "canonical": "univ_fen1",
+      "display_name": "FEN1",
       "is_protein_coding": true,
-      "is_nuclear": false,
-      "min_bp": 150,
-      "max_bp": 1000,
-      "min_taxa": 10,
-      "min_aa": 55
+      "is_nuclear": true,
+      "min_bp": 550,
+      "max_bp": 2200,
+      "min_taxa": 14,
+      "min_aa": 150,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.27
     },
     {
-      "canonical": "rrnL_16S",
-      "display_name": "16S",
-      "is_protein_coding": false,
-      "is_nuclear": false,
-      "min_bp": 180,
-      "max_bp": 1800,
-      "min_taxa": 12,
-      "min_aa": 70
+      "canonical": "univ_pcna",
+      "display_name": "PCNA",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1600,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.27
     },
     {
-      "canonical": "rrnS_12S",
-      "display_name": "12S",
-      "is_protein_coding": false,
-      "is_nuclear": false,
-      "min_bp": 160,
-      "max_bp": 1400,
-      "min_taxa": 12,
-      "min_aa": 70
+      "canonical": "univ_thrrs",
+      "display_name": "ThrRS/TARS1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 3400,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.14,
+      "min_dayhoff6_sim": 0.28
     },
     {
-      "canonical": "SSU_18S",
-      "display_name": "18S",
+      "canonical": "univ_ssu",
+      "display_name": "18S SSU rRNA",
       "is_protein_coding": false,
       "is_nuclear": true,
-      "min_bp": 220,
-      "max_bp": 2400,
-      "min_taxa": 14,
-      "min_aa": 70
+      "min_bp": 600,
+      "max_bp": 2500,
+      "min_taxa": 14
     },
     {
-      "canonical": "LSU_28S",
-      "display_name": "28S",
+      "canonical": "univ_lsu",
+      "display_name": "28S LSU rRNA",
       "is_protein_coding": false,
       "is_nuclear": true,
-      "min_bp": 220,
-      "max_bp": 4200,
-      "min_taxa": 14,
-      "min_aa": 70
+      "min_bp": 650,
+      "max_bp": 4500,
+      "min_taxa": 14
     }
   ],
   "species_slots": [
@@ -283,137 +277,144 @@
     {
       "tip_code": "A:T002",
       "sector_code": "[A] Holozoa & Choanoflagellata Outgroups",
-      "family": "Capsasporidae",
-      "species": "Capsaspora owczarzaki",
+      "family": "Salpingoecidae",
+      "species": "Salpingoeca rosetta",
       "synonyms": []
     },
     {
       "tip_code": "A:T003",
       "sector_code": "[A] Holozoa & Choanoflagellata Outgroups",
-      "family": "Amoebidiidae",
-      "species": "Amoebidium parasiticum",
+      "family": "Capsasporidae",
+      "species": "Capsaspora owczarzaki",
       "synonyms": []
     },
     {
       "tip_code": "A:T004",
       "sector_code": "[A] Holozoa & Choanoflagellata Outgroups",
-      "family": "Blastocladiomycota",
-      "species": "Sphaerothecum destruens",
-      "synonyms": [
-        "Allomyces macrogynus"
-      ]
+      "family": "Sphaeroformidae",
+      "species": "Sphaeroforma arctica",
+      "synonyms": []
     },
     {
       "tip_code": "B:T005",
+      "sector_code": "[B] Phylum Ctenophora (Comb Jellies)",
+      "family": "Bolinopsidae",
+      "species": "Bolinopsis microptera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T006",
       "sector_code": "[B] Phylum Ctenophora (Comb Jellies)",
       "family": "Bolinopsidae",
       "species": "Mnemiopsis leidyi",
       "synonyms": []
     },
     {
-      "tip_code": "B:T006",
+      "tip_code": "B:T007",
       "sector_code": "[B] Phylum Ctenophora (Comb Jellies)",
       "family": "Pleurobrachiidae",
       "species": "Pleurobrachia bachei",
-      "synonyms": []
-    },
-    {
-      "tip_code": "B:T007",
-      "sector_code": "[B] Phylum Ctenophora (Comb Jellies)",
-      "family": "Bolinopsidae",
-      "species": "Bolinopsis mikado",
-      "synonyms": []
+      "synonyms": [
+        "Pleurobrachia bachei",
+        "Pleurobrachia pileus"
+      ]
     },
     {
       "tip_code": "B:T008",
       "sector_code": "[B] Phylum Ctenophora (Comb Jellies)",
-      "family": "Coeloplanidae",
-      "species": "Vallicula multiformis",
-      "synonyms": []
+      "family": "Beroidae",
+      "species": "Beroe ovata",
+      "synonyms": [
+        "Beroe ovata",
+        "Beroe cucumis"
+      ]
     },
     {
       "tip_code": "C:T009",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Rossellidae",
+      "species": "Oopsacas minuta",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T010",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
       "family": "Aphrocallistidae",
       "species": "Aphrocallistes vastus",
       "synonyms": []
     },
     {
-      "tip_code": "C:T010",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Dactylocalycidae",
-      "species": "Iphiteon panicea",
+      "tip_code": "C:T011",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Sycettidae",
+      "species": "Sycon ciliatum",
       "synonyms": []
     },
     {
-      "tip_code": "C:T011",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
+      "tip_code": "C:T012",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
       "family": "Niphatidae",
       "species": "Amphimedon queenslandica",
       "synonyms": []
     },
     {
-      "tip_code": "C:T012",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
+      "tip_code": "C:T013",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
       "family": "Spongillidae",
       "species": "Ephydatia muelleri",
       "synonyms": []
     },
     {
-      "tip_code": "C:T013",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
+      "tip_code": "C:T014",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Halichondriidae",
+      "species": "Halichondria panicea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Dysideidae",
+      "species": "Dysidea avara",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Geodiidae",
+      "species": "Geodia barretti",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
       "family": "Suberitidae",
       "species": "Suberites domuncula",
       "synonyms": []
     },
     {
-      "tip_code": "C:T014",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Tethyidae",
-      "species": "Tethya actinia",
-      "synonyms": []
-    },
-    {
-      "tip_code": "C:T015",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Geodiidae",
-      "species": "Geodia neptuni",
-      "synonyms": []
-    },
-    {
-      "tip_code": "C:T016",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Petrosiidae",
-      "species": "Xestospongia muta",
-      "synonyms": []
-    },
-    {
-      "tip_code": "C:T017",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Aplysinidae",
-      "species": "Aplysina fulva",
-      "synonyms": []
-    },
-    {
       "tip_code": "C:T018",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Spongiidae",
-      "species": "Spongia officinalis",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Oscarellidae",
+      "species": "Oscarella lobularis",
       "synonyms": []
     },
     {
       "tip_code": "C:T019",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Oscarellidae",
-      "species": "Oscarella carmela",
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Plakinidae",
+      "species": "Corticium candelabrum",
       "synonyms": []
     },
     {
       "tip_code": "C:T020",
-      "sector_code": "[C] Phylum Porifera (Hexactinellida, Demospongiae & Homoscleromorpha)",
-      "family": "Spongiidae",
-      "species": "Hippospongia lachne",
-      "synonyms": []
+      "sector_code": "[C] Phylum Porifera (Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha)",
+      "family": "Oscarellidae",
+      "species": "Oscarella pearsei",
+      "synonyms": [
+        "Oscarella pearsei",
+        "Oscarella carmela"
+      ]
     },
     {
       "tip_code": "D:T021",
@@ -426,197 +427,199 @@
       "tip_code": "D:T022",
       "sector_code": "[D] Phylum Placozoa (Basal ParaHoxozoa)",
       "family": "Trichoplacidae",
-      "species": "Trichoplax sp. BZ2423",
-      "synonyms": []
+      "species": "Trichoplax sp. H2",
+      "synonyms": [
+        "Trichoplax sp. H2",
+        "Placozoa sp. H2"
+      ]
     },
     {
       "tip_code": "D:T023",
       "sector_code": "[D] Phylum Placozoa (Basal ParaHoxozoa)",
       "family": "Trichoplacidae",
-      "species": "Trichoplax sp. BZ10101",
-      "synonyms": []
+      "species": "Placozoa sp. H4",
+      "synonyms": [
+        "Placozoa sp. H4",
+        "Placozoa sp. H19"
+      ]
     },
     {
       "tip_code": "D:T024",
       "sector_code": "[D] Phylum Placozoa (Basal ParaHoxozoa)",
-      "family": "Trichoplacidae",
-      "species": "Trichoplax sp. BZ49",
+      "family": "Polyplacotomidae",
+      "species": "Polyplacotoma mediterranea",
       "synonyms": []
     },
     {
-      "tip_code": "D:T025",
-      "sector_code": "[D] Phylum Placozoa (Basal ParaHoxozoa)",
-      "family": "Trichoplacidae",
-      "species": "Hoilungia sp. H24",
-      "synonyms": [
-        "Hoilungia hongkongensis"
-      ]
-    },
-    {
-      "tip_code": "D:T026",
-      "sector_code": "[D] Phylum Placozoa (Basal ParaHoxozoa)",
-      "family": "Trichoplacidae",
-      "species": "Polyplacotoma mediterranea",
-      "synonyms": [
-        "Cladtertia collaboinventa"
-      ]
-    },
-    {
-      "tip_code": "E:T027",
+      "tip_code": "E:T025",
       "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
       "family": "Edwardsiidae",
       "species": "Nematostella vectensis",
       "synonyms": []
     },
     {
-      "tip_code": "E:T028",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Metridiidae",
-      "species": "Metridium senile",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T029",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Acroporidae",
-      "species": "Acropora tenuis",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T030",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Acroporidae",
-      "species": "Acropora millepora",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T031",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Pocilloporidae",
-      "species": "Stylophora pistillata",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T032",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Pocilloporidae",
-      "species": "Pocillopora damicornis",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T033",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Merulinidae",
-      "species": "Orbicella faveolata",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T034",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Poritidae",
-      "species": "Porites lobata",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T035",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Montastraeidae",
-      "species": "Orbicella annularis",
-      "synonyms": [
-        "Montastraea cavernosa"
-      ]
-    },
-    {
-      "tip_code": "E:T036",
+      "tip_code": "E:T026",
       "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
       "family": "Aiptasiidae",
       "species": "Exaiptasia diaphana",
       "synonyms": []
     },
     {
-      "tip_code": "E:T037",
+      "tip_code": "E:T027",
       "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
       "family": "Actiniidae",
-      "species": "Actinia equina",
+      "species": "Actinia tenebrosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T028",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Actinostolidae",
+      "species": "Actinostola sp. cb2023",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T029",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Acroporidae",
+      "species": "Acropora millepora",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T030",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Acroporidae",
+      "species": "Acropora digitifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T031",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Acroporidae",
+      "species": "Acropora palmata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T032",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Acroporidae",
+      "species": "Montipora foliosa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T033",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Pocilloporidae",
+      "species": "Stylophora pistillata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T034",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Pocilloporidae",
+      "species": "Pocillopora damicornis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Merulinidae",
+      "species": "Orbicella faveolata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Poritidae",
+      "species": "Porites lutea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Oculinidae",
+      "species": "Oculina patagonica",
       "synonyms": []
     },
     {
       "tip_code": "E:T038",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Astrangiidae",
-      "species": "Astrangia poculata",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T039",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Alcyoniidae",
-      "species": "Sarcophyton glaucum",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T040",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Renillidae",
-      "species": "Renilla muelleri",
-      "synonyms": [
-        "Renilla reniformis"
-      ]
-    },
-    {
-      "tip_code": "E:T041",
-      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
-      "family": "Briareidae",
-      "species": "Briareum asbestinum",
-      "synonyms": []
-    },
-    {
-      "tip_code": "E:T042",
       "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
       "family": "Nephtheidae",
       "species": "Dendronephthya gigantea",
       "synonyms": []
     },
     {
-      "tip_code": "F:T043",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Ulmaridae",
-      "species": "Aurelia aurita",
+      "tip_code": "E:T039",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Xeniidae",
+      "species": "Xenia sp. Carnegie-2017",
       "synonyms": []
     },
     {
-      "tip_code": "F:T044",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Ulmaridae",
-      "species": "Aurelia coerulea",
+      "tip_code": "E:T040",
+      "sector_code": "[E] Phylum Cnidaria: Subphylum Anthozoa (Hexacorallia & Octocorallia)",
+      "family": "Paramuriceidae",
+      "species": "Paramuricea clavata",
+      "genome_accession": "OM687344.1",
       "synonyms": []
     },
     {
-      "tip_code": "F:T045",
+      "tip_code": "F:T041",
       "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
       "family": "Rhizostomatidae",
       "species": "Rhopilema esculentum",
       "synonyms": []
     },
     {
+      "tip_code": "F:T042",
+      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
+      "family": "Hydridae",
+      "species": "Hydra vulgaris",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T043",
+      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
+      "family": "Hydridae",
+      "species": "Hydra viridissima",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T044",
+      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
+      "family": "Clytiidae",
+      "species": "Clytia hemisphaerica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T045",
+      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
+      "family": "Hydractiniidae",
+      "species": "Hydractinia symbiolongicarpus",
+      "synonyms": []
+    },
+    {
       "tip_code": "F:T046",
       "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Rhizostomatidae",
-      "species": "Nemopilema nomurai",
+      "family": "Hydractiniidae",
+      "species": "Podocoryna americana",
       "synonyms": []
     },
     {
       "tip_code": "F:T047",
       "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Cassiopeidae",
-      "species": "Cassiopea xamachana",
-      "synonyms": []
+      "family": "Ulmaridae",
+      "species": "Aurelia aurita",
+      "synonyms": [
+        "Aurelia aurita",
+        "Aurelia coerulea"
+      ]
     },
     {
       "tip_code": "F:T048",
       "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Pelagiidae",
-      "species": "Chrysaora quinquecirrha",
+      "family": "Cassiopeidae",
+      "species": "Cassiopea xamachana",
       "synonyms": []
     },
     {
@@ -629,101 +632,105 @@
     {
       "tip_code": "F:T050",
       "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Alatinidae",
-      "species": "Chironex yamaguchii",
-      "synonyms": [
-        "Alatina alata"
-      ]
-    },
-    {
-      "tip_code": "F:T051",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
       "family": "Chirodropidae",
       "species": "Chironex fleckeri",
       "synonyms": []
     },
     {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
+      "family": "Tripedaliidae",
+      "species": "Tripedalia cystophora",
+      "synonyms": [
+        "Tripedalia cystophora",
+        "Alatina alata"
+      ]
+    },
+    {
       "tip_code": "F:T052",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Hydridae",
-      "species": "Hydra vulgaris",
-      "synonyms": []
-    },
-    {
-      "tip_code": "F:T053",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Hydridae",
-      "species": "Hydra oligactis",
-      "synonyms": []
-    },
-    {
-      "tip_code": "F:T054",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Clytiidae",
-      "species": "Clytia hemisphaerica",
-      "synonyms": []
-    },
-    {
-      "tip_code": "F:T055",
-      "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "family": "Oceanidae",
-      "species": "Turritopsis dohrnii",
-      "synonyms": []
-    },
-    {
-      "tip_code": "F:T056",
       "sector_code": "[F] Phylum Cnidaria: Subphylum Medusozoa (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
       "family": "Haliclystidae",
       "species": "Haliclystus sanjuanensis",
-      "synonyms": []
+      "synonyms": [
+        "Haliclystus sanjuanensis",
+        "Haliclystus auricula"
+      ]
     },
     {
-      "tip_code": "G:T057",
+      "tip_code": "G:T053",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
-      "family": "Trichinellidae",
-      "species": "Trichinella spiralis",
+      "family": "Priapulidae",
+      "species": "Priapulus caudatus",
       "synonyms": []
     },
     {
-      "tip_code": "G:T058",
+      "tip_code": "G:T054",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
       "family": "Limulidae",
       "species": "Limulus polyphemus",
       "synonyms": []
     },
     {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
+      "family": "Daphniidae",
+      "species": "Daphnia pulex",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
+      "family": "Tenebrionidae",
+      "species": "Tribolium castaneum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
+      "family": "Lingulidae",
+      "species": "Lingula anatina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
+      "family": "Oweniidae",
+      "species": "Owenia fusiformis",
+      "synonyms": []
+    },
+    {
       "tip_code": "G:T059",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
-      "family": "Drosophilidae",
-      "species": "Drosophila yakuba",
+      "family": "Lottiidae",
+      "species": "Lottia gigantea",
       "synonyms": []
     },
     {
       "tip_code": "G:T060",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
-      "family": "Lumbricidae",
-      "species": "Lumbricus terrestris",
+      "family": "Ostreidae",
+      "species": "Crassostrea gigas",
       "synonyms": []
     },
     {
       "tip_code": "G:T061",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
-      "family": "Mopaliidae",
-      "species": "Katharina tunicata",
+      "family": "Harrimaniidae",
+      "species": "Saccoglossus kowalevskii",
       "synonyms": []
     },
     {
       "tip_code": "G:T062",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
-      "family": "Echinodermata",
+      "family": "Strongylocentrotidae",
       "species": "Strongylocentrotus purpuratus",
       "synonyms": []
     },
     {
       "tip_code": "G:T063",
       "sector_code": "[G] Crown Bilateria (Protostomia & Deuterostomia)",
-      "family": "Cephalochordata",
-      "species": "Branchiostoma lanceolatum",
+      "family": "Branchiostomatidae",
+      "species": "Branchiostoma floridae",
       "synonyms": []
     },
     {
@@ -974,7 +981,7 @@
       "locality": "Atlantic Comb Jelly (Mnemiopsis leidyi)",
       "cache_key": "bm05_pop_r4_v4",
       "query": "\"Mnemiopsis leidyi\"[Organism] AND (cytochrome[Title] OR COI[Title] OR COX1[Title] OR 16S[Title]) AND 350:1600[SLEN]",
-      "fallback_query": "Ctenophora[Organism] AND (COI[Title] OR COX1[Title] OR \"16S\"[Title]) AND 350:1600[SLEN]",
+      "fallback_query": "txid10197[Organism:exp] AND (COI[Title] OR COX1[Title] OR \"16S\"[Title]) AND 350:1600[SLEN]",
       "min_bp": 340,
       "max_bp": 1650
     },
@@ -1032,19 +1039,19 @@
     {
       "cohort_code": "L2",
       "axis_group": "Same-Region Multi-Locus (Fig 4B: Coral & Scyphozoa)",
-      "region_label": "Aurelia aurita (Nuclear rDNA ITS1-5.8S 4Ne)",
-      "clade_lineage": "Aurelia aurita",
+      "region_label": "Stylophora pistillata (Red Sea & Indo-Pacific ITS1-5.8S 4Ne)",
+      "clade_lineage": "Stylophora pistillata",
       "locus_name": "Nuclear rDNA ITS1-5.8S (4Ne)",
       "locus_tag": "SSU_18S",
       "ploidy_scalar": 4,
-      "mu_rate": 0.009,
+      "mu_rate": 0.008,
       "source_id": "P05-L2",
-      "locality": "Aurelia aurita (Nuclear rDNA ITS1-5.8S 4Ne)",
-      "cache_key": "bm05_pop_l2_v4",
-      "query": "Aurelia[Organism] AND (\"internal transcribed spacer\"[Title] OR \"5.8S\"[Title] OR ITS1[Title]) AND 450:1600[SLEN]",
-      "fallback_query": "Cnidaria[Organism] AND (\"28S\"[Title] OR ITS1[Title] OR \"internal transcribed spacer\"[Title]) AND 350:1200[SLEN]",
-      "min_bp": 420,
-      "max_bp": 1650
+      "locality": "Red Sea & Indo-Pacific Reefs (Stylophora pistillata ITS1-5.8S)",
+      "cache_key": "bm05_pop_l2_spist_v6",
+      "query": "\"Stylophora pistillata\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR \"5.8S\"[Title]) AND 400:1200[SLEN] NOT mitochondrion[Filter]",
+      "fallback_query": "",
+      "min_bp": 380,
+      "max_bp": 1250
     },
     {
       "cohort_code": "L3",
@@ -1083,35 +1090,35 @@
     {
       "cohort_code": "L5",
       "axis_group": "Same-Region Multi-Locus (Fig 4B: Coral & Scyphozoa)",
-      "region_label": "Acropora hyacinthus (Nuclear ITS/28S rDNA 4Ne)",
+      "region_label": "Acropora hyacinthus (Indo-Pacific Tabular Coral ITS1-5.8S 4Ne)",
       "clade_lineage": "Acropora hyacinthus",
-      "locus_name": "Nuclear rDNA 28S/ITS (4Ne)",
+      "locus_name": "Nuclear rDNA ITS1-5.8S (4Ne)",
       "locus_tag": "LSU_28S",
       "ploidy_scalar": 4,
       "mu_rate": 0.007,
       "source_id": "P05-L5",
-      "locality": "Acropora hyacinthus (Nuclear ITS/28S rDNA 4Ne)",
-      "cache_key": "bm05_pop_l5_v4",
-      "query": "Acropora[Organism] AND (\"internal transcribed spacer\"[Title] OR \"28S\"[Title] OR ITS1[Title]) AND 350:1200[SLEN]",
-      "fallback_query": "Cnidaria[Organism] AND (\"28S\"[Title] OR ITS1[Title] OR \"internal transcribed spacer\"[Title]) AND 350:1200[SLEN]",
-      "min_bp": 320,
-      "max_bp": 1250
+      "locality": "Indo-Pacific Reef Flats (Acropora hyacinthus ITS1-5.8S)",
+      "cache_key": "bm05_pop_l5_ahyac_v6",
+      "query": "\"Acropora hyacinthus\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR \"5.8S\"[Title]) AND 320:1250[SLEN] NOT mitochondrion[Filter]",
+      "fallback_query": "",
+      "min_bp": 300,
+      "max_bp": 1260
     },
     {
       "cohort_code": "L6",
       "axis_group": "Same-Region Multi-Locus (Fig 4B: Coral & Scyphozoa)",
-      "region_label": "Actiniaria Sea Anemone Deme (Nuclear Actin CDS 4Ne)",
-      "clade_lineage": "Actiniaria Nuclear Actin Deme",
-      "locus_name": "Nuclear Actin CDS (4Ne)",
+      "region_label": "Pocillopora damicornis (Indo-Pacific Coral Nuclear Hsp70 4Ne)",
+      "clade_lineage": "Pocillopora damicornis",
+      "locus_name": "Nuclear Hsp70 CDS (4Ne)",
       "locus_tag": "COI",
       "ploidy_scalar": 4,
       "mu_rate": 0.006,
       "source_id": "P05-L6",
-      "locality": "Actiniaria Sea Anemone Deme (Nuclear Actin CDS 4Ne)",
-      "cache_key": "bm05_pop_l6_actin_v5",
-      "query": "Actiniaria[Organism] AND \"actin\"[Title] AND mRNA[Filter] AND 700:1800[SLEN]",
+      "locality": "Indo-Pacific Reef Lagoons (Pocillopora damicornis Nuclear Hsp70)",
+      "cache_key": "bm05_pop_l6_pdam_hsp70_v6",
+      "query": "\"Pocillopora damicornis\"[Organism] AND (\"heat shock protein 70\"[Title] OR Hsp70[Title] OR HSP70[Title]) AND 380:1800[SLEN] NOT mitochondrion[Filter]",
       "fallback_query": "",
-      "min_bp": 650,
+      "min_bp": 360,
       "max_bp": 1850
     }
   ],
@@ -1162,7 +1169,7 @@
   "supp_s2_cohort_code": "L2",
   "haplotype_panels": [
     {
-      "panel_id": "Scyphozoa Aurelia Coastal Demes (COI-5P)",
+      "panel_id": "Scyphozoa Aurelia Coastal Demes",
       "fasta_filename": "cohort_bm_aurelia_cox1.fasta",
       "cohort_indices": [
         0,
@@ -1177,7 +1184,7 @@
       "min_occ": 0.6
     },
     {
-      "panel_id": "Anthozoa & Hydrozoa Marine Demes (COI-5P)",
+      "panel_id": "Anthozoa & Hydrozoa Marine Demes",
       "fasta_filename": "cohort_bm_anthozoa_cox1.fasta",
       "cohort_indices": [
         2,
@@ -1200,149 +1207,188 @@
   "calibrated_nodes": [
     {
       "node_id": "Node I",
-      "clade_name": "Holozoa Root (Choanoflagellata Monosiga + Filasterea Capsaspora + Ichthyosporea vs. Crown Metazoa)",
+      "clade_name": "Holozoa Root (Choanoflagellata + Filasterea vs. Crown Metazoa)",
       "sector_code": "[A]-[G]",
       "fossil_or_biogeo_anchor": "Early Tonian opisthokont/holozoan divergence & Proterozoic microfossil horizon (~840-945 Ma)",
       "target_age_ma": 892.4,
       "ci_min_ma": 842,
       "ci_max_ma": 941.8,
       "trophic_guild": "Unicellular & Colonial Flagellate Bacterivores (Choanoflagellata & Filasterea)",
-      "key_enzymes_or_loci": "Receptor Tyrosine Kinases, Protocadherins & Ancestral Ca2+ Signalling Toolkit",
+      "key_enzymes_or_loci": "RPB1/RPB2, EF1A, Protocadherins & Ancestral Ca2+ Signalling Toolkit",
       "ecosystem_role": "Basal Holozoan outgroup root anchoring metazoan multicellularity",
       "sector_idx": 0,
       "tip_prefixes": []
     },
     {
       "node_id": "Node II",
-      "clade_name": "Crown Metazoa Root (Phylum Ctenophora Sister to Benthozoa: Porifera + ParaHoxozoa)",
+      "clade_name": "Crown Metazoa Root (Phylum Ctenophora Sister to Benthozoa)",
       "sector_code": "[B]-[G]",
       "fossil_or_biogeo_anchor": "Mid-Tonian metazoan stem divergence & BCnS 29-ALG chromosomal synteny partition (~775-875 Ma)",
       "target_age_ma": 824.6,
       "ci_min_ma": 778.4,
       "ci_max_ma": 871.2,
       "trophic_guild": "Gelatinous Ciliary-Comb Pelagic & Epibenthic Predators (Ctenophora)",
-      "key_enzymes_or_loci": "Innexin Gap-Junction Syncytial Neuroid Net, Cav1/Kv1 Channels & Photoproteins",
-      "ecosystem_role": "Earliest-diverging crown metazoan phylum with independent peptidergic/syncytial nervous system",
+      "key_enzymes_or_loci": "RPB1/RPB2, HSP70/HSP90, FoxJ1 Comb-Plate Ciliogenesis & Syncytial Neuroid Net",
+      "ecosystem_role": "Earliest-diverging crown metazoan phylum sister to Porifera + Placozoa + Eumetazoa",
       "sector_idx": 1,
-      "tip_prefixes": []
+      "tip_prefixes": [
+        "B_",
+        "C_",
+        "D_",
+        "E_",
+        "F_",
+        "G_"
+      ]
     },
     {
       "node_id": "Node III",
-      "clade_name": "Benthozoa Divergence (Phylum Porifera vs. ParaHoxozoa: Placozoa + Cnidaria + Bilateria)",
+      "clade_name": "Benthozoa Stem Divergence (Hexactinellida-Placozoa vs. Core Porifera + Planulozoa)",
       "sector_code": "[C]-[G]",
-      "fossil_or_biogeo_anchor": "Late Tonian / Pre-Sturtian Benthozoa split & 7-event BCnS chromosomal fusion synapomorphy (~720-815 Ma)",
-      "target_age_ma": 768.2,
-      "ci_min_ma": 724.6,
-      "ci_max_ma": 812.5,
-      "trophic_guild": "Benthic Aquiferous Choanocyte Suspension Feeders (Porifera)",
-      "key_enzymes_or_loci": "Silicatein Spicule Biomineralization, Post-Synaptic Scaffold Homologs & COL4 (Homoscleromorpha)",
-      "ecosystem_role": "Benthic filter-feeding engineers driving Neoproterozoic-Phanerozoic water-column oxygenation",
+      "fossil_or_biogeo_anchor": "Late Tonian / Pre-Sturtian Benthozoa split & 7-event BCnS chromosomal fusion synapomorphy (~715-800 Ma)",
+      "target_age_ma": 752,
+      "ci_min_ma": 715,
+      "ci_max_ma": 798,
+      "trophic_guild": "Bathyal Siliceous Glass Sponges & Ciliated Placozoan Biofilm Grazers",
+      "key_enzymes_or_loci": "VMA1/VMA2, Sec61A, ParaHox Trox-2 & Silicatein Biomineralization",
+      "ecosystem_role": "Basal benthic filter-feeding and epithelial grazing grade post-dating Ctenophora",
       "sector_idx": 2,
-      "tip_prefixes": []
+      "tip_prefixes": [
+        "C_",
+        "D_",
+        "E_",
+        "F_",
+        "G_"
+      ]
     },
     {
       "node_id": "Node IV",
-      "clade_name": "Crown Phylum Porifera (Hexactinellida vs. Demospongiae + Homoscleromorpha)",
-      "sector_code": "[C]",
-      "fossil_or_biogeo_anchor": "Cryogenian sterane biomarker horizon (24-ipc / 26-mes) & pre-Ediacaran siliceous spicule radiation (~640-730 Ma)",
-      "target_age_ma": 684.5,
-      "ci_min_ma": 641.2,
-      "ci_max_ma": 728.9,
-      "trophic_guild": "Bathyal Glass Sponges, Demosponges & Basement-Membrane Homoscleromorphs",
-      "key_enzymes_or_loci": "Sterol C-24 Methyltransferases, Bromotyrosine Synthases & Oscarella Type IV Collagen",
-      "ecosystem_role": "Deep-sea siliceous sponge reefs and shallow carbonate bioerosion/accretion guilds",
+      "clade_name": "Epitheliozoa / Core Porifera–Planulozoa Divergence (Core Sponges vs. Eumetazoa)",
+      "sector_code": "[C],[E]-[G]",
+      "fossil_or_biogeo_anchor": "Cryogenian Sturtian-Marinoan interglacial sponge-eumetazoan divergence (~655-735 Ma)",
+      "target_age_ma": 694,
+      "ci_min_ma": 655,
+      "ci_max_ma": 735,
+      "trophic_guild": "Calcareous, Demosponge & Homoscleromorph Aquiferous Suspension Feeders",
+      "key_enzymes_or_loci": "CCT/TCP1, RPL3/RPS3, Classical Cadherins & Basement-Membrane Scaffolds",
+      "ecosystem_role": "Neoproterozoic benthic oxygenation and carbonate-siliceous reef foundation",
       "sector_idx": 3,
-      "tip_prefixes": []
+      "tip_prefixes": [
+        "C_T011",
+        "C_T012",
+        "C_T014",
+        "C_T015",
+        "C_T018",
+        "C_T019",
+        "E_",
+        "F_",
+        "G_"
+      ]
     },
     {
       "node_id": "Node V",
-      "clade_name": "Crown ParaHoxozoa / Planulozoa (Phylum Placozoa vs. Eumetazoa: Cnidaria + Bilateria)",
-      "sector_code": "[D]-[G]",
-      "fossil_or_biogeo_anchor": "Cryogenian Sturtian-Marinoan interglacial ParaHoxozoa divergence (~670-755 Ma)",
-      "target_age_ma": 712.8,
-      "ci_min_ma": 671.4,
-      "ci_max_ma": 754.6,
-      "trophic_guild": "Ciliated Epithelial Biofilm Grazers & Peptidergic Secretory Placozoans (Tricoplacidae)",
-      "key_enzymes_or_loci": "ParaHox Trox-2 (Gsx), Secretory Neuropeptide Prohormones & Large Mitogenome Introns",
-      "ecosystem_role": "Acoelous diploblastic biofilm grazers illuminating pre-synaptic peptidergic signaling",
-      "sector_idx": 4,
-      "tip_prefixes": []
+      "clade_name": "Core Phylum Porifera Crown (Calcarea + Demospongiae vs. Homoscleromorpha)",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Cryogenian sterane biomarker horizon (24-ipc / 26-mes) & siliceous/calcareous spicule split (~615-695 Ma)",
+      "target_age_ma": 655,
+      "ci_min_ma": 615,
+      "ci_max_ma": 695,
+      "trophic_guild": "Demospongiae, Calcarea & Basement-Membrane Homoscleromorpha (Oscarella + Corticium)",
+      "key_enzymes_or_loci": "COL4A1 Basement-Membrane Collagen, Sterol C-24 Methyltransferases & RAD51",
+      "ecosystem_role": "Crown sponge class diversification across shallow shelves and bathyal habitats",
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "C_T011",
+        "C_T012",
+        "C_T014",
+        "C_T015",
+        "C_T018",
+        "C_T019"
+      ]
     },
     {
       "node_id": "Node VI",
-      "clade_name": "Crown Eumetazoa / Neuralia (Phylum Cnidaria vs. Crown Bilateria)",
+      "clade_name": "Crown Planulozoa / Eumetazoa (Phylum Cnidaria vs. Crown Bilateria)",
       "sector_code": "[E]-[G]",
-      "fossil_or_biogeo_anchor": "Late Cryogenian / Basal Ediacaran Eumetazoa divergence & Lantian/Weng'an horizon (~615-695 Ma)",
-      "target_age_ma": 654.2,
-      "ci_min_ma": 616.8,
-      "ci_max_ma": 692.4,
-      "trophic_guild": "Cnidocyte-Armed Benthic Polyps, Symbiotic Scleractinians & Octocorals (Anthozoa)",
-      "key_enzymes_or_loci": "Peroxidasin Met93-Hyl211 COL4 Sulfilimine Crosslink, Nav1/Cav1 Channels & mtMutS",
-      "ecosystem_role": "Epithelial basement-membrane & chemical-synapse bearers founding coral reef ecosystems",
+      "fossil_or_biogeo_anchor": "Late Cryogenian / Basal Ediacaran Planulozoa divergence & Lantian/Weng'an horizon (~605-680 Ma)",
+      "target_age_ma": 642,
+      "ci_min_ma": 605,
+      "ci_max_ma": 680,
+      "trophic_guild": "Polarized Epithelial & Chemical-Synapse Eumetazoans (Cnidaria + Bilateria)",
+      "key_enzymes_or_loci": "COL4A1 Met93-Hyl211 Sulfilimine Crosslink, SYT1 Exocytosis & Nav1/Cav1 Channels",
+      "ecosystem_role": "Reciprocally monophyletic Cnidaria-Bilateria split founding eumetazoan body plans",
       "sector_idx": 5,
-      "tip_prefixes": []
+      "tip_prefixes": [
+        "E_",
+        "F_",
+        "G_"
+      ]
     },
     {
       "node_id": "Node VII",
       "clade_name": "Crown Phylum Cnidaria (Subphylum Anthozoa vs. Subphylum Medusozoa)",
       "sector_code": "[E]-[F]",
-      "fossil_or_biogeo_anchor": "Mid-Ediacaran Charniodiscus / Haootia cnidarian body-fossil & linear-mtDNA transition (~550-625 Ma)",
+      "fossil_or_biogeo_anchor": "Early-to-Mid Ediacaran Haootia / Auroralumina cnidarian fossil & linear-mtDNA split (~550-622 Ma)",
       "target_age_ma": 586.4,
-      "ci_min_ma": 540,
-      "ci_max_ma": 605,
-      "trophic_guild": "Alternating Polyp-Medusa Pelagic Cnidarians (Scyphozoa, Cubozoa, Staurozoa & Hydrozoa)",
-      "key_enzymes_or_loci": "Linear Telomeric Mitochondrial Chromosomes, Minicollagens & Box-Jelly Crystallin Opsins",
-      "ecosystem_role": "Pelagic medusozoan macrozooplankton and coastal jellyfish bloom regulators",
+      "ci_min_ma": 550,
+      "ci_max_ma": 622,
+      "trophic_guild": "Benthic Hexacorallia/Octocorallia Polyps vs. Pelagic Scyphozoa/Hydrozoa Medusae",
+      "key_enzymes_or_loci": "EF1A/ThrRS, Anthozoan mtMutS Stasis vs. Linear Telomeric Medusozoan mtDNA",
+      "ecosystem_role": "Monophyletic cnidarian radiation across benthic coral reefs and pelagic medusae",
       "sector_idx": 6,
-      "tip_prefixes": []
+      "tip_prefixes": [
+        "E_",
+        "F_"
+      ]
     },
     {
       "node_id": "Node VIII",
       "clade_name": "Crown Bilateria / Nephrozoa (Protostomia Ecdysozoa+Spiralia vs. Deuterostomia)",
       "sector_code": "[G]",
-      "fossil_or_biogeo_anchor": "Late Ediacaran Kimberella / Ikaria trace-fossil & Fortunian Cambrian boundary (~536-585 Ma)",
+      "fossil_or_biogeo_anchor": "Late Ediacaran Kimberella / Ikaria trace-fossil & Fortunian Cambrian boundary (~536-584 Ma)",
       "target_age_ma": 558.6,
       "ci_min_ma": 536.4,
       "ci_max_ma": 584.2,
-      "trophic_guild": "Triploblastic Coelomate Protostomes & Deuterostomes (Bilateria Reference Clade)",
-      "key_enzymes_or_loci": "Collinear Hox1-Hox13 Cluster, DEKA Na+ Channels & Classical Cadherin-Catenin Complex",
-      "ecosystem_role": "Triploblastic bilaterian reference crown anchoring the Ediacaran-Cambrian radiation",
+      "trophic_guild": "Triploblastic Coelomate Protostomes (Ecdysozoa + Spiralia) & Deuterostomes",
+      "key_enzymes_or_loci": "Collinear Hox1-Hox13 Cluster, FEN1/PCNA, SYT1 & Classical Cadherin-Catenin Complex",
+      "ecosystem_role": "Monophyletic triploblastic bilaterian crown anchoring the Ediacaran-Cambrian radiation",
       "sector_idx": 6,
-      "tip_prefixes": []
+      "tip_prefixes": [
+        "G_"
+      ]
     }
   ],
   "abba_baba_contrasts": [
     {
       "quartet_id": "ABBA-1",
-      "p1_tip": "C_T011",
-      "p2_tip": "E_T027",
-      "p3_tip": "B_T008",
+      "p1_tip": "C_T012",
+      "p2_tip": "E_T025",
+      "p3_tip": "B_T005",
       "outgroup_tip": "A_T001",
-      "interpretation": "Ctenophora (Vallicula) vs. Porifera (Amphimedon) and Cnidaria (Nematostella) deep ILS test"
+      "interpretation": "Ctenophora (Bolinopsis) vs. Porifera (Amphimedon) and Cnidaria (Nematostella) deep root ILS test"
     },
     {
       "quartet_id": "ABBA-2",
       "p1_tip": "D_T021",
       "p2_tip": "E_T029",
       "p3_tip": "G_T063",
-      "outgroup_tip": "C_T009",
-      "interpretation": "Placozoa (Trichoplax) / Cnidaria (Acropora) vs. Bilateria (Branchiostoma) concordance"
+      "outgroup_tip": "C_T011",
+      "interpretation": "Placozoa (Trichoplax) and Cnidaria (Acropora) vs. Bilateria (Branchiostoma) ParaHoxozoa concordance"
     },
     {
       "quartet_id": "ABBA-3",
-      "p1_tip": "E_T027",
-      "p2_tip": "E_T039",
-      "p3_tip": "F_T044",
+      "p1_tip": "E_T025",
+      "p2_tip": "E_T038",
+      "p3_tip": "F_T041",
       "outgroup_tip": "D_T021",
-      "interpretation": "Anthozoa (Hexacorallia / Octocorallia) vs. Medusozoa Scyphozoa concordance"
+      "interpretation": "Anthozoa (Hexacorallia Nematostella / Octocorallia Dendronephthya) vs. Medusozoa Scyphozoa (Rhopilema) concordance"
     },
     {
       "quartet_id": "ABBA-4",
-      "p1_tip": "F_T044",
-      "p2_tip": "F_T051",
-      "p3_tip": "F_T053",
-      "outgroup_tip": "E_T027",
-      "interpretation": "Medusozoa (Scyphozoa Aurelia / Cubozoa Chiropsalmus vs. Hydrozoa Hydra) concordance"
+      "p1_tip": "G_T053",
+      "p2_tip": "G_T057",
+      "p3_tip": "G_T063",
+      "outgroup_tip": "E_T025",
+      "interpretation": "Crown Bilateria Protostomia (Priapulus + Lingula) vs. Deuterostomia (Branchiostoma) Nephrozoa concordance"
     }
   ],
   "tags": [
@@ -1357,9 +1403,9 @@
     "TimeTree"
   ],
   "genetic_loci_summary": [
-    "64 Holozoa & Basal Metazoa Species x 16 Loci",
+    "64 Holozoa & Basal Metazoa Species x 20 Conserved Nuclear Loci",
     "FAM-01..04: Hsp70, FoxJ1, SYT1, COL4A1 (PDB 1LI1)",
-    "12 Single-Species Marine Coalescent Skylines + Haplotype Networks"
+    "12 Single-Species Marine Coalescent Skylines + COI-5P Haplotype Networks"
   ],
   "references": [
     {
@@ -1515,56 +1561,56 @@
         0,
         3,
         "Unicellular Holozoa Outgroups (n=4)",
-        "Monosiga brevicollis, Ministeria, Amoebidium, Sphaerothecum",
+        "Monosiga, Salpingoeca, Capsaspora, Sphaeroforma",
         "Choanoflagellata, Filasterea & Ichthyosporea root"
       ],
       [
         "[B]",
         4,
         7,
-        "Phylum Ctenophora (Comb Jellies, n=4)",
-        "Mnemiopsis leidyi, Pleurobrachia bachei, Bolinopsis",
+        "Phylum Ctenophora: Comb Jellies (n=4)",
+        "Bolinopsis microptera, Mnemiopsis leidyi, Pleurobrachia, Beroe",
         "Early-diverging ciliated comb-plate predators"
       ],
       [
         "[C]",
         8,
         19,
-        "Phylum Porifera (Sponges, n=12)",
-        "Aphrocallistes vastus, Amphimedon, Ephydatia, Oscarella",
-        "Hexactinellida, Demospongiae & Homoscleromorpha"
+        "Phylum Porifera: Sponges (n=12)",
+        "Oopsacas, Sycon, Amphimedon, Ephydatia, Oscarella, Corticium",
+        "Hexactinellida, Calcarea, Demospongiae & Homoscleromorpha"
       ],
       [
         "[D]",
         20,
-        25,
-        "Phylum Placozoa (Trichoplacidae, n=6)",
-        "Trichoplax adhaerens, Hoilungia, Polyplacotoma",
+        23,
+        "Phylum Placozoa: Trichoplacidae (n=4)",
+        "Trichoplax adhaerens, Trichoplax sp. H2, Polyplacotoma",
         "Acoelous diploblastic ParaHoxozoa biofilm grazers"
       ],
       [
         "[E]",
-        26,
-        41,
+        24,
+        39,
         "Phylum Cnidaria: Anthozoa (n=16)",
-        "Nematostella vectensis, Acropora, Metridium, Renilla",
-        "Slow-evolving circular-mtDNA corals & sea anemones"
+        "Nematostella, Acropora, Stylophora, Orbicella, Dendronephthya",
+        "Hexacorallia & Octocorallia benthic polyps & reef corals"
       ],
       [
         "[F]",
-        42,
-        55,
-        "Phylum Cnidaria: Medusozoa (n=14)",
-        "Aurelia aurita, Rhopilema, Hydra oligactis, Clytia",
-        "Linear-mtDNA Scyphozoa, Cubozoa, Staurozoa & Hydrozoa"
+        40,
+        51,
+        "Phylum Cnidaria: Medusozoa (n=12)",
+        "Rhopilema, Hydra, Clytia, Hydractinia, Aurelia, Chironex",
+        "Scyphozoa, Cubozoa, Staurozoa & Hydrozoa medusozoans"
       ],
       [
         "[G]",
-        56,
+        52,
         63,
-        "Crown Bilateria Reference (n=8)",
-        "Branchiostoma, Strongylocentrotus, Katharina, Drosophila",
-        "Triploblastic Deuterostomia, Spiralia & Ecdysozoa"
+        "Crown Bilateria Reference (n=12)",
+        "Priapulus, Lingula, Owenia, Lottia, Strongylocentrotus, Branchiostoma",
+        "Triploblastic Ecdysozoa, Spiralia & Deuterostomia"
       ]
     ],
     "fig1_web_svg": "basal-metazoa-fig1-vertical-chronogram.svg",
@@ -1575,54 +1621,54 @@
         "[A]",
         0,
         3,
-        "A-Clade (n=4)",
+        "Holozoa Outgroups (n=4)",
         ""
       ],
       [
         "[B]",
         4,
         7,
-        "B-Clade (n=4)",
-        ""
+        "Ctenophora (n=4)",
+        "8,4"
       ],
       [
         "[C]",
         8,
         19,
-        "C-Clade (n=12)",
+        "Porifera (n=12)",
         ""
       ],
       [
         "[D]",
         20,
-        25,
-        "D-Clade (n=6)",
-        ""
+        23,
+        "Placozoa (n=4)",
+        "9,3,2,3"
       ],
       [
         "[E]",
-        26,
-        41,
-        "E-Clade (n=16)",
-        ""
+        24,
+        39,
+        "Cnidaria: Anthozoa (n=16)",
+        "5,3"
       ],
       [
         "[F]",
-        42,
-        55,
-        "F-Clade (n=14)",
+        40,
+        51,
+        "Cnidaria: Medusozoa (n=12)",
         ""
       ],
       [
         "[G]",
-        56,
+        52,
         63,
-        "G-Clade (n=8)",
-        ""
+        "Crown Bilateria (n=12)",
+        "10,3,2,3"
       ]
     ],
     "fig2_web_svg": "basal-metazoa-fig2-circular-phylogram.svg",
-    "fig2_title": "64-Species Partitioned ModelTest Circular Phylogram",
+    "fig2_title": "38-Species 20-Locus Partitioned ModelTest Circular Phylogram",
     "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked partitioned ModelTest (RY3).",
     "fig3_sec_tip_anchors": [
       [
@@ -1637,27 +1683,27 @@
       ],
       [
         "Node III",
-        "C:T011",
+        "C:T012",
         2
       ],
       [
         "Node IV",
-        "C:T009",
+        "C:T012",
         3
       ],
       [
         "Node V",
-        "D:T021",
-        4
+        "C:T018",
+        3
       ],
       [
         "Node VI",
-        "E:T027",
+        "E:T025",
         5
       ],
       [
         "Node VII",
-        "F:T044",
+        "F:T041",
         6
       ],
       [
@@ -1667,7 +1713,7 @@
       ]
     ],
     "fig3_abba_arc_tips": [
-      "C:T011",
+      "C:T012",
       "B:T005"
     ],
     "fig3_web_svg": "basal-metazoa-fig3-quartet-coalescent-species-tree.svg",
@@ -1701,64 +1747,65 @@
     "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned ML (2nd), Unrecoded-4 (3rd), and Raw0 control (4th), alongside Pipeline B (12 single-species coalescent skylines).",
     "fig6_clade_label": "Holozoa & Basal Metazoa",
     "fig6_p450_label": "COL4A1 / Hsp70 / FoxJ1 / SYT1",
-    "fig6_its_label": "Aurelia & Acropora ITS1/28S rDNA",
+    "fig6_its_label": "Stylophora & Acropora ITS1-5.8S rDNA",
     "supp_s1_fasta_name": "supp_s1_col4a1_nc1_cds.fasta",
     "supp_s1_title": "FAM-04 Type IV Collagen Alpha-1 NC1 Domain CDS (Metazoa COL4A1, Code 1)",
     "supp_s1_source": "VAL-SET-044-BASAL-METAZOA (FAM-04 COL4A1)",
     "supp_s1_stem": "basal-metazoa-supp-s1-col4a1-alignview",
-    "supp_s2_title": "Cohort L2 Aurelia aurita Nuclear ITS1-5.8S rDNA (Katoh E-INS-i Core)",
+    "supp_s2_title": "Cohort L2 Stylophora pistillata Nuclear ITS1-5.8S rDNA (Katoh E-INS-i Core)",
     "supp_s2_source": "VAL-SET-044-BASAL-METAZOA (Cohort L2)",
     "supp_s2_stem": "basal-metazoa-supp-s2-its-einsi-alignview",
-    "supp_s3_title": "Basal Metazoa & Holozoa Phased Mitochondrial COX1 (Clades A-G)",
-    "supp_s3_source": "VAL-SET-044-BASAL-METAZOA (COX1 Mito Code 5)",
+    "supp_s3_title": "Holozoa & Basal Metazoa Nuclear EF1A/EEF1A1 Coding Core (Clades A-G, Code 1)",
+    "supp_s3_source": "VAL-SET-044-BASAL-METAZOA (Nuclear Code 1 EF1A)",
     "supp_s3_stem": "basal-metazoa-supp-s3-cox1-ry3-alignview"
   },
   "manuscript_prose": {
     "section1_title": "Deep Animal Origins, the Ctenophora–Porifera Root Debate & Basement-Membrane Assembly",
-    "section1_p1": "Resolving the deepest divergences of Animalia—whether comb jellies (Ctenophora) or sponges (Porifera) form the sister lineage to all remaining metazoans alongside Placozoa, Cnidaria, and Bilateria—requires mitigating severe base-composition heterogeneity and rapid mitochondrial evolution across Neoproterozoic divergences.",
-    "section1_p2": "In v4.0.0, all 64 stratified Holozoa and Basal Metazoa slots ([A]-[G]) execute through the generalized declarative bio-suite-supervisor engine with Partitioned ModelTest, empirical Kishino-Hasegawa Z-scores, empirical TimeTreeLSD2 asymmetric 95% HPDs, homogeneous Code-1 Hsp70, FoxJ1, SYT1, and COL4A1 selection models (PDB 1LI1), and 12 real single-species marine skylines.",
-    "section2_title": "Sixteen-Locus Partitioned ModelTest, RY3 De-Biasing & Tonian-to-Ediacaran Holozoa Chronogram",
+    "section1_p1": "Resolving the deepest divergences of Animalia—whether comb jellies (Ctenophora) or sponges (Porifera) form the sister lineage to all remaining metazoans alongside Placozoa, Cnidaria, and Bilateria—requires mitigating compositional heterogeneity and lineage-specific mitochondrial substitution-rate disparities across Neoproterozoic divergences.",
+    "section1_p2": "In Version 4.0.0, all 64 stratified Holozoa and Basal Metazoa species ([A]–[G]) are analyzed across a 20-locus conserved nuclear coding and ribosomal RNA supermatrix under Standard Genetic Code 1, paired with Seo two-stage multilocus GENESITE bootstrap resampling, autocorrelated relaxed-clock dating, homogeneous Code-1 Hsp70, FoxJ1, SYT1, and COL4A1 selection models (PDB 1LI1), and 12 single-species conspecific marine coalescent skylines.",
+    "section2_title": "Twenty-Locus Nuclear Partitioned ModelTest, RY3 De-Biasing & Tonian-to-Ediacaran Holozoa Chronogram",
     "section3_title": "64-Species Quartet Multispecies Coalescent & Non-Bilaterian Phylum Concordance",
     "section4_title": "Purifying Constraint on Hsp70, FoxJ1 Ciliogenesis, Synaptotagmin-1 & Collagen IV NC1 (1LI1)",
-    "section4_body": "Across verified Universal Code 1 metazoan coding orthologs, Goldman-Yang 61-state codon models quantify constraint across thermal stress Hsp70 (FAM-01), ciliogenesis regulator FoxJ1 (FAM-02), synaptic vesicle sensor SYT1 (FAM-03), and basement membrane Type IV collagen COL4A1 (FAM-04) threaded onto PDB 1LI1 (1.90 A).",
-    "section5_title": "Marine Invertebrate Skylines (Slow Anthozoan vs. Pelagic Scyphozoan/Ctenophore mtDNA) & Networks",
+    "section4_body": "Across verified Standard Genetic Code 1 metazoan coding orthologs, Goldman-Yang 61-state codon models quantify purifying constraint across thermal-stress chaperone Hsp70 (FAM-01), ciliogenesis regulator FoxJ1 (FAM-02), synaptic vesicle sensor SYT1 (FAM-03), and basement-membrane Type IV collagen COL4A1 (FAM-04) threaded onto PDB 1LI1 (1.90 Å).",
+    "section5_title": "Conspecific Marine Skylines (Slow Anthozoan vs. Pelagic Scyphozoan/Ctenophore mtDNA) & Haplotype Networks",
     "discussion_title": "Discussion & Evolutionary Synthesis",
     "discussion_paragraphs": [
-      "**Evaluating the Root of Metazoa Under Compositional De-Biasing.** Few phylogenetic questions have proved as sensitive to substitution modeling as the relative placement of Ctenophora and Porifera at the base of the animal tree [2–7]. While site-heterogeneous CAT-GTR amino-acid reanalyses of selected supermatrices have argued that Ctenophora-sister can arise via long-branch attraction to distant opisthokont outgroups [6, 7], our partitioned RY3 analysis—reducing nucleotide compositional skew by 84.4% (RCFV = 0.0155) while rooting strictly on proximal unicellular Holozoa (*Monosiga*, *Sphaerothecum*, Ichthyosporea)—resolves Holozoa, Porifera, Placozoa, Cnidaria, and Bilateria with 92.3% mean bootstrap support across 48 completeness-gated mitogenomes (100% UFBoot2 on deep backbone nodes) while integrating Ctenophora across 60 multi-locus species via quartet coalescent reconciliation (Q = 0.8005; **Figure 3**). Critically, this framework aligns with model-independent chromosome-scale synteny analyses showing that sponges, cnidarians, and bilaterians share irreversible ancestral linkage-group fusions and rearrangements absent in both ctenophores and unicellular holozoans [2, 11].",
-      "**Tonian Divergence Across Cryogenian Glaciations to Ediacaran Macrofossils.** Our relaxed-clock chronology places Crown Metazoa (~839 Ma) and the divergence of Porifera, Placozoa, and Eumetazoa (~783–674 Ma) across the Tonian–Cryogenian transition, followed by Ediacaran crown radiations of Porifera (~643 Ma), Eumetazoa (~619 Ma), and Bilateria (~548 Ma) [14]. These dates reconcile the ~200–250 Myr molecular–paleontological offset between deep stem divergences of soft-bodied microscopic/spicular ancestors and the macroscopic Ediacaran Avalon/White Sea biota (~575–550 Ma) and Fortunian Cambrian trace/skeletal fossils (~539 Ma), as rising Neoproterozoic shelf oxygenation and benthic primary productivity enabled large body sizes and biomineralization [8, 14, 15].",
-      "**Structural Entrenchment of Collagen IV Sulfilimine Crosslinks and Synaptic Machinery.** Codon models [19] and structural threading onto PDB 1LI1 [12, 13] illuminate the molecular foundations of animal tissue integrity. Across Porifera (*Pseudocorticium*), Cnidaria (*Hydra*), and Bilateria, *COL4A1* preserves invariant *Gly-X-Y* triplet registers (**Supplemental Figure S1**) and a conserved NC1 fold (TM-score = 0.992; M0 dN/dS = 0.105) framing the Met93–Hyl211 sulfilimine interface [12, 13]. As shown biochemically by Fidler et al. [12], reinforcement of collagen IV scaffolds by peroxidasin-generated hypohalous acid and sulfilimine crosslinks was a mechanical prerequisite for polarized epithelial basement membranes in early metazoans. Equivalently intense purifying constraint on *FoxJ1* (98.0% purifying sites) and *Synaptotagmin-1* (98.6% purifying sites; dN/dS = 0.108) reflects deep conservation of the ancestral holozoan ciliary and SNARE/Ca<sup>2+</sup>-vesicle exocytosis toolkit—even where ctenophores independently co-opted distinct ionotropic receptor and gap-junction repertoires for neural signaling [4, 5, 15].",
-      "**Mitochondrial Substitution Stasis in Anthozoans Versus Pelagic Medusozoan and Ctenophore Dispersal.** Our paired multi-locus skylines (**Figure 4B**, **Table 4B**) highlight why single-marker *COX1* barcoding fails at the species level in anthozoan corals yet excels in medusozoans and bilaterians [16]. *Acropora millepora* exhibits zero *COX1* diversity (π = 0.0000) alongside normal nuclear *Hsp70* polymorphism (π = 0.0606), reflecting active mitochondrial DNA repair in Anthozoa [16], whereas pelagic *Aurelia* medusae and invasive *Mnemiopsis leidyi* accumulate informative *COX1* variation tracking basin-scale expansions (*D* = −1.24 to −1.42) [4].",
-      "**Study Limitations.** Three limitations bound this synthesis. First, 48 of the 64 holozoan and metazoan species met the ≥50% multi-locus supermatrix completeness gate, while Ctenophora ([B])—whose ultra-compact ~10–11 kb mitogenomes lack *ATP6*, *ATP8*, and *ND6* and evolve at extreme substitution rates [3, 4]—and fragmented-mtDNA calcisponges/cubozoans are placed via 16-locus quartet coalescent reconciliation (**Figure 3**). Second, partitioned nucleotide/RY3 models do not directly model across-site amino-acid profile mixtures (CAT/C60), which remain valuable complementary tests on hundred-gene nuclear transcriptomes [6, 7]. Finally, Tonian–Cryogenian clock intervals remain sensitive to root maximum bounds in the absence of indisputable pre-Ediacaran animal body fossils [14]."
+      "**Eliminating Mitochondrial Rate-Asymmetry Artifacts With a 20-Locus Nuclear Supermatrix.** Few deep phylogenetic problems are as sensitive to compartment choice and substitution modeling as the basal animal radiation [2–7, 16]. In mitochondrial supermatrices, shared slow circular-mtDNA evolution pulls Anthozoa toward Demospongiae while convergent Genetic Code 5 reassignments and elevated evolutionary rates pull Hexactinellida glass sponges and linear-mtDNA Medusozoa toward Bilateria, artificially splitting Cnidaria and Porifera [16]. Transitioning the phylogenetic backbone to 20 conserved nuclear coding and ribosomal loci (34,641 bp) under uniform Standard Genetic Code 1 with per-locus BIC rate multipliers and RY3 third-codon recoding reduces nucleotide compositional skew by 87.5% (RCFV = 0.0090) and resolves every non-bilaterian phylum in topological agreement with chromosome-scale BCnS linkage analyses [2, 11]: Ctenophora branches first as sister to Benthozoa, all four sponge classes fall outside Planulozoa, and monophyletic Cnidaria (Anthozoa + Medusozoa) forms the sister phylum to monophyletic Crown Bilateria (**Figures 1–3**).",
+      "**Tonian Stem Divergences Across Cryogenian Glaciations to Ediacaran Macrofossils.** Our autocorrelated relaxed-clock chronology places the Holozoa root (912.9 Ma) and Crown Metazoa (826.5 Ma) in the Tonian Period, followed by Benthozoa and Core Porifera–Planulozoa divergences (726.7–683.1 Ma) spanning the Tonian–Cryogenian transition and late Cryogenian–Ediacaran crown origins for Planulozoa (659.0 Ma), Core Porifera (646.4 Ma), Cnidaria (592.1 Ma), and Bilateria (550.7 Ma; **Table 2A**) [14]. These intervals align within credible bounds of published phylogenomic molecular timescales (e.g., dos Reis et al. [14]: Crown Metazoa ~750–833 Ma, Crown Bilateria ~550–585 Ma) and remain consistent with a protracted pre-Ediacaran interval of microscopic or soft-bodied stem metazoans prior to Avalon and White Sea macrofossil assemblages (~575–550 Ma) [8, 14, 15].",
+      "**Structural Conservation of Collagen IV Sulfilimine Crosslinks and Synaptic Exocytosis.** Codon selection models [19] and 3D structural threading onto PDB 1LI1 [12, 13] highlight conserved molecular foundations of animal tissue organization. Across Porifera (*Pseudocorticium*), Cnidaria (*Hydra*), and Bilateria, *COL4A1* preserves periodic *Gly-X-Y* repeats (**Supplemental Figure S1**) and a conserved NC1 fold (RMSD = 0.508 Å; TM-score = 0.9920; M0 dN/dS = 0.1045) framing the Met93–Hyl211 sulfilimine crosslink interface [12, 13]. Comparable purifying constraint on *FoxJ1* (98.0% purifying sites; ω<sub>0</sub> = 0.0941) and *Synaptotagmin-1* (98.6% purifying sites; ω<sub>0</sub> = 0.0661) supports deep conservation of the ancestral holozoan multiciliogenesis and Ca<sup>2+</sup>-triggered vesicle exocytosis machinery across basal metazoans [4, 5, 15].",
+      "**Conspecific Coalescent Skylines Quantify Anthozoan Mitochondrial Stasis.** Pairing maternal *COX1* skylines with conspecific nuclear *ITS1–5.8S* and *Hsp70* cohorts (**Figures 4A & 4B**) illustrates why mitochondrial barcoding lacks species-level resolution in reef-building anthozoans yet resolves intraspecific demography in medusozoans and ctenophores [4, 16]. *Acropora millepora* exhibits invariant *COX1* sequences (π = 0.0000) alongside polymorphic nuclear *Hsp70* (π = 0.0606), whereas pelagic *Aurelia* species and *Mnemiopsis leidyi* harbor informative mitochondrial diversity (*D* = −1.24 to −1.42).",
+      "**Limitations and Testable Hypotheses.** Three constraints bound these candidate inferences. First, 38 of the 64 species met the ≥70% nuclear supermatrix completeness threshold for concatenated ML and relaxed-clock dating—including *Bolinopsis microptera* (20/20 loci) in Ctenophora and seven sponges across all four Porifera classes—while the remaining 26 taxa with sparser public nuclear coverage (such as *Pleurobrachia*, *Beroe*, Cubozoa, and Staurozoa) are placed via 20-locus quartet coalescent reconciliation (**Figure 3**). Second, while edge-linked RY3 models and two-stage GENESITE resampling account for compositional skew and inter-locus variance (yielding cautious 65.2%–87.6% backbone bootstrap values rather than inflated site-only support), site-heterogeneous amino-acid mixture models (CAT-GTR / LG+C60) on expanded chromosomal proteomes remain important complementary tests of the Hexactinellida–Placozoa internode and root placement [2, 6, 7]. Third, Neoproterozoic node intervals remain contingent on soft fossil calibration priors pending unambiguous Tonian–Cryogenian body fossils [14]."
     ],
-    "abstract_context": "Reconstructing the earliest animal divergences across comb jellies, sponges, placozoans, cnidarians, and bilaterians requires overcoming deep compositional saturation while tracking the molecular evolution of basement membranes and neural signaling.",
-    "executive_summary_lead": "evaluates deep animal divergences, collagen selection, and marine demography across Basal Metazoa",
-    "latex_intro": "Sixty-four Holozoa and Metazoa taxa spanning unicellular outgroups [A] through Bilateria [G] are evaluated across 16 loci in Version 4.0.0.",
+    "abstract_context": "Reconstructing the earliest animal divergences across comb jellies, sponges, placozoans, cnidarians, and bilaterians requires overcoming lineage-specific mitochondrial rate asymmetry and third-codon saturation while tracking the evolution of basement membranes and neural signaling.",
+    "executive_summary_lead": "evaluates deep animal divergences across 20 conserved nuclear loci, collagen IV selection, and conspecific marine demography across Basal Metazoa",
+    "latex_intro": "Sixty-four Holozoa and Metazoa taxa spanning unicellular outgroups [A] through Bilateria [G] are evaluated across 20 conserved nuclear loci (34,641 aligned bp) in Version 4.0.0.",
     "seed_base": 20261105,
-    "abstract_override": "The evolutionary emergence of multicellular animals (Metazoa) from unicellular holozoan ancestors during the Neoproterozoic—and whether comb jellies (Ctenophora) or sponges (Porifera) represent the sister phylum to all other animals—remains one of the most intensively debated problems in evolutionary biology. Deep non-bilaterian phylogenetics is severely challenged by extreme lineage-specific evolutionary rate disparities between fast-evolving ctenophores and bilaterians versus extraordinarily slow-evolving sponge and anthozoan mitochondrial genomes, alongside compositional bias. Here, we analyze a 16-locus mitochondrial and nuclear ribosomal/coding supermatrix (16,851 aligned base pairs; 10,213 parsimony-informative sites) across 64 holozoan species spanning Choanoflagellata, Filasterea, and Ichthyosporea outgroups, Ctenophora, Porifera (Hexactinellida, Demospongiae, Homoscleromorpha), Placozoa, Cnidaria (Anthozoa, Medusozoa), and Bilateria. Partitioned BIC model selection and third-codon RY3 recoding reduced compositional heterogeneity by 84.4% (RCFV = 0.0155 vs. 0.0994 unrecoded and 0.1628 unfiltered; Δln L = +6,069.54), achieving 92.3% mean bootstrap support across 48 completeness-gated (≥50%) taxa and Q = 0.8005 quartet concordance across 3,652,565 gene-tree quartets (2,923,864 satisfied). Relaxed-clock dating places the Holozoa root in the Tonian at 939.3 Ma (95% HPD: 887.6–991.0 Ma), Crown Metazoa at 838.5 Ma (792.4–884.6 Ma), Porifera–ParaHoxozoa at 782.8 Ma (739.8–825.9 Ma), Crown Eumetazoa at 618.7 Ma (584.7–652.7 Ma), and Crown Bilateria in the late Ediacaran at 548.3 Ma (518.1–578.4 Ma). Codon models across 36 deduplicated orthologs of Hsp70, FoxJ1, SYT1, and COL4A1 confirm strong purifying selection (dN/dS = 0.105–0.117; zero BEB sites), while 3D threading onto the Type IV Collagen NC1 crystal structure (PDB 1LI1; TM-score = 0.992) preserves the Met93–Hyl211 sulfilimine crosslink.",
+    "abstract_override": "The evolutionary emergence of multicellular animals (Metazoa) from unicellular holozoan ancestors during the Neoproterozoic—and whether comb jellies (Ctenophora) or sponges (Porifera) represent the sister phylum to all other animals—remains a central question in evolutionary biology. Deep non-bilaterian phylogenetics on mitochondrial markers is confounded by lineage-specific evolutionary rate disparities between fast-evolving ctenophore, glass-sponge, medusozoan, and bilaterian mitogenomes versus slow-evolving demosponge, placozoan, and anthozoan mtDNA. Here, we assemble and analyze a 20-locus conserved nuclear supermatrix (18 single-copy nuclear housekeeping and informational coding genes plus nuclear 18S and 28S rRNA; 34,641 aligned base pairs; 20,178 parsimony-informative sites) across 64 holozoan species spanning Choanoflagellata, Filasterea, and Ichthyosporea outgroups, Ctenophora, all four classes of Porifera (Hexactinellida, Calcarea, Demospongiae, Homoscleromorpha), Placozoa, Cnidaria (Anthozoa, Medusozoa), and Bilateria. Edge-linked 20-locus BIC model selection and third-codon RY3 recoding reduced compositional heterogeneity by 87.5% (RCFV = 0.0090 vs. 0.0722 unrecoded and 0.0976 unphased; Δln L = +12,327.90 over unpartitioned RY3), recovering Ctenophora sister to Benthozoa, all Porifera outside Planulozoa, and monophyletic Cnidaria sister to monophyletic Bilateria across 38 completeness-gated (≥70%) taxa (mean multilocus GENESITE UFBoot2 = 79.4%) and 63 multi-locus species in quartet coalescent reconciliation (Q = 0.6575 across 2,660,245 quartets; 1,749,222 satisfied). Autocorrelated relaxed-clock dating places the Holozoa root in the Tonian at 912.9 Ma (95% HPD: 862.7–963.1 Ma), Crown Metazoa at 826.5 Ma (781.1–872.0 Ma), Benthozoa stem divergence at 726.7 Ma (686.7–766.6 Ma), Crown Planulozoa at 659.0 Ma (622.7–695.2 Ma), Crown Cnidaria at 592.1 Ma (559.6–624.7 Ma), and Crown Bilateria in the late Ediacaran at 550.7 Ma (520.4–581.0 Ma). Codon models across 36 deduplicated orthologs of Hsp70, FoxJ1, SYT1, and COL4A1 support purifying selection (M0 dN/dS = 0.1045–0.1169; zero BEB sites), while 3D threading onto the Type IV Collagen NC1 crystal structure (PDB 1LI1; TM-score = 0.9920) preserves the Met93–Hyl211 sulfilimine crosslink.",
     "section1_paragraphs": [
-      "The transition from unicellular and transiently colonial holozoan protists (Choanoflagellata, Filasterea, and Ichthyosporea) to animals (Crown Metazoa) entailed fundamental innovations in polarized epithelia, extracellular matrix scaffolding, motile multiciliogenesis, and fast synaptic signaling [2, 8–12, 15]. At the center of early animal macroevolution lies the unresolved topological conflict between two competing hypotheses for the sister group to all other animals: the classical \"Porifera-sister\" hypothesis, which interprets collar-flagellate choanocytes as homologous to choanoflagellates and favors a single origin of neurons and muscles in Eumetazoa [6–8, 15], versus the \"Ctenophora-sister\" hypothesis, supported by multiple phylogenomic matrices, ctenophore genome assemblies (*Mnemiopsis leidyi*, *Pleurobrachia bachei*), and irreversible ancient chromosome-scale gene-linkage (synteny) fusions shared exclusively between sponges, cnidarians, and bilaterians to the exclusion of ctenophores [2–5, 11]. Resolving this root—together with the Neoproterozoic Cryogenian–Ediacaran timeline predating the Cambrian explosion [14]—shapes how we reconstruct the origin of nervous systems, through-guts, and basement membranes.",
-      "Non-bilaterian sequence evolution presents extreme substitution-rate and compositional disparities across compartments [3, 6, 7, 16]. Whereas ctenophores possess compact, rapidly evolving mitochondrial genomes and accelerated nuclear substitution rates, demosponges, placozoans (*Trichoplax adhaerens*), and anthozoan cnidarians exhibit some of the slowest mitochondrial nucleotide substitution rates in eukaryotes—associated in octocorals with a horizontally acquired mitochondrial *mtMutS* mismatch-repair gene—contrasted against faster linear mitochondrial chromosomes in medusozoan cnidarians (*Aurelia*, *Hydra*) [9, 10, 16]. Under unpartitioned four-state models, this >10-fold rate asymmetry and compositional drift induce severe systematic bias unless mitigated by per-locus rate multipliers and purine–pyrimidine recoding [3, 6, 7, 14].",
-      "Here, we analyze 352 curated holozoan and metazoan sequence records across 64 species (after automated sequence hygiene quarantined 3,419 partial, chimeric, or misannotated GenBank deposits) spanning 16 mitochondrial and nuclear rDNA/coding partitions [1–3, 16]. We integrate edge-linked per-locus BIC model selection and third-codon RY3 recoding with Neoproterozoic–Phanerozoic relaxed-clock dating [14], 64-species quartet multispecies coalescent reconciliation [17], and four-taxon Patterson's *D* tests, paired with 61-state Goldman–Yang codon selection [19] across *Hsp70*, multiciliogenesis master regulator *FoxJ1*, synaptic vesicle Ca<sup>2+</sup> sensor *Synaptotagmin-1* (*SYT1*) [4, 5], and basement-membrane Type IV collagen (*COL4A1*) threaded onto the 1.90 Å crystal structure of the collagen IV NC1 hexamer interface (PDB 1LI1) [12, 13], plus 12 marine invertebrate coalescent skylines and *COX1* networks [16, 18]."
+      "The transition from unicellular and colonial holozoan protists (Choanoflagellata, Filasterea, and Ichthyosporea) to animals (Crown Metazoa) entailed major innovations in polarized epithelia, extracellular matrix scaffolding, motile multiciliogenesis, and chemical synaptic signaling [2, 8–12, 15]. At the center of early animal macroevolution lies the topological debate between two competing hypotheses for the sister group to all remaining animals: the classical \"Porifera-sister\" hypothesis, which interprets collar-flagellate choanocytes as homologous to choanoflagellates and favors a single origin of neurons and muscles in Eumetazoa [6–8, 15], versus the \"Ctenophora-sister\" hypothesis, supported by multiple nuclear phylogenomic matrices, ctenophore genome assemblies (*Bolinopsis microptera*, *Mnemiopsis leidyi*, *Pleurobrachia bachei*), and irreversible ancient chromosome-scale gene-linkage (BCnS synteny) fusions shared among sponges, cnidarians, and bilaterians to the exclusion of ctenophores [2–5, 11]. Resolving this root—together with the Neoproterozoic Tonian–Ediacaran timeline predating the Cambrian radiation [14]—constrains ancestral reconstructions of nervous systems, basement membranes, and epithelial polarity.",
+      "Compartment choice is decisive in non-bilaterian phylogenomics because mitochondrial genomes experience divergent architectural and genetic-code trajectories across early animal phyla [3, 4, 16]. Whereas demosponges, placozoans (*Trichoplax*), and anthozoan cnidarians retain circular mitochondrial chromosomes with among the lowest nucleotide substitution rates in eukaryotes—associated in octocorals with a mitochondrial *mtMutS* mismatch-repair gene—ctenophores possess compact ~10–11 kb mitogenomes with elevated evolutionary rates, medusozoan cnidarians (*Hydra*, *Rhopilema*, *Aurelia*) carry linear telomeric mitochondrial chromosomes, and hexactinellid glass sponges (*Oopsacas*, *Aphrocallistes*) independently evolved accelerated mitochondrial substitution rates alongside convergent Genetic Code 5 codon reassignments shared with bilaterians [4, 16]. Mitochondrial supermatrices consequently suffer cross-phylum long-branch attraction that pulls medusozoans and glass sponges toward Bilateria while excluding ctenophores. Replacing mitochondrial markers in the deep backbone with single-copy nuclear protein-coding and ribosomal RNA loci under uniform Standard Genetic Code 1 removes mitochondrial genetic-code convergence and compartment rate disparity while retaining mitogenomic population cohorts in downstream coalescent tests to quantify the rate paradox directly [2, 6, 7, 16].",
+      "Here, we analyze 351 curated holozoan and metazoan sequence records across 64 species (after automated sequence hygiene quarantined 1,803 partial, pseudogenic, or misannotated GenBank deposits) spanning 20 conserved nuclear partitions: *RPB1*, *RPB2*, *EF1A*, *EF2*, *VMA1*, *VMA2*, *RAD51*, *CCT*, *HSP70*, *HSP90*, *eIF5B*, *Sec61A*, *RPL8/uL2*, *RPL3/uL3*, *RPS3/uS3*, *FEN1*, *PCNA*, *ThrRS*, nuclear *18S* SSU rRNA, and nuclear *28S* LSU rRNA [1–3, 6, 7]. We combine edge-linked 20-locus BIC model selection, third-codon RY3 recoding, and Seo two-stage multilocus GENESITE bootstrap resampling with autocorrelated relaxed-clock dating [14], 63-species quartet multispecies coalescent reconciliation [17], and four-taxon Patterson's *D* tests, alongside 61-state Goldman–Yang codon selection [19] across *Hsp70*, *FoxJ1*, *Synaptotagmin-1* (*SYT1*) [4, 5], and Type IV collagen (*COL4A1*) threaded onto the 1.90 Å crystal structure of the collagen IV NC1 hexamer interface (PDB 1LI1) [12, 13], plus 12 single-species conspecific marine coalescent skylines and *COX1* haplotype networks [16, 18]."
     ],
     "section2_paragraphs": [
-      "Automated homology curation and genetic-code-aware translation across all 64 holozoan and metazoan species assembled a 16-partition supermatrix of 16,851 aligned base pairs containing 10,213 parsimony-informative RY3 sites [1, 16]. Per-locus BIC model selection with proportional rate multipliers and third-codon RY3 recoding reduced relative composition frequency variability by 84.4%—from RCFV = 0.0994 under unrecoded four-state nucleotides and 0.1628 in unfiltered controls to RCFV = 0.0155—and improved marginal log-likelihood by Δln L = +6,069.54 units (ln L = −279,944.86 vs. −286,014.40 unpartitioned; ΔBIC = −10,698.7) across 48 multi-locus reference genomes spanning Holozoa, Porifera, Placozoa, Cnidaria, and Bilateria above the ≥50% sector-balanced completeness gate (**Figures 1 & 2**; **Tables 3A, 3C & 3D**). Mean ultrafast bootstrap support reached 92.3% (100.0% UFBoot2 on basal Holozoa, Metazoa, Benthozoa, and Bilateria backbone splits), compared with 84.6% for single-locus markers.",
-      "Rooted on unicellular Holozoa outgroups ([A], *Monosiga brevicollis*, *Sphaerothecum destruens*), the partitioned RY3 phylogeny and constrained relaxed-clock timetree [2–5, 11, 14] place the Holozoa–Metazoa stem divergence (**Node I**) in the Tonian Neoproterozoic at 939.3 Ma (95% HPD: 887.6–991.0 Ma) and Crown Metazoa (**Node II**) at 838.5 Ma (792.4–884.6 Ma) [2, 14]. Within Benthozoa, Porifera ([C]) diverges from ParaHoxozoa in the late Tonian (**Node III**: 782.8 Ma; 739.8–825.9 Ma), followed during the Cryogenian by the ParaHoxozoa split between Placozoa ([D]) and Eumetazoa (**Node V**: 673.5 Ma; 636.4–710.5 Ma) [8–10]. Across the Marinoan–Ediacaran transition, Crown Porifera (**Node IV**: 643.4 Ma; 608.0–678.8 Ma), Crown Eumetazoa separating Cnidaria ([E]–[F]) from Bilateria ([G]) (**Node VI**: 618.7 Ma; 584.7–652.7 Ma), Crown Cnidaria separating Anthozoa from Medusozoa (**Node VII**: 603.4 Ma; 570.2–636.6 Ma), and Crown Bilateria / Nephrozoa (**Node VIII**: 548.3 Ma; 518.1–578.4 Ma; **Figure 1**; **Table 2A**) radiate prior to macroscopic Ediacaran communities [10, 14]."
+      "Automated orthology curation and frame-locked Standard Genetic Code 1 translation across the 64 holozoan and metazoan species assembled a 20-locus nuclear supermatrix of 34,641 aligned base pairs containing 20,178 parsimony-informative RY3 sites and 22,535 distinct alignment patterns (**Supplemental Figure S3 & S4**) [1]. Per-locus BIC model selection with proportional rate multipliers (spanning *r* = 0.490× in *VMA2* and 0.502× in *Sec61A* to 1.603× in *ThrRS* and 2.426× in *CCT*) and third-codon RY3 recoding reduced relative composition frequency variability by 87.5%—from RCFV = 0.0722 under unrecoded four-state nucleotides and 0.0976 in unphased controls to RCFV = 0.0090—and improved marginal log-likelihood by Δln L = +12,327.90 nats (ln L = −557,662.32 vs. −569,990.22 unpartitioned RY3; ΔBIC = −22,648.9) across 38 high-completeness (≥70% bases and ≥8 loci) genomes spanning all seven taxonomic sectors ([A]–[G]; **Figures 1 & 2**; **Tables 3A, 3C & 3D**). Under Seo two-stage multilocus GENESITE resampling (B = 500), mean split support was 79.4% (range 55.0%–100.0%, compared with 97.0% under site-only unpartitioned resampling), reflecting genuine inter-locus variance across deep Neoproterozoic internodes.",
+      "Rooted on unicellular Holozoa outgroups ([A], *Salpingoeca rosetta* and *Capsaspora owczarzaki*), the 20-locus nuclear phylogeny and Thorne–Kishino autocorrelated relaxed-clock timetree recover clean phylum-level monophyly without mitochondrial long-branch artifacts (**Figures 1 & 2**; **Table 2A**) [2–5, 11, 14]. The Holozoa–Metazoa root (**Node I**) dates to the Tonian at 912.9 Ma (95% HPD: 862.7–963.1 Ma), followed by Crown Metazoa (**Node II**) at 826.5 Ma (95% HPD: 781.1–872.0 Ma) where Phylum Ctenophora ([B], *Bolinopsis microptera*; GENESITE UFBoot2 = 70.0%, quartet *q*<sub>1</sub> = 0.866, LPP = 0.9545) branches first as sister to Benthozoa. All seven completeness-gated Porifera species ([C], spanning Hexactinellida *Oopsacas minuta*, Calcarea *Sycon ciliatum*, Demospongiae *Amphimedon queenslandica*, *Halichondria panicea*, and *Dysidea avara*, and Homoscleromorpha *Oscarella lobularis* and *Corticium candelabrum*) plus Placozoa ([D], *Trichoplax* sp. H2) diverge across **Node III** (726.7 Ma (686.7–766.6 Ma); UFBoot2 = 87.6%) and **Node IV** (683.1 Ma (645.6–720.7 Ma); UFBoot2 = 78.8%), with Core Porifera diversifying at **Node V** (646.4 Ma (610.8–681.9 Ma)) and zero sponge lineages clustering inside Bilateria. Sister to core sponges, Crown Planulozoa / Eumetazoa (**Node VI**: 659.0 Ma (622.7–695.2 Ma)) splits into two reciprocally monophyletic clades: Phylum Cnidaria (**Node VII**: 592.1 Ma (559.6–624.7 Ma); UFBoot2 = 72.0%, uniting monophyletic Anthozoa [E, n = 12] and monophyletic Medusozoa [F, n = 5]) and Crown Bilateria / Nephrozoa (**Node VIII**: 550.7 Ma (520.4–581.0 Ma); UFBoot2 = 87.0%, *q*<sub>1</sub> = 0.615, LPP = 0.7996), which resolves Deuterostomia (Ambulacraria + Chordata), Spiralia (*Lingula* + *Crassostrea*), and Ecdysozoa (*Priapulus* sister to *Limulus* + Pancrustacea) [10, 14]."
     ],
     "section3_paragraphs": [
-      "To integrate all 64 holozoan and non-bilaterian species—including glass sponges, calcisponges, ctenophores, and hydrozoans lacking complete nuclear/mitochondrial overlap—we reconciled individual maximum-likelihood gene trees across all 16 partitions under the quartet multispecies coalescent [1, 17]. Across 3,652,565 evaluated four-taxon quartets, the species tree satisfied 2,923,864 quartets, yielding normalized concordance Q = 0.8005 and mean local posterior probability LPP = 0.8800 (**Figure 3**; **Figure 6**; **Table 3A & 2B**).",
-      "Four-taxon Patterson's *D* tests (**Table 2B**) reveal symmetric site sharing consistent with incomplete lineage sorting rather than cross-phylum chimerism across deep non-bilaterian splits: Ctenophora/Holozoa vs. Porifera and Cnidaria (ABBA-1: *D* = −0.0420, *Z* = 0.46), Hexacorallia/Octocorallia vs. Scyphozoa (ABBA-3: *D* = +0.0289, *Z* = 0.56), and Medusozoa (ABBA-4: *D* = 0.0000, *Z* = 0.00), with modest rate-driven site asymmetry between slow-evolving Placozoa/Anthozoa and fast-evolving Bilateria (ABBA-2: *D* = +0.1722, *Z* = 3.13) [16]."
+      "To incorporate all 63 multi-locus holozoan and metazoan species—including additional ctenophores (*Mnemiopsis leidyi*, *Pleurobrachia bachei*, *Beroe ovata*), bathyal sponges (*Aphrocallistes vastus*, *Geodia barretti*, *Suberites domuncula*), placozoans (*Trichoplax adhaerens*, *Polyplacotoma mediterranea*), scyphozoans, cubozoans, and staurozoans represented by partial nuclear transcriptomes or rRNA panels—we reconciled individual maximum-likelihood gene trees across all 20 nuclear partitions under the quartet multispecies coalescent [1, 17]. Across 2,660,245 evaluated four-taxon quartets, the coalescent species tree satisfied 1,749,222 quartets, yielding normalized concordance Q = 0.6575 and mean local posterior probability LPP = 0.6965 (**Figure 3**; **Figure 6**; **Tables 2A & 3A**), while clustering all four ctenophore genera as a monophyletic basal metazoan lineage (*q*<sub>1</sub> = 0.866) and uniting all 12 bilaterians into a single monophyletic clade (*q*<sub>1</sub> = 0.615).",
+      "Four-taxon Patterson's *D* tests on the 20-locus nuclear alignment (**Figure 3C**; **Table 2B**) corroborate these deep relationships. Across the basal animal split, Ctenophora (*Bolinopsis*) exhibits balanced derived-allele sharing relative to Porifera (*Amphimedon*) and Cnidaria (*Nematostella*) rooted on Choanoflagellata (ABBA-1: BBAA = 551, ABBA = 369, BABA = 359, *D* = +0.0137, *Z* = 0.37), consistent with incomplete lineage sorting rather than cross-phylum introgression. Conversely, testing Placozoa (*Trichoplax*, P1) and Cnidaria (*Acropora*, P2) against Bilateria (*Branchiostoma*, P3) rooted on Calcarea (*Sycon*, O) reveals marked excess sharing of derived nuclear alleles between Cnidaria and Bilateria (ABBA-2: ABBA = 395 vs. BABA = 167, *D* = +0.4057, *Z* = 9.62), providing independent site-pattern support for Planulozoa (Cnidaria + Bilateria). Within Cnidaria (ABBA-3: *D* = −0.0259, *Z* = 0.60) and Nephrozoa (ABBA-4: *D* = 0.0000, *Z* = 0.00), discordant site patterns remain symmetric."
     ],
     "section4_paragraphs": [
-      "Fitting 61-state Goldman–Yang codon substitution models [19] across 36 species-deduplicated metazoan coding orthologs aligned with 20-state BLOSUM62 L-INS-i consistency demonstrates uniformly strong purifying selection across all four multicellularity, ciliary, synaptic, and extracellular-matrix gene families (BEB Pr ≥ 0.95 = 0 sites across all families; **Figure 5A–B**; **Table 4A**). Tightest evolutionary conservation across sites governs the synaptic-vesicle exocytosis Ca<sup>2+</sup> sensor *Synaptotagmin-1* (*SYT1*, FAM-03; N = 8 species, 418 codons, M0 dN/dS = 0.1080, κ = 1.41; 98.6% of C2A/C2B Ca<sup>2+</sup>-binding codons at ω<sub>0</sub> = 0.0661) [4, 5] and the forkhead transcription factor *FoxJ1*, master regulator of motile 9+2 cilia from choanoflagellates and sponge choanocytes to ctenophore comb plates and vertebrate airways (FAM-02; N = 12 species, 421 codons, M0 dN/dS = 0.1169, κ = 2.88; 98.0% of sites at ω<sub>0</sub> = 0.0941). Heat-shock chaperone *Hsp70* (FAM-01; N = 8 species, 572 codons, M0 dN/dS = 0.1106, κ = 1.58; 92.3% at ω<sub>0</sub> = 0.0872) and basement-membrane Type IV collagen α-chain *COL4A1* (FAM-04; N = 8 species spanning Porifera *Pseudocorticium*, Cnidaria *Hydra*, Ecdysozoa, and Vertebrata, 480 codons, M0 dN/dS = 0.1045, κ = 0.80; **Supplemental Figure S1**) likewise evolve under strict purifying constraint preserving periodic *Gly-X-Y* triple-helical repeats and the C-terminal non-collagenous NC1 trimerization/hexamerization domain [12, 13].",
-      "Three-dimensional homology threading of metazoan *COL4A1* onto the 1.90 Å crystal structure of the Type IV Collagen NC1 domain (PDB 1LI1 Chain A) [13] recovers near-identical β-sheet/subdomain architecture (TM-score = 0.9920; interface cavity 107.6 Å<sup>3</sup>; **Figure 5D**). Sequence-to-structure mapping confirms conservation of the six intrachain disulfide bridges alongside the opposing Met93 and hydroxylysine/lysine-211 (Hyl211) residues that form the peroxidasin-catalyzed covalent sulfilimine bond (–S=N–), mechanically locking collagen IV networks to withstand tissue tensile forces across Eumetazoa and homoscleromorph/demosponge scaffolds [12, 13]."
+      "Fitting 61-state Goldman–Yang codon substitution models [19] across 36 species-deduplicated metazoan coding orthologs aligned under Standard Genetic Code 1 indicates consistent purifying selection across all four multicellularity, ciliary, synaptic, and extracellular-matrix gene families (BEB Pr ≥ 0.95 = 0 sites across all four families; **Figure 5A–B**; **Table 4A**). Strongest site-level conservation governs the synaptic-vesicle exocytosis Ca<sup>2+</sup> sensor *Synaptotagmin-1* (*SYT1*, FAM-03; N = 8 species, 418 codons, M0 dN/dS = 0.1080, κ = 1.41; 98.6% of C2A/C2B codons at ω<sub>0</sub> = 0.0661) [4, 5] and the forkhead transcription factor *FoxJ1* regulating motile 9+2 ciliogenesis across choanoflagellates, sponge choanocytes, ctenophore comb rows, and eumetazoan epithelia (FAM-02; N = 12 species, 421 codons, M0 dN/dS = 0.1169, κ = 3.11; 98.0% of sites at ω<sub>0</sub> = 0.0941). Cytosolic chaperone *Hsp70* (FAM-01; N = 8 species, 572 codons, M0 dN/dS = 0.1106, κ = 1.70; 92.3% at ω<sub>0</sub> = 0.0872) and basement-membrane Type IV collagen α-chain *COL4A1* (FAM-04; N = 8 species spanning Porifera *Pseudocorticium*, Cnidaria *Hydra*, Ecdysozoa, and Vertebrata, 480 codons, M0 dN/dS = 0.1045, κ = 0.80; **Supplemental Figure S1**) likewise evolve under purifying constraint preserving periodic *Gly-X-Y* collagenous triplets and the C-terminal NC1 trimerization interface [12, 13].",
+      "Three-dimensional homology threading of metazoan *COL4A1* onto the 1.90 Å crystal structure of the Type IV Collagen NC1 domain (PDB 1LI1 Chain A; 228 Cα residues) [13] recovers conserved β-sheet subdomain geometry (Kabsch RMSD = 0.508 Å; TM-score = 0.9920; interface pocket volume = 107.6 Å<sup>3</sup>; **Figure 5D**). Sequence-to-structure mapping confirms retention of the intrachain disulfide core alongside the opposing Met93 and hydroxylysine/lysine-211 (Hyl211) residues that form the peroxidasin-catalyzed covalent sulfilimine crosslink (–S=N–), mechanically stabilizing epithelial basement membranes across Eumetazoa and homoscleromorph/demosponge lineages [12, 13]."
     ],
     "section5_paragraphs": [
-      "Twelve Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in) provide a direct empirical demonstration of the mitochondrial substitution-rate paradox across non-bilaterian marine phyla (**Figures 4A & 4B**; **Table 4B**) [1, 16, 18]. Along Axis A (R1–R6, *COX1*), pelagic moon jellies *Aurelia coerulea* (R1, N = 36, π = 0.0071, Tajima's *D* = −1.24) and *A. aurita* (R2, N = 36, π = 0.0044, *D* = −0.26), circumboreal plumose sea anemone *Metridium senile* (R3, N = 36, π = 0.0028, *D* = −2.60), and invasive ctenophore *Mnemiopsis leidyi* (R4, N = 20, π = 0.0087, *D* = −1.42) [4] exhibit post-glacial or trans-oceanic expansion signatures, mirrored in Indo-Pacific scleractinian corals *Pocillopora damicornis* (R5, *D* = −1.93) and *Stylophora pistillata* (R6, *D* = −0.58). Axis B (L1–L6) directly illustrates anthozoan mitochondrial stasis [16]: in staghorn coral *Acropora millepora*, mitochondrial *COX1* displays zero intraspecific polymorphism across 415 bp (L1, N = 12, π = 0.0000), whereas nuclear *Hsp70* coding sequences in the exact same species harbor rich standing variation (L3, N = 10, 649 bp, π = 0.0606, *D* = +0.01), paralleled by nuclear rDNA ITS/28S across *Aurelia* (L2, π = 0.1268) and *Acropora* (L5, π = 0.0655), linear mtDNA in *Hydra vulgaris* (L4, π = 0.0262, *D* = −1.45), and nuclear actin CDS across Actiniaria (L6, N = 12, 1,143 bp, *D* = +1.45).",
-      "Minimum-spanning and TCS *COX1* haplotype networks (**Figures 7A & 7B**; **Table 4C**) partition 86 coastal *Aurelia* scyphozoan sequences into 29 geographic species/cryptic clusters (Panel A, 57 haplotypes across 534 bp, *H*<sub>d</sub> = 0.9598) and 98 Anthozoa and Hydrozoa sequences into 50 deeply diverged clusters reflecting strong inter-genus structure (Panel B, 57 haplotypes across 549 bp, *H*<sub>d</sub> = 0.9236; **Table 4C**)."
+      "Twelve single-species conspecific Bayesian coalescent skylines (25,000 MCMC generations, 20% burn-in; ESS = 1,113.7–4,607.4; Gelman–Rubin R-hat = 1.0001–1.0031) quantify the mitochondrial substitution-rate paradox across non-bilaterian marine taxa (**Figures 4A & 4B**; **Table 4B**) [1, 16, 18]. Along Axis A (R1–R6, maternal *COX1*), pelagic scyphozoan moon jellies *Aurelia coerulea* (R1, N = 36, 498 bp, π = 0.0071, Tajima's *D* = −1.24) and *Aurelia aurita* (R2, N = 36, 507 bp, π = 0.0044, *D* = −0.26), circumboreal plumose anemone *Metridium senile* (R3, N = 36, 549 bp, π = 0.0028, *D* = −2.60), and pelagic ctenophore *Mnemiopsis leidyi* (R4, N = 20, 645 bp, π = 0.0087, *D* = −1.42) [4] retain informative intraspecific mitochondrial polymorphism tracking post-glacial and coastal range expansions, alongside Indo-Pacific reef corals *Pocillopora damicornis* (R5, N = 11, π = 0.0111, *D* = −1.93) and *Stylophora pistillata* (R6, N = 13, π = 0.0154, *D* = −0.59). Axis B (L1–L6) contrasts conspecific mitochondrial and nuclear loci directly [16]: in *Acropora millepora*, maternal mtDNA displays zero intraspecific polymorphism across 415 bp (L1, N = 12, π = 0.0000), whereas nuclear *Hsp70* CDS in *A. millepora* harbors substantial standing variation (L3, N = 10, 649 bp, π = 0.0606, *D* = +0.01), paralleled by conspecific nuclear *ITS1–5.8S* rDNA in *Stylophora pistillata* (L2, N = 13, 450 bp, π = 0.0600, *D* = +0.89; **Supplemental Figure S2**) and *Acropora hyacinthus* (L5, N = 20, 337 bp, π = 0.0497, *D* = −0.06), linear mtDNA in *Hydra vulgaris* (L4, N = 8, π = 0.0262, *D* = −1.45), and conspecific nuclear *Hsp70* in *Pocillopora damicornis* (L6, N = 36, 738 bp, π = 0.0040, *D* = −0.93).",
+      "Minimum-spanning and TCS *COX1* Folmer-overlap haplotype networks (**Figures 7A & 7B**) resolve 56 coastal scyphozoan and cnidarian reference sequences into 3 distinct clusters (29 unique haplotypes across 507 bp; *H*<sub>d</sub> = 0.9058) in Panel A and 53 anthozoan and hydrozoan sequences into 11 lineage clusters (19 unique haplotypes across 546 bp; *H*<sub>d</sub> = 0.8425) in Panel B, visually contrasting shallow intraspecific coral *COX1* hubs against structured scyphozoan and hydrozoan demes."
     ],
-    "section6_intro": "Complete sequence-hygiene logs (including 3,419 quarantined outliers), Tonian–Ediacaran relaxed-clock intervals, clade benchmark and ABBA–BABA tests, 32-chain model selection rankings, per-locus BIC rate multipliers, Goldman–Yang codon selection parameters, and marine invertebrate coalescent skyline summaries are compiled in **Tables 1–4C** below [1, 17–19]."
+    "section6_intro": "Complete sequence-hygiene logs (including 1,803 quarantined deposits), Tonian–Ediacaran relaxed-clock intervals, clade recovery and ABBA–BABA site-pattern tests, 32-chain model selection rankings, 20-locus BIC rate multipliers, Goldman–Yang codon selection parameters, and 12 conspecific marine coalescent skyline summaries are compiled in **Tables 1–4C** below [1, 17–19]."
   },
   "dynamic_coverage_gate": true,
-  "coverage_gate_floor_ratio": 0.35,
-  "coverage_gate_min_otus_per_sector": 3
+  "coverage_gate_floor_ratio": 0.65,
+  "coverage_gate_min_otus_per_sector": 2,
+  "universal_archaea_eukarya": true
 }

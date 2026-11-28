@@ -802,20 +802,47 @@ pub(crate) fn run_partitioned_4regime_stage3(
     let distinct_patterns_ry3 = ry3_pats.len();
 
     let t_ml = Instant::now();
-    eprintln!(
-        "[bio-suite-supervisor] Stage 3/5: Partitioned ModelTest ({} loci) + B={} UFBoot2 on {} gated OTUs x {} bp...",
-        bundle.part_inputs.len(),
-        b_reps,
-        n_phy,
-        ortho64_cols_bp
-    );
-    let part_res: PartitionedSupermatrixMlResult = infer_partitioned_supermatrix_ml_with_bootstrap(
-        &ry3_strings,
-        &tip_labels,
-        &bundle.part_inputs,
-        b_reps,
-        seed_base + 10,
-    )?;
+    let reuse_stage3a = std::env::var("CRV_REUSE_STAGE3A").is_ok_and(|v| v == "1");
+    let part_summary_path = run_dir.join("trees/partitioned_modeltest_summary.json");
+    let cached_stage3a: Option<PartitionedSupermatrixMlResult> = if reuse_stage3a && part_summary_path.is_file() {
+        fs::read_to_string(&part_summary_path)
+            .ok()
+            .and_then(|s| serde_json::from_str::<PartitionedSupermatrixMlResult>(&s).ok())
+            .filter(|pr| {
+                pr.n_partitions == bundle.part_inputs.len()
+                    && pr.total_sites == ortho64_cols_bp
+                    && pr.partitioned_bootstrap.estimator_self_consistent
+                    && pr.partitioned_metrics.newick_tree.len() >= 20
+            })
+    } else {
+        None
+    };
+
+    let part_res: PartitionedSupermatrixMlResult = if let Some(cached) = cached_stage3a {
+        eprintln!(
+            "[bio-suite-supervisor] Stage 3/5: Reusing checkpointed Partitioned ModelTest + GENESITE UFBoot2 ({} loci, {} bp, lnL={:.4}, boot={:.2}%)...",
+            cached.n_partitions,
+            cached.total_sites,
+            cached.partitioned_ln_l,
+            cached.partitioned_bootstrap.mean_split_support_pct
+        );
+        cached
+    } else {
+        eprintln!(
+            "[bio-suite-supervisor] Stage 3/5: Partitioned ModelTest ({} loci) + B={} UFBoot2 on {} gated OTUs x {} bp...",
+            bundle.part_inputs.len(),
+            b_reps,
+            n_phy,
+            ortho64_cols_bp
+        );
+        infer_partitioned_supermatrix_ml_with_bootstrap(
+            &ry3_strings,
+            &tip_labels,
+            &bundle.part_inputs,
+            b_reps,
+            seed_base + 10,
+        )?
+    };
     if !part_res.partitioned_bootstrap.estimator_self_consistent {
         return Err(format!(
             "{} Partitioned RY3 ML bootstrap failed estimator self-consistency gate",
@@ -3364,7 +3391,7 @@ pub fn build_pdb_structure_from_template(
 
     if !template_path.is_file() {
         let url = format!("https://files.rcsb.org/download/{}.pdb", pdb_up);
-        if let Ok(resp) = ureq::get(&url).call() {
+        if let Ok(resp) = ureq::get(&url).timeout(std::time::Duration::from_secs(20)).call() {
             if let Ok(body) = resp.into_string() {
                 if body.contains("HETATM") || body.contains("ATOM  ") {
                     let _ = fs::write(&template_path, &body);
@@ -4582,6 +4609,7 @@ fn prepare_declarative_haplotype_records(
     raw_items: &[(String, String, String, String)],
     min_occ_frac: f64,
     is_mito_table5: bool,
+    is_noncoding_rrna: bool,
 ) -> Vec<FastaRecord> {
     let mut fasta_in = Vec::with_capacity(raw_items.len());
     let mut seen_ids = HashSet::new();
@@ -4590,7 +4618,7 @@ fn prepare_declarative_haplotype_records(
         if s_clean.len() < 300 || s_clean.len() > 4_800 {
             continue;
         }
-        let chosen = if is_mito_table5 {
+        let chosen = if is_noncoding_rrna || is_mito_table5 {
             s_clean
         } else {
             let orf_nt = extract_longest_sense_orf(&s_clean, s_clean.len().max(2400));
@@ -4608,7 +4636,7 @@ fn prepare_declarative_haplotype_records(
             taxon: sp.clone(),
             common_name: String::new(),
             family: sub_trimmed,
-            gene: "CoreLocus".to_string(),
+            gene: if is_noncoding_rrna { "rDNA".to_string() } else { "CoreLocus".to_string() },
             description: sp.clone(),
             sequence: chosen,
             cached_from_disk: true,
@@ -4616,6 +4644,38 @@ fn prepare_declarative_haplotype_records(
     }
     if fasta_in.len() < 6 {
         return fasta_in;
+    }
+    if is_noncoding_rrna {
+        let (r_pairs, cols_bp, _) = align_and_trim_rrna_core(&fasta_in, min_occ_frac);
+        if cols_bp < 150 || r_pairs.len() < 6 {
+            return Vec::new();
+        }
+        let map_in: HashMap<String, &FastaRecord> =
+            fasta_in.iter().map(|r| (r.id.clone(), r)).collect();
+        return r_pairs
+            .into_iter()
+            .filter_map(|(id, seq)| {
+                let valid = seq
+                    .bytes()
+                    .filter(|&b| matches!(b, b'A' | b'C' | b'G' | b'T'))
+                    .count();
+                if valid * 10 < seq.len() * 6 {
+                    return None;
+                }
+                let src = map_in.get(&id)?;
+                Some(FastaRecord {
+                    id,
+                    accession: src.accession.clone(),
+                    taxon: src.taxon.clone(),
+                    common_name: String::new(),
+                    family: src.family.clone(),
+                    gene: src.gene.clone(),
+                    description: src.description.clone(),
+                    sequence: seq,
+                    cached_from_disk: true,
+                })
+            })
+            .collect();
     }
     let (nt_pairs, _, cols_bp, _, _) = align_and_trim_codon_core_with_qc(
         &fasta_in,
@@ -5279,12 +5339,74 @@ fn classify_universal_ae_cds_header(
     {
         return Some("univ_thrrs");
     }
+    if (matches!(g.as_str(), "act1" | "actb" | "actg1" | "act1g")
+        || d.contains("cytoplasmic actin")
+        || (d.contains("actin")
+            && !d.contains("actin-related")
+            && !d.contains("actin related")
+            && !d.contains("actin-like")
+            && !d.contains("actin-binding")
+            && !d.contains("capping")
+            && !d.contains("arp")))
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("plastid")
+        && !d.contains("like")
+        && (750..=1650).contains(&len_bp)
+    {
+        return Some("univ_act1");
+    }
+    if (matches!(g.as_str(), "tub2" | "tubb" | "bena" | "btub" | "tubb1" | "tubb2")
+        || d.contains("tubulin beta")
+        || d.contains("beta-tubulin")
+        || d.contains("beta tubulin"))
+        && !d.contains("alpha")
+        && !d.contains("gamma")
+        && !d.contains("epsilon")
+        && !d.contains("folding")
+        && !d.contains("cofactor")
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("like")
+        && (850..=2000).contains(&len_bp)
+    {
+        return Some("univ_tub2");
+    }
+    if (matches!(g.as_str(), "pgk1" | "pgk") || d.contains("phosphoglycerate kinase"))
+        && !d.contains("mutase")
+        && !d.contains("mitochondri")
+        && !d.contains("chloroplast")
+        && !d.contains("plastid")
+        && !d.contains("like")
+        && (900..=1800).contains(&len_bp)
+    {
+        return Some("univ_pgk1");
+    }
+    if (matches!(g.as_str(), "mcm7" | "cdc47")
+        || d.contains("dna replication licensing factor mcm7")
+        || d.contains("minichromosome maintenance protein 7")
+        || d.contains("minichromosome maintenance complex component 7"))
+        && !d.contains("mcm2")
+        && !d.contains("mcm3")
+        && !d.contains("mcm4")
+        && !d.contains("mcm5")
+        && !d.contains("mcm6")
+        && !d.contains("mcm8")
+        && !d.contains("mcm9")
+        && !d.contains("mcm10")
+        && !d.contains("mitochondri")
+        && !d.contains("like")
+        && (1500..=3400).contains(&len_bp)
+    {
+        return Some("univ_mcm7");
+    }
     None
 }
 
 fn universal_ae_min_bp(loc: &str) -> usize {
     match loc {
         "univ_rpl2" | "univ_rps3" | "univ_pcna" => 480,
+        "univ_mcm7" => 1400,
         _ => 600,
     }
 }
@@ -5296,7 +5418,13 @@ fn fetch_universal_archaea_eukarya_panel(
     requested_loci: &[&str],
     cache_dir: &Path,
 ) -> Vec<(String, String, String)> {
-    let cache_ver = if requested_loci.contains(&"univ_hsp70") || requested_loci.contains(&"univ_hsp90") {
+    let cache_ver = if requested_loci.contains(&"univ_act1")
+        || requested_loci.contains(&"univ_tub2")
+        || requested_loci.contains(&"univ_pgk1")
+        || requested_loci.contains(&"univ_mcm7")
+    {
+        "v7"
+    } else if requested_loci.contains(&"univ_hsp70") || requested_loci.contains(&"univ_hsp90") {
         "v6"
     } else {
         "v5"
@@ -5377,6 +5505,10 @@ fn fetch_universal_archaea_eukarya_panel(
                 "univ_fen1" => Some("univ_fen1"),
                 "univ_pcna" => Some("univ_pcna"),
                 "univ_thrrs" => Some("univ_thrrs"),
+                "univ_act1" => Some("univ_act1"),
+                "univ_tub2" => Some("univ_tub2"),
+                "univ_pgk1" => Some("univ_pgk1"),
+                "univ_mcm7" => Some("univ_mcm7"),
                 "univ_ssu" => Some("univ_ssu"),
                 "univ_lsu" => Some("univ_lsu"),
                 _ => None,
@@ -5524,7 +5656,19 @@ fn fetch_universal_archaea_eukarya_panel(
                 | "Ustilaginaceae"
                 | "Psathyrellaceae"
                 | "Hypocreaceae"
-        );
+        ) || [
+            "Holomycota",
+            "Chytrid",
+            "Zoopag",
+            "Glomer",
+            "Mucor",
+            "Ascomyc",
+            "Basidiomyc",
+            "Agaric",
+            "Mycorr",
+        ]
+        .iter()
+        .any(|k| slot.sector_code.contains(k));
         let rpl2_mrna_q = if is_fungal_slot {
             format!(
                 "{} AND biomol_mrna[PROP] AND (RPL2[Gene] OR RPL2A[Gene] OR RPL2B[Gene] OR \"60S ribosomal protein L2\"[Title] OR \"large ribosomal subunit protein uL2\"[Title]) AND 480:1400[SLEN] NOT mitochondri*[Title] NOT mitoribosom*[Title] NOT MRPL*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT L20[Title] NOT L21[Title] NOT L22[Title] NOT L23[Title] NOT L24[Title] NOT L27[Title] NOT \"like\"[Title]",
@@ -5547,7 +5691,7 @@ fn fetch_universal_archaea_eukarya_panel(
                 org_clause
             )
         };
-        let per_locus_queries: [(&'static str, String, usize, usize, bool); 20] = [
+        let per_locus_queries: [(&'static str, String, usize, usize, bool); 24] = [
             (
                 "univ_rpb2",
                 format!(
@@ -5720,6 +5864,46 @@ fn fetch_universal_archaea_eukarya_panel(
                 true,
             ),
             (
+                "univ_act1",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (ACT1[Gene] OR ACTB[Gene] OR ACTG1[Gene] OR \"actin\"[Title]) AND 750:1650[SLEN] NOT \"actin-related\"[Title] NOT \"actin related\"[Title] NOT \"actin-binding\"[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                750,
+                1650,
+                true,
+            ),
+            (
+                "univ_tub2",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (TUB2[Gene] OR TUBB[Gene] OR benA[Gene] OR \"tubulin beta\"[Title] OR \"beta-tubulin\"[Title]) AND 850:2000[SLEN] NOT alpha[Title] NOT gamma[Title] NOT folding[Title] NOT cofactor[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                850,
+                2000,
+                true,
+            ),
+            (
+                "univ_pgk1",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (PGK1[Gene] OR PGK[Gene] OR \"phosphoglycerate kinase\"[Title]) AND 900:1800[SLEN] NOT mutase[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                900,
+                1800,
+                true,
+            ),
+            (
+                "univ_mcm7",
+                format!(
+                    "{} AND biomol_mrna[PROP] AND (MCM7[Gene] OR CDC47[Gene] OR \"DNA replication licensing factor MCM7\"[Title] OR \"minichromosome maintenance protein 7\"[Title]) AND 1500:3400[SLEN] NOT mitochondri*[Title] NOT chloroplast[Title] NOT \"like\"[Title]",
+                    org_clause
+                ),
+                1500,
+                3400,
+                true,
+            ),
+            (
                 "univ_ssu",
                 format!(
                     "{} AND (\"18S ribosomal RNA\"[Title] OR \"18S rRNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 900:2400[SLEN] NOT \"complete genome\"[Title] NOT chromosome[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT 28S[Title] NOT ITS1[Title]",
@@ -5774,7 +5958,9 @@ fn fetch_universal_archaea_eukarya_panel(
             "cct3", "cct4", "cct5", "hsp70", "hspa8", "hsc70", "ssa1", "hsp90", "hsp90aa1",
             "hsp90ab1", "hsp83", "eif5b", "fun12", "infb", "sec61", "secy", "rpl2", "rpl2a",
             "rpl2b", "rpl8", "rpl3", "tcm1", "rps3", "fen1", "rad27", "pcna", "pol30", "tars",
-            "tars1", "ths1", "thrs", "ribosomal protein", "flap endonuclease",
+            "tars1", "ths1", "thrs", "act1", "actb", "actg1", "tub2", "tubb", "bena", "pgk1",
+            "mcm7", "cdc47", "phosphoglycerate kinase", "beta-tubulin", "tubulin beta",
+            "ribosomal protein", "flap endonuclease",
         ];
         let is_new_ae_locus = |loc: &str| -> bool {
             matches!(
@@ -5789,13 +5975,17 @@ fn fetch_universal_archaea_eukarya_panel(
                     | "univ_fen1"
                     | "univ_pcna"
                     | "univ_thrrs"
+                    | "univ_act1"
+                    | "univ_tub2"
+                    | "univ_pgk1"
+                    | "univ_mcm7"
             )
         };
 
-        // Fast-path 1: Multiplexed single-shot `db=protein` `fasta_cds_na` sweep across all 18 universal coding loci
+        // Fast-path 1: Multiplexed single-shot `db=protein` `fasta_cds_na` sweep across all universal coding loci
         {
             let batch_prot_q = format!(
-                "{} AND (RPB2[Gene] OR POLR2B[Gene] OR NRPB2[Gene] OR RPB1[Gene] OR POLR2A[Gene] OR NRPB1[Gene] OR EEF1A[Gene] OR EEF1A1[Gene] OR TEF1[Gene] OR EEF2[Gene] OR EFT1[Gene] OR VMA1[Gene] OR ATP6V1A[Gene] OR VMA2[Gene] OR ATP6V1B[Gene] OR RAD51[Gene] OR TCP1[Gene] OR CCT1[Gene] OR CCT2[Gene] OR HSPA8[Gene] OR HSP70[Gene] OR HSC70[Gene] OR HSP90AA1[Gene] OR HSP90AB1[Gene] OR HSP90[Gene] OR HSP83[Gene] OR EIF5B[Gene] OR FUN12[Gene] OR SEC61A1[Gene] OR SEC61[Gene] OR RPL8[Gene] OR RPL2[Gene] OR RPL3[Gene] OR TCM1[Gene] OR RPS3[Gene] OR FEN1[Gene] OR RAD27[Gene] OR PCNA[Gene] OR POL30[Gene] OR TARS[Gene] OR TARS1[Gene] OR \"RNA polymerase II\"[Title] OR \"elongation factor 1-alpha\"[Title] OR \"elongation factor 2\"[Title] OR \"V-type proton ATPase\"[Title] OR \"DNA repair protein RAD51\"[Title] OR \"T-complex protein 1\"[Title] OR \"heat shock cognate 71\"[Title] OR \"heat shock protein 90\"[Title] OR \"translation initiation factor 5B\"[Title] OR \"Sec61\"[Title] OR \"60S ribosomal protein L8\"[Title] OR \"60S ribosomal protein L3\"[Title] OR \"40S ribosomal protein S3\"[Title] OR \"flap endonuclease 1\"[Title] OR \"proliferating cell nuclear antigen\"[Title] OR \"threonine--tRNA ligase\"[Title]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
+                "{} AND (RPB2[Gene] OR POLR2B[Gene] OR NRPB2[Gene] OR RPB1[Gene] OR POLR2A[Gene] OR NRPB1[Gene] OR EEF1A[Gene] OR EEF1A1[Gene] OR TEF1[Gene] OR EEF2[Gene] OR EFT1[Gene] OR VMA1[Gene] OR ATP6V1A[Gene] OR VMA2[Gene] OR ATP6V1B[Gene] OR RAD51[Gene] OR TCP1[Gene] OR CCT1[Gene] OR CCT2[Gene] OR HSPA8[Gene] OR HSP70[Gene] OR HSC70[Gene] OR HSP90AA1[Gene] OR HSP90AB1[Gene] OR HSP90[Gene] OR HSP83[Gene] OR EIF5B[Gene] OR FUN12[Gene] OR SEC61A1[Gene] OR SEC61[Gene] OR RPL8[Gene] OR RPL2[Gene] OR RPL3[Gene] OR TCM1[Gene] OR RPS3[Gene] OR FEN1[Gene] OR RAD27[Gene] OR PCNA[Gene] OR POL30[Gene] OR TARS[Gene] OR TARS1[Gene] OR ACT1[Gene] OR ACTB[Gene] OR TUB2[Gene] OR TUBB[Gene] OR PGK1[Gene] OR PGK[Gene] OR MCM7[Gene] OR CDC47[Gene] OR \"RNA polymerase II\"[Title] OR \"elongation factor 1-alpha\"[Title] OR \"elongation factor 2\"[Title] OR \"V-type proton ATPase\"[Title] OR \"DNA repair protein RAD51\"[Title] OR \"T-complex protein 1\"[Title] OR \"heat shock cognate 71\"[Title] OR \"heat shock protein 90\"[Title] OR \"translation initiation factor 5B\"[Title] OR \"Sec61\"[Title] OR \"60S ribosomal protein L8\"[Title] OR \"60S ribosomal protein L3\"[Title] OR \"40S ribosomal protein S3\"[Title] OR \"flap endonuclease 1\"[Title] OR \"proliferating cell nuclear antigen\"[Title] OR \"threonine--tRNA ligase\"[Title] OR \"tubulin beta\"[Title] OR \"phosphoglycerate kinase\"[Title] OR \"MCM7\"[Title]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
                 org_clause
             );
             let es_batch_url = format!(
@@ -5933,7 +6123,7 @@ fn fetch_universal_archaea_eukarya_panel(
             }
         }
 
-        let protein_backfill_queries: [(&'static str, String, usize, usize); 18] = [
+        let protein_backfill_queries: [(&'static str, String, usize, usize); 22] = [
             (
                 "univ_rpb2",
                 format!(
@@ -6087,6 +6277,42 @@ fn fetch_universal_archaea_eukarya_panel(
                 ),
                 800,
                 3200,
+            ),
+            (
+                "univ_act1",
+                format!(
+                    "{} AND (ACT1[Gene] OR ACTB[Gene] OR ACTG1[Gene] OR \"cytoplasmic actin\"[All Fields] OR \"actin\"[Title]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT \"actin-related\"[Title] NOT \"actin related\"[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                750,
+                1650,
+            ),
+            (
+                "univ_tub2",
+                format!(
+                    "{} AND (TUB2[Gene] OR TUBB[Gene] OR benA[Gene] OR \"tubulin beta\"[All Fields] OR \"beta-tubulin\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT alpha[Title] NOT gamma[Title] NOT folding[Title] NOT cofactor[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                850,
+                2000,
+            ),
+            (
+                "univ_pgk1",
+                format!(
+                    "{} AND (PGK1[Gene] OR PGK[Gene] OR \"phosphoglycerate kinase\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mutase[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT plastid[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                900,
+                1800,
+            ),
+            (
+                "univ_mcm7",
+                format!(
+                    "{} AND (MCM7[Gene] OR CDC47[Gene] OR \"DNA replication licensing factor MCM7\"[All Fields] OR \"minichromosome maintenance protein 7\"[All Fields]) AND (srcdb_refseq[PROP] OR srcdb_genbank[PROP]) NOT mcm2[Title] NOT mcm3[Title] NOT mcm4[Title] NOT mcm5[Title] NOT mcm6[Title] NOT mitochondri*[Title] NOT chloroplast[Title] NOT partial[Title]",
+                    org_clause
+                ),
+                1500,
+                3400,
             ),
         ];
 
@@ -6253,7 +6479,7 @@ fn fetch_universal_archaea_eukarya_panel(
     eprintln!(
         "  [Universal AE Panel] {} ({}) -> {}/{} loci",
         slot.tip_code,
-        slot.species,
+        crate::privacy::abbreviate_binomial_for_cli_log(&slot.species),
         out.len(),
         requested_loci.len()
     );
@@ -6386,7 +6612,11 @@ pub fn execute_declarative_study(
         }
     }
 
-    if !cfg.is_prokaryote && !cfg.universal_archaea_eukarya {
+    if !cfg.is_prokaryote
+        && (!cfg.universal_archaea_eukarya
+            || !cfg.mito_cohort_queries.is_empty()
+            || !cfg.fallback_mito_accessions.is_empty())
+    {
         let mut reg_mito =
             |acc: String,
              org: String,
@@ -6722,7 +6952,11 @@ pub fn execute_declarative_study(
 
     let mut full_mitogenome_records: Vec<FastaRecord> = Vec::with_capacity(raw_full_mitos.len());
     let mut unphased_full_mito_seqs: Vec<String> = Vec::with_capacity(raw_full_mitos.len());
-    if !cfg.is_prokaryote && !cfg.universal_archaea_eukarya {
+    if !cfg.is_prokaryote
+        && (!cfg.universal_archaea_eukarya
+            || !cfg.mito_cohort_queries.is_empty()
+            || !cfg.fallback_mito_accessions.is_empty())
+    {
         for (acc, org, title, c) in &raw_full_mitos {
             unphased_full_mito_seqs.push(c.clone());
             let (phased, _) = phase_circular_mitogenome(c, &cox1_anchor);
@@ -7633,7 +7867,22 @@ pub fn execute_declarative_study(
         let panel_is_mito5 = use_mito_table5
             || hp.locus_tag.eq_ignore_ascii_case("COI")
             || hp.locus_tag.eq_ignore_ascii_case("COX1");
-        let hrecs = prepare_declarative_haplotype_records(&hraw, hp.min_occ, panel_is_mito5);
+        let lt_low = hp.locus_tag.to_ascii_lowercase();
+        let panel_is_noncoding = lt_low.contains("its")
+            || lt_low.contains("18s")
+            || lt_low.contains("28s")
+            || lt_low.contains("16s")
+            || lt_low.contains("23s")
+            || lt_low.contains("ssu")
+            || lt_low.contains("lsu")
+            || lt_low.contains("rdna")
+            || lt_low.contains("rrna");
+        let hrecs = prepare_declarative_haplotype_records(
+            &hraw,
+            hp.min_occ,
+            panel_is_mito5,
+            panel_is_noncoding,
+        );
         write_pipe_delimited_fasta(&run_dir.join("alignments").join(&hp.fasta_filename), &hrecs);
     }
     let stage_msa_ms = t_msa.elapsed().as_millis().max(1);
@@ -8272,7 +8521,22 @@ pub fn refresh_declarative_stage5_skylines_in_place(
         }
         let panel_is_mito5 = use_mito_table5
             || (!cfg.is_prokaryote && matches!(hp.locus_tag.as_str(), "COI" | "COX1"));
-        let hrecs = prepare_declarative_haplotype_records(&hraw, hp.min_occ, panel_is_mito5);
+        let lt_low = hp.locus_tag.to_ascii_lowercase();
+        let panel_is_noncoding = lt_low.contains("its")
+            || lt_low.contains("18s")
+            || lt_low.contains("28s")
+            || lt_low.contains("16s")
+            || lt_low.contains("23s")
+            || lt_low.contains("ssu")
+            || lt_low.contains("lsu")
+            || lt_low.contains("rdna")
+            || lt_low.contains("rrna");
+        let hrecs = prepare_declarative_haplotype_records(
+            &hraw,
+            hp.min_occ,
+            panel_is_mito5,
+            panel_is_noncoding,
+        );
         if hrecs.len() >= 6 {
             write_pipe_delimited_fasta(&run_dir.join("alignments").join(&hp.fasta_filename), &hrecs);
         }

@@ -30,6 +30,7 @@ fn main() {
                 })
                 .unwrap_or_else(|| PathBuf::from("cache"));
             let cache = PoliteCacheManager::new(cache_dir);
+            eprintln!("[bio-suite-supervisor] Mode: Dry-Lab In-Silico Comparative Genomics & Molecular Systematics (Public NCBI/PDB Records Only)");
 
             if let Err(e) = run_supervisor_cli(&args, &cache) {
                 eprintln!("[bio-suite-supervisor] Error: {}", e);

@@ -767,6 +767,7 @@ fn entrez_get_polite(url: &str) -> Option<String> {
                 "User-Agent",
                 "crvscience-bio-suite-seqnet/0.1.0 (+https://crvscience.com/labs; GPL-3.0)",
             )
+            .timeout(Duration::from_secs(25))
             .call()
         {
             if let Ok(txt) = resp.into_string() {

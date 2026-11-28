@@ -96,6 +96,68 @@ pub struct MetadataContextFlag {
     pub class: MetadataContextClass,
 }
 
+/// Redact query-string credentials (`api_key=`, `token=`, `password=`, `email=`, `%40`) from log lines.
+pub fn redact_url_credentials(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for (idx, line) in text.split_inclusive('\n').enumerate() {
+        let _ = idx;
+        let mut first = true;
+        let has_nl = line.ends_with('\n');
+        let trimmed_nl = line.strip_suffix('\n').unwrap_or(line);
+        for tok in trimmed_nl.split(' ') {
+            if !first {
+                out.push(' ');
+            }
+            first = false;
+            if let Some(q_idx) = tok.find(".fcgi?") {
+                out.push_str(&tok[..q_idx + 5]);
+                out.push_str("?...[query-redacted]");
+                if tok.ends_with(':') {
+                    out.push(':');
+                }
+            } else if tok.contains("api_key=")
+                || tok.contains("token=")
+                || tok.contains("password=")
+                || tok.contains("email=")
+                || tok.contains("%40")
+            {
+                out.push_str("[redacted-cred]");
+            } else {
+                out.push_str(tok);
+            }
+        }
+        if has_nl {
+            out.push('\n');
+        }
+    }
+    out
+}
+
+/// Abbreviate binomial species labels in CLI stderr logs (e.g., `"Genus species"` -> `"G. species"`,
+/// `"Candidatus Taxon"` -> `"Ca. Taxon"`) to prevent high-density raw taxon lists in terminal telemetry.
+pub fn abbreviate_binomial_for_cli_log(taxon: &str) -> String {
+    let parts: Vec<&str> = taxon.split_whitespace().collect();
+    match parts.as_slice() {
+        [] => String::new(),
+        [single] => (*single).to_string(),
+        [first, second, rest @ ..] if first.eq_ignore_ascii_case("candidatus") => {
+            if rest.is_empty() {
+                format!("Ca. {}", second)
+            } else {
+                format!("Ca. {} {}", second, rest.join(" "))
+            }
+        }
+        [genus, epithet, rest @ ..] => {
+            let g_init = genus.chars().next().unwrap_or('?');
+            if rest.is_empty() {
+                format!("{}. {}", g_init, epithet)
+            } else {
+                format!("{}. {} {}", g_init, epithet, rest.join(" "))
+            }
+        }
+    }
+}
+
 const TRIGGER_TERMS: &[&str] = &[
     "toxin",
     "antitoxin",
@@ -108,7 +170,22 @@ const TRIGGER_TERMS: &[&str] = &[
     "blast",
     "shell",
     "kill",
+    "mycotoxin",
+    "amatoxin",
+    "amanitin",
+    "aflatoxin",
+    "puccinia",
+    "magnaporthe",
+    "ralstonia",
+    "synchytrium",
+    "batrachochytrium",
+    "coccidioides",
+    "cryptococcus",
+    "conidiobolus",
+    "mucormycosis",
 ];
+
+const TRIGGER_SUBSTRINGS: &[&str] = &["toxicaria", "trichothec"];
 
 const BENIGN_CONTEXT_CUES: &[&str] = &[
     "cds",
@@ -144,7 +221,13 @@ const BENIGN_CONTEXT_CUES: &[&str] = &[
     "killifish",
     "biocontrol",
     "mitochondrial",
+    "mitochondrion",
     "ribosomal",
+    "rrna",
+    "its1",
+    "its2",
+    "complete sequence",
+    "complete genome",
     "insecticide",
     "pyrethroid",
     "diamide",
@@ -158,6 +241,17 @@ const BENIGN_CONTEXT_CUES: &[&str] = &[
     "meloidogyne",
     "entomopathogenic",
     "symbiont",
+    "mycorrhiz",
+    "ectomycorrhiz",
+    "arbuscular",
+    "glomeromycot",
+    "agaricomycot",
+    "basidiomycot",
+    "ascomycot",
+    "saprotroph",
+    "endophyte",
+    "hartig",
+    "rhizosphere",
     "ortholog",
     "supermatrix",
     "phylo",
@@ -206,6 +300,14 @@ pub fn classify_sequence_metadata_false_positives(header: &str) -> Vec<MetadataC
             });
         }
     }
+    for &sub in TRIGGER_SUBSTRINGS {
+        if lower.contains(sub) {
+            flags.push(MetadataContextFlag {
+                term: sub.to_string(),
+                class,
+            });
+        }
+    }
     flags
 }
 
@@ -247,7 +349,8 @@ pub fn sanitize_fasta_header_for_log(accession: &str, taxon: &str, gene: &str, r
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_sequence_metadata_false_positives, redact_local_paths, sanitize_fasta_header_for_log,
+        abbreviate_binomial_for_cli_log, classify_sequence_metadata_false_positives,
+        redact_local_paths, redact_url_credentials, sanitize_fasta_header_for_log,
         MetadataContextClass,
     };
 
@@ -291,6 +394,28 @@ mod tests {
         assert_eq!(
             sanitize_fasta_header_for_log("AB576780.1", "Aedes albopictus", "apyrase", ">AB576780.1 raw"),
             "AB576780.1 | Aedes albopictus | apyrase"
+        );
+
+        let fungal_benign = classify_sequence_metadata_false_positives(
+            ">BK072141.1 TPA_asm: Amanita brunneitoxicaria mitochondrion, complete sequence",
+        );
+        assert_eq!(fungal_benign.len(), 1);
+        assert_eq!(fungal_benign[0].term, "toxicaria");
+        assert_eq!(fungal_benign[0].class, MetadataContextClass::BenignScientificContext);
+
+        let rust_benign = classify_sequence_metadata_false_positives(
+            ">AY125409.1 Puccinia graminis f. sp. tritici 18S ribosomal RNA gene, partial sequence",
+        );
+        assert_eq!(rust_benign.len(), 1);
+        assert_eq!(rust_benign[0].term, "puccinia");
+        assert_eq!(rust_benign[0].class, MetadataContextClass::BenignScientificContext);
+
+        assert_eq!(abbreviate_binomial_for_cli_log("Puccinia graminis"), "P. graminis");
+        assert_eq!(abbreviate_binomial_for_cli_log("Candidatus Heimdallarchaeota"), "Ca. Heimdallarchaeota");
+
+        assert_eq!(
+            redact_url_credentials("GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=nuccore&email=labs%40crvscience.com: status 429"),
+            "GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?...[query-redacted]: status 429"
         );
     }
 }

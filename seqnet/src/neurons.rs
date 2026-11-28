@@ -466,6 +466,9 @@ pub fn run_neural_network_schedule(
                         for r in &batch {
                             mito_species_in_stratum.insert(r.species_binomial.clone());
                         }
+                        if !batch.is_empty() {
+                            db.upsert_sequences(&batch)?;
+                        }
                         newly_fetched.extend(batch);
                         let _ = db.upsert_sync_watermark(
                             stratum,
@@ -510,6 +513,9 @@ pub fn run_neural_network_schedule(
                     Ok(batch) => {
                         consecutive_failures = 0;
                         live_delta_fetched += batch.len();
+                        if !batch.is_empty() {
+                            db.upsert_sequences(&batch)?;
+                        }
                         newly_fetched.extend(batch);
                         let _ = db.upsert_sync_watermark(
                             stratum,
@@ -597,7 +603,7 @@ pub fn run_neural_network_schedule(
             let mut mito_species = Vec::new();
             for (_st, mut candidates) in by_stratum {
                 candidates.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
-                candidates.truncate(24);
+                candidates.truncate(if nuclear.len() > 8 { 2 } else { 24 });
                 for (_cnt, sp) in candidates {
                     mito_species.push(sp);
                 }
@@ -632,6 +638,9 @@ pub fn run_neural_network_schedule(
                 nuclear.len(),
                 anchored.len()
             );
+            if !anchored.is_empty() {
+                db.upsert_sequences(&anchored)?;
+            }
             live_delta_fetched += anchored.len();
             newly_fetched.extend(anchored);
         }
@@ -639,7 +648,6 @@ pub fn run_neural_network_schedule(
             println!("  [Stage 1] Entrez unavailable; continuing on SQLite cache");
         }
         if !newly_fetched.is_empty() {
-            db.upsert_sequences(&newly_fetched)?;
             feedback_log.push(format!(
                 "[Stage 1 Delta Sync] Ingested {} new/modified NCBI accessions into `{}`",
                 newly_fetched.len(),

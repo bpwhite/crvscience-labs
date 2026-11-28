@@ -1,0 +1,350 @@
+{
+  "benchmark_id": "mycorrhizal-fungi-preprint33-design-v1",
+  "title": "Mycorrhizal Fungi Origins Across the Fungal Kingdom (Holomycota [A] -> Agaricomycotina [G]) 64-species x 24-nuclear-locus + COX1-mitogenome design",
+  "fixed_before_first_run": "2026-11-27",
+  "purpose": "End-to-end seqnet -> RuNIE validation sweep at PREPRINT-33 dimensions (64 fungal species x 24 conserved nuclear loci + full COX1-phased fungal mitogenomes + PDB 4J05 PiPT + 12 conspecific skylines) scored against published fungal clades without circular tuning (VAL-SET-072).",
+  "design_reference": {
+    "preprint_id": "PREPRINT-33",
+    "species": 64,
+    "loci": 25
+  },
+  "sources": [
+    {
+      "key": "Redecker2000",
+      "citation": "Redecker et al. (2000) Science 289: 1920-1921",
+      "doi": "10.1126/science.289.5486.1920"
+    },
+    {
+      "key": "StrulluDerrien2014",
+      "citation": "Strullu-Derrien et al. (2014) New Phytologist 203: 964-979",
+      "doi": "10.1111/nph.12805"
+    },
+    {
+      "key": "Spatafora2016",
+      "citation": "Spatafora et al. (2016) Mycologia 108: 1028-1046",
+      "doi": "10.3852/16-042"
+    },
+    {
+      "key": "Lutzoni2018",
+      "citation": "Lutzoni et al. (2018) Nature Communications 9: 5451",
+      "doi": "10.1038/s41467-018-07849-9"
+    },
+    {
+      "key": "Miyauchi2020",
+      "citation": "Miyauchi et al. (2020) Nature Genetics 52: 509-520",
+      "doi": "10.1038/s41588-020-0623-4"
+    },
+    {
+      "key": "Chang2021",
+      "citation": "Chang et al. (2021) New Phytologist 222: 511-525",
+      "doi": "10.1111/nph.15613"
+    }
+  ],
+  "taxon_group": "Fungi",
+  "mitogenome_loci": false,
+  "loci": [
+    "univ_rpb2",
+    "univ_rpb1",
+    "univ_ef1a",
+    "univ_ef2",
+    "univ_vmaA",
+    "univ_vmaB",
+    "univ_rad51",
+    "univ_cct",
+    "univ_hsp70",
+    "univ_hsp90",
+    "univ_eif5b",
+    "univ_sec61a",
+    "univ_rpl2",
+    "univ_rpl3",
+    "univ_rps3",
+    "univ_fen1",
+    "univ_pcna",
+    "univ_thrrs",
+    "univ_act1",
+    "univ_tub2",
+    "univ_pgk1",
+    "univ_mcm7",
+    "univ_ssu",
+    "univ_lsu",
+    "COI"
+  ],
+  "sampling_families": {
+    "Sector_A": [
+      "Fonticulaceae",
+      "Rozellaceae",
+      "Blastocladiaceae",
+      "Catenariaceae",
+      "Spizellomycetaceae",
+      "Batrachochytriaceae",
+      "Gonapodyaceae",
+      "Neocallimastigaceae"
+    ],
+    "Sector_B": [
+      "Ancylistaceae",
+      "Basidiobolaceae",
+      "Entomophthoraceae",
+      "Legeriomycetaceae",
+      "Kickxellaceae"
+    ],
+    "Sector_C": [
+      "Glomeraceae",
+      "Diversisporaceae",
+      "Gigasporaceae",
+      "Ambisporaceae",
+      "Paraglomeraceae"
+    ],
+    "Sector_D": [
+      "Endogonaceae",
+      "Bifigurataceae",
+      "Umbelopsidaceae",
+      "Mortierellaceae",
+      "Phycomycetaceae",
+      "Mucoraceae",
+      "Rhizopodaceae",
+      "Lichtheimiaceae"
+    ],
+    "Sector_E": [
+      "Schizosaccharomycetaceae",
+      "Protomycetaceae",
+      "Saccharomycetaceae",
+      "Dipodascaceae",
+      "Tuberaceae",
+      "Morchellaceae",
+      "Pyronemataceae",
+      "Gloniaceae",
+      "Myxotrichaceae",
+      "Hyaloscyphaceae",
+      "Sordariaceae"
+    ],
+    "Sector_F": [
+      "Pucciniaceae",
+      "Sporidiobolaceae",
+      "Ustilaginaceae",
+      "Cryptococcaceae"
+    ],
+    "Sector_G": [
+      "Serendipitaceae",
+      "Tulasnellaceae",
+      "Phanerochaetaceae",
+      "Fomitopsidaceae",
+      "Hydnangiaceae",
+      "Amanitaceae",
+      "Hymenogastraceae",
+      "Agaricaceae",
+      "Paxillaceae",
+      "Sclerodermataceae",
+      "Suillaceae"
+    ]
+  },
+  "species_per_family": {
+    "Fonticulaceae": 1,
+    "Rozellaceae": 1,
+    "Blastocladiaceae": 1,
+    "Catenariaceae": 1,
+    "Spizellomycetaceae": 1,
+    "Batrachochytriaceae": 1,
+    "Gonapodyaceae": 1,
+    "Neocallimastigaceae": 1,
+    "Ancylistaceae": 1,
+    "Basidiobolaceae": 1,
+    "Entomophthoraceae": 1,
+    "Legeriomycetaceae": 1,
+    "Kickxellaceae": 2,
+    "Glomeraceae": 4,
+    "Diversisporaceae": 1,
+    "Gigasporaceae": 3,
+    "Ambisporaceae": 1,
+    "Paraglomeraceae": 1,
+    "Endogonaceae": 1,
+    "Bifigurataceae": 1,
+    "Umbelopsidaceae": 1,
+    "Mortierellaceae": 3,
+    "Phycomycetaceae": 1,
+    "Mucoraceae": 1,
+    "Rhizopodaceae": 1,
+    "Lichtheimiaceae": 1,
+    "Schizosaccharomycetaceae": 1,
+    "Protomycetaceae": 1,
+    "Saccharomycetaceae": 1,
+    "Dipodascaceae": 1,
+    "Tuberaceae": 2,
+    "Morchellaceae": 1,
+    "Pyronemataceae": 1,
+    "Gloniaceae": 1,
+    "Myxotrichaceae": 1,
+    "Hyaloscyphaceae": 1,
+    "Sordariaceae": 1,
+    "Pucciniaceae": 2,
+    "Sporidiobolaceae": 1,
+    "Ustilaginaceae": 2,
+    "Cryptococcaceae": 1,
+    "Serendipitaceae": 2,
+    "Tulasnellaceae": 1,
+    "Phanerochaetaceae": 1,
+    "Fomitopsidaceae": 1,
+    "Hydnangiaceae": 1,
+    "Amanitaceae": 1,
+    "Hymenogastraceae": 1,
+    "Agaricaceae": 1,
+    "Paxillaceae": 1,
+    "Sclerodermataceae": 1,
+    "Suillaceae": 1
+  },
+  "scored_clades": [
+    {
+      "id": "glomeromycotina",
+      "name": "Glomeromycotina (Obligate Arbuscular Mycorrhizae)",
+      "families": [
+        "Glomeraceae",
+        "Diversisporaceae",
+        "Gigasporaceae",
+        "Ambisporaceae",
+        "Paraglomeraceae"
+      ]
+    },
+    {
+      "id": "mucoromycotina",
+      "name": "Subphylum Mucoromycotina (Fine-Root Endophytes & Saprotrophs)",
+      "families": [
+        "Endogonaceae",
+        "Bifigurataceae",
+        "Umbelopsidaceae",
+        "Phycomycetaceae",
+        "Mucoraceae",
+        "Rhizopodaceae",
+        "Lichtheimiaceae"
+      ]
+    },
+    {
+      "id": "mortierellomycotina",
+      "name": "Subphylum Mortierellomycotina (Rhizosphere Endophytes)",
+      "families": [
+        "Mortierellaceae"
+      ]
+    },
+    {
+      "id": "ascomycota",
+      "name": "Phylum Ascomycota (Saccharomycotina + Taphrinomycotina + Pezizomycotina)",
+      "families": [
+        "Schizosaccharomycetaceae",
+        "Protomycetaceae",
+        "Saccharomycetaceae",
+        "Dipodascaceae",
+        "Tuberaceae",
+        "Morchellaceae",
+        "Pyronemataceae",
+        "Gloniaceae",
+        "Myxotrichaceae",
+        "Hyaloscyphaceae",
+        "Sordariaceae"
+      ]
+    },
+    {
+      "id": "basidiomycota",
+      "name": "Phylum Basidiomycota (Pucciniomycotina + Ustilaginomycotina + Agaricomycotina)",
+      "families": [
+        "Pucciniaceae",
+        "Sporidiobolaceae",
+        "Ustilaginaceae",
+        "Cryptococcaceae",
+        "Serendipitaceae",
+        "Tulasnellaceae",
+        "Phanerochaetaceae",
+        "Fomitopsidaceae",
+        "Hydnangiaceae",
+        "Amanitaceae",
+        "Hymenogastraceae",
+        "Agaricaceae",
+        "Paxillaceae",
+        "Sclerodermataceae",
+        "Suillaceae"
+      ]
+    },
+    {
+      "id": "agaricomycotina",
+      "name": "Subphylum Agaricomycotina (Sebacinales + Wood-Rot + Crown ECM)",
+      "families": [
+        "Serendipitaceae",
+        "Tulasnellaceae",
+        "Phanerochaetaceae",
+        "Fomitopsidaceae",
+        "Hydnangiaceae",
+        "Amanitaceae",
+        "Hymenogastraceae",
+        "Agaricaceae",
+        "Paxillaceae",
+        "Sclerodermataceae",
+        "Suillaceae"
+      ]
+    },
+    {
+      "id": "dikarya",
+      "name": "Subkingdom Dikarya (Ascomycota + Basidiomycota)",
+      "families": [
+        "Schizosaccharomycetaceae",
+        "Protomycetaceae",
+        "Saccharomycetaceae",
+        "Dipodascaceae",
+        "Tuberaceae",
+        "Morchellaceae",
+        "Pyronemataceae",
+        "Gloniaceae",
+        "Myxotrichaceae",
+        "Hyaloscyphaceae",
+        "Sordariaceae",
+        "Pucciniaceae",
+        "Sporidiobolaceae",
+        "Ustilaginaceae",
+        "Cryptococcaceae",
+        "Serendipitaceae",
+        "Tulasnellaceae",
+        "Phanerochaetaceae",
+        "Fomitopsidaceae",
+        "Hydnangiaceae",
+        "Amanitaceae",
+        "Hymenogastraceae",
+        "Agaricaceae",
+        "Paxillaceae",
+        "Sclerodermataceae",
+        "Suillaceae"
+      ]
+    }
+  ],
+  "report_only_clades": [
+    {
+      "id": "mucoromycota_sensu_lato",
+      "name": "Mucoromycota s.l. (Glomeromycotina + Mucoromycotina + Mortierellomycotina)",
+      "families": [
+        "Glomeraceae",
+        "Diversisporaceae",
+        "Gigasporaceae",
+        "Ambisporaceae",
+        "Paraglomeraceae",
+        "Endogonaceae",
+        "Bifigurataceae",
+        "Umbelopsidaceae",
+        "Mortierellaceae",
+        "Phycomycetaceae",
+        "Mucoraceae",
+        "Rhizopodaceae",
+        "Lichtheimiaceae"
+      ],
+      "why_not_scored": "Tests the Mucoromycota s.l. hypothesis uniting AM fungi with Mucoromycotina/Mortierellomycotina fine-root endophytes vs. Glomeromycotina-sister-to-Dikarya."
+    },
+    {
+      "id": "pezizomycotina",
+      "name": "Subphylum Pezizomycotina (Truffle ECM, Cenococcum, Ericoid ERM & Neurospora)",
+      "families": [
+        "Tuberaceae",
+        "Morchellaceae",
+        "Pyronemataceae",
+        "Gloniaceae",
+        "Myxotrichaceae",
+        "Hyaloscyphaceae",
+        "Sordariaceae"
+      ],
+      "why_not_scored": "Evaluates Pezizomycotina backbone support across multiple independent Ascomycota ECM and ERM origins."
+    }
+  ]
+}

@@ -1,0 +1,2015 @@
+{
+  "study_slug": "mycorrhizal-fungi-evolution-timetree",
+  "fig_prefix": "mycorrhizal-fungi",
+  "run_id": "runie-native-mycorrhizal-fungi-33",
+  "preprint_slug": "mycorrhizal-fungi-origins-preprint",
+  "discovery_slug": "mycorrhizal-fungi-evolution-timetree",
+  "validation_set_id": "VAL-SET-072-MYCORRHIZAL-FUNGI-ORIGINS-KINGDOM-TIMETREE",
+  "preprint_label": "PREPRINT-33",
+  "preprint_version": "1.0.0",
+  "concept_doi": "10.5281/zenodo.24622739",
+  "remediation_note": "",
+  "telemetry_filename": "mycorrhizal-fungi-origins-telemetry.json",
+  "companion_label": "Lab Discovery #148",
+  "title": "Origins of Mycorrhizal Symbiosis Across the Fungal Kingdom via Partitioned Phylogenomics and Phosphate-Transporter Remodeling",
+  "subtitle_prefix": "23-Locus Nuclear Partitioned ModelTest Phylogenomics & Symbiotic Transporter Remodeling",
+  "category": "Mycology, Symbiosis & Comparative Fungal Phylogenomics",
+  "read_time": "25 min read",
+  "complexity": "High (Graduate Phylogenomics & Symbiotic Genomics)",
+  "taxonomic_scope": "Basal Holomycota & Chytrids [A] + Zoopagomycota [B] + Glomeromycotina AM [C] + Mucoromycotina & Mortierellomycotina [D] + Ascomycota ECM & ERM [E] + Non-ECM Basidiomycota [F] + Agaricomycotina Endophytes, Wood-Rot & Crown ECM [G]",
+  "genetic_code_table": 1,
+  "is_prokaryote": false,
+  "universal_archaea_eukarya": true,
+  "benchmark_design_path": "crvscience-labs/benchmarks/mycorrhizal_fungi_preprint33_design.json",
+  "cache_subdir": "mycorrhizal_fungi_val_072",
+  "seqnet_sqlite_name": "seqnet_mycorrhizal_fungi_072.sqlite",
+  "nexus_filename": "mycorrhizal_fungi_64taxa.nex",
+  "supermatrix_fasta_name": "mycorrhizal_fungi_64taxa_supermatrix.fasta",
+  "s3_locus_canonical": "univ_ef1a",
+  "mito_cohort_queries": [
+    {
+      "cache_key": "myco33_mito_A",
+      "query": "(Chytridiomycota[Organism] OR Blastocladiomycota[Organism] OR Cryptomycota[Organism] OR Allomyces[Organism] OR Spizellomyces[Organism]) AND mitochondrion[Filter] AND 15000:150000[SLEN]",
+      "target_n": 14,
+      "min_bp": 15000,
+      "max_bp": 150000
+    },
+    {
+      "cache_key": "myco33_mito_B",
+      "query": "(Zoopagomycota[Organism] OR Basidiobolus[Organism] OR Conidiobolus[Organism] OR Entomophthora[Organism] OR Smittium[Organism]) AND mitochondrion[Filter] AND 15000:150000[SLEN]",
+      "target_n": 12,
+      "min_bp": 15000,
+      "max_bp": 150000
+    },
+    {
+      "cache_key": "myco33_mito_C",
+      "query": "Glomeromycotina[Organism] AND mitochondrion[Filter] AND 18000:150000[SLEN]",
+      "target_n": 16,
+      "min_bp": 18000,
+      "max_bp": 150000
+    },
+    {
+      "cache_key": "myco33_mito_D",
+      "query": "(Mucoromycotina[Organism] OR Mortierellomycotina[Organism] OR Rhizopus[Organism] OR Mucor[Organism] OR Phycomyces[Organism]) AND mitochondrion[Filter] AND 18000:150000[SLEN]",
+      "target_n": 16,
+      "min_bp": 18000,
+      "max_bp": 150000
+    },
+    {
+      "cache_key": "myco33_mito_E",
+      "query": "(\"Tuber\"[Organism] OR \"Cenococcum\"[Organism] OR \"Morchella\"[Organism] OR \"Oidiodendron\"[Organism] OR \"Schizosaccharomyces\"[Organism] OR \"Neurospora\"[Organism] OR \"Saccharomyces\"[Organism]) AND mitochondrion[Filter] AND 18000:150000[SLEN]",
+      "target_n": 18,
+      "min_bp": 18000,
+      "max_bp": 150000
+    },
+    {
+      "cache_key": "myco33_mito_F",
+      "query": "(\"Puccinia\"[Organism] OR \"Rhodotorula\"[Organism] OR \"Ustilago\"[Organism] OR \"Sporisorium\"[Organism] OR \"Cryptococcus\"[Organism]) AND mitochondrion[Filter] AND 18000:150000[SLEN]",
+      "target_n": 14,
+      "min_bp": 18000,
+      "max_bp": 150000
+    },
+    {
+      "cache_key": "myco33_mito_G",
+      "query": "(\"Laccaria\"[Organism] OR \"Amanita\"[Organism] OR \"Suillus\"[Organism] OR \"Paxillus\"[Organism] OR \"Agaricus\"[Organism] OR \"Serendipita\"[Organism] OR \"Phanerochaete\"[Organism]) AND mitochondrion[Filter] AND 18000:150000[SLEN]",
+      "target_n": 20,
+      "min_bp": 18000,
+      "max_bp": 150000
+    }
+  ],
+  "s4_banner_title": "Fungal Kingdom (Mycorrhizal & Saprotrophic Phyla)",
+  "anchor_species": "Laccaria bicolor",
+  "anchor_locus": "univ_rpb2",
+  "bootstrap_replicates": 500,
+  "dynamic_coverage_gate": true,
+  "coverage_gate_floor_ratio": 0.5,
+  "coverage_gate_min_otus_per_sector": 3,
+  "locus_defs": [
+    {
+      "canonical": "univ_rpb2",
+      "display_name": "RPB2",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 1200,
+      "max_bp": 4800,
+      "min_taxa": 16,
+      "min_aa": 320,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_rpb1",
+      "display_name": "RPB1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 1400,
+      "max_bp": 6000,
+      "min_taxa": 16,
+      "min_aa": 360,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_ef1a",
+      "display_name": "EF1A/TEF1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 2200,
+      "min_taxa": 16,
+      "min_aa": 200,
+      "min_aa_identity": 0.22,
+      "min_dayhoff6_sim": 0.36
+    },
+    {
+      "canonical": "univ_ef2",
+      "display_name": "EF2/EFT2",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 1200,
+      "max_bp": 3400,
+      "min_taxa": 16,
+      "min_aa": 340,
+      "min_aa_identity": 0.2,
+      "min_dayhoff6_sim": 0.34
+    },
+    {
+      "canonical": "univ_vmaA",
+      "display_name": "VMA1/ATP6V1A",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 900,
+      "max_bp": 3200,
+      "min_taxa": 14,
+      "min_aa": 240,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_vmaB",
+      "display_name": "VMA2/ATP6V1B",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 220,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_rad51",
+      "display_name": "RAD51",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.31
+    },
+    {
+      "canonical": "univ_cct",
+      "display_name": "CCT/TCP1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 2800,
+      "min_taxa": 14,
+      "min_aa": 200,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_hsp70",
+      "display_name": "HSP70/SSA1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 900,
+      "max_bp": 3200,
+      "min_taxa": 14,
+      "min_aa": 240,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_hsp90",
+      "display_name": "HSP90/HSC82",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 900,
+      "max_bp": 3200,
+      "min_taxa": 14,
+      "min_aa": 240,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_eif5b",
+      "display_name": "eIF5B/FUN12",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 900,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 240,
+      "min_aa_identity": 0.15,
+      "min_dayhoff6_sim": 0.28
+    },
+    {
+      "canonical": "univ_sec61a",
+      "display_name": "Sec61A",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 700,
+      "max_bp": 2400,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_rpl2",
+      "display_name": "RPL8/uL2",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1500,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.2,
+      "min_dayhoff6_sim": 0.34
+    },
+    {
+      "canonical": "univ_rpl3",
+      "display_name": "RPL3/uL3",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.2,
+      "min_dayhoff6_sim": 0.34
+    },
+    {
+      "canonical": "univ_rps3",
+      "display_name": "RPS3/uS3",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 400,
+      "max_bp": 1400,
+      "min_taxa": 14,
+      "min_aa": 110,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_fen1",
+      "display_name": "FEN1/RAD27",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2000,
+      "min_taxa": 14,
+      "min_aa": 160,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_pcna",
+      "display_name": "PCNA/POL30",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 450,
+      "max_bp": 1400,
+      "min_taxa": 14,
+      "min_aa": 120,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_thrrs",
+      "display_name": "ThrRS/THS1",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 900,
+      "max_bp": 3000,
+      "min_taxa": 14,
+      "min_aa": 240,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_act1",
+      "display_name": "ACT1/Actin",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 1800,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.24,
+      "min_dayhoff6_sim": 0.38
+    },
+    {
+      "canonical": "univ_tub2",
+      "display_name": "TUB2/Beta-Tubulin",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2000,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.22,
+      "min_dayhoff6_sim": 0.36
+    },
+    {
+      "canonical": "univ_pgk1",
+      "display_name": "PGK1/3-PGK",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 600,
+      "max_bp": 2000,
+      "min_taxa": 14,
+      "min_aa": 180,
+      "min_aa_identity": 0.18,
+      "min_dayhoff6_sim": 0.32
+    },
+    {
+      "canonical": "univ_mcm7",
+      "display_name": "MCM7",
+      "is_protein_coding": true,
+      "is_nuclear": true,
+      "min_bp": 1200,
+      "max_bp": 3400,
+      "min_taxa": 14,
+      "min_aa": 300,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    },
+    {
+      "canonical": "univ_ssu",
+      "display_name": "18S SSU rRNA",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 900,
+      "max_bp": 2500,
+      "min_taxa": 16,
+      "min_aa": 0,
+      "min_aa_identity": null,
+      "min_dayhoff6_sim": null
+    },
+    {
+      "canonical": "univ_lsu",
+      "display_name": "28S LSU rRNA",
+      "is_protein_coding": false,
+      "is_nuclear": true,
+      "min_bp": 800,
+      "max_bp": 4200,
+      "min_taxa": 14,
+      "min_aa": 0,
+      "min_aa_identity": null,
+      "min_dayhoff6_sim": null
+    },
+    {
+      "canonical": "COI",
+      "display_name": "COX1 (Mitogenome)",
+      "is_protein_coding": true,
+      "is_nuclear": false,
+      "min_bp": 360,
+      "max_bp": 1800,
+      "min_taxa": 10,
+      "min_aa": 100,
+      "min_aa_identity": 0.16,
+      "min_dayhoff6_sim": 0.3
+    }
+  ],
+  "species_slots": [
+    {
+      "tip_code": "A:T001",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Fonticulaceae",
+      "species": "Fonticula alba",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T002",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Rozellaceae",
+      "species": "Rozella allomycis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T003",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Blastocladiaceae",
+      "species": "Allomyces macrogynus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T004",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Catenariaceae",
+      "species": "Catenaria anguillulae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T005",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Spizellomycetaceae",
+      "species": "Spizellomyces punctatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T006",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Batrachochytriaceae",
+      "species": "Batrachochytrium dendrobatidis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T007",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Gonapodyaceae",
+      "species": "Gonapodya prolifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "A:T008",
+      "sector_code": "[A] Basal Holomycota & Chytrids",
+      "family": "Neocallimastigaceae",
+      "species": "Piromyces finnis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T009",
+      "sector_code": "[B] Zoopagomycota",
+      "family": "Ancylistaceae",
+      "species": "Conidiobolus coronatus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T010",
+      "sector_code": "[B] Zoopagomycota",
+      "family": "Basidiobolaceae",
+      "species": "Basidiobolus meristosporus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T011",
+      "sector_code": "[B] Zoopagomycota",
+      "family": "Entomophthoraceae",
+      "species": "Entomophthora muscae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T012",
+      "sector_code": "[B] Zoopagomycota",
+      "family": "Legeriomycetaceae",
+      "species": "Smittium culicis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T013",
+      "sector_code": "[B] Zoopagomycota",
+      "family": "Kickxellaceae",
+      "species": "Linderina pennispora",
+      "synonyms": []
+    },
+    {
+      "tip_code": "B:T014",
+      "sector_code": "[B] Zoopagomycota",
+      "family": "Kickxellaceae",
+      "species": "Coemansia reversa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T015",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Glomeraceae",
+      "species": "Rhizophagus irregularis",
+      "synonyms": [
+        "Rhizophagus irregularis",
+        "Glomus intraradices"
+      ]
+    },
+    {
+      "tip_code": "C:T016",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Glomeraceae",
+      "species": "Rhizophagus clarus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T017",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Glomeraceae",
+      "species": "Funneliformis mosseae",
+      "synonyms": [
+        "Funneliformis mosseae",
+        "Glomus mosseae"
+      ]
+    },
+    {
+      "tip_code": "C:T018",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Glomeraceae",
+      "species": "Funneliformis geosporus",
+      "synonyms": [
+        "Funneliformis geosporus",
+        "Glomus geosporum"
+      ]
+    },
+    {
+      "tip_code": "C:T019",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Diversisporaceae",
+      "species": "Diversispora epigaea",
+      "synonyms": [
+        "Diversispora epigaea",
+        "Glomus versiforme"
+      ]
+    },
+    {
+      "tip_code": "C:T020",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Gigasporaceae",
+      "species": "Gigaspora rosea",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T021",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Gigasporaceae",
+      "species": "Gigaspora margarita",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T022",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Gigasporaceae",
+      "species": "Dentiscutata heterogama",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T023",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Ambisporaceae",
+      "species": "Ambispora leptoticha",
+      "synonyms": []
+    },
+    {
+      "tip_code": "C:T024",
+      "sector_code": "[C] Glomeromycotina AM",
+      "family": "Paraglomeraceae",
+      "species": "Paraglomus occultum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T025",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Endogonaceae",
+      "species": "Jimgerdemannia flammicorona",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T026",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Bifigurataceae",
+      "species": "Bifiguratus adelaidae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T027",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Umbelopsidaceae",
+      "species": "Umbelopsis ramanniana",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T028",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Mortierellaceae",
+      "species": "Podila verticillata",
+      "synonyms": [
+        "Podila verticillata",
+        "Mortierella verticillata"
+      ]
+    },
+    {
+      "tip_code": "D:T029",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Mortierellaceae",
+      "species": "Linnemannia elongata",
+      "synonyms": [
+        "Linnemannia elongata",
+        "Mortierella elongata"
+      ]
+    },
+    {
+      "tip_code": "D:T030",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Mortierellaceae",
+      "species": "Lobosporangium transversale",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T031",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Phycomycetaceae",
+      "species": "Phycomyces blakesleeanus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T032",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Mucoraceae",
+      "species": "Mucor circinelloides",
+      "synonyms": []
+    },
+    {
+      "tip_code": "D:T033",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Rhizopodaceae",
+      "species": "Rhizopus delemar",
+      "synonyms": [
+        "Rhizopus delemar",
+        "Rhizopus oryzae"
+      ]
+    },
+    {
+      "tip_code": "D:T034",
+      "sector_code": "[D] Mucoromycotina & Mortierellomycotina",
+      "family": "Lichtheimiaceae",
+      "species": "Lichtheimia corymbifera",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T035",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Schizosaccharomycetaceae",
+      "species": "Schizosaccharomyces pombe",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T036",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Protomycetaceae",
+      "species": "Saitoella complicata",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T037",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Saccharomycetaceae",
+      "species": "Saccharomyces cerevisiae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T038",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Dipodascaceae",
+      "species": "Yarrowia lipolytica",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T039",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Tuberaceae",
+      "species": "Tuber melanosporum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T040",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Tuberaceae",
+      "species": "Tuber borchii",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T041",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Morchellaceae",
+      "species": "Morchella importuna",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T042",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Pyronemataceae",
+      "species": "Wilcoxina mikolae",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T043",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Gloniaceae",
+      "species": "Cenococcum geophilum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T044",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Myxotrichaceae",
+      "species": "Oidiodendron maius",
+      "synonyms": []
+    },
+    {
+      "tip_code": "E:T045",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Hyaloscyphaceae",
+      "species": "Hyaloscypha bicolor",
+      "synonyms": [
+        "Hyaloscypha bicolor",
+        "Meliniomyces bicolor"
+      ]
+    },
+    {
+      "tip_code": "E:T046",
+      "sector_code": "[E] Ascomycota ECM & ERM",
+      "family": "Sordariaceae",
+      "species": "Neurospora crassa",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T047",
+      "sector_code": "[F] Non-ECM Basidiomycota",
+      "family": "Pucciniaceae",
+      "species": "Puccinia graminis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T048",
+      "sector_code": "[F] Non-ECM Basidiomycota",
+      "family": "Pucciniaceae",
+      "species": "Puccinia triticina",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T049",
+      "sector_code": "[F] Non-ECM Basidiomycota",
+      "family": "Sporidiobolaceae",
+      "species": "Rhodotorula toruloides",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T050",
+      "sector_code": "[F] Non-ECM Basidiomycota",
+      "family": "Ustilaginaceae",
+      "species": "Ustilago maydis",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T051",
+      "sector_code": "[F] Non-ECM Basidiomycota",
+      "family": "Ustilaginaceae",
+      "species": "Sporisorium reilianum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "F:T052",
+      "sector_code": "[F] Non-ECM Basidiomycota",
+      "family": "Cryptococcaceae",
+      "species": "Cryptococcus neoformans",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T053",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Serendipitaceae",
+      "species": "Serendipita indica",
+      "synonyms": [
+        "Serendipita indica",
+        "Piriformospora indica"
+      ]
+    },
+    {
+      "tip_code": "G:T054",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Serendipitaceae",
+      "species": "Serendipita vermifera",
+      "synonyms": [
+        "Serendipita vermifera",
+        "Sebacina vermifera"
+      ]
+    },
+    {
+      "tip_code": "G:T055",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Tulasnellaceae",
+      "species": "Tulasnella calospora",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T056",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Phanerochaetaceae",
+      "species": "Phanerochaete chrysosporium",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T057",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Fomitopsidaceae",
+      "species": "Rhodonia placenta",
+      "synonyms": [
+        "Rhodonia placenta",
+        "Postia placenta"
+      ]
+    },
+    {
+      "tip_code": "G:T058",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Hydnangiaceae",
+      "species": "Laccaria bicolor",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T059",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Amanitaceae",
+      "species": "Amanita muscaria",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T060",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Hymenogastraceae",
+      "species": "Hebeloma cylindrosporum",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T061",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Agaricaceae",
+      "species": "Agaricus bisporus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T062",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Paxillaceae",
+      "species": "Paxillus involutus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T063",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Sclerodermataceae",
+      "species": "Pisolithus microcarpus",
+      "synonyms": []
+    },
+    {
+      "tip_code": "G:T064",
+      "sector_code": "[G] Agaricomycotina ECM & Wood-Rot",
+      "family": "Suillaceae",
+      "species": "Suillus luteus",
+      "synonyms": []
+    }
+  ],
+  "functional_families": [
+    {
+      "family_code": "FAM-01",
+      "family_title": "Cell-Wall Remodeling Chitin Synthase Catalytic Domain (CHS1 / CHS2)",
+      "physiological_role": "Glycosyltransferase family-2 membrane enzyme catalyzing beta-1,4-N-acetylglucosamine polymer assembly during appressorium, arbuscule, and Hartig-net wall morphogenesis",
+      "gene_symbol": "CHS1",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Saccharomyces cerevisiae\"[Organism] OR \"Schizosaccharomyces pombe\"[Organism] OR \"Neurospora crassa\"[Organism] OR \"Candida albicans\"[Organism] OR \"Aspergillus nidulans\"[Organism] OR \"Aspergillus fumigatus\"[Organism] OR \"Cryptococcus neoformans\"[Organism] OR \"Ustilago maydis\"[Organism] OR \"Laccaria bicolor\"[Organism] OR \"Rhizophagus irregularis\"[Organism] OR \"Tuber melanosporum\"[Organism] OR \"Serendipita indica\"[Organism] OR \"Fusarium oxysporum\"[Organism] OR \"Botrytis cinerea\"[Organism] OR \"Agaricus bisporus\"[Organism] OR \"Coprinopsis cinerea\"[Organism] OR \"Trametes versicolor\"[Organism] OR \"Yarrowia lipolytica\"[Organism] OR \"Komagataella phaffii\"[Organism]) AND (CHS1[Gene] OR CHS2[Gene] OR chs1[Gene] OR chs2[Gene] OR \"chitin synthase 1\"[Title] OR \"chitin synthase 2\"[Title] OR \"chitin synthase\"[Title]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1400:4500[SLEN] NOT genome[Title] NOT partial[Title]",
+        "(Fungi[Organism]) AND (\"chitin synthase 1\"[Title] OR \"chitin synthase 2\"[Title] OR CHS1[Gene] OR CHS2[Gene]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1500:4200[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "(Fungi[Organism]) AND (\"chitin synthase\"[Title]) AND biomol_mrna[PROP] AND 1500:4500[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "myco33_fam01_chs1_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1400,
+        "max_bp": 4500,
+        "max_domain_bp": 2100,
+        "min_aa_len": 420,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.4,
+        "min_consensus_aa_identity": 0.14,
+        "min_consensus_dayhoff6_sim": 0.28
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-02",
+      "family_title": "Symbiotic High-Affinity Ammonium Permease (MEP2 / AMT1)",
+      "physiological_role": "Trimeric membrane ammonium transporter mediating fungal nitrogen uptake and ammonium efflux across the symbiotic root interface",
+      "gene_symbol": "MEP2",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Saccharomyces cerevisiae\"[Organism] OR \"Schizosaccharomyces pombe\"[Organism] OR \"Neurospora crassa\"[Organism] OR \"Candida albicans\"[Organism] OR \"Aspergillus nidulans\"[Organism] OR \"Cryptococcus neoformans\"[Organism] OR \"Ustilago maydis\"[Organism] OR \"Laccaria bicolor\"[Organism] OR \"Hebeloma cylindrosporum\"[Organism] OR \"Amanita muscaria\"[Organism] OR \"Tuber melanosporum\"[Organism] OR \"Rhizophagus irregularis\"[Organism] OR \"Oidiodendron maius\"[Organism] OR \"Paxillus involutus\"[Organism] OR \"Fusarium oxysporum\"[Organism] OR \"Yarrowia lipolytica\"[Organism] OR \"Agaricus bisporus\"[Organism] OR \"Coprinopsis cinerea\"[Organism]) AND (MEP2[Gene] OR AMT1[Gene] OR mep2[Gene] OR amt1[Gene] OR \"ammonium transporter\"[Title] OR \"ammonium permease\"[Title]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1000:2600[SLEN] NOT genome[Title] NOT partial[Title]",
+        "(Fungi[Organism]) AND (\"ammonium transporter\"[Title] OR \"ammonium permease\"[Title] OR MEP2[Gene] OR AMT1[Gene]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1000:2600[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "(Fungi[Organism]) AND (\"ammonium transporter\"[Title] OR \"ammonium permease\"[Title]) AND biomol_mrna[PROP] AND 1000:2600[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "myco33_fam02_mep2_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1000,
+        "max_bp": 2600,
+        "max_domain_bp": 1650,
+        "min_aa_len": 320,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.42,
+        "min_consensus_aa_identity": 0.14,
+        "min_consensus_dayhoff6_sim": 0.28
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-03",
+      "family_title": "Symbiotic Monosaccharide & Hexose Transporter (HXT / MST2)",
+      "physiological_role": "Major Facilitator Superfamily sugar symporter importing host plant photosynthate hexoses across mycorrhizal and biotrophic exchange membranes",
+      "gene_symbol": "MST2",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Saccharomyces cerevisiae\"[Organism] OR \"Schizosaccharomyces pombe\"[Organism] OR \"Neurospora crassa\"[Organism] OR \"Candida albicans\"[Organism] OR \"Aspergillus nidulans\"[Organism] OR \"Cryptococcus neoformans\"[Organism] OR \"Ustilago maydis\"[Organism] OR \"Laccaria bicolor\"[Organism] OR \"Rhizophagus irregularis\"[Organism] OR \"Tuber melanosporum\"[Organism] OR \"Amanita muscaria\"[Organism] OR \"Paxillus involutus\"[Organism] OR \"Fusarium oxysporum\"[Organism] OR \"Botrytis cinerea\"[Organism] OR \"Yarrowia lipolytica\"[Organism] OR \"Komagataella phaffii\"[Organism] OR \"Agaricus bisporus\"[Organism] OR \"Coprinopsis cinerea\"[Organism]) AND (HXT1[Gene] OR HXT2[Gene] OR HXT3[Gene] OR HXT4[Gene] OR HXT7[Gene] OR MST2[Gene] OR ght1[Gene] OR \"hexose transporter\"[Title] OR \"monosaccharide transporter\"[Title] OR \"glucose transporter\"[Title]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1100:2600[SLEN] NOT genome[Title] NOT partial[Title]",
+        "(Fungi[Organism]) AND (\"hexose transporter\"[Title] OR \"monosaccharide transporter\"[Title] OR MST2[Gene] OR HXT1[Gene]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1100:2600[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "(Fungi[Organism]) AND (\"hexose transporter\"[Title] OR \"monosaccharide transporter\"[Title]) AND biomol_mrna[PROP] AND 1100:2600[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "myco33_fam03_mst2_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 2600,
+        "max_domain_bp": 1740,
+        "min_aa_len": 340,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": null,
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.42,
+        "min_consensus_aa_identity": 0.14,
+        "min_consensus_dayhoff6_sim": 0.28
+      },
+      "msa_min_occ": 0.65
+    },
+    {
+      "family_code": "FAM-04",
+      "family_title": "Symbiotic High-Affinity H+:Pi Phosphate Transporter (PHO84 / PiPT)",
+      "physiological_role": "Proton-coupled MFS phosphate symporter acquiring inorganic orthophosphate across the periarbuscular membrane and extraradical mycorrhizal hyphae",
+      "gene_symbol": "PiPT",
+      "source": "entrez_nuccore",
+      "queries": [
+        "(\"Serendipita indica\"[Organism] OR \"Piriformospora indica\"[Organism] OR \"Laccaria bicolor\"[Organism] OR \"Rhizophagus irregularis\"[Organism] OR \"Funneliformis mosseae\"[Organism] OR \"Tuber melanosporum\"[Organism] OR \"Oidiodendron maius\"[Organism] OR \"Amanita muscaria\"[Organism] OR \"Hebeloma cylindrosporum\"[Organism] OR \"Paxillus involutus\"[Organism] OR \"Suillus luteus\"[Organism] OR \"Saccharomyces cerevisiae\"[Organism] OR \"Schizosaccharomyces pombe\"[Organism] OR \"Neurospora crassa\"[Organism] OR \"Aspergillus nidulans\"[Organism] OR \"Candida albicans\"[Organism] OR \"Cryptococcus neoformans\"[Organism] OR \"Ustilago maydis\"[Organism] OR \"Fusarium oxysporum\"[Organism]) AND (PHO84[Gene] OR pho84[Gene] OR PiPT[Gene] OR PT[Gene] OR \"phosphate transporter\"[Title] OR \"inorganic phosphate transporter\"[Title]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1100:2600[SLEN] NOT genome[Title] NOT partial[Title]",
+        "(Fungi[Organism]) AND (\"phosphate transporter\"[Title] OR \"inorganic phosphate transporter\"[Title] OR PHO84[Gene] OR PiPT[Gene]) AND (mRNA[Filter] OR RefSeq[Filter]) AND biomol_mrna[PROP] AND 1100:2600[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "fallback_queries": [
+        "(Agaricomycotina[Organism] OR Glomeromycotina[Organism] OR Ascomycota[Organism] OR Basidiomycota[Organism]) AND (\"phosphate transporter\"[Title] OR PHO84[Gene] OR PHO89[Gene]) AND biomol_mrna[PROP] AND 1100:2600[SLEN] NOT genome[Title] NOT partial[Title]"
+      ],
+      "pinned_accessions": [],
+      "ortholog_config": {
+        "cache_key": "myco33_fam04_pipt_v2",
+        "genetic_code_table": 1,
+        "preserve_frame0": false,
+        "min_bp": 1100,
+        "max_bp": 2600,
+        "max_domain_bp": 1740,
+        "min_aa_len": 340,
+        "max_internal_stops": 0,
+        "target_n": 12,
+        "pin_species_substr": "Serendipita",
+        "blocked_organisms": [],
+        "required_motifs": [],
+        "min_anchor_aa_kmer_sim": 0.12,
+        "min_row_coverage": 0.42,
+        "min_consensus_aa_identity": 0.14,
+        "min_consensus_dayhoff6_sim": 0.28
+      },
+      "msa_min_occ": 0.65
+    }
+  ],
+  "pdb_template": {
+    "pdb_id": "4J05",
+    "chain_id": "A",
+    "het_resname": "PO4",
+    "het_resseq": 600,
+    "metal_resname": null,
+    "anchor_resname": "ASN",
+    "anchor_atom_name": "ND2",
+    "cys_site": 431,
+    "pdb_filename": "mycorrhizal_fungi_pipt_4j05.pdb",
+    "gene_symbol": "PiPT",
+    "template_label": "4J05_A (2.90 A Serendipita indica PiPT + PO4 A 600)",
+    "genetic_code_table": 1,
+    "catalytic_residues": [
+      "Asn{cys} / 4J05 Asn431 (TM11 Phosphate-Coordinating Polar Anchor; PO4-ND2 = {fe_sg} A)",
+      "PO4 A 600 (Inorganic Orthophosphate Substrate Ion, 5 Atoms in Occluded Core)",
+      "Gln177 / Tyr150 / Asp324 / Tyr328 (MFS TM4-TM7-TM11 H+-Pi Symport Pocket)",
+      "TM1-TM6 N-Domain Bundle (4J05 31-228; Cytosolic & Peri-Arbuscular Proton Path)",
+      "TM7-TM12 C-Domain Bundle (4J05 298-518; Phosphate Occlusion & Release Gate)"
+    ],
+    "srs1_range": [
+      31,
+      147
+    ],
+    "fg_lid_range": [
+      149,
+      228
+    ],
+    "i_helix_range": [
+      298,
+      378
+    ],
+    "cys_loop_range": [
+      411,
+      441
+    ],
+    "l_helix_range": [
+      450,
+      518
+    ]
+  },
+  "skyline_cohorts": [
+    {
+      "cohort_code": "R1",
+      "axis_group": "Regional Symbiont ITS (R1-R6)",
+      "region_label": "Global Agroecosystem AM Root Symbiont",
+      "clade_lineage": "Glomeromycotina Rhizophagus irregularis",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.004,
+      "source_id": "P33-R1",
+      "locality": "Temperate & Subtropical Crop Soils (Global AM)",
+      "cache_key": "myco33_pop_r1",
+      "query": "\"Rhizophagus irregularis\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title] NOT \"18S\"[Title] NOT \"28S\"[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "R2",
+      "axis_group": "Regional Symbiont ITS (R1-R6)",
+      "region_label": "Calcareous Grassland & Crop AM Soils",
+      "clade_lineage": "Glomeromycotina Funneliformis mosseae",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.004,
+      "source_id": "P33-R2",
+      "locality": "Eurasian & North American Agricultural Loams",
+      "cache_key": "myco33_pop_r2",
+      "query": "\"Funneliformis mosseae\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title] NOT \"18S\"[Title] NOT \"28S\"[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "R3",
+      "axis_group": "Regional Symbiont ITS (R1-R6)",
+      "region_label": "Boreal & Alpine Stress-Tolerant ECM",
+      "clade_lineage": "Ascomycota Cenococcum geophilum",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0038,
+      "source_id": "P33-R3",
+      "locality": "Circumboreal Conifer & Fagaceae Soils",
+      "cache_key": "myco33_pop_r3",
+      "query": "\"Cenococcum geophilum\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "R4",
+      "axis_group": "Regional Symbiont ITS (R1-R6)",
+      "region_label": "Holarctic Pine Ectomycorrhizal Belt",
+      "clade_lineage": "Basidiomycota Suillus luteus",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0042,
+      "source_id": "P33-R4",
+      "locality": "Pinus sylvestris & Planted Pine Stands",
+      "cache_key": "myco33_pop_r4",
+      "query": "\"Suillus luteus\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "R5",
+      "axis_group": "Regional Symbiont ITS (R1-R6)",
+      "region_label": "Northern Temperate Mixed Birch-Conifer",
+      "clade_lineage": "Basidiomycota Amanita muscaria",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0042,
+      "source_id": "P33-R5",
+      "locality": "Circumpolar Betula & Conifer Ectomycorrhizosphere",
+      "cache_key": "myco33_pop_r5",
+      "query": "\"Amanita muscaria\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "R6",
+      "axis_group": "Regional Symbiont ITS (R1-R6)",
+      "region_label": "Mediterranean Calcareous Oak-Hazel ECM",
+      "clade_lineage": "Ascomycota Tuber melanosporum",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0038,
+      "source_id": "P33-R6",
+      "locality": "Western Mediterranean Quercus & Corylus Truffieres",
+      "cache_key": "myco33_pop_r6",
+      "query": "\"Tuber melanosporum\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "L1",
+      "axis_group": "Multi-Locus Compartment Contrast (L1-L6)",
+      "region_label": "Boreal Peatland Ericoid Symbiont",
+      "clade_lineage": "Leotiomycetes Oidiodendron maius",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0038,
+      "source_id": "P33-L1",
+      "locality": "Acidic Boreal Ericaceae Heathlands",
+      "cache_key": "myco33_pop_l1",
+      "query": "\"Oidiodendron maius\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "L2",
+      "axis_group": "Multi-Locus Compartment Contrast (L1-L6)",
+      "region_label": "Conserved AM Symbiont 28S LSU rDNA",
+      "clade_lineage": "Glomeromycotina Rhizophagus irregularis",
+      "locus_name": "28S rDNA LSU (4Ne E-INS-i)",
+      "locus_tag": "LSU_28S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0018,
+      "source_id": "P33-L2",
+      "locality": "Global Rhizophagus irregularis Reference Isolates",
+      "cache_key": "myco33_pop_l2_28s",
+      "query": "\"Rhizophagus irregularis\"[Organism] AND (\"28S ribosomal RNA\"[Title] OR \"large subunit ribosomal RNA\"[Title]) AND 400:1500[SLEN] NOT \"18S\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 400,
+      "max_bp": 1500
+    },
+    {
+      "cohort_code": "L3",
+      "axis_group": "Multi-Locus Compartment Contrast (L1-L6)",
+      "region_label": "Boletales Temperate Forest Soil ECM",
+      "clade_lineage": "Basidiomycota Paxillus involutus",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0042,
+      "source_id": "P33-L3",
+      "locality": "European & North American Mixed Deciduous Woods",
+      "cache_key": "myco33_pop_l3",
+      "query": "\"Paxillus involutus\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "L4",
+      "axis_group": "Multi-Locus Compartment Contrast (L1-L6)",
+      "region_label": "Model Ectomycorrhizal Agaricales ECM",
+      "clade_lineage": "Basidiomycota Laccaria bicolor",
+      "locus_name": "Nuclear ITS1-5.8S-ITS2",
+      "locus_tag": "ITS",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0042,
+      "source_id": "P33-L4",
+      "locality": "Holarctic Populus-Conifer Forest Soils",
+      "cache_key": "myco33_pop_l4",
+      "query": "\"Laccaria bicolor\"[Organism] AND (\"internal transcribed spacer\"[Title] OR ITS1[Title] OR ITS2[Title]) AND 350:900[SLEN] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 900
+    },
+    {
+      "cohort_code": "L5",
+      "axis_group": "Multi-Locus Compartment Contrast (L1-L6)",
+      "region_label": "Slow-Clock AM 18S SSU rDNA",
+      "clade_lineage": "Glomeromycotina Rhizophagus irregularis",
+      "locus_name": "18S rDNA SSU (4Ne Slow-Clock)",
+      "locus_tag": "SSU_18S",
+      "ploidy_scalar": 4,
+      "mu_rate": 0.0012,
+      "source_id": "P33-L5",
+      "locality": "Slow-Clock AM SSU Multi-Spore Voucher Archive",
+      "cache_key": "myco33_pop_l5_18s",
+      "query": "\"Rhizophagus irregularis\"[Organism] AND (\"18S ribosomal RNA\"[Title] OR \"small subunit ribosomal RNA\"[Title]) AND 400:1800[SLEN] NOT \"28S\"[Title] NOT \"internal transcribed\"[Title] NOT ITS1[Title] NOT ITS2[Title] NOT genome[Title]",
+      "fallback_query": "",
+      "min_bp": 400,
+      "max_bp": 1800
+    },
+    {
+      "cohort_code": "L6",
+      "axis_group": "Multi-Locus Compartment Contrast (L1-L6)",
+      "region_label": "Non-ECM Basidiomycota mtDNA Reference",
+      "clade_lineage": "Tremellomycetes Cryptococcus neoformans",
+      "locus_name": "Mitochondrial COX1 / CYTB (1Ne)",
+      "locus_tag": "COI",
+      "ploidy_scalar": 1,
+      "mu_rate": 0.0085,
+      "source_id": "P33-L6",
+      "locality": "Global Basidiomycota Clinical & Arboreal Isolates",
+      "cache_key": "myco33_pop_l6_cox1",
+      "query": "\"Cryptococcus neoformans\"[Organism] AND (COX1[Gene] OR COX1[Title] OR \"cytochrome c oxidase subunit\"[Title] OR \"mitochondrial\"[Title]) AND 350:1800[SLEN] NOT \"complete genome\"[Title]",
+      "fallback_query": "",
+      "min_bp": 350,
+      "max_bp": 1800
+    }
+  ],
+  "skyline_epochs": [
+    {
+      "label": "Epoch 1: Marine-Interglacial Refugia",
+      "age_max_ka": 120,
+      "age_min_ka": 45,
+      "period_label": "120-45 ka (MIS 5-3)",
+      "ecological_context": "Unfragmented boreal & Mediterranean forest-root refugia"
+    },
+    {
+      "label": "Epoch 2: Last Glacial Maximum Contraction",
+      "age_max_ka": 45,
+      "age_min_ka": 18,
+      "period_label": "45-18 ka (LGM)",
+      "ecological_context": "Pleistocene ice-sheet contraction of Pinus, Betula & Quercus hosts"
+    },
+    {
+      "label": "Epoch 3: Post-Glacial Reforestation",
+      "age_max_ka": 18,
+      "age_min_ka": 8,
+      "period_label": "18-8 ka (Boreal Spread)",
+      "ecological_context": "Co-migration of conifer & birch forests with ECM symbionts"
+    },
+    {
+      "label": "Epoch 4: Mid-Holocene Canopy & Soil Closure",
+      "age_max_ka": 8,
+      "age_min_ka": 3,
+      "period_label": "8.0-3.0 ka (Holocene)",
+      "ecological_context": "Stable peatland ericoid & AM rhizosphere expansion"
+    },
+    {
+      "label": "Epoch 5: Early Agrarian & Silvicultural Disturbance",
+      "age_max_ka": 3,
+      "age_min_ka": 0.15,
+      "period_label": "3.0-0.15 ka (Pre-Industrial)",
+      "ecological_context": "Neolithic tillage & calcareous oak truffiere management"
+    },
+    {
+      "label": "Epoch 6: Modern Silviculture & Inoculant Dispersal",
+      "age_max_ka": 0.15,
+      "age_min_ka": 0,
+      "period_label": "1876-2026 Modern",
+      "ecological_context": "Global forestry plantings & AM bio-inoculant dissemination"
+    }
+  ],
+  "supp_s2_cohort_code": "L2",
+  "haplotype_panels": [
+    {
+      "panel_id": "Rhizophagus irregularis Global Arbuscular Mycorrhizal ITS1-5.8S-ITS2 (Cohort R1)",
+      "fasta_filename": "cohort_myco33_rhizophagus_am_its.fasta",
+      "cohort_indices": [
+        0
+      ],
+      "slot_prefixes": [],
+      "locus_tag": "ITS",
+      "label_suffix": "AM_ITS",
+      "min_occ": 0.72
+    },
+    {
+      "panel_id": "Amanita muscaria Circumpolar Ectomycorrhizal ITS1-5.8S-ITS2 (Cohort R5)",
+      "fasta_filename": "cohort_myco33_amanita_ecm_its.fasta",
+      "cohort_indices": [
+        4
+      ],
+      "slot_prefixes": [],
+      "locus_tag": "ITS",
+      "label_suffix": "ECM_ITS",
+      "min_occ": 0.72
+    }
+  ],
+  "calibrated_nodes": [
+    {
+      "node_id": "Node I",
+      "clade_name": "Holomycota Root (Basal Holomycota/Chytrids [A] vs. Crown Fungi)",
+      "sector_code": "[A]-[G]",
+      "fossil_or_biogeo_anchor": "Proterozoic Fungi minimum bound & Chang et al. (2021) Holomycota root",
+      "target_age_ma": 995,
+      "ci_min_ma": 900,
+      "ci_max_ma": 1180,
+      "trophic_guild": "Unicellular Holomycota & zoosporic Chytridiomycota",
+      "key_enzymes_or_loci": "23 nuclear loci (RPB1, RPB2, EF1A, EF2, 18S/28S rDNA)",
+      "ecosystem_role": "Aquatic opisthokont ancestry preceding terrestrial hyphae",
+      "sector_idx": 0,
+      "tip_prefixes": []
+    },
+    {
+      "node_id": "Node II",
+      "clade_name": "Mortierellomycotina-Dikarya Stem (Mortierellaceae + Dikarya)",
+      "sector_code": "[D]-[G]",
+      "fossil_or_biogeo_anchor": "Proterozoic-Ediacaran terrestrial fungi emergence (Lutzoni et al. 2018; Chang et al. 2021)",
+      "target_age_ma": 840,
+      "ci_min_ma": 720,
+      "ci_max_ma": 950,
+      "trophic_guild": "Early terrestrialized hyphal lineages preceding Dikarya",
+      "key_enzymes_or_loci": "CHS1/CHS2 chitin wall + PHO84/PiPT + 23 nuclear loci",
+      "ecosystem_role": "Terrestrial filamentous hyphae & Mortierellaceae rhizosphere association",
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "D_T028",
+        "D_T029",
+        "D_T030",
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T040",
+        "E_T043",
+        "E_T045",
+        "E_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T052",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
+    },
+    {
+      "node_id": "Node III",
+      "clade_name": "Glomeromycotina Crown (Obligate Arbuscular Mycorrhizae [C])",
+      "sector_code": "[C]",
+      "fossil_or_biogeo_anchor": "Ordovician Glomales (~460 Ma Redecker et al. 2000) & Early Devonian Rhynie Chert (407 Ma Palaeomyces)",
+      "target_age_ma": 445,
+      "ci_min_ma": 410,
+      "ci_max_ma": 540,
+      "trophic_guild": "Obligate biotrophic Arbuscular Mycorrhizal (AM)",
+      "key_enzymes_or_loci": "PHO84/PiPT / MEP2 / MST2 / 23-locus supermatrix",
+      "ecosystem_role": "Rootless embryophyte colonization & Ordovician-Devonian Pi uptake",
+      "sector_idx": 2,
+      "tip_prefixes": [
+        "C_T015",
+        "C_T020",
+        "C_T021"
+      ]
+    },
+    {
+      "node_id": "Node IV",
+      "clade_name": "Mucoromycotina Endophyte & Saprotroph Crown ([D])",
+      "sector_code": "[D]",
+      "fossil_or_biogeo_anchor": "Rhynie Chert Mucoromycotina-like endophytes (407 Ma; Strullu-Derrien et al. 2014 & Chang et al. 2021)",
+      "target_age_ma": 465,
+      "ci_min_ma": 385,
+      "ci_max_ma": 525,
+      "trophic_guild": "Facultative fine-root endophytes & mucoralean saprotrophs",
+      "key_enzymes_or_loci": "CHS1 / PHO84 / RPB1 / EF1A",
+      "ecosystem_role": "Dual bryophyte-vascular fine-root symbiosis & litter turnover",
+      "sector_idx": 3,
+      "tip_prefixes": [
+        "D_T027",
+        "D_T031",
+        "D_T032",
+        "D_T033",
+        "D_T034"
+      ]
+    },
+    {
+      "node_id": "Node V",
+      "clade_name": "Dikarya Crown (Ascomycota [E] vs. Basidiomycota [F]-[G])",
+      "sector_code": "[E]-[G]",
+      "fossil_or_biogeo_anchor": "Silurian-Devonian Paleopyrenomycites devonicus (407 Ma Rhynie Chert) & Lutzoni et al. (2018)",
+      "target_age_ma": 690,
+      "ci_min_ma": 560,
+      "ci_max_ma": 760,
+      "trophic_guild": "Saprotrophic & independently derived mycorrhizal lineages",
+      "key_enzymes_or_loci": "23-locus supermatrix + CHS1 + HXT/MST2",
+      "ecosystem_role": "Dikaryotic hyphal radiation across vascular plant soils",
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "E_T035",
+        "E_T036",
+        "E_T037",
+        "E_T038",
+        "E_T040",
+        "E_T043",
+        "E_T045",
+        "E_T046",
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T052",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
+    },
+    {
+      "node_id": "Node VI",
+      "clade_name": "Basidiomycota Crown (Pucciniomycotina/Ustilaginomycotina [F] vs. Agaricomycotina [G])",
+      "sector_code": "[F]-[G]",
+      "fossil_or_biogeo_anchor": "Carboniferous clamp-connection hyphae (~320 Ma; Kohler et al. 2015 / Miyauchi et al. 2020)",
+      "target_age_ma": 560,
+      "ci_min_ma": 450,
+      "ci_max_ma": 630,
+      "trophic_guild": "Biotrophic basidiomycetes vs. white/brown-rot & ECM symbionts",
+      "key_enzymes_or_loci": "RPB1 / RPB2 / PiPT / EF1A",
+      "ecosystem_role": "Lignocellulose decomposition & ectomycorrhizal mantle origins",
+      "sector_idx": 5,
+      "tip_prefixes": [
+        "F_T047",
+        "F_T048",
+        "F_T049",
+        "F_T050",
+        "F_T052",
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
+    },
+    {
+      "node_id": "Node VII",
+      "clade_name": "Pezizomycotina Symbiotic Radiation (Tuber ECM, Cenococcum & Hyaloscypha ERM [E])",
+      "sector_code": "[E]",
+      "fossil_or_biogeo_anchor": "Devonian-Carboniferous Pezizomycotina (Lutzoni et al. 2018 / Miyauchi et al. 2020)",
+      "target_age_ma": 380,
+      "ci_min_ma": 290,
+      "ci_max_ma": 430,
+      "trophic_guild": "Independent Ascomycota ECM & Ericoid (ERM) origins",
+      "key_enzymes_or_loci": "PHO84 / MEP2 / ITS / 23-locus supermatrix",
+      "ecosystem_role": "Heathland ericoid nitrogen scavenging & calcareous oak truffles",
+      "sector_idx": 4,
+      "tip_prefixes": [
+        "E_T040",
+        "E_T043",
+        "E_T045",
+        "E_T046"
+      ]
+    },
+    {
+      "node_id": "Node VIII",
+      "clade_name": "Crown Agaricomycetes Ectomycorrhizal & Wood-Rot Clade ([G])",
+      "sector_code": "[G]",
+      "fossil_or_biogeo_anchor": "Middle Eocene Princeton Chert (~48.7 Ma ectomycorrhizae; LePage et al. 1997) & Kohler et al. (2015)",
+      "target_age_ma": 240,
+      "ci_min_ma": 160,
+      "ci_max_ma": 270,
+      "trophic_guild": "Boreal & temperate forest ectomycorrhizae (ECM) + wood-rot saprotrophs",
+      "key_enzymes_or_loci": "4J05 PiPT / MEP2 / MST2 / CHS1 / ITS",
+      "ecosystem_role": "Pinaceae-Fagaceae ectomycorrhizal Hartig net radiation",
+      "sector_idx": 6,
+      "tip_prefixes": [
+        "G_T057",
+        "G_T058",
+        "G_T059",
+        "G_T060",
+        "G_T061",
+        "G_T062",
+        "G_T063"
+      ]
+    }
+  ],
+  "abba_baba_contrasts": [
+    {
+      "quartet_id": "ABBA-1",
+      "p1_tip": "G_T058",
+      "p2_tip": "G_T059",
+      "p3_tip": "G_T062",
+      "outgroup_tip": "A_T003",
+      "interpretation": "Convergent ECM Agaricales (Laccaria, Amanita) vs. Boletales (Paxillus) Hartig-net locus sorting"
+    },
+    {
+      "quartet_id": "ABBA-2",
+      "p1_tip": "C_T015",
+      "p2_tip": "C_T020",
+      "p3_tip": "C_T021",
+      "outgroup_tip": "A_T003",
+      "interpretation": "Obligate AM Glomerales (Rhizophagus) vs. Gigasporaceae (Gigaspora) heterokaryon allele sorting"
+    },
+    {
+      "quartet_id": "ABBA-3",
+      "p1_tip": "D_T028",
+      "p2_tip": "D_T029",
+      "p3_tip": "D_T032",
+      "outgroup_tip": "A_T003",
+      "interpretation": "Mortierellomycotina fine-root associates (Podila/Linnemannia) vs. Mucorales saprotrophs (Mucor) deep discordance"
+    },
+    {
+      "quartet_id": "ABBA-4",
+      "p1_tip": "E_T040",
+      "p2_tip": "E_T043",
+      "p3_tip": "E_T045",
+      "outgroup_tip": "A_T003",
+      "interpretation": "Ascomycota Pezizomycetes ECM (Tuber) vs. Dothideomycetes/Leotiomycetes ECM-ERM convergent transitions"
+    }
+  ],
+  "tags": [
+    "RuNIE",
+    "Partitioned ModelTest",
+    "Mycorrhizal Fungi",
+    "Glomeromycotina",
+    "Agaricomycotina",
+    "Serendipita indica",
+    "PHO84 PiPT",
+    "PDB 4J05",
+    "Rhynie Chert",
+    "Symbiosis Evolution"
+  ],
+  "genetic_loci_summary": [
+    "RPB2",
+    "RPB1",
+    "EF1A",
+    "EF2",
+    "VMA1",
+    "VMA2",
+    "RAD51",
+    "CCT",
+    "HSP70",
+    "HSP90",
+    "eIF5B",
+    "Sec61A",
+    "RPL2",
+    "RPL3",
+    "RPS3",
+    "FEN1",
+    "PCNA",
+    "ThrRS",
+    "ACT1",
+    "TUB2",
+    "PGK1",
+    "MCM7",
+    "18S rRNA",
+    "28S rRNA",
+    "COX1 (Mitogenome)",
+    "PHO84/PiPT",
+    "MEP2/AMT1",
+    "HXT/MST2",
+    "CHS1/CHS2"
+  ],
+  "references": [
+    {
+      "text": "White, B. P. (2026). RuNIE (Rust Native Inference Engine): An Open-Source Architecture for Autonomous Bioinformatics Pipeline Synthesis, Blinded Validation, and Bayesian Scope-Depth Auditing. CRV Science Labs Preprint / Zenodo. DOI: 10.5281/zenodo.23969275",
+      "url": "https://doi.org/10.5281/zenodo.23969275"
+    },
+    {
+      "text": "Kalyaanamoorthy, S., Minh, B. Q., Wong, T. K. F., von Haeseler, A., & Jermiin, L. S. (2017). ModelFinder: fast model selection for accurate phylogenetic estimates. Nature Methods, 14(6), 587-589. DOI: 10.1038/nmeth.4285",
+      "url": "https://doi.org/10.1038/nmeth.4285"
+    },
+    {
+      "text": "Hoang, D. T., Chernomor, O., von Haeseler, A., Minh, B. Q., & Vinh, L. S. (2018). UFBoot2: Improving the ultrafast bootstrap approximation. Molecular Biology and Evolution, 35(2), 518-522. DOI: 10.1093/molbev/msx281",
+      "url": "https://doi.org/10.1093/molbev/msx281"
+    },
+    {
+      "text": "Seo, T.-K. (2008). Calculating bootstrap probabilities of phylogeny using multilocus sequence data. Molecular Biology and Evolution, 25(5), 960-971. DOI: 10.1093/molbev/msn043",
+      "url": "https://doi.org/10.1093/molbev/msn043"
+    },
+    {
+      "text": "Spatafora, J. W., Chang, Y., Benny, G. L., Lazarus, K., Smith, M. E., Berbee, M. L., et al. (2016). A phylum-level phylogenetic classification of zygomycete fungi based on genome-scale data. Mycologia, 108(5), 1028-1046. DOI: 10.3852/16-042",
+      "url": "https://doi.org/10.3852/16-042"
+    },
+    {
+      "text": "Chang, Y., Desiro, A., Na, H., Sandor, L., Lipzen, A., Clum, A., et al. (2021). Phylogenomics of Endogonaceae and evolution of mycorrhizas within Mucoromycota. New Phytologist, 222(1), 511-525. DOI: 10.1111/nph.15613",
+      "url": "https://doi.org/10.1111/nph.15613"
+    },
+    {
+      "text": "Redecker, D., Kodner, R., & Graham, L. E. (2000). Glomalean fungi from the Ordovician. Science, 289(5486), 1920-1921. DOI: 10.1126/science.289.5486.1920",
+      "url": "https://doi.org/10.1126/science.289.5486.1920"
+    },
+    {
+      "text": "Strullu-Derrien, C., Kenrick, P., Pressel, S., Duckett, J. G., Rioult, J.-P., & Strullu, D.-G. (2014). Fungal associations in Horneophyton ligneri from the Rhynie Chert (c. 407 million year old) closely resemble those in extant lower land plants. New Phytologist, 203(3), 964-979. DOI: 10.1111/nph.12805",
+      "url": "https://doi.org/10.1111/nph.12805"
+    },
+    {
+      "text": "Lutzoni, F., Nowak, M. D., Alfaro, M. E., Reeb, V., Miadlikowska, J., Krug, M., et al. (2018). Contemporaneous radiations of fungi and plants linked to symbiosis. Nature Communications, 9, 5451. DOI: 10.1038/s41467-018-07849-9",
+      "url": "https://doi.org/10.1038/s41467-018-07849-9"
+    },
+    {
+      "text": "Miyauchi, S., Kiss, E., Kuo, A., Drula, E., Kohler, A., Sanchez-Garcia, M., et al. (2020). Large-scale genome sequencing of mycorrhizal fungi provides insights into the early evolution of symbiotic traits. Nature Genetics, 52(5), 509-520. DOI: 10.1038/s41588-020-0623-4",
+      "url": "https://doi.org/10.1038/s41588-020-0623-4"
+    },
+    {
+      "text": "Martin, F., Aerts, A., Ahren, D., Brun, A., Danchin, E. G. J., Duchaussoy, F., et al. (2008). The genome of Laccaria bicolor provides insights into mycorrhizal symbiosis. Nature, 452(7183), 88-92. DOI: 10.1038/nature06556",
+      "url": "https://doi.org/10.1038/nature06556"
+    },
+    {
+      "text": "Kohler, A., Kuo, A., Nagy, L. G., Morin, E., Barry, K. W., Buscot, F., et al. (2015). Convergent losses of decay mechanisms and rapid turnover of symbiosis genes in mycorrhizal mutualists. Nature Genetics, 47(4), 410-415. DOI: 10.1038/ng.3223",
+      "url": "https://doi.org/10.1038/ng.3223"
+    },
+    {
+      "text": "Tisserant, E., Malbreil, M., Kuo, A., Kohler, A., Symeonidi, A., Balestrini, R., et al. (2013). Genome of an arbuscular mycorrhizal fungus provides insight into the oldest plant symbiosis. Proceedings of the National Academy of Sciences USA, 110(50), 20117-20122. DOI: 10.1073/pnas.1313452110",
+      "url": "https://doi.org/10.1073/pnas.1313452110"
+    },
+    {
+      "text": "Pedersen, B. P., Kumar, H., Waight, A. B., Risenmay, A. J., Roe-Zurz, Z., Chau, B. H., et al. (2013). Crystal structure of a eukaryotic phosphate transporter. Nature, 496(7446), 533-536. DOI: 10.1038/nature12042",
+      "url": "https://doi.org/10.1038/nature12042"
+    },
+    {
+      "text": "Helber, N., Wippel, K., Sauer, N., Schaarschmidt, S., Hause, B., & Requena, N. (2011). A versatile monosaccharide transporter that operates in the arbuscular mycorrhizal fungus Glomus sp. is crucial for the symbiotic relationship with plants. The Plant Cell, 23(10), 3812-3823. DOI: 10.1105/tpc.111.089813",
+      "url": "https://doi.org/10.1105/tpc.111.089813"
+    },
+    {
+      "text": "LePage, B. A., Currah, R. S., Stockey, R. A., & Rothwell, G. W. (1997). Fossil ectomycorrhizae from the Middle Eocene. American Journal of Botany, 84(3), 410-412. DOI: 10.2307/2446014",
+      "url": "https://doi.org/10.2307/2446014"
+    },
+    {
+      "text": "Katoh, K., & Standley, D. M. (2013). MAFFT Multiple Sequence Alignment Software Version 7: Improvements in Performance and Usability. Molecular Biology and Evolution, 30(4), 772-780. DOI: 10.1093/molbev/mst010",
+      "url": "https://doi.org/10.1093/molbev/mst010"
+    },
+    {
+      "text": "To, T.-H., Jung, M., Lycett, S., & Gascuel, O. (2016). Fast Dating Using Least-Squares Criteria and Algorithms. Systematic Biology, 65(1), 82-97. DOI: 10.1093/sysbio/syv068",
+      "url": "https://doi.org/10.1093/sysbio/syv068"
+    },
+    {
+      "text": "Mirarab, S., Reaz, R., Bayzid, M. S., Zimmermann, T., Swenson, M. S., & Warnow, T. (2014). ASTRAL: genome-scale coalescent-based species tree estimation. Bioinformatics, 30(17), i541-i548. DOI: 10.1093/bioinformatics/btu462",
+      "url": "https://doi.org/10.1093/bioinformatics/btu462"
+    },
+    {
+      "text": "Drummond, A. J., Rambaut, A., Shapiro, B., & Pybus, O. G. (2005). Bayesian Coalescent Inference of Past Population Dynamics from Molecular Sequences. Molecular Biology and Evolution, 22(5), 1185-1192. DOI: 10.1093/molbev/msi103",
+      "url": "https://doi.org/10.1093/molbev/msi103"
+    },
+    {
+      "text": "Yang, Z. (2007). PAML 4: Phylogenetic Analysis by Maximum Likelihood. Molecular Biology and Evolution, 24(8), 1586-1591. DOI: 10.1093/molbev/msm088",
+      "url": "https://doi.org/10.1093/molbev/msm088"
+    },
+    {
+      "text": "Green, R. E., Krause, J., Briggs, A. W., Maricic, T., Stenzel, U., Kircher, M., et al. (2010). A draft sequence of the Neandertal genome. Science, 328(5979), 710-722. DOI: 10.1126/science.1188021",
+      "url": "https://doi.org/10.1126/science.1188021"
+    },
+    {
+      "text": "Calabrese, S., Perez-Tienda, J., Ellerbeck, M., Arnould, C., Chatagnier, O., Boller, T., et al. (2016). GintAMT3: a low-affinity ammonium transporter of the arbuscular mycorrhizal Rhizophagus irregularis. Frontiers in Plant Science, 7, 679. DOI: 10.3389/fpls.2016.00679",
+      "url": "https://doi.org/10.3389/fpls.2016.00679"
+    },
+    {
+      "text": "Phillips, M. J., Delsuc, F., & Penny, D. (2004). Genome-scale phylogeny and the detection of systematic biases. Molecular Biology and Evolution, 21(7), 1455-1458. DOI: 10.1093/molbev/msh137",
+      "url": "https://doi.org/10.1093/molbev/msh137"
+    }
+  ],
+  "figure_theme": {
+    "sec_crown_ages": [
+      1050,
+      780,
+      465,
+      430,
+      590,
+      480,
+      190
+    ],
+    "backbone_node_ages": [
+      1050,
+      780,
+      620,
+      590,
+      480,
+      340
+    ],
+    "fig1_max_ma": 1180,
+    "fig1_eras": [
+      [
+        "Tonian-Cryo",
+        1180,
+        635,
+        "#f1f5f9"
+      ],
+      [
+        "Ediac-Ord",
+        635,
+        443.8,
+        "#f8fafc"
+      ],
+      [
+        "Sil-Dev",
+        443.8,
+        358.9,
+        "#f1f5f9"
+      ],
+      [
+        "Carb-Mesoz",
+        358.9,
+        66,
+        "#f8fafc"
+      ],
+      [
+        "Cenozoic",
+        66,
+        0,
+        "#f1f5f9"
+      ]
+    ],
+    "fig1_ticks": [
+      1100,
+      900,
+      700,
+      500,
+      300,
+      100,
+      0
+    ],
+    "fig1_node_y_slots": [
+      5,
+      11.5,
+      18.5,
+      25.5,
+      34,
+      43,
+      49,
+      57
+    ],
+    "fig1_clade_cards": [
+      [
+        "[A]",
+        0,
+        7,
+        "Holomycota & Chytrids (n=8)",
+        "Fonticula alba, Rozella, Allomyces, Batrachochytrium",
+        "Unicellular & zoosporic outgroups"
+      ],
+      [
+        "[B]",
+        8,
+        13,
+        "Zoopagomycota (n=6)",
+        "Conidiobolus, Basidiobolus, Entomophthora, Coemansia",
+        "Non-mycorrhizal terrestrial stem"
+      ],
+      [
+        "[C]",
+        14,
+        23,
+        "Glomeromycotina AM (n=10)",
+        "Rhizophagus irregularis, Funneliformis, Gigaspora",
+        "Obligate arbuscular mycorrhizae"
+      ],
+      [
+        "[D]",
+        24,
+        33,
+        "Mucoromycotina & Mortierellomycotina (n=10)",
+        "Jimgerdemannia, Podila, Linnemannia, Rhizopus",
+        "Fine-root endophytes & saprotrophs"
+      ],
+      [
+        "[E]",
+        34,
+        45,
+        "Ascomycota ECM & ERM (n=12)",
+        "Tuber melanosporum, Cenococcum, Oidiodendron maius",
+        "Truffle ECM, ericoid ERM & yeasts"
+      ],
+      [
+        "[F]",
+        46,
+        51,
+        "Non-ECM Basidiomycota (n=6)",
+        "Puccinia graminis, Ustilago maydis, Cryptococcus",
+        "Pucciniomycotina & Ustilaginomycotina"
+      ],
+      [
+        "[G]",
+        52,
+        63,
+        "Agaricomycotina ECM & Wood-Rot (n=12)",
+        "Serendipita indica, Laccaria, Amanita, Suillus",
+        "Sebacinales endophytes, rot & ECM"
+      ]
+    ],
+    "fig1_web_svg": "mycorrhizal-fungi-fig1-vertical-chronogram.svg",
+    "fig1_title": "Calibrated Relaxed-Clock Chronogram of Mycorrhizal Origins Across the Fungal Kingdom (Nodes I-VIII)",
+    "fig1_caption": "Strictly bifurcating relaxed-clock chronogram (TimeTreeLSD2) inferred under edge-linked 23-locus partitioned nuclear ModelTest across >=55% supermatrix-gated fungal lineages ([A]-[G]), displaying two-sided 95% HPD credible intervals on all internal nodes.",
+    "fig2_sec_ranges": [
+      [
+        "[A]",
+        0,
+        7,
+        "Holomycota & Chytrids (n=8)",
+        ""
+      ],
+      [
+        "[B]",
+        8,
+        13,
+        "Zoopagomycota (n=6)",
+        "8,4"
+      ],
+      [
+        "[C]",
+        14,
+        23,
+        "Glomeromycotina AM (n=10)",
+        "9,3,2,3"
+      ],
+      [
+        "[D]",
+        24,
+        33,
+        "Mucor & Mortierella (n=10)",
+        "5,3"
+      ],
+      [
+        "[E]",
+        34,
+        45,
+        "Ascomycota ECM/ERM (n=12)",
+        "10,3,2,3"
+      ],
+      [
+        "[F]",
+        46,
+        51,
+        "Non-ECM Basidiomycota (n=6)",
+        ""
+      ],
+      [
+        "[G]",
+        52,
+        63,
+        "Agaricomycotina ECM (n=12)",
+        "6,3"
+      ]
+    ],
+    "fig2_web_svg": "mycorrhizal-fungi-fig2-circular-phylogram.svg",
+    "fig2_title": "Circular Patristic Phylogram of the Fungal Kingdom Across Symbiont and Saprotroph Lineages",
+    "fig2_caption": "Dominant circular patristic phylogram inferred under edge-linked proportional partitioned ModelTest across 43 supermatrix-gated fungal OTUs contrasting obligate AM ([C]), fine-root endophyte ([D]), and convergent ECM/ERM Dikarya ([E], [G]) clades.",
+    "fig3_sec_tip_anchors": [
+      [
+        "Node I",
+        "A:T001",
+        0
+      ],
+      [
+        "Node II",
+        "B:T009",
+        1
+      ],
+      [
+        "Node III",
+        "C:T015",
+        2
+      ],
+      [
+        "Node IV",
+        "D:T025",
+        3
+      ],
+      [
+        "Node V",
+        "E:T035",
+        4
+      ],
+      [
+        "Node VI",
+        "F:T047",
+        5
+      ],
+      [
+        "Node VII",
+        "E:T039",
+        4
+      ],
+      [
+        "Node VIII",
+        "G:T058",
+        6
+      ]
+    ],
+    "fig3_abba_arc_tips": [
+      "G:T058",
+      "G:T062"
+    ],
+    "fig3_web_svg": "mycorrhizal-fungi-fig3-quartet-coalescent-species-tree.svg",
+    "fig3_title": "64-Species Quartet Multispecies Coalescent Species Tree, q1 Concordance & Mycorrhizal Introgression Tests",
+    "fig3_caption": "Complete 64-species bifurcating multi-locus ASTRAL-equivalent quartet coalescent species tree evaluating incomplete lineage sorting and Patterson's D contrasts across fungal phyla and independent mycorrhizal transitions.",
+    "fig4a_web_svg": "mycorrhizal-fungi-fig4a-regional-skyline-matrix.svg",
+    "fig4a_title": "Conspecific Nuclear ITS Bayesian Coalescent Skylines Across AM, ERM & ECM Symbionts (Cohorts R1-R6)",
+    "fig4a_caption": "Six single-species mycorrhizal nuclear ITS coalescent skylines (25,000 MCMC generations) spanning Rhizophagus irregularis, Funneliformis mosseae, Cenococcum geophilum, Suillus luteus, Amanita muscaria, and Tuber melanosporum.",
+    "fig4b_web_svg": "mycorrhizal-fungi-fig4b-multilocus-skyline-matrix.svg",
+    "fig4b_title": "Multi-Locus Coalescent Contrast: ITS, Single-Subunit 28S/18S rDNA & Mitochondrial COX1 (Cohorts L1-L6)",
+    "fig4b_caption": "Six single-species multi-compartment skylines contrasting ITS turnover in Oidiodendron, Paxillus, and Laccaria against slow-clock Rhizophagus irregularis 28S/18S rDNA and Cryptococcus neoformans COX1.",
+    "fig5_short_fam_titles": [
+      "Cell-Wall Chitin Synthase (CHS1 / CHS2)",
+      "Symbiotic Ammonium Permease (MEP2 / AMT1)",
+      "Symbiotic Monosaccharide Transporter (HXT / MST2)",
+      "Symbiotic Phosphate Transporter (PHO84 / PiPT)"
+    ],
+    "fig5_panel_b_fam_names": [
+      "FAM-01: Chitin Wall (CHS1)",
+      "FAM-02: NH4 Permease (MEP2)",
+      "FAM-03: Sugar Import (MST2)",
+      "FAM-04: Pi Symport (PiPT, 4J05)"
+    ],
+    "fig5_panel_d_header": "Panel D | Fungal PiPT Phosphate Symporter & PO4 Pocket (4J05, 2.90 A)",
+    "fig5_panel_d_upper_subtitle": "Upper: 3D Eukaryotic Phosphate Transporter (422 Ca Threaded with Fungal PHO84/PiPT)",
+    "fig5_web_svg": "mycorrhizal-fungi-fig5-selection-sweep-alignment.svg",
+    "fig5_title": "Pixel-Locked Fungal Coding Motif Alignments, 61-State Codon Selection & Crystallographic PiPT (4J05) Phosphate-Pocket Threading",
+    "fig5_caption": "Translated Universal Code 1 amino-acid motif alignments across four mycorrhizal transporter/cell-wall gene families, Goldman-Yang dN/dS selection estimates, 32-chain RuNIE sweeps, and 3D PiPT structure threaded onto PDB 4J05 Chain A bound to PO4 A 600.",
+    "fig6_web_svg": "mycorrhizal-fungi-fig6-runie-pipeline-architecture.svg",
+    "fig6_title": "Dual Empirical RuNIE Pipeline Architectures & 4-Rank Partitioned Model Comparison Across Pipelines A & B",
+    "fig6_caption": "Stage-by-stage Native Rust operator chains contrasting Edge-Linked Partitioned Per-Locus ModelTest (1st Best) against Unpartitioned ML, Unrecoded-4, and 0-Beaker control alongside Pipeline B (12 conspecific fungal skylines).",
+    "fig6_clade_label": "Fungal Kingdom (Mycorrhizae)",
+    "fig6_p450_label": "PiPT / MEP2 / MST2 / CHS1",
+    "fig6_its_label": "Rhizophagus irregularis 28S rDNA",
+    "supp_s1_fasta_name": "supp_s1_pipt_pho84_cds.fasta",
+    "supp_s1_title": "FAM-04 Symbiotic High-Affinity Phosphate Transporter CDS (Fungal PHO84/PiPT, Code 1)",
+    "supp_s1_source": "VAL-SET-072-MYCORRHIZAL-FUNGI-ORIGINS-KINGDOM-TIMETREE (FAM-04 PHO84/PiPT)",
+    "supp_s1_stem": "mycorrhizal-fungi-supp-s1-pipt-alignview",
+    "supp_s2_title": "Cohort L2 Rhizophagus irregularis Single-Subunit 28S LSU rDNA (Katoh E-INS-i Core)",
+    "supp_s2_source": "VAL-SET-072-MYCORRHIZAL-FUNGI-ORIGINS-KINGDOM-TIMETREE (Cohort L2 28S rDNA)",
+    "supp_s2_stem": "mycorrhizal-fungi-supp-s2-rdna-einsi-alignview",
+    "supp_s3_title": "Fungal Translation Elongation Factor 1-Alpha (EF1A/TEF1, Code 1 RY3) Alignment Across Clades A-G",
+    "supp_s3_source": "VAL-SET-072-MYCORRHIZAL-FUNGI-ORIGINS-KINGDOM-TIMETREE (EF1A/TEF1)",
+    "supp_s3_stem": "mycorrhizal-fungi-supp-s3-ef1a-ry3-alignview"
+  },
+  "manuscript_prose": {
+    "section1_title": "Polyphyletic Origins of Mycorrhizal Symbiosis and Terrestrialization Across Fungi",
+    "section1_paragraphs": [
+      "Mycorrhizal fungi form obligate and facultative root mutualisms with most extant vascular and non-vascular land plants, trading mineral phosphorus and ammonium for host photosynthates [5, 13]. Yet ectomycorrhizal (ECM), ericoid (ERM), arbuscular (AM), and fine-root endophyte guilds are distributed discontinuously across Glomeromycotina, Mucoromycotina, Ascomycota, and Basidiomycota [5, 6, 9, 10]. Evaluating whether plant-fungal biotrophy reflects single ancestral recruitment or repeated convergent innovation requires resolving deep fungal relationships across Paleozoic terrestrialization horizons [7, 8, 9].",
+      "Concatenated nuclear phylogenies across Holomycota remain susceptible to adenine-thymine compositional drift at third codon positions, rate heterogeneity across ribosomal versus housekeeping markers, and long-branch attraction between fast-evolving Chytridiomycota, Zoopagomycota, and budding yeasts [2, 3, 24]. Partitioned substitution modeling coupled with third-codon purine-pyrimidine (RY3) recoding and multi-locus quartet coalescent reconciliation directly addresses both compositional skew and deep incomplete lineage sorting [2, 4, 19, 24].",
+      "Here we present a multi-compartment phylogenomic synthesis across 64 fungal taxa stratified across basal Holomycota ([A]), Zoopagomycota ([B]), Glomeromycotina ([C]), Mucoromycotina and Mortierellomycotina ([D]), Ascomycota ([E]), non-ECM Basidiomycota ([F]), and Agaricomycotina ([G]). We couple a completeness-gated 23-locus nuclear supermatrix and 24-gene-tree quartet coalescent analysis with relaxed-clock calibration, 61-state codon selection on four symbiotic functional families (CHS1, MEP2, MST2, and PHO84/PiPT threaded onto PDB 4J05), and twelve single-species Pleistocene-to-modern coalescent skylines [1, 14, 15, 20, 21, 23]."
+    ],
+    "section1_p1": "Mycorrhizal fungi form obligate and facultative root mutualisms with most extant vascular and non-vascular land plants, yet their trophic associations originated repeatedly across distant fungal phyla [5, 9, 10].",
+    "section1_p2": "Partitioned RY3 phylogenomics, 64-species quartet coalescent inference, transporter codon modeling, and conspecific skylines across 64 fungal taxa evaluate Paleozoic AM origins versus younger Dikarya symbiotic transitions [1, 14, 20].",
+    "section2_title": "Twenty-Three-Locus Nuclear Supermatrix, RY3 Recoding, and Relaxed-Clock Chronogram",
+    "section2_paragraphs": [
+      "Automated sequence validation across 489 verified public NCBI records (2,312,092 raw nucleotides) quarantined 3,833 spurious or reading-frame-disrupted accessions and assembled a 24-locus target design [1]. Because mitochondrial COX1 met coverage in only 7 taxa (below the 10-taxon partition floor), 23 universal nuclear loci (21 protein-coding markers under RY3 plus 18S SSU [1,674 bp] and 28S LSU [775 bp]) were retained across 43 species passing the 55% site and 10-locus completeness filter ([7, 5, 3, 8, 8, 5, 7] taxa across sectors [A]-[G]; L = 36,208 aligned columns, 27,063 site patterns, 23,984 parsimony-informative sites). Per-locus BIC model selection chose 16 GTR+F+I+G4, 5 GTR+F+G4, and 2 TN+F+I+G4 partitions with edge-linked proportional rates from 0.434x (RPL8/uL2) to 1.809x (MCM7) [2]. Compositional RY3 recoding lowered RCFV by 87.1% (0.0987 unrecoded and 0.0993 unphased control vs. 0.0127 RY3) [24], and partitioned modeling improved ML fit by Delta ln L = +5,836.89 nats (ln L = -678,788.85 vs. -684,625.73 unpartitioned; Delta BIC = -9,259.5; 32-chain thermodynamic marginal ln L = -678,433.64; MCMC ESS = 3,877.9, R-hat = 1.0001) with 86.9% mean Seo multilocus UFBoot2 support (B = 500) [3, 4].",
+      "Under an autocorrelated relaxed molecular clock with soft fossil priors and two-sided 95% highest posterior density intervals on all 42 internal vertices (Figure 1) [18], the Holomycota root (Node I) resolves at 967.2 Ma (876.2-1,048.7 Ma) and the Mortierellomycotina-Dikarya stem divergence (Node II) at 819.8 Ma (749.6-876.3 Ma). Crown Glomeromycotina arbuscular mycorrhizal fungi (Node III) diversify at 413.2 Ma (365.2-438.2 Ma), consistent with Ordovician glomalean spores and Lower Devonian Rhynie Chert symbioses [7, 8], whereas Mucoromycotina fine-root endophytes (Node IV) crown at 499.3 Ma (462.2-529.9 Ma) [5, 6]. Within Dikarya (Node V: 707.5 Ma [653.9-754.6 Ma]), Basidiomycota diverged at 577.7 Ma (Node VI: [538.7-619.6 Ma]), Pezizomycotina radiated at 397.7 Ma (Node VII: [366.0-427.5 Ma]), and crown Agaricomycetes ectomycorrhizal and wood-decay lineages (Node VIII) emerged at 267.2 Ma (252.6-307.6 Ma), preceding Middle Eocene Pinaceae ectomycorrhizal fossils [9, 10, 16]."
+    ],
+    "section3_title": "Sixty-Four-Taxon Quartet Multispecies Coalescent and Four-Taxon Discordance Tests",
+    "section3_paragraphs": [
+      "To incorporate the 21 lower-coverage taxa omitted from concatenated tree inference and account for incomplete lineage sorting across ancient rapid splits, exact tripartition dynamic programming evaluated 3,244,416 quartets across all 24 nuclear gene trees (including EF1A/TEF1, Table 3C and Figure 3) [19]. Native quartet reconciliation achieved normalized Q = 0.7065 (2,292,225 satisfied quartets; mean LPP = 0.7329), outperforming Codon-12 (Q = 0.6987), unrecoded 4-state (Q = 0.7022), and unaligned controls (Q = 0.4709). Both partitioned RY3 ML (89-100% bootstrap) and 64-species quartet MSC (0.68-0.94 LPP) recovered 1.00 monophyly for Glomeromycotina, Mucoromycotina, Mortierellomycotina, Ascomycota, Basidiomycota, Agaricomycotina, Dikarya, and Pezizomycotina, while separating Mortierellomycotina from Glomeromycotina plus Mucoromycotina [5, 6].",
+      "At the focal backbone vertices in Table 2A, Glomeromycotina (Node III: q1 = 1.000, LPP = 0.8716), Basidiomycota (Node VI: q1 = 0.855, LPP = 0.7117), Pezizomycotina (Node VII: q1 = 0.790, LPP = 0.9739), and Agaricomycetes (Node VIII: q1 = 0.667, LPP = 0.8435) display strong primary quartet concordance, whereas Holomycota (Node I: q1 = 0.419, LPP = 0.4779, 0.14 CU) and Mucoromycotina (Node IV: q1 = 0.459, LPP = 0.5053, 0.21 CU) reflect rapid early radiation. Four-taxon Patterson D tests further detect asymmetric gene-tree discordance in Zoopagomycota-Mucoromycota (ABBA-1: D = -0.0653, Z = 1.95), Glomeromycotina-Mucoromycotina (ABBA-2: D = +0.8824, Z = 21.21), Ascomycota (ABBA-3: D = -0.0634, Z = 1.76), and Agaricomycotina (ABBA-4: D = +0.1708, Z = 5.32) [22]."
+    ],
+    "section4_title": "Goldman-Yang Codon Selection on PHO84/PiPT (PDB 4J05), MEP2, MST2, and CHS1 Symbiosis Genes",
+    "section4_body": "Coding sequence alignments of fungal phosphate transporters, ammonium permeases, hexose symporters, and chitin synthases evaluate evolutionary constraint accompanying the transition to plant-root biotrophy.",
+    "section4_paragraphs": [
+      "Frame-locked Goldman-Yang 61-state codon models across 42 curated fungal orthologs indicate pervasive purifying selection across symbiotic nutrient-exchange and cell-wall loci, with zero codons reaching Bayes Empirical Bayes posterior Pr >= 0.95 for positive diversifying selection (Figure 5A-B) [21]. Background M0 omega stays constrained in fungal chitin synthase CHS1/CHS2 (FAM-01: n = 11, 759 codons, omega0 = 0.0696, kappa = 1.22, purifying fraction omega0 = 0.0577 [85.7%]), symbiotic ammonium permease MEP2/AMT1 (FAM-02: n = 12, 477 codons, omega0 = 0.0660, kappa = 1.58, purifying omega0 = 0.0436 [95.4%]) [23], monosaccharide symporter HXT/MST2 (FAM-03: n = 11, 496 codons, omega0 = 0.1306, kappa = 1.06, purifying omega0 = 0.1315 [84.8%]) [15], and high-affinity H+-orthophosphate symporter PHO84/PiPT (FAM-04: n = 8, 425 codons, omega0 = 0.0770, kappa = 1.20, purifying omega0 = 0.0606 [96.6%]) [14].",
+      "Threading fungal PHO84/PiPT orthologs onto the 2.90 A crystal structure of Serendipita indica PiPT in its occluded orthophosphate-bound conformation (PDB 4J05 Chain A bound to PO4 A 600; 422 aligned C-alpha atoms; Kabsch RMSD = 0.424 A, TM-score = 0.9968; Figure 5D) preserves the twelve-helix major facilitator fold linking the TM1-TM6 N-domain (residues 31-228) and TM7-TM12 C-domain (298-518) [14]. Within the buried transport pocket (volume 137.8 cubic A, predicted binding affinity -2.29 kcal/mol), polar anchor Asn431 Nd2 maintains 3.39 A proximity to occluded PO4 A 600 alongside Gln177, Tyr150, and proton-relay residue Asp324, consistent with conserved transmembrane electrostatic geometry across distantly related mycorrhizal mutualists [14]."
+    ],
+    "section5_title": "Conspecific Mycorrhizal Population Skylines and Multi-Locus Haplotype Cluster Networks",
+    "section5_paragraphs": [
+      "Twelve single-species 25,000-generation Bayesian coalescent skylines spanning 383 aligned fungal isolates across forestry, heathland, and agroecosystem populations converged robustly (minimum ESS = 1,886.2, maximum Gelman-Rubin R-hat = 1.0013; Figure 4A-B) [20]. Aggregate regime likelihoods in Table 3B place codon and E-INS-i core modeling first (ln L = -20,936.09; 91.7% mean bootstrap) ahead of progressive FFT-NS-i / K80+G4 (-21,291.16), untrimmed gotoh-msa (-21,966.75), and unaligned controls (-194,565.39). Across the R1-R6 regional ITS cohorts (N = 193; Rhizophagus irregularis, Funneliformis mosseae, Cenococcum geophilum, Suillus luteus, Amanita muscaria, and Tuber melanosporum), demographic curves show late-Pleistocene stability and recent expansion, whereas multi-compartment L1-L6 contrasts (N = 190) separate polymorphic nuclear ITS and 28S LSU (L2, pi = 0.0640) from completely invariant R. irregularis 18S SSU (L5: n = 36, 785 bp, pi = 0.0000).",
+      "Because multiple lineages exceeded three distinguishable genetic groups, minimum spanning haplotype cluster networks were constructed from single-species ITS alignments (Figure 7A-B). Global R. irregularis ITS isolates (Cohort R1: N = 20, 19 unique haplotypes, Hd = 0.9947, pi = 0.1083, maximum k-core = 2) partition into 12 discrete haplotype clusters (4 bounded clusters containing >=2 haplotypes separated by 9-101 mutational steps), compatible with co-existing divergent ribotypes in clonal and agricultural soils [13]. Circumpolar ectomycorrhizal Amanita muscaria ITS populations (Cohort R5: N = 28, 21 haplotypes, Hd = 0.9709, pi = 0.0120, maximum k-core = 2) segregate into 4 clusters (Clusters I-IV separated by 11-13 steps), mirroring boreal Pleistocene refugial sorting."
+    ],
+    "section6_intro": "Empirical diagnostics, divergence times, clade recovery metrics, 32-chain sweeps, codon selection parameters, and conspecific population skyline budgets are compiled across Tables 1 through 4C.",
+    "discussion_title": "Discussion & Evolutionary Synthesis",
+    "discussion_paragraphs": [
+      "**Paleozoic Arbuscular and Mucoromycotina Terrestrialization Versus Later Dikarya Guilds.** Relaxed-clock calibration places crown Glomeromycotina at 413.2 Ma (365.2-438.2 Ma) and crown Mucoromycotina at 499.3 Ma (462.2-529.9 Ma), temporally consistent with Ordovician glomalean microfossils, Lower Devonian Rhynie Chert symbioses in early embryophytes, and molecular plant-fungal co-diversification models [6, 7, 8, 9]. Separating Mortierellomycotina (stem split 819.8 Ma) from Glomeromycotina plus Mucoromycotina across both partitioned RY3 ML and quartet MSC topologies supports ancient trophic differentiation prior to Dikarya radiation at 707.5 Ma [5, 6].",
+      "**Convergent Ectomycorrhizal and Ericoid Evolution Alongside Decay-Enzyme Contraction.** Crown Agaricomycetes ECM and wood-rot lineages diversify at 267.2 Ma (252.6-307.6 Ma) within Permian-Mesozoic gymnosperm-dominated biomes, well before Middle Eocene Pinaceae ectomycorrhizal permineralizations (~48-50 Ma) [10, 16]. Together with Ascomycota ECM/ERM diversification nested inside Pezizomycotina (397.7 Ma [366.0-427.5 Ma]), these timing bounds are consistent with repeated, independent evolutionary transitions from saprotrophy to root biotrophy accompanied by convergent reductions in plant cell-wall-degrading enzymes [10, 11, 12].",
+      "**Purifying Constraint on Symbiotic Phosphate, Ammonium, Hexose, and Chitin Machinery.** Strong background purifying selection across CHS1/CHS2 (omega0 = 0.0696), MEP2/AMT1 (omega0 = 0.0660), HXT/MST2 (omega0 = 0.1306), and PHO84/PiPT (omega0 = 0.0770), with zero BEB sites >= 0.95 and sub-angstrom structural conservation (0.424 A RMSD) on PDB 4J05, supports a candidate hypothesis that deep mycorrhizal transitions frequently co-opted conserved fungal transmembrane nutrient-transport scaffolds rather than requiring radical active-site remodeling [13, 14, 15, 21, 23]. Functional transport kinetics remain to be tested experimentally in heterologous systems.",
+      "**Quaternary Rhizosphere Demography and Marker Resolution Across Mycorrhizal Taxa.** Across 383 conspecific sequences in 12 fungal populations, regional nuclear ITS and 28S LSU skylines capture Holocene agricultural and boreal expansion signals that slow-evolving 18S SSU rDNA (pi = 0.0000 in R. irregularis Cohort L5) cannot resolve [17, 20]. The multi-cluster ITS networks in R. irregularis (12 clusters, pi = 0.1083) and A. muscaria (4 clusters, pi = 0.0120) reflect contrasting dispersal ecology between soil-borne multinucleate AM spores and wind-dispersed boreal ECM basidiospores [13].",
+      "**Study Limitations.** Several methodological constraints qualify these inferences. First, mitochondrial COX1 dropped below the 10-taxon completeness threshold, leaving the 23-locus supermatrix entirely nuclear, and 21 sparse taxa failed the 55% site gate in concatenated chronogram estimation (though all 64 species were retained in quartet coalescent analyses). Second, conspecific Bayesian skylines rely on single-locus ITS or LSU/COX1 cohorts from heterogeneous public submissions rather than phased whole-genome resequencing. Third, structural threading evaluates a single static inward-occluded 4J05 crystal conformer without molecular dynamics simulations or biochemical transport assays; accordingly, evolutionary rates, introgression contrasts, and structural contacts are reported as candidate statistical correlations."
+    ],
+    "abstract_context": "Resolving single versus multiple origins of mycorrhizal symbioses across the fungal tree of life.",
+    "executive_summary_lead": "tracks 23 conserved nuclear loci, symbiotic nutrient-transporter remodeling, and root-associated diversification across 64 fungal species",
+    "latex_intro": "Partitioned 23-locus nuclear phylogenomics, 64-species quartet coalescent inference, transporter codon selection, and conspecific population skylines across the fungal tree of life.",
+    "seed_base": 20261133,
+    "abstract_override": "Mycorrhizal fungi sustain terrestrial plant nutrition through ancient arbuscular mutualisms in Glomeromycotina and Mucoromycotina alongside younger ectomycorrhizal and ericoid lineages in Ascomycota and Basidiomycota. However, deep fungal phylogenomics faces adenine-thymine compositional drift and long-branch attraction across early-diverging clades. Analyzing 489 curated NCBI sequences across 64 fungal species spanning all seven major compartments, we evaluated a completeness-gated 23-locus nuclear supermatrix (36,208 aligned columns across 43 species), 24-gene-tree quartet multispecies coalescent reconciliation (3,244,416 quartets), Goldman-Yang codon selection on 42 transporter and chitin-synthase orthologs threaded onto Serendipita indica PiPT (PDB 4J05), and 12 single-species coalescent skylines (383 isolates). Per-locus partitioned RY3 modeling reduced compositional skew (RCFV) by 87.1% to 0.0127 and improved maximum-likelihood fit by +5,836.89 nats over unpartitioned analysis, recovering all major symbiotic clades across ML (89-100% bootstrap) and quartet coalescent trees (Q = 0.7065). Autocorrelated relaxed-clock dating places crown Glomeromycotina at 413.2 Ma (365.2-438.2 Ma) and Mucoromycotina at 499.3 Ma (462.2-529.9 Ma), versus Dikarya ectomycorrhizal crown diversification in Agaricomycetes at 267.2 Ma (252.6-307.6 Ma). Strong purifying constraint (M0 dN/dS = 0.0660-0.1306) and 0.424 A structural conservation on PiPT 4J05 (Asn431-phosphate distance 3.39 A) align with repeated evolutionary recruitment of conserved nutrient-symport machinery across independent fungal transitions."
+  }
+}

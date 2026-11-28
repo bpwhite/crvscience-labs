@@ -5,18 +5,19 @@
 ---
 
 <!-- AUTO-LABS-SUMMARY:START -->
-## Validated Preprints (`32`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`93` Total Reports)
+## Validated Preprints (`33`), Validated Tool Calibrations (`37`) & Pipeline Benchmarks (`94` Total Reports)
 
-- **Total Lab Discovery Entries**: **93** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
-  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-32`, `v2.0.2`)**: **32** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
+- **Total Lab Discovery Entries**: **94** ([https://crvscience.com/labs#discoveries](https://crvscience.com/labs#discoveries))
+  - **✅ Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-33`, `v2.0.2`)**: **33** verified empirical monographs ([https://crvscience.com/labs#preprints](https://crvscience.com/labs#preprints))
   - **✅ Validated Head-to-Head Tool Calibrations**: **37** native-vs-external tool calibration benchmarks (`MAFFT`, `jModelTest`, `IQ-TREE 2`, `ASTRAL`, `PAML`, `BEAST`, `DIAMOND`, `Minimap2`, `Prodigal`, `HMMER3`, `ViennaRNA`, `US-align`, `fpocket`, `AutoDock Vina`, `minigraph`, `AMRFinderPlus`, `GECCO`, `MACSE`, `Biopython`, `SciPy`)
   - **🔬 Pipeline & Model-Calibration Benchmarks**: **0** multi-stage `RuNIE` DAG controller and scope-tier calibration runs
-  - **Curated Validation Dataset Registry**: **70** datasets (`VAL-SET-001` through `VAL-SET-070`)
+  - **Curated Validation Dataset Registry**: **71** datasets (`VAL-SET-001` through `VAL-SET-071`)
 
-#### ✅ 32 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-32`, `v2.0.2`)
+#### ✅ 33 Empirically Verified Preprints (`PREPRINT-01`–`PREPRINT-33`, `v2.0.2`)
 
 | ID & Status | Preprint Monograph Title & Live Link | Master Concept Zenodo DOI | Signal Rating | Validation Set Provenance |
 | :--- | :--- | :--- | :--- | :--- |
+| **#148** `✅ Verified Preprint` | **[Origins of Mycorrhizal Symbiosis Across the Fungal Kingdom via Partitioned Phylogenomics and Phosphate-Transporter Remodeling](https://crvscience.com/labs/discoveries/mycorrhizal-fungi-evolution-timetree)** | [`10.5281/zenodo.24622739`](https://doi.org/10.5281/zenodo.24622739) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-072-MYCORRHIZAL-FUNGI-ORIGINS-KINGDOM-TIMETREE` |
 | **#147** `✅ Verified Preprint` | **[Asgardarchaeota-to-LECA Phylogenomics, Nuclear Pore Ran-GTPase Switching (1BYU), and Transcriptional Compartmentalization in the Origin of the Eukaryotic Nucleus](https://crvscience.com/labs/discoveries/eukaryotic-nucleus-asgard-origin)** | [`10.5281/zenodo.24504303`](https://doi.org/10.5281/zenodo.24504303) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-071-EUKARYOTIC-NUCLEUS-ASGARD-LECA-ORIGIN` |
 | **#146** `✅ Verified Preprint` | **[Partitioned ModelTest Phylogenomics, Cell-Wall Evolution, and Coalescent Dynamics Across Gram-Positive Bacteria (Bacillota and Actinomycetota)](https://crvscience.com/labs/discoveries/gram-positive-bacteria-phylogenomics)** | [`10.5281/zenodo.24455504`](https://doi.org/10.5281/zenodo.24455504) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS` |
 | **#145** `✅ Verified Preprint` | **[Partitioned ModelTest Phylogenomics, Insecticide-Target Selection, and Bayesian Coalescent Dynamics Across 64 U.S. Agricultural Arthropod Pests](https://crvscience.com/labs/discoveries/us-agricultural-arthropod-pests)** | [`10.5281/zenodo.24359245`](https://doi.org/10.5281/zenodo.24359245) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS` |
@@ -50,10 +51,11 @@
 | **#109** `✅ Verified Preprint` | **[Archosauria-to-Crown-Aves Divergence, K–Pg Neoaves Radiation, and Convergent Ratite Flight Loss Under Relaxed-Clock and Coalescent Models](https://crvscience.com/labs/discoveries/theropoda-crown-aves-timetree-kpg)** | [`10.5281/zenodo.23971260`](https://doi.org/10.5281/zenodo.23971260) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-042-THEROPODA-CROWN-AVES-TIMETREE-114RECORDS` |
 | **#108** `✅ Verified Preprint` | **[Phylogenomic Divergence, Hominoid Rate Slowdown, and Pleistocene Tip-Dating Across Primates Under Relaxed-Clock and Coalescent Models](https://crvscience.com/labs/discoveries/primate-evolution-timetree-chronogram)** | [`10.5281/zenodo.23971921`](https://doi.org/10.5281/zenodo.23971921) | 🧪🧪🧪🧪🧪 (`5/5`) | `VAL-SET-041-PRIMATE-EUARCHONTOGLIRES-TIMETREE-116RECORDS` |
 
-#### Latest 12 Lab Discovery Entries (`#134`–`#147`)
+#### Latest 12 Lab Discovery Entries (`#136`–`#148`)
 
 | # & Validation Status | Entry Title | Scope Tier | Beaker Signal | Date |
 | :--- | :--- | :--- | :--- | :--- |
+| **#148** `✅ Verified Preprint` | [Origins of Mycorrhizal Symbiosis Across the Fungal Kingdom via Partitioned Phylogenomics and Phosphate-Transporter Remodeling](https://crvscience.com/labs/discoveries/mycorrhizal-fungi-evolution-timetree) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 27, 2026 |
 | **#147** `✅ Verified Preprint` | [Asgardarchaeota-to-LECA Phylogenomics, Nuclear Pore Ran-GTPase Switching (1BYU), and Transcriptional Compartmentalization in the Origin of the Eukaryotic Nucleus](https://crvscience.com/labs/discoveries/eukaryotic-nucleus-asgard-origin) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 23, 2026 |
 | **#146** `✅ Verified Preprint` | [Partitioned ModelTest Phylogenomics, Cell-Wall Evolution, and Coalescent Dynamics Across Gram-Positive Bacteria (Bacillota and Actinomycetota)](https://crvscience.com/labs/discoveries/gram-positive-bacteria-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 21, 2026 |
 | **#145** `✅ Verified Preprint` | [Partitioned ModelTest Phylogenomics, Insecticide-Target Selection, and Bayesian Coalescent Dynamics Across 64 U.S. Agricultural Arthropod Pests](https://crvscience.com/labs/discoveries/us-agricultural-arthropod-pests) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 16, 2026 |
@@ -65,9 +67,8 @@
 | **#138** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Isoptera and Sister Wood-Roach Outgroups (Blattodea: Termitoidae): Native Rust Quartet Coalescent Species-Tree Inference, Endogenous Lignocellulase and Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/isoptera-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
 | **#137** `✅ Verified Preprint` | [Global Phylogenomic Radiation of Nudibranchia and Allied Nudipleura (Gastropoda: Heterobranchia): Native Rust Quartet Coalescent Species-Tree Inference, Kleptocnidae and Terpenoid Cytochrome P450 Selection, and Cross-Regional vs. Multi-Locus Demographic Skylines](https://crvscience.com/labs/discoveries/nudibranch-global-radiation-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 10, 2026 |
 | **#136** `✅ Verified Preprint` | [Global Phylogenomics, Functional Selection, and Demographic Skylines of Invasive Marine, Freshwater, and Terrestrial Snails Across Australia and New Zealand](https://crvscience.com/labs/discoveries/invasive-snails-au-nz-phylogenomics) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
-| **#134** `✅ Verified Preprint` | [Global Phylogenomic Radiation, Xenobiotic Detoxification Selection, and Coalescent Skylines Across Bemisia tabaci Cryptic Whiteflies and Aleyrodidae](https://crvscience.com/labs/discoveries/bemisia-whitefly-global-radiation) | `Tier 3: Scientific` | 🧪🧪🧪🧪🧪 (`5/5`) | Nov 9, 2026 |
 
-#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-070`)
+#### Curated Validation Datasets Registry (`VAL-SET-001`–`VAL-SET-071`)
 
 | Validation Set ID | Biological & Mathematical Domain | Benchmark Command | Dev / Reserve Split | Published Discovery Reports |
 | :--- | :--- | :--- | :--- | :--- |
@@ -141,4 +142,5 @@
 | `VAL-SET-069-US-AGRICULTURAL-ARTHROPOD-PESTS` | U.S. Agricultural Entomology (Fruit/Specialty Crops, Rangeland/Livestock & Stored Grain), Per-Locus BIC ModelTest & Edge-Linked Proportional Partitioning, Quartet MSC, CYP6/ace-1/CSP/Hsp70 Selection & Single-Species Phylodynamics | `us-ag-pests-partitioned-modeltest` | Dual-Pass SHA-256 Blinded Validation + Estimator-Matched Stratified UFBoot2 (B=500, ID Con=100%, RF=0) across 14 per-locus ModelTest partitions (RCFV collapsed 92.5% from 0.0600 unrecoded [0.0866 0-Beaker] to 0.0045 RY3) | [`us-agricultural-arthropod-pests`](https://crvscience.com/labs/discoveries/us-agricultural-arthropod-pests) |
 | `VAL-SET-070-GRAM-POSITIVE-BACTERIA-MONODERM-PHYLOGENOMICS` | Prokaryote Phylogenomics (Terrabacteria Diderms, Anaerobic Clostridia, Endospore Bacillales, Staphylococcales/Listeriaceae, Lactobacillales LAB, Bifidobacteriales/Corynebacteriales & Soil Actinomycetota), Per-Locus BIC ModelTest & Edge-Linked Proportional Partitioning, Quartet MSC, murA/spo0A/dnaK/CYP102A Selection & Single-Species Phylodynamics | `gram-positive-partitioned-modeltest` | Dual-Pass SHA-256 Blinded Validation + Estimator-Matched Stratified UFBoot2 (B=500, ID Con=100%, RF=0) across 10 per-locus Code-11 ModelTest partitions (RCFV collapsed 89.6% from 0.1715 unrecoded [0.1938 0-Beaker] to 0.0179 RY3) | [`gram-positive-bacteria-phylogenomics`](https://crvscience.com/labs/discoveries/gram-positive-bacteria-phylogenomics) |
 | `VAL-SET-071-EUKARYOTIC-NUCLEUS-ASGARD-LECA-ORIGIN` | Asgardarchaeota-to-LECA Eukaryogenesis & Nuclear Origin, Partitioned BIC ModelTest + RY3 Compositional Recoding, Quartet MSC & ABBA-BABA Introgression, Nuclear Functional Family Selection (VPS4/HHT1/RPB2/RAN + 1BYU), & Phylodynamic Skylines | `eukaryotic-nucleus-origin-dualpass` | Dual-Pass SHA-256 Blinded Validation + Estimator-Matched Stratified UFBoot2 (B=500) across 18 partitioned universal loci (RCFV collapsed 83.6% from 0.1441 unrecoded [0.1558 0-Beaker] to 0.0236 RY3) | [`eukaryotic-nucleus-asgard-origin`](https://crvscience.com/labs/discoveries/eukaryotic-nucleus-asgard-origin) |
+| `VAL-SET-072` | Fungal Kingdom Mycorrhizal Terrestrialization, Partitioned BIC ModelTest + RY3 Compositional Recoding, Quartet MSC & ABBA-BABA Introgression, Symbiotic Transporter Codon Selection (CHS1/MEP2/MST2/PiPT + PDB 4J05), & Conspecific Skylines | `mycorrhizal-fungi-evolution-timetree` | Dual-Pass SHA-256 Blinded Validation + Estimator-Matched Stratified UFBoot2 (B=500) across 23 partitioned nuclear loci (RCFV collapsed 87.1% from 0.0987 unrecoded [0.0993 0-Beaker] to 0.0127 RY3) | [`mycorrhizal-fungi-evolution-timetree`](https://crvscience.com/labs/discoveries/mycorrhizal-fungi-evolution-timetree) |
 <!-- AUTO-LABS-SUMMARY:END -->

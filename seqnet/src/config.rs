@@ -219,6 +219,10 @@ pub fn build_named_locus_panel(names: &[String], invert_mito: bool) -> Vec<Locus
         ("univ_fen1", true, 500, 2000, &["fen", "FEN1", "RAD27", "flap endonuclease 1", "flap endonuclease-1"]),
         ("univ_pcna", true, 450, 1500, &["pcn", "pcna", "PCNA", "POL30", "proliferating cell nuclear antigen", "DNA polymerase sliding clamp"]),
         ("univ_thrrs", true, 650, 3200, &["thrS", "TARS", "TARS1", "THS1", "threonine--tRNA ligase", "threonyl-tRNA synthetase"]),
+        ("univ_act1", true, 750, 1650, &["ACT1", "ACTB", "ACTG1", "actin", "cytoplasmic actin", "actin-1"]),
+        ("univ_tub2", true, 850, 2000, &["TUB2", "TUBB", "benA", "tubulin beta chain", "beta-tubulin"]),
+        ("univ_pgk1", true, 900, 1800, &["PGK1", "PGK", "phosphoglycerate kinase", "phosphoglycerate kinase 1"]),
+        ("univ_mcm7", true, 1500, 3400, &["MCM7", "CDC47", "DNA replication licensing factor MCM7", "minichromosome maintenance protein 7"]),
         ("univ_ssu", false, 600, 2200, &["16S ribosomal RNA", "18S ribosomal RNA", "16S rRNA", "18S rRNA", "small subunit ribosomal RNA"]),
         ("univ_lsu", false, 650, 3800, &["23S ribosomal RNA", "28S ribosomal RNA", "26S ribosomal RNA", "25S ribosomal RNA", "large subunit ribosomal RNA"]),
     ];

@@ -4294,7 +4294,10 @@ pub fn run_supervisor_cli(args: &[String], cache: &PoliteCacheManager) -> Result
     for anom in &manifest.ncbi_flagged_anomalies {
         eprintln!(
             "    [!] {} ({}) [{}]: {}",
-            anom.accession, anom.declared_organism, anom.anomaly_code, anom.autonomous_resolution
+            anom.accession,
+            crate::privacy::abbreviate_binomial_for_cli_log(&anom.declared_organism),
+            anom.anomaly_code,
+            anom.autonomous_resolution
         );
     }
     eprintln!(

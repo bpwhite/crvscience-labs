@@ -4472,6 +4472,7 @@ fn render_bemisia_fig5_selection_and_sweep(
         let is_bacterial = theme.supp_s3_source.contains("Bacterial");
         let is_universal_ae = theme.supp_s3_source.contains("Universal");
         let is_col4_1li1 = pdb.template_pdb_code.contains("1LI1");
+        let is_pipt_4j05 = pdb.template_pdb_code.contains("4J05");
         let is_non_heme = !pdb.het_atoms.is_empty() && !pdb.het_atoms.iter().any(|h| h.atom_name == "FE");
         // Domain legend callouts in Upper Viewport corners
         if is_col4_1li1 {
@@ -4479,6 +4480,11 @@ fn render_bemisia_fig5_selection_and_sweep(
             svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● Trimeric NC1 Hexamer Cap</text>"##);
             svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● HSQTT Recognition Loop</text>"##);
             svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● Met93–Hyl211 Sulfilimine Site</text>"##);
+        } else if is_pipt_4j05 {
+            svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● TM1–TM6 N-Domain Bundle (31–228)</text>"##);
+            svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● TM7–TM12 C-Domain Bundle (298–518)</text>"##);
+            svg.push_str(r##"<text x="1116" y="796" font-size="8.6" font-weight="800" fill="#059669">● MFS H⁺–Pᵢ Symport Core (Gln177 / Asp324)</text>"##);
+            svg.push_str(r##"<text x="1556" y="796" text-anchor="end" font-size="8.6" font-weight="800" fill="#d97706">● TM11 Anchor (Asn431–PO₄)</text>"##);
         } else if is_universal_ae || is_non_heme {
             svg.push_str(r##"<text x="1116" y="562" font-size="8.6" font-weight="800" fill="#7c3aed">● P-Loop / Switch I (Thr24 Mg²⁺)</text>"##);
             svg.push_str(r##"<text x="1556" y="562" text-anchor="end" font-size="8.6" font-weight="800" fill="#0284c7">● C-Term / Switch Core</text>"##);
@@ -4501,6 +4507,8 @@ fn render_bemisia_fig5_selection_and_sweep(
         if is_non_heme {
             if is_col4_1li1 {
                 svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: NC1 Sulfilimine Interface Pocket (ACT A 2009) &amp; Hyl211–Nζ Anchor</text>"##);
+            } else if is_pipt_4j05 {
+                svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Occluded PO₄ Substrate (A 600, 5 Atoms) &amp; Asn431–Nδ2 Polar Anchor</text>"##);
             } else {
                 svg.push_str(r##"<text x="1118" y="832" font-size="9.3" font-weight="800" fill="#0f172a">Lower: Active-Site GDP (28 Atoms) + Mg²⁺ A 221 &amp; Thr24–Oγ1 Bond</text>"##);
             }
@@ -4567,6 +4575,8 @@ fn render_bemisia_fig5_selection_and_sweep(
                 h_cx,
                 if is_col4_1li1 {
                     "Met93–Hyl211 Sulfilimine Pocket &amp; C4 Disulfide Core"
+                } else if is_pipt_4j05 {
+                    "MFS H⁺–Pᵢ Symport Core (Gln177 / Tyr150 / Asp324 / Asn431)"
                 } else {
                     "P-Loop Walker A (GDGGTGKT) &amp; Switch II (DTAGQE)"
                 }
@@ -4681,7 +4691,7 @@ fn render_bemisia_fig5_selection_and_sweep(
                     mx, my, mx, my + 2.2
                 ));
             }
-            if is_col4_1li1 && thr24_pill_info.is_none() {
+            if (is_col4_1li1 || is_pipt_4j05) && thr24_pill_info.is_none() {
                 if let Some((sgx, sgy, sgz, cys_num, nz_dist)) = pdb.proximal_cys_sg {
                     let og_raw = proj_lig(sgx, sgy, sgz);
                     let ox = og_raw.0.clamp(1136.0, 1290.0);
@@ -4690,9 +4700,10 @@ fn render_bemisia_fig5_selection_and_sweep(
                         r##"<line x1="{:.1}" y1="{:.1}" x2="{:.1}" y2="{:.1}" stroke="#d97706" stroke-width="2.6" stroke-dasharray="3,2"/>"##,
                         h_cx, h_cy, ox, oy
                     ));
+                    let atom_lbl = if is_pipt_4j05 { "Nδ" } else { "Nζ" };
                     svg.push_str(&format!(
-                        r##"<circle cx="{:.1}" cy="{:.1}" r="6.0" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.2"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.2" font-weight="900" fill="#ffffff">Nζ</text>"##,
-                        ox, oy, ox, oy + 2.2
+                        r##"<circle cx="{:.1}" cy="{:.1}" r="6.0" fill="#2563eb" stroke="#1e3a8a" stroke-width="1.2"/><text x="{:.1}" y="{:.1}" text-anchor="middle" font-size="6.2" font-weight="900" fill="#ffffff">{}</text>"##,
+                        ox, oy, ox, oy + 2.2, atom_lbl
                     ));
                     thr24_pill_info = Some((ox, oy, cys_num, nz_dist));
                 }
@@ -4710,6 +4721,8 @@ fn render_bemisia_fig5_selection_and_sweep(
                 ));
                 let bond_lbl = if is_col4_1li1 {
                     format!("Hyl211 (ORF {}) Nζ–ACT = {:.2} Å", cys_num, mg_dist)
+                } else if is_pipt_4j05 {
+                    format!("Asn431 (ORF {}) Nδ2–PO₄ = {:.2} Å", cys_num, mg_dist)
                 } else {
                     format!("Thr24 (ORF {}) Oγ1–Mg²⁺ = {:.2} Å", cys_num, mg_dist)
                 };
@@ -4722,6 +4735,8 @@ fn render_bemisia_fig5_selection_and_sweep(
             }
             if is_col4_1li1 {
                 svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Hyl211 Nζ  ● Interface O⁻  ● Pocket C  ● Sulfilimine Crosslink Pocket</text>"##);
+            } else if is_pipt_4j05 {
+                svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● PO₄ Phosphorus (P)  ● Orthophosphate O⁻  ● Asn431 Nδ2  ● H⁺–Pᵢ Pocket</text>"##);
             } else {
                 svg.push_str(r##"<text x="1116" y="1055" font-size="8.0" font-weight="700" fill="#475569">● Mg²⁺  ● α/β-PO₄ P  ● Guanine N  ● Phosphate/Ribose O⁻  ● Thr24 Oγ1</text>"##);
             }
@@ -4932,6 +4947,15 @@ fn render_bemisia_fig5_selection_and_sweep(
                 pdb.kabsch_rmsd_angstrom,
                 pdb.tm_score
             )
+        } else if is_pipt_4j05 {
+            format!(
+                "Template {} | {} Cα + {} PO₄ | Kabsch RMSD = {:.3} Å | TM = {:.4}",
+                pdb.template_pdb_code.split(" (").next().unwrap_or("4J05_A"),
+                pdb.atoms.len(),
+                pdb.het_atoms.len(),
+                pdb.kabsch_rmsd_angstrom,
+                pdb.tm_score
+            )
         } else if is_non_heme {
             format!(
                 "Template {} | {} Cα + {} GDP/MG | Kabsch RMSD = {:.3} Å | TM = {:.4}",
@@ -4965,6 +4989,7 @@ fn render_bemisia_fig5_selection_and_sweep(
         ));
         let bond_part = match pdb.proximal_cys_sg {
             Some(p) if is_col4_1li1 => format!(" | Hyl211 Nζ–ACT = {:.2} Å", p.4),
+            Some(p) if is_pipt_4j05 => format!(" | Asn431 Nδ2–PO₄ = {:.2} Å", p.4),
             Some(p) if is_non_heme => format!(" | Mg²⁺–Oγ1 = {:.2} Å", p.4),
             Some(p) => format!(" | Fe–Sγ = {:.2} Å", p.4),
             None => String::new(),

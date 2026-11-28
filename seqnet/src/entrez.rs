@@ -13,6 +13,34 @@ use crate::db::SequenceRecord;
 const ESEARCH_URL: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
 const EFETCH_URL: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
 
+/// Strips verbose Entrez URL query parameters, `api_key`, and contact `email` / `%40`
+/// strings from transient HTTP/network error messages before logging to stderr.
+fn sanitize_entrez_err(err: &anyhow::Error) -> String {
+    let raw = format!("{:#}", err);
+    let mut out = String::with_capacity(raw.len().min(240));
+    for tok in raw.split_whitespace() {
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        if let Some(fcgi_idx) = tok.find(".fcgi?") {
+            out.push_str(&tok[..fcgi_idx + 5]);
+            out.push_str("?...[query-redacted]");
+            if tok.ends_with(':') {
+                out.push(':');
+            }
+        } else if tok.contains("api_key=") || tok.contains("email=") || tok.contains("%40") {
+            out.push_str("[redacted-param]");
+        } else {
+            out.push_str(tok);
+        }
+    }
+    if out.len() > 260 {
+        out.truncate(257);
+        out.push_str("...");
+    }
+    out
+}
+
 /// Computes nucleotide composition statistics `(gc_fraction, ambig_fraction, shannon_entropy)`.
 pub fn compute_seq_metrics(seq: &str) -> (f64, f64, f64) {
     if seq.is_empty() {
@@ -107,6 +135,8 @@ impl EntrezClient {
         let agent = ureq::AgentBuilder::new()
             .timeout_connect(Duration::from_secs(10))
             .timeout_read(Duration::from_secs(30))
+            .timeout_write(Duration::from_secs(15))
+            .timeout(Duration::from_secs(35))
             .user_agent("bio-suite-seqnet/0.1 (https://github.com/bpwhite/crvscience-labs)")
             .build();
 
@@ -198,11 +228,11 @@ impl EntrezClient {
                 Ok(r) => return Ok(r),
                 Err(e) => {
                     eprintln!(
-                        "  [Stage 1] Entrez attempt {} for {} / {} failed: {:#}",
+                        "  [Stage 1 Dry-Lab Entrez] attempt {} for {} / {} transient HTTP/network retry: {}",
                         attempt + 1,
                         taxon_query,
                         what,
-                        e
+                        sanitize_entrez_err(&e)
                     );
                     last_err = Some(e);
                 }
